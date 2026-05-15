@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 # =========================================================================
-# reset-first-launch.sh — wipe partial first-launch state and re-arm.
+# reset-first-launch.sh — wipe world saves and re-arm first-launch flow.
 #
-# Use this when the first launch failed midway (e.g. the wizard captured
-# the wrong stdin) and left an inconsistent state. It clears:
+# Use this when you want to start over with a fresh world (e.g. testing,
+# or first launch failed and left inconsistent state).
+#
+# Clears:
 #   - World saves (Distribution/Saves/)
-#   - Server runtime configs that the wizard writes (modernuo.json,
-#     expansion.json, server-access.json)
+#   - server-access.json (wizard-written, gets regenerated)
 #   - PID file and log
 #
-# It does NOT touch:
-#   - The ModernUO build (Distribution/ModernUO.dll, Assemblies/, etc.)
+# Preserves:
+#   - ModernUO build
 #   - .NET SDK install
 #   - ClassicUO install
-#   - Your UO game data folder
+#   - UO game data folder
+#   - modernuo.json and expansion.json (we wrote these correctly; keep them)
 #
-# After running this, re-run install.sh to rewrite the configs, then
-# start.sh to do a clean first launch.
+# After running this, just run start.sh — it'll redo the owner-account
+# wizard and world population.
 # =========================================================================
 set -uo pipefail
 
@@ -38,9 +40,7 @@ pkill -9 -f ModernUO.dll 2>/dev/null || true
 echo "Wiping world saves..."
 rm -rf "${DIST_DIR}/Saves"
 
-echo "Wiping server runtime configs..."
-rm -f "${DIST_DIR}/Configuration/modernuo.json"
-rm -f "${DIST_DIR}/Configuration/expansion.json"
+echo "Removing wizard-written runtime config..."
 rm -f "${DIST_DIR}/Configuration/server-access.json"
 
 echo "Clearing PID file and log..."
@@ -51,8 +51,9 @@ echo "Re-arming first-launch marker..."
 touch "${INSTALL_ROOT}/.needs-owner-account"
 
 echo ""
-echo "Done. Next steps:"
-echo "  1. Re-run the installer to rewrite configs:"
-echo "       cd ~/Downloads/uo-modernuo && ./install.sh"
-echo "  2. Then start the server:"
+echo "Done. Next: run the server to redo first launch:"
 echo "       ~/uo-modernuo/start.sh"
+echo ""
+echo "After your character is created, re-run the [-commands listed in:"
+echo "       ~/uo-modernuo/POPULATE-WORLD.txt"
+echo "to repopulate the world."
