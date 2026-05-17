@@ -1,0 +1,56 @@
+# combat_actions.txt — Mid-combat banter for Adventurer-archetype bots.
+# Short, urgent, period-appropriate. Mix of brags, panic, target calls.
+# Lines starting with # are comments. Blank lines ignored.
+
+# Engagement / target calls
+die foul beast
+have at thee
+en garde
+back demon
+to me
+for honor
+attack
+strike now
+foul creature
+
+# Combat status / brags
+take that
+got him
+almost down
+one more hit
+hah
+
+# Panic / low HP
+i need a heal
+healer
+bandages
+help
+running low
+where's a healer
+gonna die
+oh no
+*shouts for aid*
+
+# Generic combat noise
+hyaaa
+hyah
+for britannia
+*grunts*
+*swings hard*
+nice swing
+missed
+
+# Loot / aftermath (occasionally said when no current target)
+that's loot for me
+nice drop
+got coin
+where's the next one
+keep going
+on to the next
+
+# Adventurer life
+gold in these dungeons
+killed a dozen today
+this is the life
+i live for this
+better than working a forge

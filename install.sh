@@ -5,13 +5,14 @@
 # What this does:
 #   1. Installs Linux prerequisites (Debian/Ubuntu/SteamOS/Fedora).
 #   2. Clones ModernUO and bootstraps .NET 10 per-user.
-#   3. Builds ModernUO for Linux x64.
-#   4. Downloads ClassicUO from GitHub releases.
-#   5. Downloads UO Classic 7.0.23.1 game data from a community mirror
+#   3. Deploys the PlayerBots source files into the ModernUO source tree.
+#   4. Builds ModernUO (including the bots) for Linux x64.
+#   5. Downloads ClassicUO from GitHub releases.
+#   6. Downloads UO Classic 7.0.23.1 game data from a community mirror
 #      (or uses an existing install if one is already on disk).
-#   6. Downloads Nerun's pre-T2A spawn map for world population.
-#   7. Writes correct ModernUO and ClassicUO configs (T2A, localhost-only).
-#   8. Installs start/stop scripts and a desktop launcher.
+#   7. Downloads Nerun's pre-T2A spawn map for world population.
+#   8. Writes correct ModernUO and ClassicUO configs (T2A, localhost-only).
+#   9. Installs start/stop scripts and a desktop launcher.
 #
 # After install, run start.sh (or click the UO Offline desktop icon).
 # First launch creates the owner account and populates the world.
@@ -679,11 +680,91 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Step 4b — PlayerBots: deploy bot source files into the ModernUO source tree
+#
+# This runs BEFORE build_modernuo so the bot code is compiled into the same
+# build pass. The bot files live in this repo at ./playerbots/.
+# ---------------------------------------------------------------------------
+install_playerbots() {
+  banner "Installing PlayerBots"
+
+  local src_dir="${SCRIPT_DIR}/playerbots"
+  if [[ ! -d "${src_dir}" ]]; then
+    warn "No playerbots/ directory next to install.sh; skipping bot install."
+    return
+  fi
+
+  local src_target="${MODERNUO_DIR}/Projects/UOContent/CustomBots"
+  local chat_target="${DIST_DIR}/Data/PlayerBotChat"
+  local waypoints_target="${DIST_DIR}/Data/Waypoints"
+
+  # Hash the source we're about to deploy so we know whether to force a
+  # rebuild. If the hash matches what's already deployed, skip the touch
+  # of ModernUO.dll so build_modernuo can skip cleanly.
+  local new_hash
+  new_hash="$(find "${src_dir}/source" "${src_dir}/data" -type f -exec sha256sum {} + 2>/dev/null \
+    | sort | sha256sum | cut -d' ' -f1)"
+  local hash_file="${src_target}/.deployed-hash"
+  local prev_hash=""
+  [[ -f "${hash_file}" ]] && prev_hash="$(cat "${hash_file}")"
+
+  if [[ -d "${src_target}" && "${new_hash}" == "${prev_hash}" ]]; then
+    say "PlayerBot sources unchanged. Skipping deploy."
+    return
+  fi
+
+  say "Deploying bot source -> ${src_target}"
+  mkdir -p "${src_target}"
+  cp -rT "${src_dir}/source/CustomBots" "${src_target}"
+  echo "${new_hash}" > "${hash_file}"
+
+  if [[ -d "${src_dir}/data/PlayerBotChat" ]]; then
+    say "Deploying chat data -> ${chat_target}"
+    mkdir -p "${chat_target}"
+    cp -rT "${src_dir}/data/PlayerBotChat" "${chat_target}"
+  fi
+
+  if [[ -d "${src_dir}/data/Waypoints" ]]; then
+    say "Deploying waypoint graph -> ${waypoints_target}"
+    mkdir -p "${waypoints_target}"
+    cp -rT "${src_dir}/data/Waypoints" "${waypoints_target}"
+  fi
+
+  # Clean up any legacy files from older bot system versions
+  local legacy_files=(
+    "${src_target}/Behaviors/RouteRegistry.cs"
+    "${src_target}/Behaviors/ReloadRoutesCommand.cs"
+    "${src_target}/Behaviors/DestinationRegistry.cs"
+    "${src_target}/Behaviors/ReloadDestinationsCommand.cs"
+  )
+  for f in "${legacy_files[@]}"; do
+    [[ -f "$f" ]] && rm -f "$f"
+  done
+
+  local legacy_dirs=(
+    "${DIST_DIR}/Data/Routes"
+    "${DIST_DIR}/Data/Destinations"
+  )
+  for d in "${legacy_dirs[@]}"; do
+    [[ -d "$d" ]] && rm -rf "$d"
+  done
+
+  # Force a rebuild on next build_modernuo by removing the marker file.
+  if [[ -f "${DIST_DIR}/ModernUO.dll" ]]; then
+    say "Bot sources changed — clearing build cache to trigger rebuild"
+    rm -f "${DIST_DIR}/ModernUO.dll"
+  fi
+
+  ok "PlayerBots deployed (will be compiled by the next ModernUO build)"
+}
+
+# ---------------------------------------------------------------------------
 main() {
   preflight
   install_deps
   fetch_modernuo
   bootstrap_dotnet
+  install_playerbots
   build_modernuo
   find_or_download_uo_data
   fetch_spawn_map

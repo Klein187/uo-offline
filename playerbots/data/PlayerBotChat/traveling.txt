@@ -1,0 +1,27 @@
+# traveling.txt — lines bots say while wandering/traveling.
+# Used by Wander behavior. Should feel like someone "going somewhere."
+
+i should head to britain
+i need to get to the bank
+where's the nearest moongate?
+how far to vesper?
+any pks on the road?
+this road is dangerous after dark
+hope my horse stays put
+i'm late for a meeting
+i should hurry
+need to make it back before dark
+i hate walking
+my legs are sore
+remember when we had recall scrolls?
+i wish i had more reagents
+need to grab some bandages
+should i recall or walk?
+heard there were thieves on this road
+keep your eyes open
+beautiful countryside
+trinsic is a long walk from here
+yew is just up ahead
+not much further
+the forests here are thick
+this would be faster with a horse

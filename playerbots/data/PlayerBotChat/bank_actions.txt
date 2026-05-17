@@ -1,0 +1,13 @@
+# bank_actions.txt — what bots say when "using" the bank.
+# These are real UO commands. 'bank' opens the bank box; 'withdraw N'
+# pulls gold from the bank. Saying them out loud is what a real player
+# does, so bots saying them mid-bank-crowd is pitch perfect.
+
+bank
+bank
+bank
+withdraw 100
+withdraw 500
+withdraw 1000
+withdraw 5000
+balance
