@@ -1,0 +1,100 @@
+Updating the uo-offline repo with PlayerBots
+============================================
+
+This is the complete updated repo for your Klein187/uo-offline GitHub
+project. It includes:
+
+  - Your existing install.sh, uninstall.sh, scripts/, LICENSE
+    (preserved exactly as you had them, plus a small playerbots step
+    added to install.sh)
+  - The new playerbots/ directory with the full v16e bot system
+  - A new install-playerbots.sh for upgrading existing installs
+  - An updated README.md describing all the features
+  - LIFECYCLE-DESIGN.md (architecture doc)
+
+What was changed in install.sh
+------------------------------
+
+One new step was added between bootstrap_dotnet and build_modernuo:
+
+  install_playerbots()
+    - Copies playerbots/source/CustomBots/ into ModernUO source tree
+    - Copies playerbots/data/PlayerBotChat/ into Distribution/Data/
+    - Copies playerbots/data/Waypoints/ into Distribution/Data/
+    - Removes legacy files from older bot system versions
+    - Hashes source files; if unchanged from last deploy, skips
+    - If changed, removes ModernUO.dll to trigger a rebuild
+
+Effect: running ./install.sh on a fresh machine gives you a working
+server with bots built in. Running ./install.sh again on an existing
+install only rebuilds if the bot source changed.
+
+Pushing the update to GitHub
+----------------------------
+
+Recommended sequence:
+
+  1. Clone or pull your current main:
+
+       git clone https://github.com/Klein187/uo-offline.git
+       cd uo-offline
+
+     Or if you already have a clone:
+
+       cd ~/uo-offline   # wherever your clone lives
+       git pull origin main
+
+  2. Drop in the new files. From the directory where you extracted this
+     update zip:
+
+       cp -r playerbots/                ~/uo-offline/
+       cp install.sh                    ~/uo-offline/install.sh
+       cp install-playerbots.sh         ~/uo-offline/install-playerbots.sh
+       cp README.md                     ~/uo-offline/README.md
+       cp LIFECYCLE-DESIGN.md           ~/uo-offline/LIFECYCLE-DESIGN.md
+       chmod +x ~/uo-offline/install.sh ~/uo-offline/install-playerbots.sh
+       chmod +x ~/uo-offline/playerbots/deploy.sh
+
+  3. Verify the install.sh syntax check passes locally:
+
+       bash -n ~/uo-offline/install.sh && echo OK
+
+  4. Commit and push:
+
+       cd ~/uo-offline
+       git add playerbots/ install.sh install-playerbots.sh README.md LIFECYCLE-DESIGN.md
+       git status                       # review what's changing
+       git commit -m "Add PlayerBots system (Adventurer, Traveler, Lifecycle)"
+       git push
+
+  5. Create a release on GitHub:
+
+       - Go to github.com/Klein187/uo-offline/releases
+       - "Draft a new release"
+       - Tag: v2.0.0
+       - Title: v2.0.0 - PlayerBots
+       - Description: paste the bot features section from README
+       - Attach uo-offline.zip (zip of the repo) as a release asset so
+         users can download it directly:
+
+           cd ~/uo-offline
+           zip -r ~/uo-offline.zip . -x ".git/*"
+
+       - Publish
+
+What's in playerbots/
+---------------------
+
+  source/CustomBots/                  C# source files (~5000 lines)
+    Behaviors/                        Bot AI and helpers
+    AdminPanel/                       BotPanel gump
+    PlayerBot.cs                      Bot mobile class
+    PlayerBotSpawner.cs               Spawns bots
+    NamePool.cs                       400+ curated names
+    EquipmentTable.cs                 6 equipment archetypes
+    ...
+
+  data/PlayerBotChat/                 Ambient chat (~220 lines)
+  data/Waypoints/waypoints.json       7-node starter graph
+
+  deploy.sh                           Standalone deploy script

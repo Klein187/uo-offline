@@ -1,0 +1,37 @@
+# small_talk.txt — generic ambient chat any bot can say.
+# Used by Idle and Wander behaviors. Aim for short, casual, period-feeling.
+# Lines starting with # are comments. Blank lines ignored.
+
+hail
+hail friend
+hail there
+hello
+greetings
+greetings traveler
+*sigh*
+*yawn*
+*nods*
+anyone out there?
+is anyone online?
+this place is dead today
+quiet evening
+fine day for adventuring
+i'm tired
+need a drink
+where is everyone?
+anyone seen the orcs lately?
+i heard there was a dragon spotted near destard
+my feet hurt
+the weather is strange today
+i think it'll rain
+have you seen any reds around?
+heard there were pks on the road earlier
+careful out there
+stay safe
+the moonglow is calm tonight
+hmm
+i wonder...
+not bad
+indeed
+yes
+*shrug*

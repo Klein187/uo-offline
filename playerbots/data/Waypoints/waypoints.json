@@ -1,0 +1,47 @@
+{
+  "_comment": "Waypoint graph for bot navigation. Each node connects to nearby nodes (≤38 tiles for PathFollower's A* to handle). Edges are made bidirectional automatically. After editing, run [ReloadWaypoints in-game. Coords were captured via [where in-game; Z values are critical — don't change them unless you re-verify the location.",
+
+  "Waypoints": [
+    {
+      "Name": "Britain Bank",
+      "X": 1434, "Y": 1697, "Z": 0,
+      "Connects": ["Britain South Road A"]
+    },
+    {
+      "Name": "Britain South Road A",
+      "_note": "South road to Britain — captured by user",
+      "X": 1410, "Y": 1734, "Z": 12,
+      "Connects": ["Britain Bank", "Britain West Bridge"]
+    },
+    {
+      "Name": "Britain West Bridge",
+      "_note": "West Britain bridge — captured by user",
+      "X": 1396, "Y": 1748, "Z": 1,
+      "Connects": ["Britain South Road A", "Britain West Entrance"]
+    },
+    {
+      "Name": "Britain West Entrance",
+      "_note": "West Britain entrance — captured by user",
+      "X": 1367, "Y": 1756, "Z": 10,
+      "Connects": ["Britain West Bridge", "Britain South Road B"]
+    },
+    {
+      "Name": "Britain South Road B",
+      "_note": "Road to Trinsic, point 1 — captured by user",
+      "X": 1365, "Y": 1780, "Z": 15,
+      "Connects": ["Britain West Entrance", "Britain South Road C"]
+    },
+    {
+      "Name": "Britain South Road C",
+      "_note": "Road to Trinsic, point 2 — captured by user",
+      "X": 1374, "Y": 1802, "Z": 0,
+      "Connects": ["Britain South Road B", "Britain South Road D"]
+    },
+    {
+      "Name": "Britain South Road D",
+      "_note": "Road to Trinsic, point 3 — captured by user",
+      "X": 1358, "Y": 1838, "Z": 0,
+      "Connects": ["Britain South Road C"]
+    }
+  ]
+}
