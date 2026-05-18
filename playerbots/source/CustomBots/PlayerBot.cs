@@ -79,6 +79,17 @@ namespace Server.CustomBots
         // Personality.AveragePhaseDuration to decide on transitions.
         public DateTime PhaseStartedAt;
 
+        // ---- Identity (class + skill tier) ----
+
+        // What kind of character this bot is. Rolled at creation, immutable.
+        // Drives equipment selection and paperdoll title. Independent of
+        // behavior — a Grandmaster Mage might be a BankSitter today.
+        public BotClass Class;
+
+        // How experienced this bot is. Bell-curved distribution: most are
+        // mid-tier, few are Grandmasters. Drives equipment quality.
+        public BotSkillTier SkillTier;
+
         // ---- Constructors ----
 
         // [Constructible] makes this constructor visible to:
@@ -90,6 +101,22 @@ namespace Server.CustomBots
         [Constructible(AccessLevel.GameMaster)]
         public PlayerBot() : base()
         {
+            // Mark this mobile as a player from the system's perspective.
+            // PlayerMobile's default constructor doesn't set m_Player = true
+            // (account creation normally does that), so we have to. Without
+            // this, dungeon entrance teleporters refuse to fire on bots
+            // because Teleporter.CanTeleport returns false when m.Player is
+            // false and Creatures isn't enabled.
+            Player = true;
+
+            // Bots never eat or drink. Vanilla ModernUO doesn't auto-decay
+            // hunger or thirst — these properties exist but no built-in
+            // timer ticks them down. Setting both to max here is defense
+            // in depth: if any custom content ever drains them, bots still
+            // read as fully fed.
+            Hunger = 20;
+            Thirst = 20;
+
             Female = Utility.RandomBool();
             Body   = Female ? 0x191 : 0x190;
 
@@ -102,22 +129,74 @@ namespace Server.CustomBots
                 FacialHairHue = HairHue;
             }
 
-            RawStr = 50;
-            RawDex = 50;
-            RawInt = 50;
-            Hits = HitsMax;
-            Stam = StamMax;
-            Mana = ManaMax;
-
             Name = NamePool.PickRandom(Female);
             SpeechHue = SpeechHues.PickRandom();
 
-            // Roll a random outfit from the six archetypes (peasant, mage,
-            // warrior, adventurer, merchant, wanderer). Replaces the v1
-            // always-robe-and-boots look.
-            EquipmentTable.RollOutfit(this);
+            // Roll the bot's "identity" — class (what they are) and skill
+            // tier (how experienced). Drives skills, stats, equipment.
+            Class     = BotClassHelper.RollRandom();
+            SkillTier = BotSkillTierHelper.RollRandom();
+
+            // Apply real UO skills based on class template. The paperdoll
+            // title comes from the highest skill, so a GM Warrior naturally
+            // shows "the Grandmaster Swordsman" — no manual Title needed.
+            ApplyClassSkills();
+
+            // Apply class-flavored stats (Warriors are Str-heavy, etc.) and
+            // recompute Hits/Stam/Mana from the new stat values.
+            ApplyClassStats();
+
+            // Roll equipment from the class+tier specific pool.
+            EquipmentTable.RollOutfit(this, Class, SkillTier);
 
             Behavior = new IdleBehavior();
+        }
+
+        // -------------------------------------------------------------------
+        // Apply this bot's skill template based on Class and SkillTier.
+        // Primary skill gets PrimarySkillTarget(tier) + jitter. Secondaries
+        // get SecondarySkillTarget(tier) + jitter (the -4 offset keeps the
+        // primary on top, so the paperdoll title reflects the class).
+        // -------------------------------------------------------------------
+        private void ApplyClassSkills()
+        {
+            var template = BotSkillTemplates.GetTemplate(Class);
+
+            double primaryTarget   = BotSkillTemplates.PrimarySkillTarget(SkillTier);
+            double secondaryTarget = BotSkillTemplates.SecondarySkillTarget(SkillTier);
+
+            // Primary
+            double primaryVal = Math.Clamp(
+                primaryTarget + BotSkillTemplates.RollJitter(),
+                0, 100);
+            this.Skills[template.Primary].Base = primaryVal;
+
+            // Secondaries — each independently jittered
+            foreach (var skill in template.Secondary)
+            {
+                double val = Math.Clamp(
+                    secondaryTarget + BotSkillTemplates.RollJitter(),
+                    0, 100);
+                this.Skills[skill].Base = val;
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Apply class-flavored stats. Warriors get high Str, Mages high Int,
+        // etc. Scales by tier — Novices are weaker than Grandmasters.
+        // -------------------------------------------------------------------
+        private void ApplyClassStats()
+        {
+            var (str, dex, intel) = BotSkillTemplates.StatTargets(Class, SkillTier);
+
+            RawStr = str;
+            RawDex = dex;
+            RawInt = intel;
+
+            // Refill HP/Stam/Mana from the new maxes.
+            Hits = HitsMax;
+            Stam = StamMax;
+            Mana = ManaMax;
         }
 
         public PlayerBot(Serial serial) : base(serial)
@@ -166,6 +245,37 @@ namespace Server.CustomBots
             {
                 Direction = RandomCameraFacingDirection();
             }
+
+            // Roll for a mount. Most bots are mounted (varied horses,
+            // ostards, llamas). Mounts despawn at death + delete.
+            // BankSitters who are wall-hugging skip the mount (they're
+            // standing pressed against a wall, mount would clip weirdly).
+            if (!hugged && Utility.RandomDouble() < 0.70)
+            {
+                BotMountHelper.TryMountRandom(this);
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // OnBeforeDeath — called just before the bot dies. Use this to
+        // dismount + delete the mount so it doesn't become an orphan.
+        // -------------------------------------------------------------------
+        public override bool OnBeforeDeath()
+        {
+            BotMountHelper.DismountAndDelete(this);
+            return base.OnBeforeDeath();
+        }
+
+        // -------------------------------------------------------------------
+        // OnAfterDelete — called when the bot is fully removed from the
+        // world. Belt + suspenders: if OnBeforeDeath didn't fire (e.g. the
+        // bot was [removed by an admin while alive), still clean up the
+        // mount here.
+        // -------------------------------------------------------------------
+        public override void OnAfterDelete()
+        {
+            BotMountHelper.DismountAndDelete(this);
+            base.OnAfterDelete();
         }
 
         // -------------------------------------------------------------------
@@ -261,6 +371,7 @@ namespace Server.CustomBots
         //   0 — IsBot only
         //   1 — IsBot, behavior name
         //   2 — IsBot, behavior name, personality, phase started at
+        //   3 — IsBot, behavior name, personality, phase started at, Class, SkillTier
         //
         // SpeechHue is handled by Mobile.Serialize / Mobile.Deserialize
         // automatically; we don't touch it here.
@@ -268,16 +379,21 @@ namespace Server.CustomBots
         // For bots saved at v0 that load under this code, behavior defaults
         // to "Idle" (the safe fallback). Personality is default (unassigned);
         // the lifecycle manager will roll a fresh one when it first sees them.
+        // Class defaults to Warrior, SkillTier defaults to Apprentice (mid-low)
+        // for bots loaded from v0-v2 saves — they don't get a re-roll because
+        // their equipment is already on them from the earlier construction.
 
         public override void Serialize(IGenericWriter writer)
         {
             base.Serialize(writer);
 
-            writer.Write(2);                                       // version
+            writer.Write(3);                                       // version
             writer.Write(IsBot);
             writer.Write(_behavior?.SerializableName ?? "Idle");
             Personality.Write(writer);
             writer.Write(PhaseStartedAt);
+            writer.Write((byte)Class);
+            writer.Write((byte)SkillTier);
         }
 
         public override void Deserialize(IGenericReader reader)
@@ -301,6 +417,39 @@ namespace Server.CustomBots
                 Personality = BotPersonality.Read(reader);
                 PhaseStartedAt = reader.ReadDateTime();
             }
+            if (version >= 3)
+            {
+                Class     = (BotClass)reader.ReadByte();
+                SkillTier = (BotSkillTier)reader.ReadByte();
+            }
+            else
+            {
+                // Pre-v3 bots: assign reasonable defaults. Their equipment
+                // is whatever was saved with them, and the skills they had
+                // (if any) are preserved by Mobile.Deserialize. We don't
+                // re-roll skills here — that'd change loaded bots in a way
+                // that surprises the user.
+                Class     = BotClass.Warrior;
+                SkillTier = BotSkillTier.Apprentice;
+            }
+
+            // Heal pre-v20c bots whose m_Player flag was never set. Without
+            // this, dungeon entrance teleporters refuse to fire on them.
+            // Setting Player on an already-Player bot is a no-op, so this
+            // is safe to apply to every load.
+            Player = true;
+
+            // Same idea for hunger/thirst — pre-v20d bots may have nonzero
+            // hunger/thirst from earlier runs. Reset to max each load.
+            Hunger = 20;
+            Thirst = 20;
+
+            // Note: no manual Title set. The paperdoll renders the title
+            // from the bot's highest skill above 50 (UO's normal behavior).
+            // A GM Swordsman naturally shows "the Grandmaster Swordsman".
+            // Pre-v3 bots may have no real skills set, so they'll show as
+            // just their name — that's fine, they'll get fresh skills on
+            // any future re-spawn.
 
             Behavior = BehaviorRegistry.Create(behaviorName);
         }

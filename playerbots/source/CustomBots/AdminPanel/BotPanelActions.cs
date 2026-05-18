@@ -101,6 +101,62 @@ namespace Server.CustomBots
             BotPanelState.Log(from, $"Cleared {removed} bot(s) worldwide.");
         }
 
+        // Remove every PlayerBotSpawner in the world. The spawned bots
+        // continue to exist (we don't delete them — that's ClearBotsAll's
+        // job). Use this when you have stale test spawners scattered around
+        // and just want to start fresh on the spawner front.
+        public static void RemoveAllSpawners(Mobile from)
+        {
+            var victims = new List<PlayerBotSpawner>();
+            foreach (var item in World.Items.Values)
+            {
+                if (item is PlayerBotSpawner s && !s.Deleted)
+                    victims.Add(s);
+            }
+            foreach (var v in victims) v.Delete();
+            BotPanelState.Log(from, $"Removed {victims.Count} PlayerBotSpawner(s).");
+        }
+
+        // Single-target remove. Caller is responsible for the Target prompt;
+        // this just does the deletion once the target arrives.
+        public static void RemoveSingleObject(Mobile from, object targeted)
+        {
+            if (targeted is PlayerBot bot && !bot.Deleted)
+            {
+                string name = bot.Name;
+                bot.Delete();
+                BotPanelState.Log(from, $"Removed bot: {name}");
+                return;
+            }
+            if (targeted is PlayerBotSpawner spawner && !spawner.Deleted)
+            {
+                spawner.Delete();
+                BotPanelState.Log(from, "Removed PlayerBotSpawner.");
+                return;
+            }
+            if (targeted is Item item && !item.Deleted)
+            {
+                string typeName = item.GetType().Name;
+                item.Delete();
+                BotPanelState.Log(from, $"Removed item: {typeName}");
+                return;
+            }
+            if (targeted is Mobile m && !m.Deleted && m != from)
+            {
+                // Only allow non-player mobile removal as a safety check.
+                if (m is Server.Mobiles.PlayerMobile)
+                {
+                    BotPanelState.Log(from, "Refused: target is a player.");
+                    return;
+                }
+                string name = m.Name ?? m.GetType().Name;
+                m.Delete();
+                BotPanelState.Log(from, $"Removed mobile: {name}");
+                return;
+            }
+            BotPanelState.Log(from, "Target not removable.");
+        }
+
         private static int ClearBotsInternal(Mobile from, int range, bool worldwide)
         {
             var victims = new List<PlayerBot>();

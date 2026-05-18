@@ -5,7 +5,31 @@
     {
       "Name": "Britain Bank",
       "X": 1434, "Y": 1697, "Z": 0,
-      "Connects": ["Britain South Road A"]
+      "Connects": ["Britain South Road A", "East Britain Bank Road"]
+    },
+    {
+      "Name": "East Britain Bank Road",
+      "_note": "Road east of Britain Bank — captured by user",
+      "X": 1452, "Y": 1697, "Z": 0,
+      "Connects": ["Britain Bank", "Britain Tailor Entrance"]
+    },
+    {
+      "Name": "Britain Tailor Entrance",
+      "_note": "Entrance to Britain tailor — captured by user",
+      "X": 1471, "Y": 1697, "Z": 0,
+      "Connects": ["East Britain Bank Road", "East Britain Road A"]
+    },
+    {
+      "Name": "East Britain Road A",
+      "_note": "East road from tailor toward Blue Boar — captured by user",
+      "X": 1479, "Y": 1699, "Z": 0,
+      "Connects": ["Britain Tailor Entrance", "Blue Boar Tavern"]
+    },
+    {
+      "Name": "Blue Boar Tavern",
+      "_note": "Tavern east of Britain — captured by user",
+      "X": 1503, "Y": 1687, "Z": 20,
+      "Connects": ["East Britain Road A"]
     },
     {
       "Name": "Britain South Road A",

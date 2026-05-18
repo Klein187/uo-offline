@@ -45,6 +45,9 @@ namespace Server.CustomBots
         private Point3D? _goal;
         private PathFollower _follower;
         private bool _running;
+        // Last known mount state — combined with _running to decide if the
+        // step timer needs to restart at a different rate.
+        private bool _wasMounted;
 
         private DateTime _pauseUntil = DateTime.MinValue;
 
@@ -220,6 +223,22 @@ namespace Server.CustomBots
 
         // -------------------------------------------------------------------
         // FindNearbyEnemy
+        //
+        // Only attack ACTUAL hostile monsters. The naive filter
+        // (AlwaysAttackable OR FightMode != None) included town guards,
+        // vendors, healers, etc — all of whom share those flags.
+        //
+        // Correct filter:
+        //   - Skip controlled pets and summons.
+        //   - Skip anything with Karma >= 0. Monsters in UO have very
+        //     negative karma (-1000 to -10000); wildlife is 0 or slightly
+        //     positive; guards/NPCs are positive.
+        //   - Require FightMode != None as a final sanity check.
+        //
+        // Note: bots WILL engage monsters that invade guarded zones. The
+        // Karma filter handles this — zombies/orcs/etc are Karma < 0, so
+        // an Adventurer who finds themselves in a city under attack will
+        // defend it. This is intentional for "town gets invaded" events.
         // -------------------------------------------------------------------
         private Mobile FindNearbyEnemy(PlayerBot bot)
         {
@@ -230,8 +249,17 @@ namespace Server.CustomBots
             {
                 if (m == bot || m.Deleted || !m.Alive) continue;
                 if (m is not BaseCreature bc) continue;
+
+                // Skip players' pets and summoned creatures.
                 if (bc.ControlMaster != null || bc.Summoned) continue;
-                if (!bc.AlwaysAttackable && bc.FightMode == FightMode.None) continue;
+
+                // Skip anything that isn't actually hostile.
+                if (bc.FightMode == FightMode.None) continue;
+
+                // Karma test: real monsters are deeply negative. NPCs
+                // (guards, vendors, town criers, healers) are neutral or
+                // positive.
+                if (bc.Karma >= 0) continue;
 
                 int dx = bc.X - bot.X;
                 int dy = bc.Y - bot.Y;
@@ -250,12 +278,25 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void EnsureStepTimer(PlayerBot bot, bool running)
         {
-            if (_stepTimer != null && _running == running)
+            bool mounted = bot.Mounted;
+            if (_stepTimer != null && _running == running && _wasMounted == mounted)
                 return;
 
             StopStepTimer();
             _running = running;
-            int delayMs = running ? MoveDelays.RunFootDelay : MoveDelays.WalkFootDelay;
+            _wasMounted = mounted;
+
+            // Mounted bots use the faster mount delays.
+            int delayMs;
+            if (mounted)
+            {
+                delayMs = running ? MoveDelays.RunMountDelay : MoveDelays.WalkMountDelay;
+            }
+            else
+            {
+                delayMs = running ? MoveDelays.RunFootDelay : MoveDelays.WalkFootDelay;
+            }
+
             var interval = TimeSpan.FromMilliseconds(delayMs);
             _stepTimer = Timer.DelayCall(interval, interval, () => StepOnce(bot));
         }

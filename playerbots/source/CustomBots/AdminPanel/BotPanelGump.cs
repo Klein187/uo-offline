@@ -1,66 +1,75 @@
 // =========================================================================
-// BotPanelGump.cs — Main admin panel gump.
+// BotPanelGump.cs — The [GmPanel admin gump.
 //
-// Sections (top to bottom):
-//   1. Header             - location, region, nearby counts
-//   2. Fresh World Setup  - 8 numbered buttons + "Run All"
-//   3. Place Spawner      - draft rows with +/-, behavior picker, commit
-//   4. Travel             - 9 city buttons
-//   5. Cleanup            - clear bots near / all
-//   6. World              - save / export / regenerate
-//   7. Test               - one test bot per behavior
-//   8. Log                - last few action messages
+// Layout philosophy: four clearly separated sections, no horizontal
+// overflow, destructive actions confirm before firing.
 //
-// Button IDs are namespaced via Action enum + index encoding so multiple
-// rows of the same kind don't collide. See ButtonID() / DecodeButtonID().
+//   ┌────────────────────────────────────────────────┐
+//   │  GM Panel                                  [X] │
+//   │  Location: ... (X,Y,Z)                         │
+//   │  Nearby (20 tiles): N bot(s), M spawner(s)     │
+//   ├────────────────────────────────────────────────┤
+//   │  WORLD                                          │
+//   │    [Decorate]  [SignGen]   [TelGen]            │
+//   │    [MoonGen]   [TownCriers][Spawners]          │
+//   │    [Bots]      [Save]      [★ Run All]         │
+//   ├────────────────────────────────────────────────┤
+//   │  SPAWN HERE                                     │
+//   │    (draft table — see below)                   │
+//   │    [+ Add Behavior]                            │
+//   │    [Commit Spawner Here]  [Clear Draft]        │
+//   ├────────────────────────────────────────────────┤
+//   │  TRAVEL                                         │
+//   │    Cities:   [Britain] [Vesper] [Trinsic] ...  │
+//   │    Dungeons: [Despise] [Destard] ...           │
+//   │    Inside:   [Despise] [Destard] ...           │
+//   ├────────────────────────────────────────────────┤
+//   │  CLEANUP                                        │
+//   │    [Clear bots near]  [Clear ALL bots*]        │
+//   │    [Remove ALL spawners*]                       │
+//   │    [Remove (target one)]                        │
+//   │    *destructive — confirms before acting       │
+//   └────────────────────────────────────────────────┘
 //
-// After most clicks the gump re-sends itself to refresh state. This is
-// the standard UO gump pattern — gumps are stateless on the client side.
+// Buttons encode an Action and (optionally) a row index. We pack as:
+//   actionId * 1000 + rowIndex
+// Keep action IDs <100 so they don't overflow.
 // =========================================================================
 
 using System;
-using System.Collections.Generic;
 using Server;
 using Server.Gumps;
+using Server.Mobiles;
 using Server.Network;
+using Server.Targeting;
 
 namespace Server.CustomBots
 {
-    public class BotPanelGump : Gump
+    public sealed class BotPanelGump : Gump
     {
         // ---- Layout constants ----
 
-        private const int PanelX        = 50;
-        private const int PanelY        = 10;
         private const int PanelW        = 620;
         private const int PanelH        = 820;
         private const int PadX          = 14;
-        private const int ColStart      = PadX;
         private const int LineH         = 22;
-        private const int SectionGap    = 8;
+        private const int SectionGap    = 10;
         private const int ButtonH       = 22;
         private const int ButtonW       = 110;
-        private const int SmallButtonW  = 30;
 
         // ModernUO gump art IDs.
         private const int BgArt         = 9270;     // beige scroll background
         private const int BtnNormal     = 4005;     // generic button up
         private const int BtnPressed    = 4007;     // generic button down
-        private const int PlusUp        = 0x983;    // green plus, up
+        private const int PlusUp        = 0x983;
         private const int PlusDown      = 0x984;
-        private const int MinusUp       = 0x985;    // red minus, up
+        private const int MinusUp       = 0x985;
         private const int MinusDown     = 0x986;
-        private const int ExitUp        = 0xFB1;    // red X
+        private const int ExitUp        = 0xFB1;
         private const int ExitDown      = 0xFB3;
 
-        // Hues for text. 1153 is a light off-white that reads cleanly on
-        // the dark gump background (same approach as ModernUO's spawner
-        // gump, which uses light-on-dark via BASEFONT HTML).
         private const int LabelHue      = 1153;
 
-        // Sensible starting counts per behavior so the user doesn't have to
-        // click + many times. BankSitters are usually deployed in larger
-        // populations than wanderers/idle bots.
         private static int DefaultCountFor(string behaviorName) =>
             behaviorName switch
             {
@@ -72,28 +81,22 @@ namespace Server.CustomBots
                 _            => 1,
             };
 
-        // ---- Behaviors available in the picker ----
-        // Hardcoded for now; could pull from BehaviorRegistry.KnownNames.
+        // Behaviors available in the picker. Order here is the order they
+        // appear in the grid. Keep these short so two-column layout fits.
         private static readonly string[] BehaviorChoices =
         {
             "BankSitter", "Wander", "Idle", "Adventurer", "Traveler"
         };
 
         // ---- Action IDs ----
-        //
-        // Buttons encode an Action and (optionally) a row index.
-        // We pack as: actionId * 1000 + rowIndex.
-        //
-        // Keep IDs <100 so they don't overflow when multiplied. Plenty of
-        // room for future actions.
 
         private enum Act
         {
             Close = 1,
             Refresh,
 
-            // Fresh World Setup (1-8 + Run All)
-            FreshDecorate = 10,
+            // World setup
+            FreshDecorate    = 10,
             FreshSignGen,
             FreshTelGen,
             FreshMoonGen,
@@ -103,48 +106,36 @@ namespace Server.CustomBots
             FreshSaveWorld,
             FreshRunAll,
 
-            // Draft management
-            DraftAddBehavior = 30,   // expands the inline picker
-            DraftCancelAdd,          // hides the inline picker
-            DraftPickBehavior,       // row index = which behavior in BehaviorChoices
-            DraftIncrement,          // row index = draft row to +1
-            DraftDecrement,          // row index = draft row to -1
-            DraftIncrement5,         // row index = draft row to +5
-            DraftDecrement5,         // row index = draft row to -5
-            DraftRemoveRow,          // row index = draft row to delete
+            // Draft
+            DraftAddBehavior  = 30,
+            DraftCancelAdd,
+            DraftPickBehavior,
+            DraftIncrement,
+            DraftDecrement,
+            DraftIncrement5,
+            DraftDecrement5,
+            DraftRemoveRow,
             DraftCommit,
             DraftClear,
 
-            // Travel — row index = position in CityKeys
-            Travel = 50,
-
-            // Dungeon — row index = position in DungeonKeys
-            Dungeon = 55,
-
-            // DungeonInside — same indices as Dungeon; goes inside the dungeon
+            // Travel
+            Travel        = 50,
+            Dungeon       = 55,
             DungeonInside = 56,
 
             // Cleanup
-            ClearBotsHere = 60,
+            ClearBotsHere      = 60,
             ClearBotsAll,
-
-            // World
-            SaveWorld = 70,
-            ExportJson,
-            Regenerate,
-
-            // Test — row index = position in BehaviorChoices
-            SpawnTest = 80,
+            RemoveAllSpawners,
+            RemoveSingleTarget,
         }
 
-        // City order for the Travel section. Matches BotPanelActions.CityCoords.
         private static readonly string[] CityKeys =
         {
             "Britain", "Vesper", "Trinsic", "Yew", "Minoc",
             "Magincia", "Jhelom", "Skara Brae", "Moonglow"
         };
 
-        // Dungeon order for the Dungeons section.
         private static readonly string[] DungeonKeys =
         {
             "Despise", "Destard", "Covetous", "Deceit", "Hythloth",
@@ -152,26 +143,24 @@ namespace Server.CustomBots
         };
 
         // ---- Per-instance state ----
-        // Whether the inline behavior picker is open (between two refreshes).
         private readonly bool _pickerOpen;
 
         // ---- Constructor ----
-
-        public BotPanelGump(Mobile from, bool pickerOpen = false) : base(PanelX, PanelY)
+        public BotPanelGump(Mobile from, bool pickerOpen = false) : base(50, 10)
         {
             _pickerOpen = pickerOpen;
             BuildLayout(from);
         }
 
-        // ---- Button ID encoding ----
+        // Pack/unpack button IDs so multiple rows of the same Act can coexist.
         private static int ButtonID(Act action, int rowIndex = 0) =>
             (int)action * 1000 + rowIndex;
 
         private static (Act action, int rowIndex) DecodeButtonID(int id)
         {
-            int rowIndex = id % 1000;
-            Act action   = (Act)(id / 1000);
-            return (action, rowIndex);
+            int a = id / 1000;
+            int r = id % 1000;
+            return ((Act)a, r);
         }
 
         // ---- Layout ----
@@ -185,58 +174,102 @@ namespace Server.CustomBots
 
             // ── Title and close button ──────────────────────────────────
             AddHtml(PadX, y, PanelW - 80, 22,
-                "<BASEFONT COLOR=#F4F4F4 SIZE=4><B>PlayerBot Admin Panel</B></BASEFONT>");
+                "<BASEFONT COLOR=#F4F4F4 SIZE=4><B>GM Panel</B></BASEFONT>");
             AddButton(PanelW - 36, y, ExitUp, ExitDown, ButtonID(Act.Close));
             y += LineH + 4;
 
             // ── Header: location + counts ───────────────────────────────
             var (botCount, spawnerCount, regionName) = BotPanelActions.CountNearby(from, 20);
 
-            string headerLine1 = $"Location: {regionName} ({from.X},{from.Y},{from.Z})";
-            string headerLine2 = $"Nearby (20 tiles): {botCount} bot(s), {spawnerCount} spawner(s)";
+            AddLabel(PadX, y, LabelHue,
+                $"Location: {regionName} ({from.X},{from.Y},{from.Z})"); y += LineH;
+            AddLabel(PadX, y, LabelHue,
+                $"Nearby (20 tiles): {botCount} bot(s), {spawnerCount} spawner(s)");
+            y += LineH + SectionGap;
 
-            AddLabel(PadX, y, LabelHue, headerLine1); y += LineH;
-            AddLabel(PadX, y, LabelHue, headerLine2); y += LineH + SectionGap;
+            // ── Section 1: World ───────────────────────────────────────
+            y = AddSectionHeader(y, "WORLD");
+            y = BuildWorldSection(y);
 
-            // ── Section: Fresh World Setup ──────────────────────────────
-            y = AddSectionHeader(y, "FRESH WORLD SETUP");
+            // ── Section 2: Spawn Here (draft) ──────────────────────────
+            y = AddSectionHeader(y, "SPAWN HERE");
+            y = BuildSpawnSection(from, y);
 
-            // 3x3 grid: 8 commands + Run All
-            string[] setupLabels = {
-                "1. Decorate", "2. SignGen", "3. TelGen",
-                "4. MoonGen", "5. TownCriers", "6. Spawners",
-                "7. GenerateBots", "8. Save World", "★ Run All"
+            // ── Section 3: Travel ──────────────────────────────────────
+            y = AddSectionHeader(y, "TRAVEL");
+            y = BuildTravelSection(y);
+
+            // ── Section 4: Cleanup ─────────────────────────────────────
+            y = AddSectionHeader(y, "CLEANUP");
+            y = BuildCleanupSection(y);
+
+            // ── Log line ───────────────────────────────────────────────
+            var logQueue = BotPanelState.GetLog(from);
+            if (logQueue != null && logQueue.Count > 0)
+            {
+                // Show the most recent line. Iterating a Queue gives oldest-first,
+                // so we take the last entry via ToArray.
+                var arr = logQueue.ToArray();
+                string logMsg = arr[arr.Length - 1];
+                y += SectionGap;
+                AddHtml(PadX, y, PanelW - 28, 22,
+                    $"<BASEFONT COLOR=#B4E1A8><I>{logMsg}</I></BASEFONT>");
+            }
+        }
+
+        private int AddSectionHeader(int y, string title)
+        {
+            AddHtml(PadX, y, PanelW - 28, 22,
+                $"<BASEFONT COLOR=#FFD080 SIZE=3><B>{title}</B></BASEFONT>");
+            return y + LineH;
+        }
+
+        // -------------------------------------------------------------------
+        // Section: World — 3x3 grid (8 setup commands + Run All)
+        // -------------------------------------------------------------------
+        private int BuildWorldSection(int y)
+        {
+            string[] labels = {
+                "Decorate", "SignGen", "TelGen",
+                "MoonGen", "TownCriers", "Spawners",
+                "Bots", "Save World", "★ Run All",
             };
-            Act[] setupActs = {
+            Act[] acts = {
                 Act.FreshDecorate, Act.FreshSignGen, Act.FreshTelGen,
                 Act.FreshMoonGen, Act.FreshTownCriers, Act.FreshSpawners,
-                Act.FreshGenerateBots, Act.FreshSaveWorld, Act.FreshRunAll
+                Act.FreshGenerateBots, Act.FreshSaveWorld, Act.FreshRunAll,
             };
 
-            for (int i = 0; i < setupLabels.Length; i++)
+            // Three columns evenly across panel width.
+            int colW = (PanelW - 2 * PadX) / 3;
+            for (int i = 0; i < labels.Length; i++)
             {
                 int col = i % 3;
                 int row = i / 3;
-                int bx  = PadX + col * (ButtonW + 50);
-                int by  = y + row * (ButtonH + 4);
+                int bx  = PadX + col * colW;
+                int by  = y   + row * (ButtonH + 4);
 
-                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(setupActs[i]));
-                AddLabel(bx + 30, by + 2, LabelHue, setupLabels[i]);
+                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(acts[i]));
+                AddLabel(bx + 30, by + 2, LabelHue, labels[i]);
             }
-            y += 3 * (ButtonH + 4) + SectionGap;
+            return y + 3 * (ButtonH + 4) + SectionGap;
+        }
 
-            // ── Section: Place Spawner (draft) ──────────────────────────
-            y = AddSectionHeader(y, "PLACE SPAWNER HERE");
-
+        // -------------------------------------------------------------------
+        // Section: Spawn Here — draft table + behavior picker
+        // -------------------------------------------------------------------
+        private int BuildSpawnSection(Mobile from, int y)
+        {
             var draft = BotPanelState.GetDraft(from);
             if (draft.Count == 0)
             {
                 AddLabel(PadX + 10, y, LabelHue,
-                    "(Draft is empty. Click + Add Behavior below to begin.)");
+                    "(no behaviors yet — click + Add Behavior below)");
                 y += LineH;
             }
             else
             {
+                // Header row
                 AddLabel(PadX,       y, LabelHue, "Behavior");
                 AddLabel(PadX + 200, y, LabelHue, "Count");
                 AddLabel(PadX + 360, y, LabelHue, "Action");
@@ -245,11 +278,10 @@ namespace Server.CustomBots
                 for (int i = 0; i < draft.Count; i++)
                 {
                     var e = draft[i];
+
                     AddLabel(PadX,       y + 2, LabelHue, e.BehaviorName);
 
-                    // Compact count row: [-5] [-1]  count  [+1] [+5]
-                    // No labels on the buttons; pattern is "two together =
-                    // bigger step." Users learn it in a couple of clicks.
+                    // -5 / -1 / count / +1 / +5
                     AddButton(PadX + 170, y, MinusUp, MinusDown,
                         ButtonID(Act.DraftDecrement5, i));
                     AddButton(PadX + 192, y, MinusUp, MinusDown,
@@ -262,16 +294,14 @@ namespace Server.CustomBots
                     AddButton(PadX + 278, y, PlusUp, PlusDown,
                         ButtonID(Act.DraftIncrement5, i));
 
-                    // [Remove]
                     AddButton(PadX + 360, y, BtnNormal, BtnPressed,
                         ButtonID(Act.DraftRemoveRow, i));
                     AddLabel(PadX + 390, y + 2, LabelHue, "Remove");
-
                     y += LineH;
                 }
             }
 
-            // Add behavior picker — collapsed by default
+            // Picker — either "+ Add Behavior" button OR the picker grid
             if (!_pickerOpen)
             {
                 AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.DraftAddBehavior));
@@ -281,154 +311,123 @@ namespace Server.CustomBots
             else
             {
                 AddLabel(PadX, y + 2, LabelHue, "Pick a behavior:");
-                int px = PadX + 130;
+                y += LineH;
+
+                // 2-column grid for behaviors — fits any reasonable count.
+                int colW = (PanelW - 2 * PadX) / 2;
                 for (int i = 0; i < BehaviorChoices.Length; i++)
                 {
-                    AddButton(px, y, BtnNormal, BtnPressed,
+                    int col = i % 2;
+                    int row = i / 2;
+                    int bx  = PadX + col * colW;
+                    int by  = y   + row * (ButtonH + 2);
+
+                    AddButton(bx, by, BtnNormal, BtnPressed,
                         ButtonID(Act.DraftPickBehavior, i));
-                    AddLabel(px + 30, y + 2, LabelHue, BehaviorChoices[i]);
-                    px += ButtonW + 30;
+                    AddLabel(bx + 30, by + 2, LabelHue, BehaviorChoices[i]);
                 }
-                // Cancel goes on the next line so it never collides with the
-                // behavior list as we add more choices over time.
-                y += LineH;
+                int rows = (BehaviorChoices.Length + 1) / 2;
+                y += rows * (ButtonH + 2);
+
                 AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.DraftCancelAdd));
                 AddLabel(PadX + 30, y + 2, LabelHue, "Cancel");
                 y += LineH;
             }
 
-            // Commit + Clear Draft
+            // Commit + Clear (placed side-by-side under the picker)
+            y += 4;
             AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.DraftCommit));
             AddLabel(PadX + 30, y + 2, LabelHue, "Commit Spawner Here");
 
             AddButton(PadX + 280, y, BtnNormal, BtnPressed, ButtonID(Act.DraftClear));
             AddLabel(PadX + 310, y + 2, LabelHue, "Clear Draft");
-            y += LineH + SectionGap;
+            return y + LineH + SectionGap;
+        }
 
-            // ── Section: Travel ─────────────────────────────────────────
-            y = AddSectionHeader(y, "TRAVEL");
+        // -------------------------------------------------------------------
+        // Section: Travel — cities, dungeon entrances, dungeon interiors
+        // -------------------------------------------------------------------
+        private int BuildTravelSection(int y)
+        {
+            // Cities — 3 cols × 3 rows
+            AddLabel(PadX, y + 2, LabelHue, "Cities:");
+            y = LayOutKeyGrid(y, CityKeys, Act.Travel, 3, indent: 60);
 
-            for (int i = 0; i < CityKeys.Length; i++)
+            // Dungeon entrances
+            AddLabel(PadX, y + 2, LabelHue, "Dungeons:");
+            y = LayOutKeyGrid(y, DungeonKeys, Act.Dungeon, 3, indent: 60);
+
+            // Dungeon interiors
+            AddLabel(PadX, y + 2, LabelHue, "Inside:");
+            y = LayOutKeyGrid(y, DungeonKeys, Act.DungeonInside, 3, indent: 60);
+
+            return y + SectionGap;
+        }
+
+        // Lay out a row of keys (cities or dungeons) in a grid with the
+        // given number of columns, starting at PadX+indent so the section
+        // label can fit alongside the first row.
+        private int LayOutKeyGrid(int y, string[] keys, Act act, int cols, int indent)
+        {
+            int startX = PadX + indent;
+            int colW = (PanelW - PadX - startX) / cols;
+
+            for (int i = 0; i < keys.Length; i++)
             {
-                int col = i % 5;
-                int row = i / 5;
-                int bx  = PadX + col * (ButtonW + 8);
-                int by  = y + row * (ButtonH + 4);
+                int col = i % cols;
+                int row = i / cols;
+                int bx  = startX + col * colW;
+                int by  = y      + row * (ButtonH + 2);
 
-                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(Act.Travel, i));
-                AddLabel(bx + 30, by + 2, LabelHue, CityKeys[i]);
+                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(act, i));
+                AddLabel(bx + 22, by + 2, LabelHue, keys[i]);
             }
-            y += 2 * (ButtonH + 4) + SectionGap;
+            int rows = (keys.Length + cols - 1) / cols;
+            return y + rows * (ButtonH + 2) + 4;
+        }
 
-            // ── Section: Dungeons ───────────────────────────────────────
-            y = AddSectionHeader(y, "DUNGEONS");
-
-            for (int i = 0; i < DungeonKeys.Length; i++)
-            {
-                int col = i % 5;
-                int row = i / 5;
-                int bx  = PadX + col * (ButtonW + 8);
-                int by  = y + row * (ButtonH + 4);
-
-                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(Act.Dungeon, i));
-                AddLabel(bx + 30, by + 2, LabelHue, DungeonKeys[i]);
-            }
-            y += 2 * (ButtonH + 4) + SectionGap;
-
-            // ── Section: Dungeons (Inside) ─────────────────────────────
-            // Compact: single row, shorter labels, smaller buttons.
-            // Drops you directly inside the dungeon (past the entrance
-            // teleporter) so you can place spawners in there.
-            y = AddSectionHeader(y, "DUNGEONS (INSIDE)");
-
-            int dlx = PadX;
-            for (int i = 0; i < DungeonKeys.Length; i++)
-            {
-                AddButton(dlx, y, BtnNormal, BtnPressed, ButtonID(Act.DungeonInside, i));
-                AddLabel(dlx + 22, y + 2, LabelHue, DungeonKeys[i].Substring(0, Math.Min(4, DungeonKeys[i].Length)));
-                dlx += 60;
-            }
-            y += LineH + SectionGap;
-
-            // ── Section: Cleanup ────────────────────────────────────────
-            y = AddSectionHeader(y, "CLEANUP");
-
+        // -------------------------------------------------------------------
+        // Section: Cleanup — buttons for clearing bots and spawners
+        // -------------------------------------------------------------------
+        private int BuildCleanupSection(int y)
+        {
+            // Row 1: Clear bots near | Clear ALL bots
             AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.ClearBotsHere));
             AddLabel(PadX + 30, y + 2, LabelHue, "Clear bots near");
 
             AddButton(PadX + 220, y, BtnNormal, BtnPressed, ButtonID(Act.ClearBotsAll));
-            AddLabel(PadX + 250, y + 2, LabelHue, "Clear ALL bots");
-            y += LineH + SectionGap;
+            AddLabel(PadX + 250, y + 2, LabelHue, "Clear ALL bots *");
+            y += LineH;
 
-            // ── Section: World ──────────────────────────────────────────
-            y = AddSectionHeader(y, "WORLD");
+            // Row 2: Remove ALL spawners
+            AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.RemoveAllSpawners));
+            AddLabel(PadX + 30, y + 2, LabelHue, "Remove ALL spawners *");
+            y += LineH;
 
-            AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.SaveWorld));
-            AddLabel(PadX + 30, y + 2, LabelHue, "Save World");
+            // Row 3: Remove single target
+            AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.RemoveSingleTarget));
+            AddLabel(PadX + 30, y + 2, LabelHue, "Remove (target one)");
+            y += LineH;
 
-            AddButton(PadX + 180, y, BtnNormal, BtnPressed, ButtonID(Act.ExportJson));
-            AddLabel(PadX + 210, y + 2, LabelHue, "Export JSON");
+            // Footer note
+            AddHtml(PadX, y, PanelW - 28, 22,
+                "<BASEFONT COLOR=#B0B0B0 SIZE=2>* = will ask for confirmation</BASEFONT>");
+            y += LineH;
 
-            AddButton(PadX + 380, y, BtnNormal, BtnPressed, ButtonID(Act.Regenerate));
-            AddLabel(PadX + 410, y + 2, LabelHue, "Regenerate from JSON");
-            y += LineH + SectionGap;
-
-            // ── Section: Test (compact) ─────────────────────────────────
-            y = AddSectionHeader(y, "TEST");
-
-            for (int i = 0; i < BehaviorChoices.Length; i++)
-            {
-                int bx = PadX + i * (ButtonW + 40);
-                AddButton(bx, y, BtnNormal, BtnPressed, ButtonID(Act.SpawnTest, i));
-                AddLabel(bx + 30, y + 2, LabelHue, $"Spawn {BehaviorChoices[i]}");
-            }
-            y += LineH + SectionGap;
-
-            // ── Section: Log (newest at bottom) ─────────────────────────
-            y = AddSectionHeader(y, "RECENT ACTIONS");
-            var log = BotPanelState.GetLog(from);
-            if (log.Count == 0)
-            {
-                AddLabel(PadX + 10, y, LabelHue, "(No actions yet.)");
-            }
-            else
-            {
-                foreach (var line in log)
-                {
-                    AddLabel(PadX + 10, y, LabelHue, Truncate(line, 90));
-                    y += 16;
-                }
-            }
+            return y + SectionGap;
         }
 
-        private int AddSectionHeader(int y, string title)
-        {
-            // FFD700 (gold) on the dark gump = the warm-yellow look UO has
-            // always used for "category header" type text. Pops without
-            // being garish.
-            AddHtml(PadX, y, PanelW - PadX * 2, 20,
-                $"<BASEFONT COLOR=#FFD700 SIZE=2><B>── {title} ──</B></BASEFONT>");
-            return y + 22;
-        }
-
-        private static string Truncate(string s, int max)
-        {
-            if (string.IsNullOrEmpty(s)) return "";
-            if (s.Length <= max) return s;
-            return s.Substring(0, max - 1) + "…";
-        }
-
-        // ---- Response handler ----
+        // ---- Response handling ----
 
         public override void OnResponse(NetState sender, in RelayInfo info)
         {
-            var from = sender.Mobile;
+            var from = sender?.Mobile;
             if (from == null) return;
 
             var (action, row) = DecodeButtonID(info.ButtonID);
 
-            bool reopen      = true;
-            bool keepPicker  = false;
+            bool reopen     = true;
+            bool keepPicker = false;
 
             switch (action)
             {
@@ -439,7 +438,7 @@ namespace Server.CustomBots
                 case Act.Refresh:
                     break;
 
-                // ----- Fresh world setup -----
+                // ----- World setup -----
                 case Act.FreshDecorate:
                     BotPanelActions.RunCommand(from, "Decorate"); break;
                 case Act.FreshSignGen:
@@ -451,7 +450,8 @@ namespace Server.CustomBots
                 case Act.FreshTownCriers:
                     BotPanelActions.RunCommand(from, "TownCriers"); break;
                 case Act.FreshSpawners:
-                    BotPanelActions.RunCommand(from, "GenerateSpawners Spawners/uoclassic/UOClassic.map");
+                    BotPanelActions.RunCommand(from,
+                        "GenerateSpawners Spawners/uoclassic/UOClassic.map");
                     break;
                 case Act.FreshGenerateBots:
                     BotPanelActions.RunCommand(from, "GenerateBots"); break;
@@ -463,7 +463,8 @@ namespace Server.CustomBots
                     BotPanelActions.RunCommand(from, "TelGen");
                     BotPanelActions.RunCommand(from, "MoonGen");
                     BotPanelActions.RunCommand(from, "TownCriers");
-                    BotPanelActions.RunCommand(from, "GenerateSpawners Spawners/uoclassic/UOClassic.map");
+                    BotPanelActions.RunCommand(from,
+                        "GenerateSpawners Spawners/uoclassic/UOClassic.map");
                     BotPanelActions.RunCommand(from, "GenerateBots");
                     BotPanelActions.SaveWorld(from);
                     BotPanelState.Log(from, "Run All complete.");
@@ -507,19 +508,15 @@ namespace Server.CustomBots
                 {
                     var d = BotPanelState.GetDraft(from);
                     if (row >= 0 && row < d.Count)
-                    {
                         d[row].Count = Math.Max(0, d[row].Count - 5);
-                    }
                     break;
                 }
                 case Act.DraftRemoveRow:
                     BotPanelState.RemoveDraftEntry(from, row);
                     break;
-
                 case Act.DraftCommit:
                     BotPanelActions.CommitDraft(from);
                     break;
-
                 case Act.DraftClear:
                     BotPanelState.ClearDraft(from);
                     BotPanelState.Log(from, "Draft cleared.");
@@ -528,51 +525,61 @@ namespace Server.CustomBots
                 // ----- Travel -----
                 case Act.Travel:
                     if (row >= 0 && row < CityKeys.Length)
-                    {
                         BotPanelActions.GoToCity(from, CityKeys[row]);
-                    }
                     break;
-
                 case Act.Dungeon:
                     if (row >= 0 && row < DungeonKeys.Length)
-                    {
                         BotPanelActions.GoToDungeon(from, DungeonKeys[row]);
-                    }
                     break;
-
                 case Act.DungeonInside:
                     if (row >= 0 && row < DungeonKeys.Length)
-                    {
                         BotPanelActions.GoToDungeonInside(from, DungeonKeys[row]);
-                    }
                     break;
 
                 // ----- Cleanup -----
                 case Act.ClearBotsHere:
-                    BotPanelActions.ClearBotsHere(from); break;
-                case Act.ClearBotsAll:
-                    BotPanelActions.ClearBotsAll(from); break;
-
-                // ----- World -----
-                case Act.SaveWorld:
-                    BotPanelActions.SaveWorld(from); break;
-                case Act.ExportJson:
-                    BotPanelActions.RunCommand(from, "ExportBotSpawners"); break;
-                case Act.Regenerate:
-                    BotPanelActions.RunCommand(from, "GenerateBots"); break;
-
-                // ----- Test -----
-                case Act.SpawnTest:
-                    if (row >= 0 && row < BehaviorChoices.Length)
-                    {
-                        BotPanelActions.SpawnTestBot(from, BehaviorChoices[row]);
-                    }
+                    BotPanelActions.ClearBotsHere(from);
                     break;
+
+                case Act.ClearBotsAll:
+                    // Destructive — confirm first.
+                    from.SendGump(new GmPanelConfirmGump(
+                        "This will delete every PlayerBot in the entire world. The spawners will eventually replace them. Continue?",
+                        () => BotPanelActions.ClearBotsAll(from)));
+                    return; // don't auto-reopen; confirm gump handles it
+
+                case Act.RemoveAllSpawners:
+                    // Destructive — confirm first.
+                    from.SendGump(new GmPanelConfirmGump(
+                        "This will delete every PlayerBotSpawner in the entire world. Bots already spawned will continue to exist (use 'Clear ALL bots' for those). Continue?",
+                        () => BotPanelActions.RemoveAllSpawners(from)));
+                    return; // don't auto-reopen
+
+                case Act.RemoveSingleTarget:
+                    from.SendMessage("Target the bot, spawner, item, or NPC to remove.");
+                    from.Target = new RemoveTarget();
+                    return; // don't auto-reopen; let the target prompt run
             }
 
             if (reopen)
-            {
                 from.SendGump(new BotPanelGump(from, keepPicker));
+        }
+
+        // ---- Single-target remove target ----
+
+        private class RemoveTarget : Target
+        {
+            public RemoveTarget() : base(12, false, TargetFlags.None) { }
+
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                BotPanelActions.RemoveSingleObject(from, targeted);
+                from.SendGump(new BotPanelGump(from));
+            }
+
+            protected override void OnTargetCancel(Mobile from, TargetCancelType cancelType)
+            {
+                from.SendGump(new BotPanelGump(from));
             }
         }
     }

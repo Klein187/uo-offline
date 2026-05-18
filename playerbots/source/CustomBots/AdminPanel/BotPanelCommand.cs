@@ -1,5 +1,8 @@
 // =========================================================================
-// BotPanelCommand.cs — [BotPanel admin command. Opens the admin gump.
+// BotPanelCommand.cs — [GmPanel and [BotPanel admin commands.
+// Both open the same admin gump. BotPanel kept as an alias for backward
+// compatibility; GmPanel is the preferred name now that the panel handles
+// general GM tasks beyond bots.
 // =========================================================================
 
 using Server;
@@ -12,11 +15,12 @@ namespace Server.CustomBots
     {
         public static void Configure()
         {
+            CommandSystem.Register("GmPanel",  AccessLevel.GameMaster, OnCommand);
             CommandSystem.Register("BotPanel", AccessLevel.GameMaster, OnCommand);
         }
 
-        [Usage("BotPanel")]
-        [Description("Opens the PlayerBot admin panel for streamlined GM operations.")]
+        [Usage("GmPanel")]
+        [Description("Opens the GM admin panel for streamlined operations.")]
         private static void OnCommand(CommandEventArgs e)
         {
             var from = e.Mobile;

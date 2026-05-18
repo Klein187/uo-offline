@@ -146,12 +146,21 @@ namespace Server.CustomBots
             }
 
             // Place the bot appropriately for the new behavior.
-            string placement = LifecycleTransitions.ApplyPlacement(bot, target);
+            var placement = LifecycleTransitions.ApplyPlacement(bot, target);
+
+            if (placement.IsAsync)
+            {
+                // Multi-stage placement (e.g. dungeon entry sequence) handles
+                // the behavior swap itself once the bot arrives. We just log
+                // that the transition is in progress.
+                Log($"[{bot.Name}] transition: {current} -> {target} ({placement.Description})");
+                return;
+            }
 
             // Swap the brain. Behavior's setter resets PhaseStartedAt for us.
             bot.Behavior = BehaviorRegistry.Create(target);
 
-            Log($"[{bot.Name}] transition: {current} -> {target} ({placement})");
+            Log($"[{bot.Name}] transition: {current} -> {target} ({placement.Description})");
         }
 
         // -------------------------------------------------------------------
