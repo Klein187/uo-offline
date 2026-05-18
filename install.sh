@@ -222,6 +222,40 @@ build_modernuo() {
 }
 
 # ---------------------------------------------------------------------------
+# Step 5b — Fix Felucca season
+# ---------------------------------------------------------------------------
+# ModernUO ships with Felucca's season set to 4 (Desolation) — a Renaissance-era
+# lore choice that makes all trees on Felucca render leafless. For an offline
+# single-player experience we want a leafy world year-round. Change to 1 (Summer).
+#
+# Idempotent: re-running on an already-fixed file is a no-op.
+# ---------------------------------------------------------------------------
+fix_felucca_season() {
+ banner "Setting Felucca season to Summer"
+
+ local mapdef="${MODERNUO_DIR}/Distribution/Data/map-definitions.json"
+
+ if [[ ! -f "${mapdef}" ]]; then
+   warn "map-definitions.json not found at ${mapdef}. Skipping season fix."
+   return
+ fi
+
+ if grep -A 5 '"name": "Felucca"' "${mapdef}" | grep -q '"season": 1'; then
+   say "Felucca already set to Summer. Skipping."
+   return
+ fi
+
+ cp "${mapdef}" "${mapdef}.original"
+ sed -i '/"name": "Felucca"/,/"rules"/ s/"season": 4/"season": 1/' "${mapdef}"
+
+ if grep -A 5 '"name": "Felucca"' "${mapdef}" | grep -q '"season": 1'; then
+   ok "Felucca season set to Summer (leafy trees)."
+ else
+   warn "Season fix may not have applied. Check ${mapdef} manually."
+ fi
+}
+
+# ---------------------------------------------------------------------------
 # Step 6 — UO game data: detect existing, or auto-download
 # ---------------------------------------------------------------------------
 find_or_download_uo_data() {
@@ -766,6 +800,7 @@ main() {
   bootstrap_dotnet
   install_playerbots
   build_modernuo
+  fix_felucca_season
   find_or_download_uo_data
   fetch_spawn_map
   install_classicuo
