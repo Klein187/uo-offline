@@ -1,6 +1,6 @@
 # UO Offline
 
-A one-command installer for offline single-player Ultima Online on Linux and Steam Deck, with a custom PlayerBots system that populates Britannia with bots that fight, travel, chat, and live their own lives.
+A one-command installer for offline single-player Ultima Online on Linux and Steam Deck, with a custom PlayerBots system that populates Britannia with bots that fight, travel, chat, ride horses, and live their own lives.
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, runs entirely on localhost.
 
@@ -37,51 +37,56 @@ Double-click the **UO Offline** desktop icon. Log in as `admin` / `admin`, creat
 
 The world starts empty. To populate it:
 
-**1.** Open chat (press Enter) and run these six commands, one at a time:
+**1.** Type `[GmPanel` to open the GM admin panel. Click **★ Run All** under "WORLD" — this seeds the world with vendors, monsters, signs, moongates, town criers, and PlayerBots at every bank.
 
-```
-[Decorate
-[SignGen
-[TelGen
-[MoonGen
-[TownCriers
-[GenerateSpawners Spawners/uoclassic/UOClassic.map
-```
-
-This spawns ~1700 vendors, monsters, signs, moongates, and town criers across the world.
-
-**2.** Type `[BotPanel` to open the bot admin panel. This is the GM panel we built to simplify setup. Click **Run All** under "Fresh World Setup" — it seeds bots at every bank in the world. Done.
-
-Now the Lifecycle system takes over. Bots gradually transition between roles — bank-sitters become adventurers, adventurers travel to other cities, etc. The world stays alive as long as the server is running.
+**2.** Done. Bots are now alive. The Lifecycle system takes over — bank-sitters transition to adventurers, adventurers travel to dungeons, etc.
 
 ---
 
 ## Features
 
-**Behaviors.** Five distinct bot behaviors: Idle, Wander, BankSitter, Adventurer (with real combat — sword swings, retreat at low HP, permadeath), and Traveler (walks between cities along roads).
+**Bot identity.** Every bot has a class (Warrior, Mage, Fencer, Archer, Tamer, Crafter, Healer, Thief, Bard, Ranger) and a skill tier (Novice through Grandmaster, bell-curve distributed). Skills, stats, equipment, and behavior preferences all derive from class + tier. A Grandmaster Mage really IS a Grandmaster Mage — 99 Magery, 125 Int, with a fancy hued robe and spellbook.
 
-**Combat.** Adventurers engage hostile creatures in melee, retreat when wounded, die permanently, get replaced by their spawner. No magic yet — that's coming.
+**Equipment variety.** Beyond class signatures (Warriors in plate, Mages in robes), every bot rolls universal accessories: hats from 18 types (floppy hat, jester hat, feathered cap, tribal mask, etc.), cloaks in any color, body sashes, beards, varied hair. Some Warriors wear chain or studded instead of plate. Some Mages wear studded leather. The visual feel matches classic UO bank gatherings.
 
-**Navigation.** Short-range pathfinding via ModernUO's A*. Long-range navigation via a waypoint graph: a curated set of named locations across Britannia, each linked to its neighbors. Dijkstra picks routes; PathFollower walks each leg.
+**Mounts.** 70% of bots spawn mounted on a horse, ostard, or llama. Horse coat colors vary realistically (browns, grays, palominos). Mounted bots move at proper UO mount speed. Mounts despawn cleanly with their rider on death or removal.
 
-**Lifecycle.** Every bot has a personality — weighted tendencies toward each behavior plus optional traits (Restless, Homebody, Brave, Cautious, Wealthy, Rough). Every 60 seconds the lifecycle manager evaluates each bot; if their current phase (30-180 minutes) has elapsed, they transition. Smart placement: a bot becoming a BankSitter teleports to a random bank, an Adventurer to a random dungeon interior. The world feels demographically alive.
+**Behaviors.** Five distinct bot behaviors: Idle, Wander, BankSitter, Adventurer (real combat — sword swings, retreat at low HP, permadeath), and Traveler (walks/rides between destinations along roads).
 
-**Admin tools.** `[BotPanel` is the central GM gump for everything bot-related. Spawn bots at custom locations, teleport to cities and dungeons, manage spawners, save the world. Plus `[BotGoals` to see what every bot is doing, `[LifecycleStatus` for system health, `[ReloadWaypoints` for hot-reloading the navigation graph after edits.
+**Destinations and waypoints.** Travelers don't just wander to random forest spots — they go to actual places. 17 destinations in Britain so far (bank, tailor, alchemist, inn, healer, bowyer, weaponer, bakery, tavern). Class-weighted destination picking: Bards prefer taverns, Crafters prefer smithies, Mages prefer the moongate. The waypoint graph has 35 nodes covering Britain's road network, with hot-reload via `[ReloadWaypoints`.
+
+**Combat.** Adventurers engage hostile creatures (negative-Karma monsters) in melee, retreat when wounded, die permanently, get replaced by their spawner. Bots respect the notoriety system — they don't attack innocents or wildlife. No magic combat yet — coming.
+
+**Stuck recovery.** When bots get pinned against terrain (lightposts, corners, walls), automatic detection nudges them 3 tiles in a random walkable direction every 4 seconds until they're free.
+
+**Navigation.** Short-range pathfinding via ModernUO's A*. Long-range via the waypoint graph: Dijkstra picks routes; PathFollower walks each leg. Bots fire dungeon entrance teleporters naturally (no fake "go inside" magic — they actually step on the teleporter tile).
+
+**Lifecycle.** Every bot has a personality — weighted tendencies toward each behavior plus optional traits (Restless, Homebody, Brave, Cautious, Wealthy, Rough). Every 60 seconds the lifecycle manager evaluates each bot; if their current phase (30-180 minutes) has elapsed, they transition. Smart placement: bots becoming Adventurers walk or recall to a dungeon, BankSitters teleport to a random bank.
+
+**Admin tools.** `[GmPanel` is the central GM gump for everything. World setup, spawning bots with custom behavior mixes, teleporting to cities and dungeons, cleanup (single-target remove, mass spawner remove, all with confirmation gumps for destructive actions).
+
+**World-marking commands** for capturing waypoints and destinations as you walk:
+- `[MarkWay <name>` — record a waypoint at your position, auto-connects to neighbors within 38 tiles
+- `[MarkSpot <name> <type>` — record a destination (Bank, Tavern, Inn, VendorSmith, etc.) with auto-detected nearest waypoint
+- Both write JSON-ready snippets to draft files, ready to integrate into the live data
+
+**Diagnostics.** `[BotInfo` targets a bot and dumps their class, tier, stats, skills, and notoriety. `[BotGoals` shows every bot's current state and destination. `[LifecycleStatus` for system health. `[SetBotVerbose true` enables per-bot debug logging.
 
 ---
 
 ## Currently being worked on
 
-- **Expanding the waypoint graph.** Right now it's a 7-node chain along the south road out of Britain. Adding waypoints in other cities and on roads between them is the highest-impact way to make travelers more interesting.
-- **Verifying dungeon interior coordinates.** Despise is verified; the other 8 dungeons have placeholder coords that need real values from inside each dungeon.
+- **Expanding the waypoint graph beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. Each city needs its own road network + destinations cluster.
+- **Verifying dungeon interior coordinates.** Despise is verified; the other 8 dungeons have placeholder coords pending in-game verification.
+- **Special dungeon-entrance waypoints.** A waypoint flag system that lets bots walk to a dungeon entrance teleporter and step on it naturally, replacing the current teleport-with-pause fallback.
 
 ## What's coming
 
 - **Death and resurrection.** Dead adventurer bots walk as ghosts to the nearest healer, get resurrected, walk back to their corpse, re-equip their loot.
-- **More behaviors.** Shopper, Crafter, PK (murderer), Tamer, Mage.
+- **More behaviors.** Shopper, Crafter (with smithing animations), PK, Tamer (with pets), Mage combat.
+- **Random events.** Zombie invasions of towns. Bots will engage them — guards alone won't be enough.
 - **Per-personality chat.** A Wealthy bot says different things than a Rough bot.
 - **Bot story memory.** Click a bot to see their recent history — "this bot was in Despise yesterday, traveled to Britain this morning."
-- **Magic combat.** High-Int adventurers cast spells instead of swinging swords.
 
 ---
 
