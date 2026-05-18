@@ -1,0 +1,55 @@
+{
+  "_comment": "Bot destinations — places of interest within the world. Each destination references a NearestWaypoint that bots use to route here via the graph. Add destinations as you verify coords in-game with [MarkSpot. Run [ReloadDestinations after editing. Type values come from DestinationType enum (Bank, Tavern, VendorSmith, VendorMage, VendorTailor, VendorCarpenter, VendorBowyer, VendorAlchemist, Healer, Library, Graveyard, Moongate, Crossroads, Bridge, Stables, CityCenter).",
+
+  "Destinations": [
+    {
+      "Name": "Britain Bank - Front",
+      "X": 1434, "Y": 1697, "Z": 0,
+      "Type": "Bank",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank"
+    },
+    {
+      "Name": "Britain Bank - East",
+      "X": 1438, "Y": 1699, "Z": 0,
+      "Type": "Bank",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank"
+    },
+    {
+      "Name": "Britain Bank - West",
+      "X": 1430, "Y": 1695, "Z": 0,
+      "Type": "Bank",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank"
+    },
+    {
+      "Name": "Britain Bank - North",
+      "X": 1434, "Y": 1693, "Z": 0,
+      "Type": "Bank",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank"
+    },
+    {
+      "Name": "Britain Bank - Interior",
+      "X": 1431, "Y": 1688, "Z": 0,
+      "Type": "Bank",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank"
+    },
+    {
+      "Name": "Britain Tailor",
+      "X": 1470, "Y": 1689, "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Tailor Entrance"
+    },
+    {
+      "Name": "Blue Boar Tavern",
+      "X": 1496, "Y": 1684, "Z": 20,
+      "Type": "Tavern",
+      "City": "Britain",
+      "NearestWaypoint": "Blue Boar Tavern"
+    }
+  ]
+}
