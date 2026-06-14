@@ -8,19 +8,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 ## Install
 
-Download `uo-offline.zip` from the [Releases page](../../releases), then in a terminal:
-
-```
-cd ~/Downloads
-unzip uo-offline.zip
-cd uo-offline
-chmod +x install.sh
-./install.sh
-```
-
-That's it. The installer handles everything: ModernUO, ClassicUO, .NET 10, the UO game data, the spawn map, and the PlayerBots. Takes 15-25 minutes.
-
-**Steam Deck users:** before the install command above, run these once to allow installs:
+**Steam Deck users:** first, run these once to allow installs (Desktop Mode, in a terminal). The first `passwd` sets a sudo password if you've never set one:
 
 ```
 passwd
@@ -28,6 +16,27 @@ sudo steamos-readonly disable
 sudo pacman-key --init
 sudo pacman-key --populate
 ```
+
+Then get the code and run the installer. Either clone with git:
+
+```
+git clone https://github.com/Klein187/uo-offline.git
+cd uo-offline
+chmod +x install.sh
+./install.sh
+```
+
+…or, if you don't have git, download the repo as a ZIP instead: on the GitHub page click the green **Code** button → **Download ZIP**, then:
+
+```
+cd ~/Downloads
+unzip uo-offline-main.zip
+cd uo-offline-main
+chmod +x install.sh
+./install.sh
+```
+
+That's it. The installer handles everything: it clones and builds ModernUO (with the PlayerBots compiled in), bootstraps .NET, downloads ClassicUO, fetches the UO Classic game data from a community mirror (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and installs a desktop launcher. Takes 15-25 minutes. Re-running it is safe — it skips steps already done.
 
 ---
 
