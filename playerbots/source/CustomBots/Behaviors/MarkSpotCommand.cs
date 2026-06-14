@@ -1,25 +1,29 @@
 // =========================================================================
-// MarkSpotCommand.cs — [MarkSpot <name...> <type>
+// MarkSpotCommand.cs — [MarkSpot <Type> <name...>  (LIVE version)
 //
-// Records the GM's current position as a destination candidate. Writes
-// a JSON-ready snippet to Distribution/destinations-draft.txt, ready
-// to paste into destinations.json.
+// Appends the GM's current position as a destination DIRECTLY to
+// Data/Destinations/destinations.json (with a .bak first):
+//   - Type from the first arg (DestinationType, case-insensitive)
+//   - City auto-detected (nearest city center)
+//   - NearestWaypoint auto-filled from the waypoint graph, with a GAP
+//     warning if it's beyond the 38-tile leg limit
 //
-// Usage in-game:
-//   [MarkSpot Britain Smithy Forge VendorSmith
-//   [MarkSpot Britain Bank Counter Bank
-//   [MarkSpot Britain Tavern Bar Tavern
+//   [MarkSpot Tavern The Salty Dog        mark here as a Tavern
+//   [MarkSpotShow                         list spots marked this session
+//   [MarkSpotClear                        UNDO the most recent mark
 //
-// The last argument is always the type. Everything before is the name.
-// Auto-detects the nearest waypoint (using the current WaypointGraph).
-//
-// At end of session, paste destinations-draft.txt content into the
-// "Destinations" array in destinations.json, then [ReloadDestinations.
+// After marking: [ReloadDestinations makes it pickable. Its approach
+// field doesn't exist until [rebuildfields (or next boot's auto-rebuild —
+// the cache fingerprint sees the change); until then bots arrive without
+// the field-guided final approach. (Draft-file workflow retired.)
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.Json.Nodes;
 using Server;
 using Server.Commands;
 
@@ -27,15 +31,30 @@ namespace Server.CustomBots
 {
     public static class MarkSpotCommand
     {
+        private const int GapWarn = 38;
+
+        private static readonly List<string> _sessionMarks = new();
+
+        private static string JsonPath => Path.Combine(
+            Core.BaseDirectory, "Data", "Destinations", "destinations.json");
+
+        private static readonly (string city, int x, int y)[] CityCenters =
+        {
+            ("Britain", 1434, 1690), ("Vesper", 2899, 676), ("Minoc", 2466, 437),
+            ("Trinsic", 1900, 2780), ("Yew", 632, 858), ("Skara Brae", 596, 2138),
+            ("Moonglow", 4442, 1172), ("Jhelom", 1383, 3815), ("Nujel'm", 3732, 1279),
+            ("Magincia", 3714, 2220), ("Cove", 2230, 1200), ("Buccaneer's Den", 2706, 2150),
+        };
+
         public static void Configure()
         {
-            CommandSystem.Register("MarkSpot", AccessLevel.GameMaster, OnCommand);
+            CommandSystem.Register("MarkSpot",      AccessLevel.GameMaster, OnCommand);
             CommandSystem.Register("MarkSpotClear", AccessLevel.GameMaster, OnClearCommand);
             CommandSystem.Register("MarkSpotShow",  AccessLevel.GameMaster, OnShowCommand);
         }
 
-        [Usage("MarkSpot <name words...> <Type>")]
-        [Description("Append a destination at the current position to destinations-draft.txt.")]
+        [Usage("MarkSpot <Type> <name words...>")]
+        [Description("Add a destination at the current position directly to destinations.json.")]
         public static void OnCommand(CommandEventArgs e)
         {
             var from = e.Mobile;
@@ -43,135 +62,142 @@ namespace Server.CustomBots
 
             if (e.Length < 2)
             {
-                from.SendMessage("Usage: [MarkSpot <name words...> <Type>");
-                from.SendMessage("Example: [MarkSpot Britain Smithy Forge VendorSmith");
-                SendTypeList(from);
+                from.SendMessage("Usage: [MarkSpot <Type> <name words...>");
+                from.SendMessage("Types: " + string.Join(", ",
+                    Enum.GetNames(typeof(DestinationType))));
                 return;
             }
 
-            // Last arg is Type, everything else is name (joined by spaces).
-            string typeArg = e.GetString(e.Length - 1);
-            if (!Enum.TryParse<DestinationType>(typeArg, ignoreCase: true, out var type))
+            if (!Enum.TryParse<DestinationType>(e.GetString(0), true, out var type))
             {
-                from.SendMessage($"Unknown type '{typeArg}'.");
-                SendTypeList(from);
+                from.SendMessage($"Unknown type '{e.GetString(0)}'. Valid: " +
+                    string.Join(", ", Enum.GetNames(typeof(DestinationType))));
                 return;
             }
 
             var sb = new StringBuilder();
-            for (int i = 0; i < e.Length - 1; i++)
+            for (int i = 1; i < e.Length; i++)
             {
                 if (sb.Length > 0) sb.Append(' ');
                 sb.Append(e.GetString(i));
             }
             string name = sb.ToString().Trim();
-            if (name.Length == 0)
-            {
-                from.SendMessage("Name cannot be empty.");
-                return;
-            }
+            if (name.Length == 0) { from.SendMessage("Name cannot be empty."); return; }
 
-            // Find nearest waypoint (so user doesn't have to know).
+            string city = NearestCity(from.X, from.Y);
+
+            // nearest waypoint for the routing hint (the dynamic resolver
+            // re-derives this at plan time anyway, but a good hint is nice)
             string nearestWp = "";
-            int wpDist = -1;
+            int wpDist = int.MaxValue;
             var graph = WaypointRegistry.Graph;
-            if (graph != null && graph.NodeCount > 0)
+            if (graph != null)
             {
-                var nearest = graph.FindNearestNode(from.Location);
-                if (nearest != null)
+                var node = graph.FindNearestNode(from.Location);
+                if (node != null)
                 {
-                    nearestWp = nearest.Name;
-                    int dx = from.X - nearest.Location.X;
-                    int dy = from.Y - nearest.Location.Y;
-                    wpDist = (int)Math.Sqrt(dx * dx + dy * dy);
+                    nearestWp = node.Name;
+                    wpDist = Math.Max(Math.Abs(node.Location.X - from.X),
+                                      Math.Abs(node.Location.Y - from.Y));
                 }
             }
 
-            // Build JSON-ready snippet.
-            string snippet =
-                $"    {{\n" +
-                $"      \"Name\": \"{Escape(name)}\",\n" +
-                $"      \"X\": {from.X}, \"Y\": {from.Y}, \"Z\": {from.Z},\n" +
-                $"      \"Type\": \"{type}\",\n" +
-                $"      \"City\": \"\",\n" +
-                $"      \"NearestWaypoint\": \"{Escape(nearestWp)}\"\n" +
-                $"    }},\n";
-
-            string draftPath = Path.Combine(Core.BaseDirectory, "destinations-draft.txt");
             try
             {
-                File.AppendAllText(draftPath, snippet);
+                var root = JsonNode.Parse(File.ReadAllText(JsonPath));
+                var arr = (JsonArray)root["Destinations"];
+                if (arr == null) { from.SendMessage("Destinations array not found."); return; }
+
+                if (arr.Any(d => string.Equals((string)d["Name"], name,
+                        StringComparison.OrdinalIgnoreCase)))
+                {
+                    from.SendMessage($"A destination named '{name}' already exists. Pick another name.");
+                    return;
+                }
+
+                arr.Add(new JsonObject
+                {
+                    ["Name"] = name,
+                    ["X"] = from.X, ["Y"] = from.Y, ["Z"] = from.Z,
+                    ["Type"] = type.ToString(),
+                    ["City"] = city,
+                    ["NearestWaypoint"] = nearestWp,
+                });
+
+                File.Copy(JsonPath, JsonPath + ".bak-markspot", overwrite: true);
+                File.WriteAllText(JsonPath, root.ToJsonString(
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                _sessionMarks.Add(name);
             }
             catch (Exception ex)
             {
-                from.SendMessage($"Write failed: {ex.Message}");
+                from.SendMessage($"Write failed: {ex.Message} — nothing changed.");
                 return;
             }
 
-            // Confirm in chat with the same info, plus a warning if the
-            // nearest waypoint is farther than the safe A* range.
-            from.SendMessage(0x35, $"Marked: {name} [{type}]");
-            from.SendMessage(0x3B2,
-                $"  ({from.X}, {from.Y}, {from.Z}) | nearest wp: {nearestWp} ({wpDist} tiles)");
-            if (wpDist > 30)
-            {
-                from.SendMessage(0x22,
-                    $"  WARNING: nearest waypoint is {wpDist} tiles — bots may fail to path here. Add a closer waypoint.");
-            }
+            from.SendMessage(0x35, $"Marked destination: {name}  (LIVE in destinations.json)");
+            from.SendMessage(0x3B2, $"  ({from.X}, {from.Y}, {from.Z})  Type: {type}  City: {city}");
+            if (nearestWp.Length == 0)
+                from.SendMessage(0x22, "  WARNING: no waypoint graph loaded — routing hint empty.");
+            else if (wpDist > GapWarn)
+                from.SendMessage(0x22, $"  GAP: nearest waypoint '{nearestWp}' is {wpDist} tiles away " +
+                                        "— [MarkWay something closer or bots won't truly arrive.");
+            else
+                from.SendMessage(0x3B2, $"  Nearest waypoint: {nearestWp} ({wpDist}t)");
+            from.SendMessage(0x3B2, "  [ReloadDestinations to make it pickable; " +
+                                    "[rebuildfields for its approach field.");
         }
 
-        // Wipe the draft file. Useful when starting a fresh session.
         [Usage("MarkSpotClear")]
-        [Description("Clear destinations-draft.txt.")]
+        [Description("UNDO the most recent [MarkSpot from this session.")]
         public static void OnClearCommand(CommandEventArgs e)
         {
-            string draftPath = Path.Combine(Core.BaseDirectory, "destinations-draft.txt");
+            var from = e.Mobile;
+            if (_sessionMarks.Count == 0)
+            { from.SendMessage("No spots this session to undo."); return; }
+
+            string name = _sessionMarks[^1];
             try
             {
-                File.WriteAllText(draftPath, "");
-                e.Mobile.SendMessage("Cleared destinations-draft.txt");
+                var root = JsonNode.Parse(File.ReadAllText(JsonPath));
+                var arr = (JsonArray)root["Destinations"];
+                var victim = arr?.FirstOrDefault(d => string.Equals(
+                    (string)d["Name"], name, StringComparison.OrdinalIgnoreCase));
+                if (victim != null)
+                {
+                    arr.Remove(victim);
+                    File.Copy(JsonPath, JsonPath + ".bak-markspot", overwrite: true);
+                    File.WriteAllText(JsonPath, root.ToJsonString(
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                }
+                _sessionMarks.RemoveAt(_sessionMarks.Count - 1);
+                from.SendMessage($"Undid destination '{name}'. [ReloadDestinations to apply.");
             }
             catch (Exception ex)
-            {
-                e.Mobile.SendMessage($"Clear failed: {ex.Message}");
-            }
+            { from.SendMessage($"Undo failed: {ex.Message}"); }
         }
 
-        // Echo the file's contents in chat (last N lines).
         [Usage("MarkSpotShow")]
-        [Description("Show the recent contents of destinations-draft.txt.")]
+        [Description("List destinations marked this session.")]
         public static void OnShowCommand(CommandEventArgs e)
         {
             var from = e.Mobile;
-            string draftPath = Path.Combine(Core.BaseDirectory, "destinations-draft.txt");
-            if (!File.Exists(draftPath))
-            {
-                from.SendMessage("destinations-draft.txt is empty / missing.");
-                return;
-            }
-
-            try
-            {
-                var lines = File.ReadAllLines(draftPath);
-                int from_idx = Math.Max(0, lines.Length - 40);
-                from.SendMessage(0x35, $"destinations-draft.txt (last {lines.Length - from_idx} of {lines.Length} lines):");
-                for (int i = from_idx; i < lines.Length; i++)
-                {
-                    from.SendMessage(0x3B2, lines[i]);
-                }
-            }
-            catch (Exception ex)
-            {
-                from.SendMessage($"Read failed: {ex.Message}");
-            }
+            if (_sessionMarks.Count == 0)
+            { from.SendMessage("No spots this session."); return; }
+            from.SendMessage(0x35, $"Marked this session ({_sessionMarks.Count}):");
+            foreach (var n in _sessionMarks.TakeLast(20))
+                from.SendMessage(0x3B2, $"  {n}");
         }
 
-        private static void SendTypeList(Mobile m)
+        private static string NearestCity(int x, int y)
         {
-            m.SendMessage(0x3B2, "Valid types: " + string.Join(", ",
-                Enum.GetNames(typeof(DestinationType))));
+            string best = "Britain"; double bd = double.MaxValue;
+            foreach (var (c, cx, cy) in CityCenters)
+            {
+                double d = (double)(cx - x) * (cx - x) + (double)(cy - y) * (cy - y);
+                if (d < bd) { bd = d; best = c; }
+            }
+            return best;
         }
-
-        private static string Escape(string s) => s.Replace("\"", "\\\"");
     }
 }

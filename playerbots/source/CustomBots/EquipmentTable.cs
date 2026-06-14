@@ -34,6 +34,160 @@ namespace Server.CustomBots
             RollClassLook(bot, cls, tier);
             RollUniversalAccessories(bot, cls, tier);
             EnsureFootwear(bot);
+            RollBackpackLoot(bot, cls, tier);
+        }
+
+        // -------------------------------------------------------------------
+        // Backpack loot — gold and class-appropriate carry items, so a bot
+        // is worth snooping/stealing from and drops a real corpse on death.
+        //
+        // Gold scales with skill tier (a Grandmaster carries a fatter
+        // purse than a Novice). Class items are the consumables/tools that
+        // class would plausibly carry: bandages for fighters, potions and
+        // a spare reagent stash for mages, lockpicks for thieves, etc.
+        // -------------------------------------------------------------------
+        private static void RollBackpackLoot(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            if (bot.Backpack == null) return;
+
+            // --- Gold, scaled by tier ---
+            int goldBase = tier switch
+            {
+                BotSkillTier.Novice      => 40,
+                BotSkillTier.Apprentice  => 90,
+                BotSkillTier.Journeyman  => 170,
+                BotSkillTier.Adept       => 300,
+                BotSkillTier.Expert      => 500,
+                BotSkillTier.Master      => 850,
+                BotSkillTier.Grandmaster => 1400,
+                _                        => 100,
+            };
+            // ±35% spread so bots aren't all carrying identical purses.
+            int gold = (int)(goldBase * Utility.RandomMinMax(65, 135) / 100.0);
+            if (gold > 0) AddToPack(bot, "Server.Items.Gold", gold);
+
+            // --- Class-appropriate carry items ---
+            switch (cls)
+            {
+                case BotClass.Warrior:
+                case BotClass.Fencer:
+                case BotClass.Archer:
+                case BotClass.Ranger:
+                    // Fighters carry bandages and a few healing potions.
+                    AddToPack(bot, "Server.Items.Bandage",
+                              Utility.RandomMinMax(5, 20));
+                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.5,
+                                   Utility.RandomMinMax(1, 4));
+                    break;
+
+                case BotClass.Mage:
+                    // Mages carry potions and a spare reagent stash.
+                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.4,
+                                   Utility.RandomMinMax(1, 3));
+                    MaybeAddToPack(bot, "Server.Items.GreaterManaPotion",
+                                   0.3, Utility.RandomMinMax(1, 3));
+                    AddReagentStash(bot, tier);
+                    break;
+
+                case BotClass.Healer:
+                    AddToPack(bot, "Server.Items.Bandage",
+                              Utility.RandomMinMax(15, 40));
+                    AddReagentStash(bot, tier);
+                    break;
+
+                case BotClass.Thief:
+                    // Thieves carry the tools of the trade.
+                    AddToPack(bot, "Server.Items.Lockpick",
+                              Utility.RandomMinMax(3, 12));
+                    MaybeAddToPack(bot, "Server.Items.Lantern", 0.4, 1);
+                    break;
+
+                case BotClass.Crafter:
+                    if (bot.CrafterSpec == CrafterType.Fisherman)
+                    {
+                        // Fishing loot — what a day at the docks produces.
+                        // Use stock ModernUO fishing-product types via
+                        // reflection; missing types fail silently.
+                        MaybeAddToPack(bot, "Server.Items.Fish", 0.85,
+                                       Utility.RandomMinMax(2, 6));
+                        MaybeAddToPack(bot, "Server.Items.RawFishSteak", 0.5,
+                                       Utility.RandomMinMax(1, 4));
+                        MaybeAddToPack(bot, "Server.Items.Lobster", 0.30,
+                                       Utility.RandomMinMax(1, 3));
+                        MaybeAddToPack(bot, "Server.Items.Crab", 0.20,
+                                       Utility.RandomMinMax(1, 2));
+                        // A spare reel — a fisherman always has one.
+                        MaybeAddToPack(bot, "Server.Items.FishingPole", 0.15, 1);
+                    }
+                    else
+                    {
+                        // A few tools / raw materials.
+                        MaybeAddToPack(bot, "Server.Items.IronIngot", 0.6,
+                                       Utility.RandomMinMax(5, 25));
+                        MaybeAddToPack(bot, "Server.Items.Bandage", 0.4,
+                                       Utility.RandomMinMax(3, 10));
+                    }
+                    break;
+
+                case BotClass.Bard:
+                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.4,
+                                   Utility.RandomMinMax(1, 3));
+                    break;
+
+                case BotClass.Tamer:
+                    AddToPack(bot, "Server.Items.Bandage",
+                              Utility.RandomMinMax(5, 15));
+                    break;
+            }
+
+            // --- A common odd-and-end most travelers carry ---
+            MaybeAddToPack(bot, "Server.Items.Torch", 0.3, 1);
+        }
+
+        // Add a spread of the 8 standard magery reagents to the pack.
+        // Amount per reagent scales with skill tier — a higher-skill caster
+        // casts more often and with costlier spells, so carries a deeper
+        // reagent supply. Each reagent gets its tier base ±30% spread.
+        private static void AddReagentStash(PlayerBot bot, BotSkillTier tier)
+        {
+            int regBase = tier switch
+            {
+                BotSkillTier.Novice      => 8,
+                BotSkillTier.Apprentice  => 14,
+                BotSkillTier.Journeyman  => 22,
+                BotSkillTier.Adept       => 32,
+                BotSkillTier.Expert      => 45,
+                BotSkillTier.Master      => 60,
+                BotSkillTier.Grandmaster => 80,
+                _                        => 20,
+            };
+
+            string[] regs =
+            {
+                "Server.Items.BlackPearl",
+                "Server.Items.Bloodmoss",
+                "Server.Items.Garlic",
+                "Server.Items.Ginseng",
+                "Server.Items.MandrakeRoot",
+                "Server.Items.Nightshade",
+                "Server.Items.SulfurousAsh",
+                "Server.Items.SpidersSilk",
+            };
+            foreach (var r in regs)
+            {
+                // ±30% per-reagent spread so the stash isn't uniform.
+                int amt = (int)(regBase * Utility.RandomMinMax(70, 130) / 100.0);
+                if (amt < 1) amt = 1;
+                AddToPack(bot, r, amt);
+            }
+        }
+
+        // Add to pack with a probability gate.
+        private static void MaybeAddToPack(PlayerBot bot, string itemType,
+                                           double chance, int amount)
+        {
+            if (Utility.RandomDouble() < chance)
+                AddToPack(bot, itemType, amount);
         }
 
         // -------------------------------------------------------------------
@@ -92,22 +246,44 @@ namespace Server.CustomBots
             // 80–92: robe only, no wizard hat
             // 93–98: studded leather (battle-mage)
             // 99: plate (gish)
+            //
+            // Mages NEVER carry a weapon — they fight with spells and kite
+            // at range, so a staff would just be dead weight (and ModernUO
+            // would try to melee-swing it). Armor look only; hands stay
+            // free for casting.
             if (roll < 80)       RobeAndMage(bot, tier, withHat: true);
             else if (roll < 93)  RobeAndMage(bot, tier, withHat: false);
-            else if (roll < 99)  { StuddedUp(bot, tier); EquipWeapon(bot, tier, new[] { 10 }); /*staff*/ }
-            else                 { PlatesUp(bot, tier); EquipWeapon(bot, tier, new[] { 10 }); }
+            else if (roll < 99)  StuddedUp(bot, tier);   // battle-mage look
+            else                 PlatesUp(bot, tier);    // gish look
 
-            // Spellbook — usually present for any mage-class.
+            // Spellbook — usually present for any mage-class, and FILLED
+            // with spells. An empty book reads as wrong (and a real mage
+            // needs spells written to cast from it). Content is a 64-bit
+            // mask, one bit per spell, 8 spells per circle. A bot knows
+            // every spell from circle 1 up through a cap set by skill
+            // tier — a Novice knows the first couple circles, a
+            // Grandmaster knows all 8.
             if (Utility.RandomDouble() < 0.85)
             {
-                Add(bot, new Spellbook(), IsHighTier(tier) ? RichHue() : 0);
-            }
+                int circles = tier switch
+                {
+                    BotSkillTier.Novice      => 2,
+                    BotSkillTier.Apprentice  => 3,
+                    BotSkillTier.Journeyman  => 4,
+                    BotSkillTier.Adept       => 5,
+                    BotSkillTier.Expert      => 6,
+                    BotSkillTier.Master      => 7,
+                    BotSkillTier.Grandmaster => 8,
+                    _                        => 4,
+                };
+                // Low bit = circle 1 spell 1. circles*8 spells, all set.
+                ulong content = (circles >= 8)
+                    ? ulong.MaxValue
+                    : (1UL << (circles * 8)) - 1UL;
 
-            // Staff weapon if no weapon yet (e.g. the robe paths)
-            if (bot.FindItemOnLayer(Layer.OneHanded) == null &&
-                bot.FindItemOnLayer(Layer.TwoHanded) == null)
-            {
-                EquipWeapon(bot, tier, new[] { 10 }); // staff
+                var book = new Spellbook();
+                book.Content = content;
+                Add(bot, book, IsHighTier(tier) ? RichHue() : 0);
             }
         }
 
@@ -145,6 +321,12 @@ namespace Server.CustomBots
                 var xbow = TryNewItem("Server.Items.Crossbow");
                 if (xbow != null) Add(bot, xbow, 0);
             }
+
+            // Ammunition — a ranged weapon needs ammo in the pack or it
+            // won't fire. Give a generous stack of arrows, plus some bolts
+            // in case the bot ended up with a crossbow.
+            AddToPack(bot, "Server.Items.Arrow", Utility.RandomMinMax(40, 80));
+            AddToPack(bot, "Server.Items.Bolt",  Utility.RandomMinMax(20, 40));
         }
 
         private static void RollTamerLook(PlayerBot bot, BotSkillTier tier)
@@ -168,6 +350,31 @@ namespace Server.CustomBots
 
         private static void RollCrafterLook(PlayerBot bot, BotSkillTier tier)
         {
+            // FISHERMAN — different look entirely. Simple shirt and pants,
+            // a straw hat, and a fishing pole as their "tool/weapon." No
+            // apron, no smith hammer. Skip the rest of the crafter rolling.
+            if (bot.CrafterSpec == CrafterType.Fisherman)
+            {
+                CommonerUp(bot, tier);
+
+                // Straw hat ~70% of the time; otherwise bandana / no hat.
+                if (Utility.RandomDouble() < 0.7)
+                {
+                    var hat = TryNewItem("Server.Items.StrawHat");
+                    if (hat != null) Add(bot, hat, Utility.RandomNeutralHue());
+                }
+                else if (Utility.RandomDouble() < 0.5)
+                {
+                    var bandana = TryNewItem("Server.Items.Bandana");
+                    if (bandana != null) Add(bot, bandana, Utility.RandomNeutralHue());
+                }
+
+                // Fishing pole — the defining tool. Equipped like a weapon.
+                var pole = TryNewItem("Server.Items.FishingPole");
+                if (pole != null) Add(bot, pole, 0);
+                return;
+            }
+
             // Crafters mostly civilian. Aprons, simple shirts, occasional leather.
             int roll = Utility.Random(100);
             if (roll < 60) CommonerUp(bot, tier);
@@ -250,7 +457,13 @@ namespace Server.CustomBots
             if (Utility.RandomDouble() < 0.75)
             {
                 var bow = TryNewItem("Server.Items.Bow");
-                if (bow != null) Add(bot, bow, 0);
+                if (bow != null)
+                {
+                    Add(bot, bow, 0);
+                    // Bow needs arrows in the pack to fire.
+                    AddToPack(bot, "Server.Items.Arrow",
+                              Utility.RandomMinMax(40, 80));
+                }
                 else EquipWeapon(bot, tier, new[] { 0, 1 });
             }
             else
@@ -518,7 +731,6 @@ namespace Server.CustomBots
             "Server.Items.WizardsHat",
             "Server.Items.ClothNinjaHood",
             "Server.Items.OrcHelm",
-            "Server.Items.OrcMask",
             "Server.Items.BearMask",
             "Server.Items.DeerMask",
             "Server.Items.TribalMask",
@@ -526,26 +738,16 @@ namespace Server.CustomBots
 
         private static Item RollRandomHat()
         {
-            // Try up to N random picks. If reflection-instantiation fails
-            // for one (type doesn't exist or has no parameterless constructor),
-            // move to the next.
+            // Try up to N random picks. TryNewItem handles all the
+            // edge cases — missing types, hue-only constructors, etc.
+            // If a pick fails, try a different one.
             for (int tries = 0; tries < 5; tries++)
             {
                 string typeName = _hatTypes[Utility.Random(_hatTypes.Length)];
-                try
-                {
-                    var t = Type.GetType(typeName + ", UOContent")
-                         ?? Type.GetType(typeName);
-                    if (t == null) continue;
-                    var inst = Activator.CreateInstance(t) as Item;
-                    if (inst != null) return inst;
-                }
-                catch
-                {
-                    // Try next type.
-                }
+                var hat = TryNewItem(typeName);
+                if (hat != null) return hat;
             }
-            // Last resort: a FloppyHat which we know is in every build.
+            // Last resort: a FloppyHat — known to exist.
             try { return new FloppyHat(); } catch { return null; }
         }
 
@@ -639,19 +841,61 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Reflection helpers — try to instantiate an item by type name. Used
-        // for items that may not exist in every ModernUO build (e.g.
-        // SmithHammer, Lute, JesterHat). Returns null if the type isn't
-        // found, has no parameterless constructor, or instantiation throws.
+        // Reflection helpers — try to instantiate an item by type name.
+        //
+        // Two challenges in ModernUO:
+        //   1. We can't predict which assembly a content class lives in.
+        //      Server.Items.WideBrimHat could be in ModernUO.dll directly,
+        //      or in a content assembly with a different name. Type.GetType
+        //      with an assembly qualifier requires us to know the assembly.
+        //   2. Many ModernUO content classes have an (int hue = 0)
+        //      constructor instead of a true parameterless constructor.
+        //      Activator.CreateInstance(t) without args requires a real
+        //      parameterless ctor, so it fails on these even though they
+        //      LOOK like they have a default.
+        //
+        // Solution: search loaded assemblies for the type, then try ctors
+        // in order: () -> (int) -> (int hue). Returns null on failure.
         // -------------------------------------------------------------------
+        private static Type FindType(string fullName)
+        {
+            // First try the direct lookup (works if type is in calling asm).
+            var t = Type.GetType(fullName);
+            if (t != null) return t;
+
+            // Walk every loaded assembly looking for the type.
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    t = asm.GetType(fullName, false);
+                    if (t != null) return t;
+                }
+                catch
+                {
+                    // Some assemblies throw on GetType for various reasons;
+                    // skip them and try the next.
+                }
+            }
+            return null;
+        }
+
         private static Item TryNewItem(string typeName)
         {
             try
             {
-                var t = Type.GetType(typeName + ", UOContent")
-                     ?? Type.GetType(typeName);
+                var t = FindType(typeName);
                 if (t == null) return null;
-                return Activator.CreateInstance(t) as Item;
+
+                // Prefer a true parameterless ctor if present.
+                var ctor0 = t.GetConstructor(Type.EmptyTypes);
+                if (ctor0 != null) return ctor0.Invoke(null) as Item;
+
+                // Fall back to (int) ctor with hue=0 (matches default value).
+                var ctorInt = t.GetConstructor(new[] { typeof(int) });
+                if (ctorInt != null) return ctorInt.Invoke(new object[] { 0 }) as Item;
+
+                return null;
             }
             catch
             {
@@ -663,19 +907,23 @@ namespace Server.CustomBots
         {
             try
             {
-                var t = Type.GetType(typeName + ", UOContent")
-                     ?? Type.GetType(typeName);
+                var t = FindType(typeName);
                 if (t == null) return null;
-                // Try (int) constructor first (most cloth items)
-                var ctor = t.GetConstructor(new[] { typeof(int) });
-                if (ctor != null)
+
+                // Prefer (int) ctor since we have a hue to pass.
+                var ctorInt = t.GetConstructor(new[] { typeof(int) });
+                if (ctorInt != null) return ctorInt.Invoke(new object[] { hueArg }) as Item;
+
+                // Fall back to parameterless ctor and set hue afterward.
+                var ctor0 = t.GetConstructor(Type.EmptyTypes);
+                if (ctor0 != null)
                 {
-                    return ctor.Invoke(new object[] { hueArg }) as Item;
+                    var inst = ctor0.Invoke(null) as Item;
+                    if (inst != null && hueArg != 0) inst.Hue = hueArg;
+                    return inst;
                 }
-                // Fall back to default ctor + setting hue on the item
-                var inst = Activator.CreateInstance(t) as Item;
-                if (inst != null && hueArg != 0) inst.Hue = hueArg;
-                return inst;
+
+                return null;
             }
             catch
             {
@@ -687,6 +935,17 @@ namespace Server.CustomBots
         {
             if (hue != 0) item.Hue = hue;
             bot.AddItem(item);
+        }
+
+        // Put an item in the bot's backpack (not an equip layer). Used for
+        // consumables like arrows and reagents that combat/casting draws
+        // from the pack. Falls back gracefully if the item can't be made.
+        private static void AddToPack(PlayerBot bot, string itemType, int amount)
+        {
+            var item = TryNewItem(itemType);
+            if (item == null) return;
+            if (amount > 1 && item.Stackable) item.Amount = amount;
+            bot.AddToBackpack(item);
         }
     }
 }

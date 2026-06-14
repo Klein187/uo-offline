@@ -138,8 +138,20 @@ namespace Server.CustomBots
         {
             try
             {
-                var t = Type.GetType(typeName + ", UOContent")
-                     ?? Type.GetType(typeName);
+                // Search across all loaded assemblies for the type.
+                Type t = Type.GetType(typeName);
+                if (t == null)
+                {
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        try
+                        {
+                            t = asm.GetType(typeName, false);
+                            if (t != null) break;
+                        }
+                        catch { }
+                    }
+                }
                 if (t == null) return null;
                 if (!typeof(BaseMount).IsAssignableFrom(t)) return null;
                 return Activator.CreateInstance(t) as BaseMount;

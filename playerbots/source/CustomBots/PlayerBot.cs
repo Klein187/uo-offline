@@ -90,6 +90,11 @@ namespace Server.CustomBots
         // mid-tier, few are Grandmasters. Drives equipment quality.
         public BotSkillTier SkillTier;
 
+        // Craft specialization. Only meaningful when Class == Crafter;
+        // rolled at creation. Drives the crafter's station (forge / tailor
+        // vendor / bowyer / bank), its "making" animation, and its title.
+        public CrafterType CrafterSpec;
+
         // ---- Constructors ----
 
         // [Constructible] makes this constructor visible to:
@@ -99,7 +104,15 @@ namespace Server.CustomBots
         //     log "There is no constructor for ... that matches the given
         //     predicate" and silently produce nothing).
         [Constructible(AccessLevel.GameMaster)]
-        public PlayerBot() : base()
+        public PlayerBot()
+            : this(BotClassHelper.RollRandom(), BotSkillTierHelper.RollRandom())
+        {
+        }
+
+        // Construct a bot with a SPECIFIC class and skill tier instead of
+        // random rolls. Used by the [SpawnBot command so an admin can drop
+        // a bot of a chosen class (e.g. a Mage) for testing.
+        public PlayerBot(BotClass cls, BotSkillTier tier) : base()
         {
             // Mark this mobile as a player from the system's perspective.
             // PlayerMobile's default constructor doesn't set m_Player = true
@@ -132,10 +145,16 @@ namespace Server.CustomBots
             Name = NamePool.PickRandom(Female);
             SpeechHue = SpeechHues.PickRandom();
 
-            // Roll the bot's "identity" — class (what they are) and skill
-            // tier (how experienced). Drives skills, stats, equipment.
-            Class     = BotClassHelper.RollRandom();
-            SkillTier = BotSkillTierHelper.RollRandom();
+            // The bot's "identity" — class (what they are) and skill tier
+            // (how experienced). Passed in (random or explicit). Drives
+            // skills, stats, equipment.
+            Class     = cls;
+            SkillTier = tier;
+
+            // Crafter specialization — rolled for every bot but only used
+            // when Class is Crafter. Cheap to always roll; keeps the field
+            // valid regardless of class.
+            CrafterSpec = CrafterTypeHelper.RollRandom();
 
             // Apply real UO skills based on class template. The paperdoll
             // title comes from the highest skill, so a GM Warrior naturally
@@ -145,6 +164,17 @@ namespace Server.CustomBots
             // Apply class-flavored stats (Warriors are Str-heavy, etc.) and
             // recompute Hits/Stam/Mana from the new stat values.
             ApplyClassStats();
+
+            // Every bot needs a backpack. PlayerMobile's constructor does
+            // NOT create one (that normally happens during character
+            // creation), so without this a bot has no container — nothing
+            // to hold loot, nothing for a thief to snoop or steal. Create
+            // it before rolling equipment so EquipmentTable can stock it.
+            if (Backpack == null)
+            {
+                var pack = new Backpack { Movable = false };
+                AddItem(pack);
+            }
 
             // Roll equipment from the class+tier specific pool.
             EquipmentTable.RollOutfit(this, Class, SkillTier);
@@ -231,6 +261,36 @@ namespace Server.CustomBots
             {
                 behaviorName = pbs.BehaviorName;
                 Behavior = BehaviorRegistry.Create(behaviorName);
+            }
+
+            // PK setup. PKs are strong (mostly Master/Grandmaster) and may
+            // belong to a gang. ~40% of a PK spawner's bots form a gang
+            // keyed to the spawner's serial, so PKs from the same spawner
+            // hunt together; the rest are solo (GangId 0).
+            if (Behavior is PKBehavior pk)
+            {
+                // PKs must be a COMBAT class — a Bard or Crafter PK can't
+                // fight and is tonally wrong. Force one of the four real
+                // fighting classes and re-roll the skill template for it.
+                BotClass[] combatClasses =
+                {
+                    BotClass.Warrior, BotClass.Mage,
+                    BotClass.Fencer,  BotClass.Archer,
+                };
+                Class = combatClasses[Utility.Random(combatClasses.Length)];
+
+                // Strong: re-roll tier weighted high. Then re-apply skills
+                // so BOTH the new class and new tier take effect (skills
+                // were set from the original class/tier in the constructor).
+                SkillTier = Utility.RandomDouble() < 0.7
+                    ? BotSkillTier.Grandmaster
+                    : BotSkillTier.Master;
+                ApplyClassSkills();
+
+                if (Utility.RandomDouble() < 0.40 && Spawner != null)
+                {
+                    pk.GangId = (int)Spawner.Serial.Value;
+                }
             }
 
             // BankSitters: most of them lean against the nearest wall.
@@ -387,13 +447,14 @@ namespace Server.CustomBots
         {
             base.Serialize(writer);
 
-            writer.Write(3);                                       // version
+            writer.Write(4);                                       // version
             writer.Write(IsBot);
             writer.Write(_behavior?.SerializableName ?? "Idle");
             Personality.Write(writer);
             writer.Write(PhaseStartedAt);
             writer.Write((byte)Class);
             writer.Write((byte)SkillTier);
+            writer.Write((byte)CrafterSpec);                       // v4
         }
 
         public override void Deserialize(IGenericReader reader)
@@ -431,6 +492,15 @@ namespace Server.CustomBots
                 // that surprises the user.
                 Class     = BotClass.Warrior;
                 SkillTier = BotSkillTier.Apprentice;
+            }
+            if (version >= 4)
+            {
+                CrafterSpec = (CrafterType)reader.ReadByte();
+            }
+            else
+            {
+                // Pre-v4 bots: roll a craft spec so the field is valid.
+                CrafterSpec = CrafterTypeHelper.RollRandom();
             }
 
             // Heal pre-v20c bots whose m_Player flag was never set. Without

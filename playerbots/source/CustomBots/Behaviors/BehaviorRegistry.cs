@@ -27,6 +27,9 @@ namespace Server.CustomBots
             Register("BankSitter", () => new BankSitterBehavior());
             Register("Adventurer", () => new AdventurerBehavior());
             Register("Traveler",   () => new TravelerBehavior());
+            Register("Shopper",    () => new ShopperBehavior());
+            Register("Crafter",    () => new CrafterBehavior());
+            Register("PK",         () => new PKBehavior());
         }
 
         public static void Register(string name, Func<PlayerBotBehavior> factory)

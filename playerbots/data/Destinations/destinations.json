@@ -1,55 +1,1595 @@
 {
-  "_comment": "Bot destinations — places of interest within the world. Each destination references a NearestWaypoint that bots use to route here via the graph. Add destinations as you verify coords in-game with [MarkSpot. Run [ReloadDestinations after editing. Type values come from DestinationType enum (Bank, Tavern, VendorSmith, VendorMage, VendorTailor, VendorCarpenter, VendorBowyer, VendorAlchemist, Healer, Library, Graveyard, Moongate, Crossroads, Bridge, Stables, CityCenter).",
-
+  "_comment": "PRUNED to waypoint-graph coverage (38-tile reach). Full ground-truth catalog: destinations_generated.json. Re-prune after expanding the graph.",
   "Destinations": [
     {
-      "Name": "Britain Bank - Front",
-      "X": 1434, "Y": 1697, "Z": 0,
+      "Name": "Britain Bank",
+      "X": 1433,
+      "Y": 1689,
+      "Z": 0,
       "Type": "Bank",
       "City": "Britain",
-      "NearestWaypoint": "Britain Bank"
+      "NearestWaypoint": "Britain Bank",
+      "Arrivals": [
+        {
+          "X": 1437,
+          "Y": 1694,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Bank",
+            "Britain Bank SE Intersection"
+          ]
+        },
+        {
+          "X": 1425,
+          "Y": 1694,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Bank",
+            "britbank sw"
+          ]
+        },
+        {
+          "X": 1422,
+          "Y": 1682,
+          "Z": 0,
+          "Waypoints": [
+            "Road To Britain Bank NW",
+            "britbank sw"
+          ]
+        },
+        {
+          "X": 1439,
+          "Y": 1681,
+          "Z": 8,
+          "Waypoints": [
+            "Britain Bank North",
+            "brit bank ne"
+          ]
+        },
+        {
+          "X": 1426,
+          "Y": 1672,
+          "Z": 10,
+          "Waypoints": [
+            "WP 156",
+            "Road To Britain Bank NW"
+          ]
+        }
+      ]
     },
     {
-      "Name": "Britain Bank - East",
-      "X": 1438, "Y": 1699, "Z": 0,
+      "Name": "Britain Bank 3",
+      "X": 1429,
+      "Y": 1684,
+      "Z": 0,
       "Type": "Bank",
       "City": "Britain",
-      "NearestWaypoint": "Britain Bank"
+      "NearestWaypoint": "Britain Bank North"
     },
     {
-      "Name": "Britain Bank - West",
-      "X": 1430, "Y": 1695, "Z": 0,
-      "Type": "Bank",
+      "Name": "Britain Smith 4",
+      "X": 1425,
+      "Y": 1557,
+      "Z": 30,
+      "Type": "VendorSmith",
       "City": "Britain",
-      "NearestWaypoint": "Britain Bank"
+      "NearestWaypoint": "Britain Forge 5",
+      "Polygon": [
+        [
+          1424,
+          1554
+        ],
+        [
+          1429,
+          1554
+        ],
+        [
+          1428,
+          1560
+        ],
+        [
+          1423,
+          1560
+        ]
+      ]
     },
     {
-      "Name": "Britain Bank - North",
-      "X": 1434, "Y": 1693, "Z": 0,
-      "Type": "Bank",
+      "Name": "britdock 1",
+      "X": 1438,
+      "Y": 1762,
+      "Z": -2,
+      "Type": "Dock",
       "City": "Britain",
-      "NearestWaypoint": "Britain Bank"
+      "NearestWaypoint": "britdock 2"
     },
     {
-      "Name": "Britain Bank - Interior",
-      "X": 1431, "Y": 1688, "Z": 0,
+      "Name": "brit dock 2",
+      "X": 1482,
+      "Y": 1761,
+      "Z": -2,
+      "Type": "Dock",
+      "City": "Britain",
+      "NearestWaypoint": "britdock2 1",
+      "Polygon": [
+        [
+          1483,
+          1747
+        ],
+        [
+          1491,
+          1747
+        ],
+        [
+          1491,
+          1758
+        ],
+        [
+          1501,
+          1758
+        ],
+        [
+          1501,
+          1763
+        ],
+        [
+          1485,
+          1764
+        ],
+        [
+          1485,
+          1773
+        ],
+        [
+          1480,
+          1773
+        ],
+        [
+          1480,
+          1763
+        ],
+        [
+          1472,
+          1764
+        ],
+        [
+          1472,
+          1772
+        ],
+        [
+          1467,
+          1773
+        ],
+        [
+          1467,
+          1754
+        ],
+        [
+          1483,
+          1754
+        ]
+      ]
+    },
+    {
+      "Name": "Britain Bank 2",
+      "X": 1651,
+      "Y": 1608,
+      "Z": 20,
       "Type": "Bank",
       "City": "Britain",
-      "NearestWaypoint": "Britain Bank"
+      "NearestWaypoint": "Rec 10",
+      "Polygon": [
+        [
+          1646,
+          1598
+        ],
+        [
+          1667,
+          1599
+        ],
+        [
+          1667,
+          1611
+        ],
+        [
+          1659,
+          1611
+        ],
+        [
+          1658,
+          1619
+        ],
+        [
+          1645,
+          1619
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1645,
+          "Y": 1601,
+          "Z": 20,
+          "Waypoints": [
+            "WP 16",
+            "WP 17"
+          ]
+        },
+        {
+          "X": 1648,
+          "Y": 1614,
+          "Z": 20,
+          "Waypoints": [
+            "Rec 10"
+          ]
+        },
+        {
+          "X": 1655,
+          "Y": 1615,
+          "Z": 20,
+          "Waypoints": [
+            "Rec 10"
+          ]
+        },
+        {
+          "X": 1654,
+          "Y": 1601,
+          "Z": 20,
+          "Waypoints": [
+            "WP 17"
+          ]
+        },
+        {
+          "X": 1657,
+          "Y": 1610,
+          "Z": 20,
+          "Waypoints": []
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 8",
+      "X": 1452,
+      "Y": 1613,
+      "Z": 20,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "brittailor2",
+      "ArrivalX": 1451,
+      "ArrivalY": 1613,
+      "ArrivalZ": 20
+    },
+    {
+      "Name": "Britain Healer",
+      "X": 1474,
+      "Y": 1612,
+      "Z": 20,
+      "Type": "Healer",
+      "City": "Britain",
+      "NearestWaypoint": "Baker Entrance",
+      "ArrivalX": 1473,
+      "ArrivalY": 1612,
+      "ArrivalZ": 20
+    },
+    {
+      "Name": "Britain Bowyer",
+      "X": 1475,
+      "Y": 1580,
+      "Z": 20,
+      "Type": "VendorBowyer",
+      "City": "Britain",
+      "NearestWaypoint": "Britain West Bowyer",
+      "Arrivals": [
+        {
+          "X": 1477,
+          "Y": 1578,
+          "Z": 20,
+          "Waypoints": [
+            "Britain West Bowyer"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Alchemist",
+      "X": 1494,
+      "Y": 1552,
+      "Z": 30,
+      "Type": "VendorAlchemist",
+      "City": "Britain",
+      "NearestWaypoint": "britmage 2",
+      "Arrivals": [
+        {
+          "X": 1491,
+          "Y": 1547,
+          "Z": 30,
+          "Waypoints": [
+            "britmage 2"
+          ]
+        },
+        {
+          "X": 1487,
+          "Y": 1553,
+          "Z": 30,
+          "Waypoints": [
+            "britmage 2"
+          ]
+        },
+        {
+          "X": 1497,
+          "Y": 1549,
+          "Z": 30,
+          "Waypoints": [
+            "britmage 2"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Stables 3",
+      "X": 1516,
+      "Y": 1546,
+      "Z": 25,
+      "Type": "Stables",
+      "City": "Britain",
+      "NearestWaypoint": "WP 152",
+      "ArrivalX": 1520,
+      "ArrivalY": 1543,
+      "ArrivalZ": 25
+    },
+    {
+      "Name": "Britain Inn 3",
+      "X": 1460,
+      "Y": 1525,
+      "Z": 20,
+      "Type": "Inn",
+      "City": "Britain",
+      "NearestWaypoint": "WP 145",
+      "ArrivalX": 1461,
+      "ArrivalY": 1522,
+      "ArrivalZ": 20
+    },
+    {
+      "Name": "Britain Weaponer 2",
+      "X": 1482,
+      "Y": 1588,
+      "Z": 20,
+      "Type": "VendorWeaponer",
+      "City": "Britain",
+      "NearestWaypoint": "Britain West Bowyer",
+      "Arrivals": [
+        {
+          "X": 1483,
+          "Y": 1583,
+          "Z": 20,
+          "Waypoints": [
+            "cntrl brit rd 3"
+          ]
+        },
+        {
+          "X": 1483,
+          "Y": 1590,
+          "Z": 20,
+          "Waypoints": [
+            "cntrl brit rd 3"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Inn 2",
+      "X": 1496,
+      "Y": 1610,
+      "Z": 20,
+      "Type": "Inn",
+      "City": "Britain",
+      "NearestWaypoint": "Central Britain Road 2",
+      "ArrivalX": 1497,
+      "ArrivalY": 1612,
+      "ArrivalZ": 10
+    },
+    {
+      "Name": "Britain Alchemist 3",
+      "X": 1501,
+      "Y": 1661,
+      "Z": 27,
+      "Type": "VendorAlchemist",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Between Inn And Alchemist",
+      "Arrivals": [
+        {
+          "X": 1498,
+          "Y": 1660,
+          "Z": 20,
+          "Waypoints": [
+            "Britain Alchemist East"
+          ]
+        },
+        {
+          "X": 1504,
+          "Y": 1658,
+          "Z": 20,
+          "Waypoints": [
+            "Britain Alchemist East"
+          ]
+        },
+        {
+          "X": 1499,
+          "Y": 1664,
+          "Z": 20,
+          "Waypoints": [
+            "Britain Alchemist East"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 11",
+      "X": 1471,
+      "Y": 1667,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "WP 133",
+      "Arrivals": [
+        {
+          "X": 1466,
+          "Y": 1667,
+          "Z": 0,
+          "Waypoints": [
+            "WP 133"
+          ]
+        },
+        {
+          "X": 1477,
+          "Y": 1667,
+          "Z": 0,
+          "Waypoints": [
+            "WP 133"
+          ]
+        },
+        {
+          "X": 1467,
+          "Y": 1671,
+          "Z": 0,
+          "Waypoints": [
+            "WP 133"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Tailor 3",
+      "X": 1471,
+      "Y": 1685,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Bank Provisioner Entrance",
+      "Arrivals": [
+        {
+          "X": 1475,
+          "Y": 1687,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Tailor Entrance"
+          ]
+        },
+        {
+          "X": 1468,
+          "Y": 1687,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Tailor Entrance"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 6",
+      "X": 1452,
+      "Y": 1684,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Gem Shop",
+      "Arrivals": [
+        {
+          "X": 1451,
+          "Y": 1680,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Gem Shop"
+          ]
+        },
+        {
+          "X": 1455,
+          "Y": 1684,
+          "Z": 0,
+          "Waypoints": [
+            "Britain Gem Shop"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 12",
+      "X": 1491,
+      "Y": 1688,
+      "Z": 20,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Provisioner SE Alley",
+      "Arrivals": [
+        {
+          "X": 1494,
+          "Y": 1688,
+          "Z": 20,
+          "Waypoints": [
+            "Blue Boar Tavern"
+          ]
+        },
+        {
+          "X": 1498,
+          "Y": 1682,
+          "Z": 20,
+          "Waypoints": [
+            "Blue Boar Tavern"
+          ]
+        },
+        {
+          "X": 1498,
+          "Y": 1696,
+          "Z": 20,
+          "Waypoints": [
+            "Blue Boar Tavern"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 9",
+      "X": 1456,
+      "Y": 1724,
+      "Z": 6,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "WP 135",
+      "Arrivals": [
+        {
+          "X": 1452,
+          "Y": 1721,
+          "Z": 0,
+          "Waypoints": [
+            "WP 135"
+          ]
+        },
+        {
+          "X": 1461,
+          "Y": 1722,
+          "Z": 0,
+          "Waypoints": [
+            "britprov9 2"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 10",
+      "X": 1428,
+      "Y": 1720,
+      "Z": 20,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "brit west rd 1",
+      "Arrivals": [
+        {
+          "X": 1426,
+          "Y": 1734,
+          "Z": 20,
+          "Waypoints": [
+            "brittav3"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 7",
+      "X": 1416,
+      "Y": 1753,
+      "Z": 10,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "britprov7",
+      "Arrivals": [
+        {
+          "X": 1414,
+          "Y": 1748,
+          "Z": 10,
+          "Waypoints": [
+            "britprov7"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Tailor 5",
+      "X": 1433,
+      "Y": 1614,
+      "Z": 20,
+      "Type": "VendorTailor",
+      "City": "Britain",
+      "NearestWaypoint": "Road To Britain Forge",
+      "Arrivals": [
+        {
+          "X": 1430,
+          "Y": 1611,
+          "Z": 20,
+          "Waypoints": [
+            "brittailor2"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Provisioner 3",
+      "X": 1552,
+      "Y": 1764,
+      "Z": 10,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "Rec 7",
+      "Arrivals": [
+        {
+          "X": 1551,
+          "Y": 1767,
+          "Z": 10,
+          "Waypoints": [
+            "Rec 9"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Weaponer 3",
+      "X": 1635,
+      "Y": 1693,
+      "Z": 37,
+      "Type": "VendorWeaponer",
+      "City": "Britain",
+      "NearestWaypoint": "estbnritwep",
+      "Arrivals": [
+        {
+          "X": 1633,
+          "Y": 1690,
+          "Z": 30,
+          "Waypoints": [
+            "estbnritwep"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Mage 2",
+      "X": 1594,
+      "Y": 1652,
+      "Z": 10,
+      "Type": "VendorMage",
+      "City": "Britain",
+      "NearestWaypoint": "eastbritmg",
+      "Arrivals": [
+        {
+          "X": 1592,
+          "Y": 1655,
+          "Z": 10,
+          "Waypoints": [
+            "eastbritmg"
+          ]
+        }
+      ]
     },
     {
       "Name": "Britain Tailor",
-      "X": 1470, "Y": 1689, "Z": 0,
+      "X": 1548,
+      "Y": 1658,
+      "Z": 26,
       "Type": "VendorTailor",
       "City": "Britain",
-      "NearestWaypoint": "Britain Tailor Entrance"
+      "NearestWaypoint": "estbrittai",
+      "Arrivals": [
+        {
+          "X": 1556,
+          "Y": 1657,
+          "Z": 20,
+          "Waypoints": [
+            "estbrittai"
+          ]
+        }
+      ]
     },
     {
-      "Name": "Blue Boar Tavern",
-      "X": 1496, "Y": 1684, "Z": 20,
-      "Type": "Tavern",
+      "Name": "Britain Provisioner 4",
+      "X": 1624,
+      "Y": 1585,
+      "Z": 0,
+      "Type": "VendorProvisioner",
       "City": "Britain",
-      "NearestWaypoint": "Blue Boar Tavern"
+      "NearestWaypoint": "WP 16",
+      "Arrivals": [
+        {
+          "X": 1614,
+          "Y": 1585,
+          "Z": 0,
+          "Waypoints": [
+            "estbritprov4"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Stables",
+      "X": 1393,
+      "Y": 1645,
+      "Z": 30,
+      "Type": "Stables",
+      "City": "Britain",
+      "NearestWaypoint": "WP 35",
+      "Arrivals": [
+        {
+          "X": 1392,
+          "Y": 1643,
+          "Z": 30,
+          "Waypoints": [
+            "WP 35",
+            "WP 38"
+          ]
+        },
+        {
+          "X": 1390,
+          "Y": 1653,
+          "Z": 30,
+          "Waypoints": [
+            "WP 38"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Carpenter",
+      "X": 1391,
+      "Y": 1588,
+      "Z": 30,
+      "Type": "VendorCarpenter",
+      "City": "Britain",
+      "NearestWaypoint": "WP 34",
+      "Arrivals": [
+        {
+          "X": 1388,
+          "Y": 1591,
+          "Z": 30,
+          "Waypoints": [
+            "WP 32"
+          ]
+        },
+        {
+          "X": 1395,
+          "Y": 1596,
+          "Z": 30,
+          "Waypoints": [
+            "WP 32"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Smith",
+      "X": 1371,
+      "Y": 1572,
+      "Z": 30,
+      "Type": "VendorSmith",
+      "City": "Britain",
+      "NearestWaypoint": "WP 34",
+      "Arrivals": [
+        {
+          "X": 1371,
+          "Y": 1575,
+          "Z": 30,
+          "Waypoints": [
+            "WP 34"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 32",
+      "X": 1816,
+      "Y": 2828,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Trinsic",
+      "NearestWaypoint": "trinbank",
+      "Polygon": [
+        [
+          1809,
+          2818
+        ],
+        [
+          1822,
+          2818
+        ],
+        [
+          1822,
+          2839
+        ],
+        [
+          1809,
+          2839
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1821,
+          "Y": 2827,
+          "Z": 0,
+          "Waypoints": [
+            "trinbank"
+          ]
+        },
+        {
+          "X": 1821,
+          "Y": 2832,
+          "Z": 0,
+          "Waypoints": [
+            "trinbank"
+          ]
+        },
+        {
+          "X": 1820,
+          "Y": 2820,
+          "Z": 0,
+          "Waypoints": [
+            "trinbank"
+          ]
+        },
+        {
+          "X": 1820,
+          "Y": 2836,
+          "Z": 0,
+          "Waypoints": [
+            "trinbank"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Tailor 4",
+      "X": 1852,
+      "Y": 2825,
+      "Z": 10,
+      "Type": "VendorTailor",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 164",
+      "Arrivals": [
+        {
+          "X": 1852,
+          "Y": 2830,
+          "Z": 10,
+          "Waypoints": [
+            "WP 141"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 12",
+      "X": 1854,
+      "Y": 2788,
+      "Z": -8,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 136",
+      "Arrivals": [
+        {
+          "X": 1854,
+          "Y": 2791,
+          "Z": -8,
+          "Waypoints": [
+            "WP 138"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Healer",
+      "X": 1916,
+      "Y": 2806,
+      "Z": 0,
+      "Type": "Healer",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 162",
+      "Arrivals": [
+        {
+          "X": 1916,
+          "Y": 2804,
+          "Z": 0,
+          "Waypoints": [
+            "WP 162"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 8",
+      "X": 1900,
+      "Y": 2803,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 163",
+      "Arrivals": [
+        {
+          "X": 1900,
+          "Y": 2805,
+          "Z": 0,
+          "Waypoints": [
+            "WP 163"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 13",
+      "X": 1885,
+      "Y": 2806,
+      "Z": 10,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 226",
+      "Arrivals": [
+        {
+          "X": 1882,
+          "Y": 2805,
+          "Z": 0,
+          "Waypoints": [
+            "WP 226"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Stables",
+      "X": 1824,
+      "Y": 2737,
+      "Z": 0,
+      "Type": "Stables",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 185",
+      "Arrivals": [
+        {
+          "X": 1824,
+          "Y": 2733,
+          "Z": 0,
+          "Waypoints": [
+            "WP 185"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Alchemist",
+      "X": 1843,
+      "Y": 2711,
+      "Z": 10,
+      "Type": "VendorAlchemist",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 191",
+      "Arrivals": [
+        {
+          "X": 1840,
+          "Y": 2710,
+          "Z": 10,
+          "Waypoints": [
+            "WP 191"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Smith",
+      "X": 1895,
+      "Y": 2653,
+      "Z": 30,
+      "Type": "VendorSmith",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 221",
+      "Arrivals": [
+        {
+          "X": 1897,
+          "Y": 2650,
+          "Z": 0,
+          "Waypoints": [
+            "WP 221"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 41",
+      "X": 1899,
+      "Y": 2688,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 219",
+      "Polygon": [
+        [
+          1889,
+          2678
+        ],
+        [
+          1909,
+          2678
+        ],
+        [
+          1908,
+          2697
+        ],
+        [
+          1890,
+          2697
+        ]
+      ]
+    },
+    {
+      "Name": "Trinsic Smith 3",
+      "X": 1934,
+      "Y": 2771,
+      "Z": 30,
+      "Type": "VendorSmith",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 182",
+      "Arrivals": [
+        {
+          "X": 1940,
+          "Y": 2762,
+          "Z": 0,
+          "Waypoints": [
+            "WP 182"
+          ]
+        },
+        {
+          "X": 1937,
+          "Y": 2772,
+          "Z": 0,
+          "Waypoints": [
+            "WP 182"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 10",
+      "X": 1935,
+      "Y": 2796,
+      "Z": 20,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 178",
+      "Arrivals": [
+        {
+          "X": 1928,
+          "Y": 2793,
+          "Z": 0,
+          "Waypoints": [
+            "WP 178"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Tailor 6",
+      "X": 1982,
+      "Y": 2832,
+      "Z": 35,
+      "Type": "VendorTailor",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 173",
+      "Arrivals": [
+        {
+          "X": 1988,
+          "Y": 2837,
+          "Z": 15,
+          "Waypoints": [
+            "WP 170"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 4",
+      "X": 2026,
+      "Y": 2845,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 195",
+      "Arrivals": [
+        {
+          "X": 2022,
+          "Y": 2844,
+          "Z": 0,
+          "Waypoints": [
+            "WP 195"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Tailor",
+      "X": 1991,
+      "Y": 2867,
+      "Z": 20,
+      "Type": "VendorTailor",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 198",
+      "Arrivals": [
+        {
+          "X": 1986,
+          "Y": 2867,
+          "Z": 10,
+          "Waypoints": [
+            "WP 198"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner",
+      "X": 1992,
+      "Y": 2883,
+      "Z": 5,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 199",
+      "Arrivals": [
+        {
+          "X": 1988,
+          "Y": 2885,
+          "Z": 5,
+          "Waypoints": [
+            "WP 199"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 48",
+      "X": 2072,
+      "Y": 2856,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 197",
+      "Polygon": [
+        [
+          2059,
+          2849
+        ],
+        [
+          2063,
+          2849
+        ],
+        [
+          2064,
+          2854
+        ],
+        [
+          2069,
+          2854
+        ],
+        [
+          2069,
+          2848
+        ],
+        [
+          2075,
+          2848
+        ],
+        [
+          2074,
+          2854
+        ],
+        [
+          2082,
+          2854
+        ],
+        [
+          2083,
+          2848
+        ],
+        [
+          2088,
+          2847
+        ],
+        [
+          2088,
+          2865
+        ],
+        [
+          2083,
+          2865
+        ],
+        [
+          2082,
+          2859
+        ],
+        [
+          2074,
+          2859
+        ],
+        [
+          2074,
+          2865
+        ],
+        [
+          2069,
+          2865
+        ],
+        [
+          2069,
+          2858
+        ],
+        [
+          2064,
+          2858
+        ],
+        [
+          2063,
+          2865
+        ],
+        [
+          2056,
+          2864
+        ],
+        [
+          2056,
+          2848
+        ]
+      ]
+    },
+    {
+      "Name": "Trinsic Provisioner 9",
+      "X": 2002,
+      "Y": 2721,
+      "Z": 30,
+      "Type": "VendorProvisioner",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 212",
+      "Arrivals": [
+        {
+          "X": 2004,
+          "Y": 2722,
+          "Z": 30,
+          "Waypoints": [
+            "WP 212"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Healer 2",
+      "X": 647,
+      "Y": 1087,
+      "Z": 0,
+      "Type": "Healer",
+      "City": "Yew",
+      "NearestWaypoint": "WP 323",
+      "Arrivals": [
+        {
+          "X": 647,
+          "Y": 1084,
+          "Z": 0,
+          "Waypoints": [
+            "WP 323"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Carpenter",
+      "X": 570,
+      "Y": 1009,
+      "Z": 0,
+      "Type": "VendorCarpenter",
+      "City": "Yew",
+      "NearestWaypoint": "WP 419",
+      "Arrivals": [
+        {
+          "X": 569,
+          "Y": 1011,
+          "Z": 0,
+          "Waypoints": [
+            "WP 352"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Provisioner",
+      "X": 529,
+      "Y": 1008,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Yew",
+      "NearestWaypoint": "WP 375",
+      "Arrivals": [
+        {
+          "X": 531,
+          "Y": 1011,
+          "Z": 0,
+          "Waypoints": [
+            "WP 351"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Provisioner 2",
+      "X": 559,
+      "Y": 995,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Yew",
+      "NearestWaypoint": "WP 419",
+      "Arrivals": [
+        {
+          "X": 556,
+          "Y": 990,
+          "Z": 0,
+          "Waypoints": [
+            "WP 351"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Tailor",
+      "X": 517,
+      "Y": 986,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Yew",
+      "NearestWaypoint": "WP 373",
+      "Arrivals": [
+        {
+          "X": 514,
+          "Y": 991,
+          "Z": 0,
+          "Waypoints": [
+            "WP 372"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Healer",
+      "X": 532,
+      "Y": 958,
+      "Z": 0,
+      "Type": "Healer",
+      "City": "Yew",
+      "NearestWaypoint": "WP 376",
+      "Arrivals": [
+        {
+          "X": 531,
+          "Y": 967,
+          "Z": 0,
+          "Waypoints": [
+            "WP 356"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Bowyer",
+      "X": 564,
+      "Y": 968,
+      "Z": 0,
+      "Type": "VendorBowyer",
+      "City": "Yew",
+      "NearestWaypoint": "WP 356",
+      "Arrivals": [
+        {
+          "X": 569,
+          "Y": 963,
+          "Z": 0,
+          "Waypoints": [
+            "WP 353"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Provisioner 3",
+      "X": 634,
+      "Y": 1038,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Yew",
+      "NearestWaypoint": "WP 341",
+      "Arrivals": [
+        {
+          "X": 629,
+          "Y": 1034,
+          "Z": 0,
+          "Waypoints": [
+            "WP 341"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Provisioner 4",
+      "X": 535,
+      "Y": 867,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Yew",
+      "NearestWaypoint": "WP 416",
+      "Arrivals": [
+        {
+          "X": 537,
+          "Y": 867,
+          "Z": 0,
+          "Waypoints": [
+            "WP 398"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 59",
+      "X": 660,
+      "Y": 820,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Yew",
+      "NearestWaypoint": "Rec 3.7",
+      "Polygon": [
+        [
+          647,
+          806
+        ],
+        [
+          674,
+          806
+        ],
+        [
+          673,
+          833
+        ],
+        [
+          648,
+          834
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 654,
+          "Y": 833,
+          "Z": 0,
+          "Waypoints": [
+            "Rec 2.7"
+          ]
+        },
+        {
+          "X": 673,
+          "Y": 818,
+          "Z": 0,
+          "Waypoints": [
+            "Rec 4.4"
+          ]
+        },
+        {
+          "X": 666,
+          "Y": 834,
+          "Z": 0,
+          "Waypoints": [
+            "Rec 3.4",
+            "Rec 2.7"
+          ]
+        },
+        {
+          "X": 671,
+          "Y": 832,
+          "Z": 0,
+          "Waypoints": [
+            "Rec 2.7",
+            "Rec 3.4"
+          ]
+        },
+        {
+          "X": 656,
+          "Y": 817,
+          "Z": 0,
+          "Waypoints": [
+            "Rec 3.7"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 60",
+      "X": 772,
+      "Y": 751,
+      "Z": 5,
+      "Type": "Moongate",
+      "City": "Yew",
+      "NearestWaypoint": "Rec 8.2",
+      "Polygon": [
+        [
+          765,
+          744
+        ],
+        [
+          779,
+          744
+        ],
+        [
+          779,
+          758
+        ],
+        [
+          766,
+          757
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 771,
+          "Y": 754,
+          "Z": 5,
+          "Waypoints": [
+            "Rec 8.2",
+            "WP 460"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 61",
+      "X": 644,
+      "Y": 2068,
+      "Z": 5,
+      "Type": "Moongate",
+      "City": "Skara Brae",
+      "NearestWaypoint": "WP 454",
+      "Polygon": [
+        [
+          641,
+          2065
+        ],
+        [
+          647,
+          2066
+        ],
+        [
+          647,
+          2071
+        ],
+        [
+          641,
+          2071
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 644,
+          "Y": 2066,
+          "Z": 5,
+          "Waypoints": [
+            "WP 454"
+          ]
+        }
+      ]
     }
   ]
 }

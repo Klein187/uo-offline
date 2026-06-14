@@ -1,0 +1,6 @@
+*.bak
+*.bak-*
+*.pre-felucca-patch
+tools/map/serve_map.log
+tools/map/uomap.png
+tools/map/mapdata.js

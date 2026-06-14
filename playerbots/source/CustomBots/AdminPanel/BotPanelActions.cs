@@ -58,6 +58,31 @@ namespace Server.CustomBots
                     new Point3D(from.X + boundsRadius, from.Y + boundsRadius, from.Z + 20)
                 );
 
+                // Remove any existing PlayerBotSpawner near this spot first.
+                // Without this, clicking the panel spawn button repeatedly
+                // STACKS spawners on the same tile — that's how a world
+                // ends up with dozens of overlapping spawners and a runaway
+                // bot population. Re-spawning here REPLACES rather than adds.
+                var overlapping = new System.Collections.Generic.List<PlayerBotSpawner>();
+                foreach (var item in World.Items.Values)
+                {
+                    if (item is PlayerBotSpawner existing && !existing.Deleted &&
+                        existing.Map == from.Map &&
+                        existing.GetDistanceToSqrt(from.Location) <= boundsRadius)
+                    {
+                        overlapping.Add(existing);
+                    }
+                }
+                foreach (var old in overlapping)
+                {
+                    try { old.Delete(); } catch { }
+                }
+                if (overlapping.Count > 0)
+                {
+                    BotPanelState.Log(from,
+                        $"Replaced {overlapping.Count} existing spawner(s) here.");
+                }
+
                 var spawner = new PlayerBotSpawner(
                     behaviorName: probe.SerializableName,
                     amount:       entry.Count,

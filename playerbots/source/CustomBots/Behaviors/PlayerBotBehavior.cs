@@ -32,6 +32,35 @@ namespace Server.CustomBots
 
         private DateTime _nextChatAllowed = DateTime.MinValue;
 
+        // ---- Destination visit expiry ----
+        //
+        // When a Traveler arrives somewhere and hands off to a destination
+        // behavior (e.g. becomes a BankSitter at a bank, an Adventurer at a
+        // graveyard), the new behavior is a TIMED VISIT — it should run for
+        // a while, then return the bot to traveling.
+        //
+        // VisitExpiresAt holds the time the visit ends. Null means "not a
+        // visit" — the behavior runs open-ended until the lifecycle manager
+        // moves the bot (the normal case for lifecycle-assigned behaviors).
+        //
+        // A destination-visit behavior should call CheckVisitExpired() at
+        // the top of its Tick. If it returns true, the behavior has already
+        // swapped the bot back to a Traveler and the caller must return
+        // immediately without touching any more state.
+        public DateTime? VisitExpiresAt { get; set; }
+
+        protected bool CheckVisitExpired(PlayerBot bot)
+        {
+            if (VisitExpiresAt == null) return false;
+            if (Core.Now < VisitExpiresAt.Value) return false;
+
+            // Visit's over. Return the bot to traveling — it'll roll a
+            // fresh destination and continue its journey. Swapping Behavior
+            // detaches THIS behavior, so the caller must return right away.
+            bot.Behavior = BehaviorRegistry.Create("Traveler");
+            return true;
+        }
+
         // ---- Lifecycle ----
 
         public virtual void Tick(PlayerBot bot) { }

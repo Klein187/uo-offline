@@ -122,6 +122,12 @@ namespace Server.CustomBots
                 Location = new Point3D(x, y, z),
             };
 
+            // Optional ArrivalRange override (e.g. 1 for tight door waypoints).
+            if (el.TryGetProperty("ArrivalRange", out var arEl) && arEl.TryGetInt32(out var ar))
+            {
+                node.ArrivalRange = ar;
+            }
+
             if (el.TryGetProperty("Connects", out var c) && c.ValueKind == JsonValueKind.Array)
             {
                 foreach (var cn in c.EnumerateArray())

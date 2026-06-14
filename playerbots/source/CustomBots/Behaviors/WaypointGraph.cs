@@ -21,6 +21,14 @@ namespace Server.CustomBots
         // Names of the nodes this one connects to. Bidirectional — when
         // the graph is loaded, edges are added in both directions.
         public List<string> Connects { get; set; } = new();
+
+        // Optional per-waypoint arrival tolerance. When a bot's PathFollower
+        // approaches this node, the bot is considered "arrived" when within
+        // ArrivalRange tiles. Default 3 (set by TravelerBehavior). Override
+        // to 1 for door/entrance waypoints at unusual Z where the bot must
+        // actually step onto the exact tile (e.g. Z=27 raised entrances).
+        // 0 means "use behavior default."
+        public int ArrivalRange { get; set; } = 0;
     }
 
     public class WaypointGraph

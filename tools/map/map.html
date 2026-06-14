@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>UO Bot World Map</title>
+<style>
+ body{margin:0;font-family:sans-serif;background:#111;color:#eee;overflow:hidden}
+ #c{display:block;cursor:grab}
+ #panel{position:fixed;top:10px;right:10px;width:270px;background:rgba(20,20,25,.92);
+   border:1px solid #444;border-radius:8px;padding:12px;font-size:13px}
+ #panel h3{margin:0 0 6px;font-size:14px;color:#ffd76e}
+ #info{min-height:90px;border-top:1px solid #333;margin-top:8px;padding-top:8px;white-space:pre-line}
+ label{display:block;margin:2px 0;cursor:pointer}
+ #search{width:100%;box-sizing:border-box;margin-top:6px;padding:4px;background:#222;
+   color:#eee;border:1px solid #444;border-radius:4px}
+ .hint{color:#888;font-size:11px;margin-top:6px}
+ button{background:#333;color:#eee;border:1px solid #555;border-radius:4px;margin-right:4px;cursor:pointer;padding:3px 8px}
+ #refresh{background:#2d5a2d}
+ #stamp{color:#7a7;font-size:11px;margin-top:4px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="panel">
+ <h3>UO Bot World</h3>
+ <label><input type="checkbox" id="lEdges" checked> Graph edges</label>
+ <label><input type="checkbox" id="lWps" checked> Waypoints</label>
+ <label><input type="checkbox" id="lDests" checked> Destinations</label>
+ <label><input type="checkbox" id="lLabels"> Labels (zoomed)</label>
+ <label><input type="checkbox" id="lZones" checked> Zones</label>
+ <label style="color:#ffb066"><input type="checkbox" id="editZones"> EDIT zones</label>
+ <div id="zoneCtl" style="display:none;margin:4px 0">
+  <select id="zKind"><option>Portal</option><option>Area</option><option>Waypoint</option><option>Arrival</option></select>
+  <select id="zType" style="display:none"><option>Bank</option><option>Tavern</option>
+   <option>Inn</option><option>Healer</option><option>Stables</option>
+   <option>VendorSmith</option><option>VendorWeaponer</option><option>VendorMage</option>
+   <option>VendorTailor</option><option>VendorCarpenter</option><option>VendorBowyer</option>
+   <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
+   <option>Dock</option><option>Library</option><option>Graveyard</option>
+   <option>Moongate</option><option>CityCenter</option><option>Dungeon</option></select>
+ </div>
+ <input id="search" placeholder="search & Enter (e.g. Trinsic Bank)">
+ <div style="margin-top:6px">
+  <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
+  <button onclick="goHome()">Britain</button>
+  <button id="refresh" onclick="loadData()">&#10227; Refresh</button>
+ </div>
+ <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
+   onclick="toggleActive()"></button>
+ <div id="stamp"></div>
+ <div id="info">Click a dot for details.</div>
+ <div class="hint">drag = pan &nbsp; wheel = zoom &nbsp; click = inspect<br>
+  Refresh re-reads the game's JSON files live.<br>
+  <b>EDIT mode:</b> click = add corner &middot; Enter = save zone &middot;
+  Esc = cancel &middot; click a zone + Delete = remove &middot;
+  <b>drag a dest dot = move it</b><br>
+  edges: <span style="color:#3cff5a">ok</span> &middot;
+  <span style="color:#ffc832">near 38t limit</span> &middot;
+  <span style="color:#ff5050">BROKEN (&gt;38t)</span></div>
+</div>
+<script>
+let DESTS=[], WPS=[], EDGES=[], ZONES=[], wpByName={};
+let drawPts=[], selZone=-1, dotDrag=null, wpDrag=null, wpSel=null, destSel=null, arrDrag=null, arrSel=null;
+const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085",
+ Stables:"#795548",VendorSmith:"#34495e",VendorWeaponer:"#788ca0",VendorMage:"#2980b9",
+ VendorTailor:"#d35400",VendorCarpenter:"#a0522d",VendorBowyer:"#27ae60",
+ VendorAlchemist:"#9b59b6",VendorProvisioner:"#95a5a6",Forge:"#e74c3c",Dock:"#3498db",
+ Library:"#f1c40f",Graveyard:"#7f8c8d",Moongate:"#00e5ff",CityCenter:"#fff",
+ Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600"};
+const cv=document.getElementById("c"),ctx=cv.getContext("2d");
+const img=new Image(); img.src="uomap.png";
+let scale=3, ox=1380, oy=1500;
+function loadData(){
+ fetch("mapdata.json?ts="+Date.now()).then(r=>{
+  if(!r.ok)throw new Error("HTTP "+r.status+" — run serve_map.py, not http.server");
+  return r.json();
+ }).then(d=>{
+  DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[];
+  wpByName={}; WPS.forEach(w=>wpByName[w.n]=w);
+  document.getElementById("stamp").textContent=
+   `loaded ${new Date().toLocaleTimeString()} — ${DESTS.length} dests, ${WPS.length} wps`;
+  draw();
+ }).catch(e=>{document.getElementById("info").textContent="Data load failed: "+e.message;});
+}
+function resize(){cv.width=innerWidth;cv.height=innerHeight;draw();}
+addEventListener("resize",resize);
+img.onload=resize;
+function T(x,y){return[(x-ox)*scale,(y-oy)*scale];}
+function draw(){
+ ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle="#000";ctx.fillRect(0,0,cv.width,cv.height);
+ if(img.complete&&img.naturalWidth)
+  ctx.drawImage(img,ox,oy,cv.width/scale,cv.height/scale,0,0,cv.width,cv.height);
+ if(lEdges.checked){
+  const LEG=38;ctx.lineWidth=Math.max(1,scale*.25);
+  for(const[a,b]of EDGES){const A=wpByName[a],B=wpByName[b];if(!A||!B)continue;
+   const d=Math.max(Math.abs(A.x-B.x),Math.abs(A.y-B.y));
+   const[x1,y1]=T(A.x,A.y),[x2,y2]=T(B.x,B.y);
+   ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+   if(d>LEG){            // BROKEN: beyond the A* leg limit — bots fail this
+    ctx.setLineDash([6,4]);ctx.strokeStyle="rgba(255,60,60,.95)";
+    ctx.lineWidth=Math.max(1.5,scale*.3);ctx.stroke();
+    ctx.setLineDash([]);ctx.lineWidth=Math.max(1,scale*.25);
+    if(scale>=2){ctx.fillStyle="#ff5050";ctx.font="bold 11px sans-serif";
+     ctx.fillText(d+"t!",(x1+x2)/2+3,(y1+y2)/2-3);}
+   }else if(d>LEG-6){    // RISKY: within 6 of the limit
+    ctx.strokeStyle="rgba(255,200,50,.9)";ctx.stroke();
+   }else{
+    ctx.strokeStyle="rgba(60,255,90,.85)";ctx.stroke();
+   }}}
+ if(lWps.checked)for(const w of WPS){const[x,y]=T(w.x,w.y);
+  if(x<-9||y<-9||x>cv.width+9||y>cv.height+9)continue;
+  const r=Math.max(2,scale*.6);
+  ctx.fillStyle=(wpSel&&wpSel.n===w.n)?"#ffe14d":"#00e5ff";
+  ctx.fillRect(x-r,y-r,2*r,2*r);
+  ctx.strokeStyle="#003a44";ctx.lineWidth=1;
+  ctx.strokeRect(x-r,y-r,2*r,2*r);
+  if(lLabels.checked&&scale>=6){ctx.fillStyle="#aef3ff";ctx.font="10px sans-serif";
+   ctx.fillText(w.n,x+r+2,y+3);}}
+ if(lZones.checked)for(let i=0;i<ZONES.length;i++){const z=ZONES[i];
+  if(!z.Points||z.Points.length<3)continue;
+  ctx.beginPath();
+  for(let j=0;j<z.Points.length;j++){const[x,y]=T(z.Points[j][0],z.Points[j][1]);
+   j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.closePath();
+  const isArea=(z.Kind||"Portal")==="Area";
+  ctx.fillStyle=i===selZone?(isArea?"rgba(80,170,255,.5)":"rgba(255,140,40,.55)")
+                           :(isArea?"rgba(80,170,255,.25)":"rgba(255,140,40,.30)");
+  ctx.fill();ctx.strokeStyle=isArea?"#50aaff":"#ff8c28";ctx.lineWidth=1.5;ctx.stroke();
+  if(scale>=4){const cx=z.Points.reduce((a,p)=>a+p[0],0)/z.Points.length,
+   cy=z.Points.reduce((a,p)=>a+p[1],0)/z.Points.length;const[lx,ly]=T(cx,cy);
+   ctx.fillStyle=(z.Kind==="Area")?"#bfe0ff":"#ffd0a0";ctx.font="10px sans-serif";
+   ctx.fillText(z.Name+(z.Type?" ["+z.Type+"]":""),lx+4,ly);}}
+ if(drawPts.length){ctx.beginPath();
+  for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
+   j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.strokeStyle="#ffe14d";ctx.lineWidth=2;ctx.stroke();
+  for(const p of drawPts){const[x,y]=T(p[0],p[1]);
+   ctx.fillStyle="#ffe14d";ctx.fillRect(x-2,y-2,4,4);}}
+ if(lDests.checked)for(const d of DESTS){
+  if(d.poly&&d.poly.length>=3){
+   ctx.beginPath();
+   for(let j=0;j<d.poly.length;j++){const[px,py]=T(d.poly[j][0],d.poly[j][1]);
+    j?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+   ctx.closePath();
+   const c=TYPE_COLORS[d.t]||"#888";
+   ctx.fillStyle=c+"44";ctx.fill();
+   ctx.strokeStyle=(destSel&&destSel.n===d.n)?"#ffe14d":c;
+   ctx.lineWidth=(destSel&&destSel.n===d.n)?2.5:1.5;ctx.stroke();}}
+ if(lDests.checked)for(const d of DESTS){
+  if(d.arrivals&&d.arrivals.length){const[dx,dy]=T(d.x,d.y);
+   for(let ai=0;ai<d.arrivals.length;ai++){const a=d.arrivals[ai];
+    if(a.x==null||a.y==null)continue;const[ax,ay]=T(a.x,a.y);
+    // tether: dest dot -> this arrival spot
+    ctx.strokeStyle="#ffd24d";ctx.lineWidth=1;ctx.beginPath();
+    ctx.moveTo(dx,dy);ctx.lineTo(ax,ay);ctx.stroke();
+    // dashed link lines: this spot -> each of its waypoints
+    if(a.wps)for(const wn of a.wps){const lw=wpByName[wn];if(!lw)continue;
+     const[wx,wy]=T(lw.x,lw.y);
+     ctx.strokeStyle="#ffcf33";ctx.lineWidth=2;ctx.setLineDash([6,4]);
+     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(wx,wy);ctx.stroke();
+     ctx.setLineDash([]);}
+    // the diamond (brighter if selected)
+    const sel=(arrSel&&arrSel.dest===d.n&&arrSel.index===ai);
+    const s2=Math.max(3,scale*(sel?1.0:0.7));ctx.fillStyle=sel?"#fff36b":"#ffd24d";
+    ctx.beginPath();ctx.moveTo(ax,ay-s2);ctx.lineTo(ax+s2,ay);
+    ctx.lineTo(ax,ay+s2);ctx.lineTo(ax-s2,ay);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=sel?"#000":"#7a5c00";ctx.lineWidth=sel?2:1;ctx.stroke();}}}
+ if(lDests.checked)for(const d of DESTS){const[x,y]=T(d.x,d.y);
+  if(x<-9||y<-9||x>cv.width+9||y>cv.height+9)continue;
+  const r=Math.max(3,scale*.9);
+  ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=TYPE_COLORS[d.t]||"#fff";ctx.fill();
+  ctx.lineWidth=(destSel&&destSel.n===d.n)?3:1.5;
+  ctx.strokeStyle=(destSel&&destSel.n===d.n)?"#ffe14d":(d.s==="generated"?"#888":"#fff");
+  ctx.stroke();
+  if(lLabels.checked&&scale>=6){ctx.fillStyle="#ffd";ctx.font="10px sans-serif";
+   ctx.fillText(d.n,x+r+2,y+3);}}
+}
+["lEdges","lWps","lDests","lLabels"].forEach(id=>document.getElementById(id).onchange=draw);
+let drag=null,moved=0;
+cv.onmousedown=e=>{
+ if(editZones.checked&&drawPts.length===0){
+  const tx=ox+e.clientX/scale,ty=oy+e.clientY/scale,tol=Math.max(2,8/scale);
+  const mode=document.getElementById("zKind").value;
+  if(mode==="Arrival"){
+   const near=findArrivalNear(tx,ty);
+   if(near){arrDrag={dest:near.dest,index:near.index,dObj:near.dObj,
+                     a:near.a,moved:false};cv.style.cursor="move";return;}
+  }
+  if(mode==="Waypoint"){
+   let best=null,bd=tol;
+   for(const w of WPS){const dd=Math.max(Math.abs(tx-w.x),Math.abs(ty-w.y));
+    if(dd<bd){bd=dd;best=w;}}
+   if(best){wpDrag={w:best,sx:best.x,sy:best.y,moved:false};cv.style.cursor="move";return;}
+  }else{
+   let best=null,bd=tol,bestGen=null,bgd=tol;
+   for(const d of DESTS){
+    const dd=Math.max(Math.abs(tx-d.x),Math.abs(ty-d.y));
+    if(d.s==="active"){if(dd<bd){bd=dd;best=d;}}
+    else{if(dd<bgd){bgd=dd;bestGen=d;}}}
+   if(best){dotDrag={d:best,sx:best.x,sy:best.y,moved:false};cv.style.cursor="move";return;}
+   if(bestGen){ // generated dot: select for activation (can't drag archive)
+    destSel=bestGen;wpSel=null;
+    document.getElementById("info").textContent=
+     `[generated] ${bestGen.n} (${bestGen.t}, ${bestGen.c})\nat (${bestGen.x},${bestGen.y},${bestGen.z})\n`+
+     `use the green button below to activate\nEsc = deselect`;
+    updateActBtn();draw();return;}
+  }
+ }
+ drag={x:e.clientX,y:e.clientY};moved=0;cv.style.cursor="grabbing";};
+addEventListener("mouseup",e=>{cv.style.cursor="grab";
+ if(arrDrag){
+  const ad=arrDrag;arrDrag=null;
+  if(ad.moved){
+   fetch("/dest_arrival_move",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:ad.dest,index:ad.index,x:ad.a.x,y:ad.a.y})})
+   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+    r.ok?`arrival #${r.index} of '${r.name}' moved -> (${r.x},${r.y})\nRun [ReloadDestinations.`
+        :"failed: "+r.error;loadData();});
+  }else{
+   // click (no move) = select this spot; next waypoint click toggles a link
+   arrSel={dest:ad.dest,index:ad.index};
+   document.getElementById("info").textContent=
+    `[arrival] ${ad.dest} #${ad.index} selected\n`+
+    `click a waypoint = link/unlink it &middot; Delete = remove spot &middot; Esc`;
+   draw();
+  }
+  return;}
+ if(wpDrag){
+  const wd=wpDrag;wpDrag=null;
+  if(!wd.moved){ // a CLICK on a waypoint: select, or link/sever with prior selection
+   wd.w.x=wd.sx;wd.w.y=wd.sy;
+   if(wpSel&&wpSel!==wd.w){
+    fetch("/wp_edge",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({a:wpSel.n,b:wd.w.n})})
+    .then(r=>r.json()).then(r=>{
+     document.getElementById("info").textContent=r.ok
+      ?`${r.action}: ${r.a} <-> ${r.b}\nRun [ReloadWaypoints.`:"edge failed: "+r.error;
+     wpSel=null;loadData();});
+   }else{
+    wpSel=wd.w;
+    document.getElementById("info").textContent=
+     `[wp] ${wd.w.n} selected\nclick another wp = link/sever\nDelete = remove\nEsc = deselect`;
+    draw();
+   }
+   return;}
+  fetch("/wp_move",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:wd.w.n,x:wd.w.x,y:wd.w.y})})
+  .then(r=>r.json()).then(r=>{
+   document.getElementById("info").textContent=r.ok
+    ?`moved '${r.name}' -> (${r.x},${r.y}) z=${r.z} (snapped to road)\nRun [ReloadWaypoints.`
+    :"move failed: "+r.error;
+   loadData();});
+  return;}
+ if(dotDrag){
+  const dd=dotDrag;dotDrag=null;
+  if(!dd.moved){ // CLICK on a dest in edit mode: select for deletion
+   dd.d.x=dd.sx;dd.d.y=dd.sy;
+   destSel=dd.d;wpSel=null;
+   document.getElementById("info").textContent=
+    `[dest] ${dd.d.n} (${dd.d.t}, ${dd.d.c})\nat (${dd.d.x},${dd.d.y},${dd.d.z})\n`+
+    `Delete = remove &middot; button below = disable\nEsc = deselect`;
+   updateActBtn();draw();return;}
+  const d=dd.d;
+  fetch("/dest_move",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:d.n,x:d.x,y:d.y})})
+  .then(r=>r.json()).then(r=>{
+   document.getElementById("info").textContent=r.ok
+    ?`moved '${r.name}' ${r.from} -> ${r.to}\n(Z stays ${r.z} — re-[MarkSpot if floor changed)\nRun [ReloadDestinations.`
+    :"move failed: "+r.error;
+   loadData();})
+  .catch(er=>{document.getElementById("info").textContent="move failed: "+er;});
+  return;}
+ if(drag&&moved<5){
+  if(editZones.checked)editClick(e.clientX,e.clientY);
+  else inspect(e.clientX,e.clientY);
+ }
+ drag=null;});
+addEventListener("mousemove",e=>{
+ if(arrDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  if(nx!==arrDrag.a.x||ny!==arrDrag.a.y)arrDrag.moved=true;
+  arrDrag.a.x=nx;arrDrag.a.y=ny;draw();return;}
+ if(wpDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  if(nx!==wpDrag.w.x||ny!==wpDrag.w.y)wpDrag.moved=true;
+  wpDrag.w.x=nx;wpDrag.w.y=ny;draw();return;}
+ if(dotDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  if(nx!==dotDrag.d.x||ny!==dotDrag.d.y)dotDrag.moved=true;
+  dotDrag.d.x=nx;dotDrag.d.y=ny;draw();return;}
+ if(!drag)return;
+ const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);
+ ox-=dx/scale;oy-=dy/scale;drag={x:e.clientX,y:e.clientY};draw();});
+cv.addEventListener("wheel",e=>{e.preventDefault();
+ const f=e.deltaY<0?1.25:0.8,tx=ox+e.clientX/scale,ty=oy+e.clientY/scale;
+ scale=Math.min(24,Math.max(0.15,scale*f));
+ ox=tx-e.clientX/scale;oy=ty-e.clientY/scale;draw();},{passive:false});
+function zoomBy(f){const tx=ox+cv.width/2/scale,ty=oy+cv.height/2/scale;
+ scale=Math.min(24,Math.max(0.15,scale*f));
+ ox=tx-cv.width/2/scale;oy=ty-cv.height/2/scale;draw();}
+function goHome(){scale=3;ox=1380;oy=1500;draw();}
+function dist(ax,ay,bx,by){return Math.max(Math.abs(ax-bx),Math.abs(ay-by));}
+function inspect(px,py){
+ const tx=ox+px/scale,ty=oy+py/scale;const tol=Math.max(2,8/scale);
+ let best=null,bd=tol;
+ for(const d of DESTS){const dd=dist(tx,ty,d.x,d.y);if(dd<bd){bd=dd;best={k:"D",o:d};}}
+ if(!best)for(const d of DESTS){if(d.poly&&d.poly.length>=3&&
+  pointInZone(tx,ty,{Points:d.poly})){best={k:"D",o:d};break;}}
+ for(const w of WPS){const dd=dist(tx,ty,w.x,w.y);if(dd<bd){bd=dd;best={k:"W",o:w};}}
+ const el=document.getElementById("info");
+ if(!best){el.textContent=`(${Math.round(tx)}, ${Math.round(ty)})  — nothing here`;return;}
+ if(best.k==="D"){const d=best.o;
+  let nw=null,nd=1e9;for(const w of WPS){const x=dist(d.x,d.y,w.x,w.y);if(x<nd){nd=x;nw=w;}}
+  el.textContent=`\u2605 ${d.n}\nType: ${d.t}   City: ${d.c}\nAt: (${d.x}, ${d.y}, ${d.z})\n`+
+   `Stored waypoint: ${d.w||"\u2014"}\nNearest waypoint: ${nw?nw.n:"\u2014"} (${nd} tiles)`+
+   (nd>40?"\n\u26a0 GAP: >40 tiles — needs [recordway/[MarkWay":"")+
+   (d.s==="generated"?"\n(generated — turn on EDIT, click it, press A to activate)":"");
+ }else{const w=best.o;
+  el.textContent=`\u25a0 ${w.n}\nAt: (${w.x}, ${w.y})\nArrivalRange: ${w.ar||"default"}\n`+
+   `Connects (${w.co.length}): ${w.co.join(", ")}`;}
+}
+document.getElementById("search").addEventListener("keydown",e=>{
+ if(e.key!=="Enter")return;const q=e.target.value.toLowerCase();
+ const hit=DESTS.find(d=>d.n.toLowerCase().includes(q))||WPS.find(w=>w.n.toLowerCase().includes(q));
+ if(hit){ox=hit.x-cv.width/2/Math.max(scale,4);oy=hit.y-cv.height/2/Math.max(scale,4);
+  scale=Math.max(scale,4);draw();
+  inspect((hit.x-ox)*scale,(hit.y-oy)*scale);}});
+function updateActBtn(){
+ const b=document.getElementById("actBtn");
+ if(destSel){
+  b.style.display="block";
+  if(destSel.s==="active"){b.textContent="\u2014 Disable (archive) "+destSel.n;
+   b.style.background="#5a2d2d";}
+  else{b.textContent="\u2713 Enable (activate) "+destSel.n;
+   b.style.background="#2d5a2d";}
+ }else{b.style.display="none";}
+}
+function toggleActive(){
+ if(!destSel)return;
+ const active=destSel.s==="active",name=destSel.n;
+ const url=active?"/dest_deactivate":"/dest_activate";
+ if(active&&!confirm(`Disable '${name}' (move to archive)?`))return;
+ fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name:name})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?`${active?"disabled":"enabled"} '${name}' (${r.active} active)\nRun [ReloadDestinations.`
+   :"failed: "+r.error;
+  destSel=null;document.getElementById("actBtn").style.display="none";loadData();});
+}
+function findArrivalNear(tx,ty){
+ const tol=Math.max(3,12/scale);let best=null,bd=tol;
+ for(const d of DESTS){if(!d.arrivals)continue;
+  for(let ai=0;ai<d.arrivals.length;ai++){const a=d.arrivals[ai];if(a.x==null)continue;
+   const dd=Math.max(Math.abs(tx-a.x),Math.abs(ty-a.y));
+   if(dd<bd){bd=dd;best={dest:d.n,index:ai,a:a,dObj:d};}}}
+ return best;
+}
+function pointInZone(tx,ty,z){let inside=false;const P=z.Points;
+ for(let i=0,j=P.length-1;i<P.length;j=i++){
+  if(((P[i][1]>ty)!==(P[j][1]>ty))&&
+     (tx<(P[j][0]-P[i][0])*(ty-P[i][1])/(P[j][1]-P[i][1])+P[i][0]))inside=!inside;}
+ return inside;}
+function editClick(px,py){
+ const tx=Math.round(ox+px/scale),ty=Math.round(oy+py/scale);
+ if(document.getElementById("zKind").value==="Arrival"){
+  // A spot already selected? A click on a waypoint toggles its link.
+  if(arrSel){
+   let nw=null,nbd=Math.max(3,12/scale);
+   for(const w of WPS){const dd=Math.max(Math.abs(tx-w.x),Math.abs(ty-w.y));
+    if(dd<nbd){nbd=dd;nw=w;}}
+   if(nw){
+    fetch("/dest_arrival_wp",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({name:arrSel.dest,index:arrSel.index,wp:nw.n})})
+    .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+     r.ok?`${r.action}: ${r.wp} (spot now: ${r.waypoints.join(", ")||"none"})\nRun [ReloadDestinations.`
+         :"failed: "+r.error;loadData();});
+    return;}
+   // clicked empty ground with a spot selected = deselect (fall through to add)
+   arrSel=null;
+  }
+  // Clicked an existing spot? select it.
+  const near=findArrivalNear(tx,ty);
+  if(near){arrSel={dest:near.dest,index:near.index};
+   document.getElementById("info").textContent=
+    `[arrival] ${near.dest} #${near.index} selected\n`+
+    `click a waypoint = link/unlink &middot; Delete = remove &middot; Esc`;
+   draw();return;}
+  // Else: need a destination chosen to ADD a new spot to. Click a dot first.
+  if(!destSel){
+   let bestd=null,bd=Math.max(2,8/scale);
+   for(const d of DESTS){if(d.s!=="active")continue;
+    const dd=Math.max(Math.abs(tx-d.x),Math.abs(ty-d.y));if(dd<bd){bd=dd;bestd=d;}}
+   if(bestd){destSel=bestd;
+    document.getElementById("info").textContent=
+     `[arrival] ${bestd.n}\nclick a reachable tile = ADD an arrival spot\n`+
+     `(click an existing gold diamond to select/link it)`;draw();}
+   return;}
+  // Dest selected + clicked open ground = add a new arrival spot there.
+  fetch("/dest_arrival_add",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:destSel.n,x:tx,y:ty})})
+  .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+   r.ok?`added arrival #${r.index} to '${r.name}' (${r.x},${r.y})\n`+
+        `click it then a waypoint to link a route &middot; Run [ReloadDestinations.`
+       :"failed: "+r.error;
+   destSel=null;loadData();});
+  return;}
+  if(document.getElementById("zKind").value==="Waypoint"){
+  if(wpSel){wpSel=null;draw();return;}  // empty click clears selection first
+  const used=new Set(WPS.map(w=>w.n.toLowerCase()));
+  let wpn=1; while(used.has(("wp "+wpn)))wpn++;
+  const name=prompt("New waypoint name:","WP "+wpn);
+  if(!name)return;
+  fetch("/wp_add",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:name,x:tx,y:ty})})
+  .then(r=>r.json()).then(r=>{
+   document.getElementById("info").textContent=r.ok
+    ?`added '${r.name}' (${r.x},${r.y}) z=${r.z}${r.snapped?" [snapped]":""}\n`+
+     `auto-connected (road-flood): ${r.connects.join(", ")||"NONE — isolated!"}\nRun [ReloadWaypoints.`
+    :"add failed: "+r.error;
+   loadData();});
+  return;}
+ // select an existing portal if clicked inside one (and not mid-sketch)
+ if(drawPts.length===0){
+  for(let i=0;i<ZONES.length;i++)
+   if(ZONES[i].Points&&pointInZone(tx,ty,ZONES[i])){
+    selZone=i;
+    document.getElementById("info").textContent=
+     `[zone] ${ZONES[i].Name} (${ZONES[i].Kind}`+
+     (ZONES[i].Type?` / ${ZONES[i].Type}`:"")+`)\n`+
+     (ZONES[i].LinkedDest?`linked: ${ZONES[i].LinkedDest}\n`:"")+
+     `${ZONES[i].Points.length} corners — press Delete to remove`;
+    draw();return;}
+ }
+ selZone=-1;
+ drawPts.push([tx,ty]);
+ document.getElementById("info").textContent=
+  `sketching portal: ${drawPts.length} corner(s)\nEnter = save, Esc = cancel`;
+ draw();}
+function saveZones(){
+ fetch("/zones",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({zones:ZONES})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?`saved ${r.count} zone(s) to zones.json\nRun [ReloadZones in game.`
+   :"save failed: "+r.error;
+  loadData();})
+ .catch(e=>{document.getElementById("info").textContent="save failed: "+e;});}
+addEventListener("keydown",e=>{
+ if(!editZones.checked)return;
+ if(e.key==="Enter"&&drawPts.length>=3){
+  const kind=document.getElementById("zKind").value;
+  if(kind==="Area"){
+   const type=document.getElementById("zType").value;
+   // the shape IS the destination: absorb the dot inside it, or create new
+   const sketch={Points:drawPts};
+   const inDot=DESTS.find(d=>d.s==="active"&&pointInZone(d.x,d.y,sketch));
+   let name=null;
+   if(!inDot){
+    name=prompt("New destination name:",type+" "+(DESTS.filter(d=>d.s==="active").length+1));
+    if(!name)return;
+   }else if(!confirm(`Shape contains '${inDot.n}' — make this its outline?`)){return;}
+   fetch("/zone_dest",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({points:drawPts,type:type,name:name})})
+   .then(r=>r.json()).then(r=>{
+    document.getElementById("info").textContent=r.ok
+     ?(r.mode==="absorbed"
+       ?`outline absorbed into '${r.name}' (${r.type})\nRun [ReloadDestinations + [ReloadZones.`
+       :`created destination '${r.name}' (${r.x},${r.y}) z=${r.z} ${r.city}\n`+
+        `nearest wp: ${r.nearest_wp} (${r.wp_dist}t)${r.gap?" — GAP! add a waypoint":""}\n`+
+        `Run [ReloadDestinations + [ReloadZones; fields rebuild next boot.`)
+     :"failed: "+r.error;
+    drawPts=[];loadData();});
+  }else{
+   const name=prompt("Portal name:","Portal "+(ZONES.length+1));
+   if(name){ZONES.push({Name:name,Kind:"Portal",Points:drawPts.slice()});
+    drawPts=[];saveZones();}
+  }
+ }else if((e.key==="Delete"||e.key==="Backspace")&&arrSel&&document.getElementById("zKind").value==="Arrival"){
+  fetch("/dest_arrival_del",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:arrSel.dest,index:arrSel.index})})
+  .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+   r.ok?`removed arrival spot (#${arrSel.index}) — ${r.remaining} left\nRun [ReloadDestinations.`
+       :"failed: "+r.error;arrSel=null;loadData();});
+ }else if(e.key==="Escape"){drawPts=[];selZone=-1;wpSel=null;destSel=null;arrSel=null;
+  document.getElementById("actBtn").style.display="none";draw();
+ }else if(e.key==="Delete"&&destSel&&destSel.s==="active"){
+  if(confirm(`Delete destination '${destSel.n}' from the active catalog?`)){
+   fetch("/dest_del",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:destSel.n})})
+   .then(r=>r.json()).then(r=>{
+    document.getElementById("info").textContent=r.ok
+     ?`deleted '${r.name}' (${r.remaining} remain)\nRun [ReloadDestinations.`
+     :"delete failed: "+r.error;
+    destSel=null;loadData();});}
+ }else if(e.key==="Delete"&&wpSel){
+  if(confirm(`Delete waypoint '${wpSel.n}'?`)){
+   fetch("/wp_del",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:wpSel.n})})
+   .then(r=>r.json()).then(r=>{
+    document.getElementById("info").textContent=r.ok
+     ?`deleted '${r.name}'\nRun [ReloadWaypoints.`:"delete failed: "+r.error;
+    wpSel=null;loadData();});}
+ }else if(e.key==="Delete"&&selZone>=0){
+  if(confirm(`Delete zone '${ZONES[selZone].Name}'?`)){
+   ZONES.splice(selZone,1);selZone=-1;saveZones();}}});
+document.getElementById("editZones").onchange=function(){
+ drawPts=[];selZone=-1;
+ document.getElementById("zoneCtl").style.display=this.checked?"block":"none";
+ draw();};
+document.getElementById("zKind").onchange=function(){
+ document.getElementById("zType").style.display=this.value==="Area"?"inline":"none";};
+document.getElementById("lZones").onchange=draw;
+goHome();
+loadData();
+</script></body></html>

@@ -1,71 +1,5695 @@
 {
-  "_comment": "Waypoint graph for bot navigation. Each node connects to nearby nodes (≤38 tiles for PathFollower's A* to handle). Edges are made bidirectional automatically. After editing, run [ReloadWaypoints in-game. Coords were captured via [where in-game; Z values are critical — don't change them unless you re-verify the location.",
-
+  "_comment": "Waypoint graph for bot navigation. Each node connects to nearby nodes (\u226438 tiles for PathFollower's A* to handle, with 32-tile soft limit for safety). Edges are made bidirectional automatically. After editing, run [ReloadWaypoints in-game. Coords were captured via [where in-game; Z values are critical \u2014 don't change them unless you re-verify the location.",
   "Waypoints": [
     {
       "Name": "Britain Bank",
-      "X": 1434, "Y": 1697, "Z": 0,
-      "Connects": ["Britain South Road A", "East Britain Bank Road"]
+      "X": 1434,
+      "Y": 1697,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank SE Intersection"
+      ],
+      "ArrivalRange": 6
+    },
+    {
+      "Name": "Britain Bank SE Intersection",
+      "X": 1444,
+      "Y": 1704,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank",
+        "East Britain Bank Road"
+      ]
     },
     {
       "Name": "East Britain Bank Road",
-      "_note": "Road east of Britain Bank — captured by user",
-      "X": 1452, "Y": 1697, "Z": 0,
-      "Connects": ["Britain Bank", "Britain Tailor Entrance"]
+      "X": 1452,
+      "Y": 1697,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank SE Intersection",
+        "Britain Tailor Entrance"
+      ]
     },
     {
       "Name": "Britain Tailor Entrance",
-      "_note": "Entrance to Britain tailor — captured by user",
-      "X": 1471, "Y": 1697, "Z": 0,
-      "Connects": ["East Britain Bank Road", "East Britain Road A"]
-    },
-    {
-      "Name": "East Britain Road A",
-      "_note": "East road from tailor toward Blue Boar — captured by user",
-      "X": 1479, "Y": 1699, "Z": 0,
-      "Connects": ["Britain Tailor Entrance", "Blue Boar Tavern"]
+      "X": 1471,
+      "Y": 1699,
+      "Z": 0,
+      "Connects": [
+        "East Britain Bank Road",
+        "Britain Tailor SE Corner"
+      ]
     },
     {
       "Name": "Blue Boar Tavern",
-      "_note": "Tavern east of Britain — captured by user",
-      "X": 1503, "Y": 1687, "Z": 20,
-      "Connects": ["East Britain Road A"]
+      "X": 1504,
+      "Y": 1688,
+      "Z": 20,
+      "Connects": []
+    },
+    {
+      "Name": "Britain Gem Shop",
+      "_note": "Gem shop, captured by user",
+      "X": 1461,
+      "Y": 1682,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank Provisioner Entrance"
+      ]
+    },
+    {
+      "Name": "Britain Bank Provisioner Entrance",
+      "X": 1480,
+      "Y": 1681,
+      "Z": 0,
+      "Connects": [
+        "Britain Gem Shop"
+      ]
+    },
+    {
+      "Name": "Britain Between Inn And Alchemist",
+      "X": 1497,
+      "Y": 1671,
+      "Z": 10,
+      "Connects": []
+    },
+    {
+      "Name": "Sewer Entrance",
+      "_note": "Sewer entrance \u2014 likely teleports to Britain Sewers",
+      "X": 1514,
+      "Y": 1650,
+      "Z": 20,
+      "Connects": []
+    },
+    {
+      "Name": "Britain Tailor Back Alley",
+      "_note": "Alley behind the inn near tailor",
+      "X": 1481,
+      "Y": 1689,
+      "Z": 0,
+      "Connects": [
+        "Britain Tailor SE Corner",
+        "Britain Bank Provisioner Entrance"
+      ]
+    },
+    {
+      "Name": "Britain Tailor SE Corner",
+      "_note": "SE corner of tailor building",
+      "X": 1479,
+      "Y": 1697,
+      "Z": 0,
+      "Connects": [
+        "Britain Tailor Entrance",
+        "Britain Tailor Back Alley"
+      ]
+    },
+    {
+      "Name": "Britain Provisioner SE Alley",
+      "_note": "SE alley near provisioner, Z=10 raised path",
+      "X": 1489,
+      "Y": 1679,
+      "Z": 10,
+      "Connects": [
+        "Britain Between Inn And Alchemist",
+        "Britain Bank Provisioner Entrance",
+        "Britain East Provisioner Alley"
+      ]
+    },
+    {
+      "Name": "Britain East Provisioner Alley",
+      "_note": "East alley near provisioner, Z=10 raised path",
+      "X": 1491,
+      "Y": 1671,
+      "Z": 10,
+      "Connects": [
+        "Britain Between Inn And Alchemist",
+        "Britain Provisioner SE Alley"
+      ]
+    },
+    {
+      "Name": "Britain Alchemist South Approach",
+      "_note": "South approach to alchemist shop",
+      "X": 1506,
+      "Y": 1671,
+      "Z": 20,
+      "Connects": [
+        "Britain Between Inn And Alchemist",
+        "Blue Boar Tavern",
+        "Rec 1.2"
+      ]
+    },
+    {
+      "Name": "Britain Alchemist East",
+      "_note": "East side of alchemist shop",
+      "X": 1514,
+      "Y": 1663,
+      "Z": 20,
+      "Connects": [
+        "Sewer Entrance",
+        "Britain Alchemist South Approach"
+      ]
+    },
+    {
+      "Name": "Britain Inn East Road",
+      "_note": "East road south of inn, Z=10. Connections kept local to force routing through the relay chain in the inn corridor rather than long-distance shortcuts that fail A* pathfinding through narrow streets.",
+      "X": 1513,
+      "Y": 1629,
+      "Z": 10,
+      "Connects": []
+    },
+    {
+      "Name": "Britain Inn South Stairs",
+      "_note": "Stairs south of inn approach, Z=10",
+      "X": 1496,
+      "Y": 1631,
+      "Z": 10,
+      "Connects": [
+        "Central Britain Road",
+        "Britain Inn East Road"
+      ]
+    },
+    {
+      "Name": "Central Britain Road",
+      "X": 1483,
+      "Y": 1625,
+      "Z": 20,
+      "Connects": [
+        "Britain West Healer",
+        "Virtue Path 1"
+      ]
+    },
+    {
+      "Name": "Britain West Healer",
+      "X": 1486,
+      "Y": 1612,
+      "Z": 20,
+      "Connects": [
+        "Central Britain Road",
+        "Central Britain Road 2"
+      ]
+    },
+    {
+      "Name": "Central Britain Road 2",
+      "X": 1489,
+      "Y": 1603,
+      "Z": 16,
+      "Connects": [
+        "Britain West Healer"
+      ]
+    },
+    {
+      "Name": "Alley To Baker",
+      "X": 1464,
+      "Y": 1604,
+      "Z": 20,
+      "Connects": [
+        "Baker Entrance",
+        "Rec 1.1",
+        "Central Britain Road 2"
+      ]
+    },
+    {
+      "Name": "Baker Entrance",
+      "X": 1465,
+      "Y": 1612,
+      "Z": 20,
+      "Connects": [
+        "Alley To Baker",
+        "Virtue Path 1"
+      ]
+    },
+    {
+      "Name": "Alley To Bower",
+      "X": 1464,
+      "Y": 1588,
+      "Z": 20,
+      "Connects": [
+        "Britain West Bowyer"
+      ]
+    },
+    {
+      "Name": "Britain West Bowyer",
+      "X": 1475,
+      "Y": 1588,
+      "Z": 20,
+      "Connects": [
+        "Alley To Bower"
+      ]
+    },
+    {
+      "Name": "Virtue Path 1",
+      "X": 1463,
+      "Y": 1626,
+      "Z": 20,
+      "Connects": [
+        "Baker Entrance",
+        "Virtue Path 2",
+        "Central Britain Road"
+      ]
+    },
+    {
+      "Name": "Virtue Path 2",
+      "X": 1444,
+      "Y": 1626,
+      "Z": 20,
+      "Connects": [
+        "Virtue Path 1",
+        "Virtue Path 3"
+      ]
+    },
+    {
+      "Name": "Virtue Path 3",
+      "X": 1433,
+      "Y": 1626,
+      "Z": 20,
+      "Connects": [
+        "Virtue Path 2",
+        "Road To Britain Castle"
+      ]
+    },
+    {
+      "Name": "Virtue Path 4",
+      "X": 1420,
+      "Y": 1638,
+      "Z": 20,
+      "Connects": [
+        "Road To Britain Bank North",
+        "Road To Britain Castle"
+      ]
+    },
+    {
+      "Name": "Road To Britain Bank North",
+      "X": 1417,
+      "Y": 1656,
+      "Z": 10,
+      "Connects": [
+        "Virtue Path 4",
+        "Road To Britain Bank NW"
+      ]
+    },
+    {
+      "Name": "Road To Britain Bank NW",
+      "X": 1419,
+      "Y": 1671,
+      "Z": 10,
+      "Connects": [
+        "Road To Britain Bank North"
+      ]
+    },
+    {
+      "Name": "Britain Bank North",
+      "X": 1436,
+      "Y": 1678,
+      "Z": 10,
+      "Connects": []
+    },
+    {
+      "Name": "Road To Britain Castle",
+      "_note": "South end of the north corridor leading up past the forge to the graveyard. Entry from Virtue Path 3.",
+      "X": 1422,
+      "Y": 1626,
+      "Z": 20,
+      "Connects": [
+        "Virtue Path 3",
+        "Road To Britain Forge"
+      ]
+    },
+    {
+      "Name": "Road To Britain Forge",
+      "X": 1425,
+      "Y": 1609,
+      "Z": 20,
+      "Connects": [
+        "Road To Britain Castle",
+        "Britain Forge 1",
+        "Rec 3.1"
+      ]
+    },
+    {
+      "Name": "Britain Forge 1",
+      "X": 1425,
+      "Y": 1595,
+      "Z": 20,
+      "Connects": [
+        "Road To Britain Forge",
+        "Britain Forge 2"
+      ]
+    },
+    {
+      "Name": "Britain Forge 2",
+      "X": 1435,
+      "Y": 1584,
+      "Z": 21,
+      "Connects": [
+        "Britain Forge 1",
+        "Britain Forge 3"
+      ]
+    },
+    {
+      "Name": "Britain Forge 3",
+      "_note": "Z=30 \u2014 raised forge area",
+      "X": 1434,
+      "Y": 1573,
+      "Z": 30,
+      "Connects": [
+        "Britain Forge 2",
+        "Britain Forge 6",
+        "Rec 3"
+      ]
+    },
+    {
+      "Name": "Britain Forge 6",
+      "X": 1429,
+      "Y": 1570,
+      "Z": 30,
+      "Connects": [
+        "Britain Forge 3",
+        "Britain Forge 5"
+      ]
+    },
+    {
+      "Name": "Britain Forge 5",
+      "X": 1429,
+      "Y": 1562,
+      "Z": 30,
+      "Connects": [
+        "Britain Forge 6",
+        "Britain Forge 7"
+      ]
+    },
+    {
+      "Name": "Britain Forge 7",
+      "X": 1432,
+      "Y": 1543,
+      "Z": 30,
+      "Connects": [
+        "Britain Forge 5",
+        "Road To Graveyard 1"
+      ]
+    },
+    {
+      "Name": "Road To Graveyard 1",
+      "_note": "Z=35 \u2014 raised path north of the forge toward the graveyard",
+      "X": 1431,
+      "Y": 1531,
+      "Z": 35,
+      "Connects": [
+        "Britain Forge 7",
+        "Road To Graveyard 2"
+      ]
+    },
+    {
+      "Name": "Road To Graveyard 2",
+      "X": 1418,
+      "Y": 1522,
+      "Z": 19,
+      "Connects": [
+        "Road To Graveyard 1",
+        "Road To Graveyard 3"
+      ]
+    },
+    {
+      "Name": "Road To Graveyard 3",
+      "X": 1400,
+      "Y": 1515,
+      "Z": 9,
+      "Connects": [
+        "Road To Graveyard 2",
+        "Road To Graveyard 4"
+      ]
+    },
+    {
+      "Name": "Road To Graveyard 4",
+      "X": 1391,
+      "Y": 1508,
+      "Z": 10,
+      "Connects": [
+        "Road To Graveyard 3",
+        "Britain Graveyard Entrance"
+      ]
+    },
+    {
+      "Name": "Britain Graveyard Entrance",
+      "X": 1384,
+      "Y": 1495,
+      "Z": 10,
+      "Connects": [
+        "Road To Graveyard 4"
+      ]
     },
     {
       "Name": "Britain South Road A",
-      "_note": "South road to Britain — captured by user",
-      "X": 1410, "Y": 1734, "Z": 12,
-      "Connects": ["Britain Bank", "Britain West Bridge"]
+      "_note": "Disconnected from Britain Bank until a relay waypoint is walked between them (need ~halfway, around 1422,1715).",
+      "X": 1410,
+      "Y": 1734,
+      "Z": 12,
+      "Connects": [
+        "Britain West Bridge"
+      ]
     },
     {
       "Name": "Britain West Bridge",
-      "_note": "West Britain bridge — captured by user",
-      "X": 1396, "Y": 1748, "Z": 1,
-      "Connects": ["Britain South Road A", "Britain West Entrance"]
+      "X": 1396,
+      "Y": 1748,
+      "Z": 1,
+      "Connects": [
+        "Britain South Road A",
+        "Britain West Entrance"
+      ],
+      "ArrivalRange": 5
     },
     {
       "Name": "Britain West Entrance",
-      "_note": "West Britain entrance — captured by user",
-      "X": 1367, "Y": 1756, "Z": 10,
-      "Connects": ["Britain West Bridge", "Britain South Road B"]
+      "X": 1367,
+      "Y": 1756,
+      "Z": 10,
+      "Connects": [
+        "Britain West Bridge",
+        "Britain South Road B",
+        "WP 228"
+      ]
     },
     {
       "Name": "Britain South Road B",
-      "_note": "Road to Trinsic, point 1 — captured by user",
-      "X": 1365, "Y": 1780, "Z": 15,
-      "Connects": ["Britain West Entrance", "Britain South Road C"]
+      "X": 1365,
+      "Y": 1780,
+      "Z": 15,
+      "Connects": [
+        "Britain West Entrance",
+        "Britain South Road C"
+      ]
     },
     {
       "Name": "Britain South Road C",
-      "_note": "Road to Trinsic, point 2 — captured by user",
-      "X": 1374, "Y": 1802, "Z": 0,
-      "Connects": ["Britain South Road B", "Britain South Road D"]
+      "_note": "Disconnected from South Road D until a relay waypoint is walked between them.",
+      "X": 1374,
+      "Y": 1802,
+      "Z": 0,
+      "Connects": [
+        "Britain South Road B"
+      ]
     },
     {
       "Name": "Britain South Road D",
-      "_note": "Road to Trinsic, point 3 — captured by user",
-      "X": 1358, "Y": 1838, "Z": 0,
-      "Connects": ["Britain South Road C"]
+      "_note": "Currently orphaned. Connect via a future relay waypoint between South Road C and this node.",
+      "X": 1358,
+      "Y": 1838,
+      "Z": 0,
+      "Connects": [
+        "WP 44"
+      ]
+    },
+    {
+      "Name": "brit bank ne",
+      "X": 1445,
+      "Y": 1678,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank North",
+        "Britain Bank SE Intersection"
+      ]
+    },
+    {
+      "Name": "britbank sw",
+      "X": 1419,
+      "Y": 1697,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank",
+        "Britain Bank SE Intersection",
+        "Road To Britain Bank NW"
+      ]
+    },
+    {
+      "Name": "brit west rd 1",
+      "X": 1419,
+      "Y": 1727,
+      "Z": 20,
+      "Connects": [
+        "Britain South Road A",
+        "britbank sw",
+        "Britain West Bridge"
+      ]
+    },
+    {
+      "Name": "brit rd to tvrn",
+      "X": 1425,
+      "Y": 1740,
+      "Z": 20,
+      "Connects": [
+        "brit west rd 1",
+        "Britain South Road A"
+      ]
+    },
+    {
+      "Name": "britprov7",
+      "X": 1428,
+      "Y": 1748,
+      "Z": 15,
+      "Connects": [
+        "brit rd to tvrn"
+      ]
+    },
+    {
+      "Name": "britdock 1",
+      "X": 1435,
+      "Y": 1752,
+      "Z": 14,
+      "Connects": [
+        "britprov7",
+        "brit rd to tvrn"
+      ]
+    },
+    {
+      "Name": "britdock 2",
+      "X": 1438,
+      "Y": 1760,
+      "Z": -3,
+      "Connects": []
+    },
+    {
+      "Name": "britdock3",
+      "X": 1435,
+      "Y": 1757,
+      "Z": -3,
+      "Connects": [
+        "britdock 1",
+        "britdock 2"
+      ]
+    },
+    {
+      "Name": "brittav3",
+      "X": 1436,
+      "Y": 1734,
+      "Z": 20,
+      "Connects": [
+        "britprov7",
+        "britdock 1"
+      ]
+    },
+    {
+      "Name": "britprov9 1",
+      "X": 1446,
+      "Y": 1730,
+      "Z": 0,
+      "Connects": [
+        "brittav3",
+        "Britain Bank SE Intersection"
+      ]
+    },
+    {
+      "Name": "britprov9 2",
+      "X": 1460,
+      "Y": 1733,
+      "Z": 0,
+      "Connects": [
+        "britprov9 1",
+        "brittav3"
+      ]
+    },
+    {
+      "Name": "britdockway",
+      "X": 1466,
+      "Y": 1743,
+      "Z": 0,
+      "Connects": [
+        "britprov9 2",
+        "britprov9 1"
+      ]
+    },
+    {
+      "Name": "britdock2",
+      "X": 1473,
+      "Y": 1757,
+      "Z": -2,
+      "Connects": [
+        "britdockway",
+        "britprov9 2"
+      ]
+    },
+    {
+      "Name": "britdock2 1",
+      "X": 1486,
+      "Y": 1753,
+      "Z": -2,
+      "Connects": [
+        "britdock2"
+      ]
+    },
+    {
+      "Name": "britdockrd 2",
+      "X": 1487,
+      "Y": 1731,
+      "Z": 0,
+      "Connects": [
+        "britdock2 1",
+        "britprov9 2"
+      ]
+    },
+    {
+      "Name": "britrd 5",
+      "X": 1487,
+      "Y": 1714,
+      "Z": 0,
+      "Connects": [
+        "britdockrd 2",
+        "Britain Tailor SE Corner",
+        "Britain Tailor Entrance"
+      ]
+    },
+    {
+      "Name": "britrd bridge'",
+      "X": 1504,
+      "Y": 1707,
+      "Z": 20,
+      "Connects": [
+        "britrd 5",
+        "Blue Boar Tavern"
+      ]
+    },
+    {
+      "Name": "britrd55",
+      "X": 1477,
+      "Y": 1707,
+      "Z": 0,
+      "Connects": [
+        "Britain Tailor SE Corner",
+        "Britain Tailor Entrance",
+        "britrd 5",
+        "britrd bridge'"
+      ]
+    },
+    {
+      "Name": "brit cntrl rd",
+      "X": 1458,
+      "Y": 1665,
+      "Z": 7,
+      "Connects": [
+        "Britain Gem Shop"
+      ]
+    },
+    {
+      "Name": "brit cntrlrd 2",
+      "X": 1461,
+      "Y": 1655,
+      "Z": 10,
+      "Connects": [
+        "brit cntrl rd",
+        "Britain Gem Shop"
+      ]
+    },
+    {
+      "Name": "britgate",
+      "X": 1471,
+      "Y": 1644,
+      "Z": 20,
+      "Connects": [
+        "brit cntrlrd 2",
+        "Britain Inn South Stairs",
+        "Virtue Path 1",
+        "britgate3"
+      ]
+    },
+    {
+      "Name": "britgate2",
+      "X": 1476,
+      "Y": 1635,
+      "Z": 20,
+      "Connects": [
+        "britgate",
+        "Central Britain Road",
+        "Britain Inn South Stairs",
+        "Virtue Path 1",
+        "Britain West Healer",
+        "brit cntrl rd",
+        "britgate3"
+      ]
+    },
+    {
+      "Name": "britgate3",
+      "X": 1490,
+      "Y": 1656,
+      "Z": 10,
+      "Connects": [
+        "Britain East Provisioner Alley",
+        "Britain Between Inn And Alchemist",
+        "Britain Provisioner SE Alley",
+        "Sewer Entrance",
+        "brit cntrlrd 2"
+      ]
+    },
+    {
+      "Name": "sewnorth",
+      "X": 1513,
+      "Y": 1632,
+      "Z": 10,
+      "Connects": [
+        "Britain Inn East Road",
+        "Sewer Entrance",
+        "Britain Inn South Stairs",
+        "Britain Alchemist East"
+      ]
+    },
+    {
+      "Name": "cntrl brit rd 3",
+      "X": 1490,
+      "Y": 1588,
+      "Z": 20,
+      "Connects": [
+        "Central Britain Road 2"
+      ]
+    },
+    {
+      "Name": "britmage",
+      "X": 1492,
+      "Y": 1573,
+      "Z": 30,
+      "Connects": [
+        "cntrl brit rd 3",
+        "Central Britain Road 2"
+      ]
+    },
+    {
+      "Name": "britmage 2",
+      "X": 1491,
+      "Y": 1562,
+      "Z": 30,
+      "Connects": [
+        "britmage",
+        "cntrl brit rd 3"
+      ]
+    },
+    {
+      "Name": "Rec 1",
+      "X": 1479,
+      "Y": 1573,
+      "Z": 30,
+      "Connects": [
+        "Rec 2",
+        "Rec 1.6"
+      ]
+    },
+    {
+      "Name": "Rec 2",
+      "X": 1463,
+      "Y": 1572,
+      "Z": 30,
+      "Connects": [
+        "Rec 1",
+        "Rec 3"
+      ]
+    },
+    {
+      "Name": "Rec 3",
+      "X": 1438,
+      "Y": 1572,
+      "Z": 30,
+      "Connects": [
+        "Rec 2",
+        "Britain Forge 3"
+      ]
+    },
+    {
+      "Name": "bowyerally",
+      "X": 1464,
+      "Y": 1582,
+      "Z": 21,
+      "Connects": [
+        "Alley To Bower",
+        "Rec 2",
+        "Alley To Baker"
+      ]
+    },
+    {
+      "Name": "Rec 1.1",
+      "X": 1465,
+      "Y": 1597,
+      "Z": 20,
+      "Connects": [
+        "Alley To Baker",
+        "Alley To Bower"
+      ]
+    },
+    {
+      "Name": "Rec 2.1",
+      "X": 1437,
+      "Y": 1603,
+      "Z": 20,
+      "Connects": [
+        "Rec 3.1",
+        "Alley To Baker"
+      ]
+    },
+    {
+      "Name": "Rec 3.1",
+      "X": 1431,
+      "Y": 1603,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.1",
+        "Road To Britain Forge"
+      ]
+    },
+    {
+      "Name": "brittailor2",
+      "X": 1444,
+      "Y": 1613,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.1",
+        "Virtue Path 2"
+      ]
+    },
+    {
+      "Name": "Rec 1.2",
+      "X": 1509,
+      "Y": 1673,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.2",
+        "Britain Alchemist South Approach",
+        "Britain Alchemist East"
+      ]
+    },
+    {
+      "Name": "Rec 2.2",
+      "X": 1534,
+      "Y": 1673,
+      "Z": 20,
+      "Connects": [
+        "Rec 1.2",
+        "Rec 3.2",
+        "Rec 1.5"
+      ]
+    },
+    {
+      "Name": "Rec 3.2",
+      "X": 1561,
+      "Y": 1673,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.2",
+        "Rec 4"
+      ]
+    },
+    {
+      "Name": "Rec 4",
+      "X": 1593,
+      "Y": 1680,
+      "Z": 10,
+      "Connects": [
+        "Rec 3.2",
+        "Rec 5",
+        "Rec 2.4"
+      ]
+    },
+    {
+      "Name": "Rec 5",
+      "X": 1593,
+      "Y": 1702,
+      "Z": 10,
+      "Connects": [
+        "Rec 4"
+      ]
+    },
+    {
+      "Name": "Rec 7",
+      "X": 1556,
+      "Y": 1755,
+      "Z": 15,
+      "Connects": []
+    },
+    {
+      "Name": "Rec 8",
+      "X": 1540,
+      "Y": 1775,
+      "Z": 10,
+      "Connects": [
+        "Rec 9"
+      ]
+    },
+    {
+      "Name": "Rec 9",
+      "X": 1544,
+      "Y": 1781,
+      "Z": 10,
+      "Connects": [
+        "Rec 8"
+      ]
+    },
+    {
+      "Name": "Rec 2.3",
+      "X": 1523,
+      "Y": 1706,
+      "Z": 20,
+      "Connects": [
+        "Rec 3.3",
+        "britrd bridge'"
+      ]
+    },
+    {
+      "Name": "Rec 3.3",
+      "X": 1534,
+      "Y": 1700,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.3"
+      ]
+    },
+    {
+      "Name": "Rec 4.1",
+      "X": 1558,
+      "Y": 1725,
+      "Z": 35,
+      "Connects": [
+        "Rec 5.1"
+      ]
+    },
+    {
+      "Name": "Rec 5.1",
+      "X": 1533,
+      "Y": 1724,
+      "Z": 20,
+      "Connects": [
+        "Rec 4.1"
+      ]
+    },
+    {
+      "Name": "britbridge int",
+      "X": 1527,
+      "Y": 1712,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.3",
+        "Rec 5.1"
+      ]
+    },
+    {
+      "Name": "briteastside1",
+      "X": 1555,
+      "Y": 1739,
+      "Z": 15,
+      "Connects": [
+        "Rec 7",
+        "Rec 4.1"
+      ]
+    },
+    {
+      "Name": "britest1",
+      "X": 1539,
+      "Y": 1763,
+      "Z": 14,
+      "Connects": [
+        "Rec 8",
+        "Rec 7"
+      ]
+    },
+    {
+      "Name": "britprov5",
+      "X": 1593,
+      "Y": 1724,
+      "Z": 20,
+      "Connects": [
+        "Rec 5"
+      ]
+    },
+    {
+      "Name": "britprov5 1",
+      "X": 1603,
+      "Y": 1724,
+      "Z": 20,
+      "Connects": [
+        "britprov5"
+      ]
+    },
+    {
+      "Name": "Rec 2.4",
+      "X": 1618,
+      "Y": 1675,
+      "Z": 20,
+      "Connects": []
+    },
+    {
+      "Name": "estbnritwep",
+      "X": 1642,
+      "Y": 1690,
+      "Z": 25,
+      "Connects": []
+    },
+    {
+      "Name": "eastbritmg",
+      "X": 1592,
+      "Y": 1667,
+      "Z": 10,
+      "Connects": [
+        "Rec 4"
+      ]
+    },
+    {
+      "Name": "estbrittai",
+      "X": 1556,
+      "Y": 1666,
+      "Z": 20,
+      "Connects": [
+        "Rec 3.2",
+        "Rec 2.2"
+      ]
+    },
+    {
+      "Name": "Rec 1.5",
+      "X": 1540,
+      "Y": 1668,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.5",
+        "Rec 2.2"
+      ]
+    },
+    {
+      "Name": "Rec 2.5",
+      "X": 1540,
+      "Y": 1643,
+      "Z": 15,
+      "Connects": [
+        "Rec 1.5",
+        "Rec 3.5"
+      ]
+    },
+    {
+      "Name": "Rec 3.5",
+      "X": 1559,
+      "Y": 1617,
+      "Z": 10,
+      "Connects": [
+        "Rec 2.5",
+        "Rec 4.2"
+      ]
+    },
+    {
+      "Name": "Rec 4.2",
+      "X": 1586,
+      "Y": 1605,
+      "Z": 20,
+      "Connects": [
+        "Rec 3.5"
+      ]
+    },
+    {
+      "Name": "Rec 5.2",
+      "X": 1604,
+      "Y": 1574,
+      "Z": 20,
+      "Connects": [
+        "Rec 6.1"
+      ]
+    },
+    {
+      "Name": "Rec 6.1",
+      "X": 1629,
+      "Y": 1572,
+      "Z": 9,
+      "Connects": [
+        "Rec 5.2",
+        "Rec 7.1"
+      ]
+    },
+    {
+      "Name": "Rec 7.1",
+      "X": 1654,
+      "Y": 1572,
+      "Z": 3,
+      "Connects": [
+        "Rec 6.1"
+      ]
+    },
+    {
+      "Name": "Rec 8.1",
+      "X": 1667,
+      "Y": 1598,
+      "Z": 0,
+      "Connects": [
+        "Rec 9.1"
+      ]
+    },
+    {
+      "Name": "Rec 9.1",
+      "X": 1675,
+      "Y": 1624,
+      "Z": -5,
+      "Connects": [
+        "Rec 8.1",
+        "Rec 10"
+      ]
+    },
+    {
+      "Name": "Rec 10",
+      "X": 1648,
+      "Y": 1624,
+      "Z": 20,
+      "Connects": [
+        "Rec 9.1",
+        "Rec 11",
+        "WP 3"
+      ]
+    },
+    {
+      "Name": "Rec 11",
+      "X": 1621,
+      "Y": 1640,
+      "Z": 35,
+      "Connects": [
+        "Rec 10",
+        "Rec 12",
+        "WP 4"
+      ]
+    },
+    {
+      "Name": "Rec 12",
+      "X": 1597,
+      "Y": 1634,
+      "Z": 35,
+      "Connects": [
+        "Rec 11",
+        "Rec 13"
+      ]
+    },
+    {
+      "Name": "Rec 13",
+      "X": 1579,
+      "Y": 1616,
+      "Z": 10,
+      "Connects": [
+        "Rec 12",
+        "Rec 4.2",
+        "Rec 3.5"
+      ]
+    },
+    {
+      "Name": "britestbrdg1",
+      "X": 1537,
+      "Y": 1630,
+      "Z": 0,
+      "Connects": [
+        "Rec 2.5",
+        "Rec 3.5"
+      ]
+    },
+    {
+      "Name": "estbrdg2",
+      "X": 1527,
+      "Y": 1629,
+      "Z": 10,
+      "Connects": [
+        "britestbrdg1",
+        "Britain Inn East Road",
+        "sewnorth",
+        "Britain Inn South Stairs"
+      ]
+    },
+    {
+      "Name": "Rec 1.6",
+      "X": 1492,
+      "Y": 1577,
+      "Z": 30,
+      "Connects": [
+        "Rec 2.6",
+        "Rec 1"
+      ]
+    },
+    {
+      "Name": "Rec 2.6",
+      "X": 1519,
+      "Y": 1579,
+      "Z": 27,
+      "Connects": [
+        "Rec 1.6",
+        "Rec 3.6"
+      ]
+    },
+    {
+      "Name": "Rec 3.6",
+      "X": 1544,
+      "Y": 1579,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.6",
+        "Rec 4.3"
+      ]
+    },
+    {
+      "Name": "Rec 4.3",
+      "X": 1569,
+      "Y": 1579,
+      "Z": 20,
+      "Connects": [
+        "Rec 3.6"
+      ]
+    },
+    {
+      "Name": "estbritrd 44",
+      "X": 1585,
+      "Y": 1576,
+      "Z": 20,
+      "Connects": [
+        "Rec 4.3",
+        "Rec 5.2"
+      ]
+    },
+    {
+      "Name": "estbritinn2",
+      "X": 1603,
+      "Y": 1589,
+      "Z": 20,
+      "Connects": [
+        "Rec 5.2"
+      ]
+    },
+    {
+      "Name": "estbritin22",
+      "X": 1605,
+      "Y": 1600,
+      "Z": 19,
+      "Connects": [
+        "estbritinn2",
+        "Rec 4.2",
+        "Rec 5.2",
+        "Rec 13"
+      ]
+    },
+    {
+      "Name": "estbritprov4",
+      "X": 1612,
+      "Y": 1595,
+      "Z": 4,
+      "Connects": [
+        "estbritin22",
+        "estbritinn2",
+        "Rec 4.2"
+      ]
+    },
+    {
+      "Name": "WP 144",
+      "X": 1568,
+      "Y": 1604,
+      "Z": 11,
+      "Connects": [
+        "Rec 4.3",
+        "Rec 4.2",
+        "Rec 3.5"
+      ]
+    },
+    {
+      "Name": "WP 145",
+      "X": 1458,
+      "Y": 1543,
+      "Z": 30,
+      "Connects": [
+        "Britain Forge 7"
+      ]
+    },
+    {
+      "Name": "WP 146",
+      "X": 1478,
+      "Y": 1541,
+      "Z": 30,
+      "Connects": [
+        "WP 145",
+        "WP 149"
+      ]
+    },
+    {
+      "Name": "WP 147",
+      "X": 1494,
+      "Y": 1540,
+      "Z": 30,
+      "Connects": [
+        "WP 146"
+      ]
+    },
+    {
+      "Name": "WP 148",
+      "X": 1495,
+      "Y": 1534,
+      "Z": 30,
+      "Connects": [
+        "WP 147",
+        "WP 146"
+      ]
+    },
+    {
+      "Name": "WP 149",
+      "X": 1479,
+      "Y": 1524,
+      "Z": 20,
+      "Connects": [
+        "WP 148"
+      ]
+    },
+    {
+      "Name": "WP 150",
+      "X": 1504,
+      "Y": 1542,
+      "Z": 29,
+      "Connects": [
+        "WP 148",
+        "WP 147",
+        "WP 146"
+      ]
+    },
+    {
+      "Name": "WP 151",
+      "X": 1505,
+      "Y": 1555,
+      "Z": 25,
+      "Connects": [
+        "WP 150"
+      ]
+    },
+    {
+      "Name": "WP 152",
+      "X": 1519,
+      "Y": 1555,
+      "Z": 25,
+      "Connects": [
+        "WP 151",
+        "Rec 2.6"
+      ]
+    },
+    {
+      "Name": "WP 153",
+      "X": 1515,
+      "Y": 1530,
+      "Z": 40,
+      "Connects": [
+        "WP 148",
+        "WP 147"
+      ]
+    },
+    {
+      "Name": "WP 154",
+      "X": 1539,
+      "Y": 1530,
+      "Z": 39,
+      "Connects": [
+        "WP 153"
+      ]
+    },
+    {
+      "Name": "WP 155",
+      "X": 1583,
+      "Y": 1631,
+      "Z": 19,
+      "Connects": [
+        "Rec 13",
+        "Rec 12"
+      ]
+    },
+    {
+      "Name": "WP 15",
+      "X": 1436,
+      "Y": 1657,
+      "Z": 10,
+      "Connects": [
+        "Britain Bank North",
+        "brit cntrlrd 2"
+      ]
+    },
+    {
+      "Name": "WP 156",
+      "X": 1432,
+      "Y": 1671,
+      "Z": 10,
+      "Connects": [
+        "Road To Britain Bank NW",
+        "brit bank ne",
+        "WP 15",
+        "Britain Bank North"
+      ]
+    },
+    {
+      "Name": "WP 157",
+      "X": 1419,
+      "Y": 1712,
+      "Z": 20,
+      "Connects": [
+        "britbank sw",
+        "brit west rd 1",
+        "Britain Bank",
+        "Britain South Road A"
+      ]
+    },
+    {
+      "Name": "wp 158",
+      "X": 1391,
+      "Y": 1626,
+      "Z": 30,
+      "Connects": [
+        "Road To Britain Castle"
+      ]
+    },
+    {
+      "Name": "WP 1",
+      "X": 1564,
+      "Y": 1687,
+      "Z": 28,
+      "Connects": [
+        "Rec 3.2",
+        "Rec 4"
+      ]
+    },
+    {
+      "Name": "WP 2",
+      "X": 1617,
+      "Y": 1647,
+      "Z": 35,
+      "Connects": [
+        "Rec 2.4",
+        "Rec 11"
+      ]
+    },
+    {
+      "Name": "WP 3",
+      "X": 1630,
+      "Y": 1623,
+      "Z": 35,
+      "Connects": []
+    },
+    {
+      "Name": "WP 4",
+      "X": 1629,
+      "Y": 1639,
+      "Z": 35,
+      "Connects": [
+        "WP 3"
+      ]
+    },
+    {
+      "Name": "WP 5",
+      "X": 1600,
+      "Y": 1638,
+      "Z": 35,
+      "Connects": [
+        "Rec 12",
+        "Rec 11"
+      ]
+    },
+    {
+      "Name": "WP 6",
+      "X": 1669,
+      "Y": 1641,
+      "Z": 0,
+      "Connects": [
+        "Rec 9.1"
+      ]
+    },
+    {
+      "Name": "WP 7",
+      "X": 1667,
+      "Y": 1651,
+      "Z": 0,
+      "Connects": [
+        "WP 6",
+        "Rec 9.1"
+      ]
+    },
+    {
+      "Name": "WP 8",
+      "X": 1654,
+      "Y": 1661,
+      "Z": 5,
+      "Connects": [
+        "WP 7"
+      ]
+    },
+    {
+      "Name": "WP 9",
+      "X": 1645,
+      "Y": 1667,
+      "Z": 15,
+      "Connects": [
+        "WP 8",
+        "WP 7"
+      ]
+    },
+    {
+      "Name": "WP 10",
+      "X": 1643,
+      "Y": 1677,
+      "Z": 15,
+      "Connects": [
+        "WP 9",
+        "estbnritwep",
+        "WP 8",
+        "Rec 2.4"
+      ]
+    },
+    {
+      "Name": "WP 11",
+      "X": 1605,
+      "Y": 1772,
+      "Z": 46,
+      "Connects": [
+        "WP 13"
+      ]
+    },
+    {
+      "Name": "WP 12",
+      "X": 1585,
+      "Y": 1757,
+      "Z": 24,
+      "Connects": [
+        "Rec 7",
+        "WP 11"
+      ]
+    },
+    {
+      "Name": "WP 13",
+      "X": 1621,
+      "Y": 1771,
+      "Z": 56,
+      "Connects": []
+    },
+    {
+      "Name": "WP 14",
+      "X": 1668,
+      "Y": 1573,
+      "Z": 5,
+      "Connects": [
+        "Rec 7.1"
+      ]
+    },
+    {
+      "Name": "WP 16",
+      "X": 1637,
+      "Y": 1588,
+      "Z": 0,
+      "Connects": [
+        "Rec 6.1"
+      ]
+    },
+    {
+      "Name": "WP 17",
+      "X": 1652,
+      "Y": 1588,
+      "Z": 0,
+      "Connects": [
+        "Rec 7.1",
+        "Rec 8.1",
+        "WP 16"
+      ]
+    },
+    {
+      "Name": "WP 18",
+      "X": 1667,
+      "Y": 1587,
+      "Z": 2,
+      "Connects": [
+        "Rec 8.1",
+        "WP 14",
+        "WP 17"
+      ]
+    },
+    {
+      "Name": "WP 19",
+      "X": 1685,
+      "Y": 1581,
+      "Z": 5,
+      "Connects": []
+    },
+    {
+      "Name": "WP 20",
+      "X": 1668,
+      "Y": 1580,
+      "Z": 5,
+      "Connects": [
+        "WP 14",
+        "WP 18",
+        "WP 19"
+      ]
+    },
+    {
+      "Name": "WP 21",
+      "X": 1700,
+      "Y": 1581,
+      "Z": 25,
+      "Connects": [
+        "WP 19"
+      ]
+    },
+    {
+      "Name": "WP 22",
+      "X": 1707,
+      "Y": 1570,
+      "Z": 48,
+      "Connects": [
+        "WP 21"
+      ]
+    },
+    {
+      "Name": "WP 23",
+      "X": 1662,
+      "Y": 1560,
+      "Z": 15,
+      "Connects": [
+        "WP 14",
+        "Rec 7.1"
+      ]
+    },
+    {
+      "Name": "WP 24",
+      "X": 1690,
+      "Y": 1556,
+      "Z": 40,
+      "Connects": [
+        "WP 23"
+      ]
+    },
+    {
+      "Name": "WP 25",
+      "X": 1572,
+      "Y": 1530,
+      "Z": 39,
+      "Connects": [
+        "WP 154"
+      ]
+    },
+    {
+      "Name": "WP 26",
+      "X": 1587,
+      "Y": 1531,
+      "Z": 37,
+      "Connects": [
+        "WP 25"
+      ]
+    },
+    {
+      "Name": "WP 27",
+      "X": 1586,
+      "Y": 1542,
+      "Z": 30,
+      "Connects": [
+        "WP 26",
+        "WP 25"
+      ]
+    },
+    {
+      "Name": "WP 28",
+      "X": 1602,
+      "Y": 1548,
+      "Z": 25,
+      "Connects": [
+        "WP 27",
+        "WP 26",
+        "Rec 5.2",
+        "WP 25"
+      ]
+    },
+    {
+      "Name": "WP 29",
+      "X": 1619,
+      "Y": 1530,
+      "Z": 40,
+      "Connects": [
+        "WP 26"
+      ]
+    },
+    {
+      "Name": "WP 30",
+      "X": 1644,
+      "Y": 1524,
+      "Z": 36,
+      "Connects": [
+        "WP 29"
+      ]
+    },
+    {
+      "Name": "WP 31",
+      "X": 1557,
+      "Y": 1700,
+      "Z": 30,
+      "Connects": [
+        "Rec 3.3",
+        "WP 1",
+        "Rec 4.1"
+      ]
+    },
+    {
+      "Name": "WP 32",
+      "X": 1386,
+      "Y": 1613,
+      "Z": 30,
+      "Connects": [
+        "wp 158"
+      ]
+    },
+    {
+      "Name": "WP 33",
+      "X": 1374,
+      "Y": 1604,
+      "Z": 30,
+      "Connects": [
+        "WP 32",
+        "wp 158"
+      ]
+    },
+    {
+      "Name": "WP 34",
+      "X": 1372,
+      "Y": 1587,
+      "Z": 30,
+      "Connects": [
+        "WP 33",
+        "WP 32"
+      ]
+    },
+    {
+      "Name": "WP 35",
+      "X": 1379,
+      "Y": 1642,
+      "Z": 30,
+      "Connects": [
+        "wp 158",
+        "WP 32"
+      ]
+    },
+    {
+      "Name": "WP 36",
+      "X": 1379,
+      "Y": 1669,
+      "Z": 30,
+      "Connects": [
+        "WP 35"
+      ]
+    },
+    {
+      "Name": "WP 37",
+      "X": 1365,
+      "Y": 1676,
+      "Z": 30,
+      "Connects": [
+        "WP 36"
+      ]
+    },
+    {
+      "Name": "WP 38",
+      "X": 1388,
+      "Y": 1667,
+      "Z": 30,
+      "Connects": [
+        "WP 36",
+        "WP 37"
+      ]
+    },
+    {
+      "Name": "WP 39",
+      "X": 1442,
+      "Y": 1589,
+      "Z": 20,
+      "Connects": [
+        "Britain Forge 2"
+      ]
+    },
+    {
+      "Name": "WP 40",
+      "X": 1445,
+      "Y": 1604,
+      "Z": 20,
+      "Connects": [
+        "Rec 2.1",
+        "brittailor2",
+        "WP 39",
+        "Alley To Baker"
+      ]
+    },
+    {
+      "Name": "WP 41",
+      "X": 1465,
+      "Y": 1716,
+      "Z": 0,
+      "Connects": [
+        "britrd 5"
+      ]
+    },
+    {
+      "Name": "WP 42",
+      "X": 1444,
+      "Y": 1716,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank SE Intersection",
+        "britprov9 1",
+        "WP 41"
+      ]
+    },
+    {
+      "Name": "WP 43",
+      "X": 1468,
+      "Y": 1732,
+      "Z": 0,
+      "Connects": [
+        "britprov9 2",
+        "britdockway",
+        "WP 41",
+        "britdockrd 2"
+      ]
+    },
+    {
+      "Name": "WP 44",
+      "X": 1367,
+      "Y": 1818,
+      "Z": 0,
+      "Connects": [
+        "Britain South Road C"
+      ]
+    },
+    {
+      "Name": "WP 45",
+      "X": 1361,
+      "Y": 1859,
+      "Z": 0,
+      "Connects": [
+        "Britain South Road D"
+      ]
+    },
+    {
+      "Name": "WP 46",
+      "X": 1314,
+      "Y": 1839,
+      "Z": 0,
+      "Connects": [
+        "WP 47",
+        "WP 81"
+      ]
+    },
+    {
+      "Name": "WP 47",
+      "X": 1339,
+      "Y": 1837,
+      "Z": 0,
+      "Connects": [
+        "Britain South Road D"
+      ]
+    },
+    {
+      "Name": "WP 48",
+      "X": 1368,
+      "Y": 1871,
+      "Z": 0,
+      "Connects": [
+        "WP 45"
+      ]
+    },
+    {
+      "Name": "WP 49",
+      "X": 1390,
+      "Y": 1888,
+      "Z": 0,
+      "Connects": [
+        "WP 48"
+      ]
+    },
+    {
+      "Name": "WP 50",
+      "X": 1409,
+      "Y": 1890,
+      "Z": 0,
+      "Connects": [
+        "WP 49"
+      ]
+    },
+    {
+      "Name": "WP 51",
+      "X": 1424,
+      "Y": 1900,
+      "Z": 0,
+      "Connects": [
+        "WP 50"
+      ]
+    },
+    {
+      "Name": "WP 52",
+      "X": 1444,
+      "Y": 1901,
+      "Z": 0,
+      "Connects": [
+        "WP 51"
+      ]
+    },
+    {
+      "Name": "WP 53",
+      "X": 1465,
+      "Y": 1901,
+      "Z": 0,
+      "Connects": [
+        "WP 52"
+      ]
+    },
+    {
+      "Name": "WP 54",
+      "X": 1474,
+      "Y": 1894,
+      "Z": 0,
+      "Connects": [
+        "WP 53"
+      ]
+    },
+    {
+      "Name": "WP 55",
+      "X": 1388,
+      "Y": 1906,
+      "Z": 0,
+      "Connects": [
+        "WP 49",
+        "WP 57"
+      ]
+    },
+    {
+      "Name": "WP 56",
+      "X": 1382,
+      "Y": 1812,
+      "Z": 0,
+      "Connects": [
+        "Britain South Road C"
+      ]
+    },
+    {
+      "Name": "WP 57",
+      "X": 1379,
+      "Y": 1919,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 58",
+      "X": 1364,
+      "Y": 1924,
+      "Z": 0,
+      "Connects": [
+        "WP 57"
+      ]
+    },
+    {
+      "Name": "WP 59",
+      "X": 1350,
+      "Y": 1934,
+      "Z": 0,
+      "Connects": [
+        "WP 58"
+      ]
+    },
+    {
+      "Name": "WP 60",
+      "X": 1348,
+      "Y": 1950,
+      "Z": 0,
+      "Connects": [
+        "WP 59"
+      ]
+    },
+    {
+      "Name": "WP 61",
+      "X": 1352,
+      "Y": 1967,
+      "Z": 0,
+      "Connects": [
+        "WP 60"
+      ]
+    },
+    {
+      "Name": "WP 62",
+      "X": 1367,
+      "Y": 1980,
+      "Z": 0,
+      "Connects": [
+        "WP 61"
+      ]
+    },
+    {
+      "Name": "WP 63",
+      "X": 1383,
+      "Y": 1997,
+      "Z": 0,
+      "Connects": [
+        "WP 62"
+      ]
+    },
+    {
+      "Name": "WP 64",
+      "X": 1393,
+      "Y": 2016,
+      "Z": 0,
+      "Connects": [
+        "WP 63",
+        "WP 65"
+      ]
+    },
+    {
+      "Name": "WP 65",
+      "X": 1395,
+      "Y": 2044,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 66",
+      "X": 1400,
+      "Y": 2056,
+      "Z": 0,
+      "Connects": [
+        "WP 65"
+      ]
+    },
+    {
+      "Name": "WP 67",
+      "X": 1408,
+      "Y": 2062,
+      "Z": 0,
+      "Connects": [
+        "WP 66",
+        "WP 65"
+      ]
+    },
+    {
+      "Name": "WP 68",
+      "X": 1420,
+      "Y": 2063,
+      "Z": 0,
+      "Connects": [
+        "WP 67",
+        "WP 66"
+      ]
+    },
+    {
+      "Name": "WP 69",
+      "X": 1430,
+      "Y": 2060,
+      "Z": 0,
+      "Connects": [
+        "WP 68"
+      ]
+    },
+    {
+      "Name": "WP 70",
+      "X": 1434,
+      "Y": 2068,
+      "Z": 0,
+      "Connects": [
+        "WP 69",
+        "WP 68",
+        "WP 67"
+      ]
+    },
+    {
+      "Name": "WP 71",
+      "X": 1428,
+      "Y": 2082,
+      "Z": 5,
+      "Connects": [
+        "WP 70",
+        "WP 68"
+      ]
+    },
+    {
+      "Name": "WP 72",
+      "X": 1438,
+      "Y": 2093,
+      "Z": 5,
+      "Connects": [
+        "WP 71"
+      ]
+    },
+    {
+      "Name": "WP 73",
+      "X": 1431,
+      "Y": 2107,
+      "Z": 5,
+      "Connects": [
+        "WP 72"
+      ]
+    },
+    {
+      "Name": "WP 74",
+      "X": 1444,
+      "Y": 2113,
+      "Z": 5,
+      "Connects": [
+        "WP 73",
+        "WP 72"
+      ]
+    },
+    {
+      "Name": "WP 75",
+      "X": 1453,
+      "Y": 2122,
+      "Z": 0,
+      "Connects": [
+        "WP 74",
+        "WP 73"
+      ]
+    },
+    {
+      "Name": "WP 76",
+      "X": 1466,
+      "Y": 2127,
+      "Z": 0,
+      "Connects": [
+        "WP 75"
+      ]
+    },
+    {
+      "Name": "WP 77",
+      "X": 1473,
+      "Y": 2142,
+      "Z": 0,
+      "Connects": [
+        "WP 76",
+        "WP 75"
+      ]
+    },
+    {
+      "Name": "WP 78",
+      "X": 1473,
+      "Y": 2151,
+      "Z": 0,
+      "Connects": [
+        "WP 77"
+      ]
+    },
+    {
+      "Name": "WP 79",
+      "X": 1473,
+      "Y": 2159,
+      "Z": -15,
+      "Connects": [
+        "WP 78",
+        "brittrinbrdg"
+      ]
+    },
+    {
+      "Name": "WP 82",
+      "X": 1575,
+      "Y": 1725,
+      "Z": 35,
+      "Connects": [
+        "Rec 4.1",
+        "britprov5",
+        "britprov5 1",
+        "briteastside1"
+      ]
+    },
+    {
+      "Name": "WP 83",
+      "X": 1556,
+      "Y": 1530,
+      "Z": -15,
+      "Connects": [
+        "WP 25",
+        "WP 154"
+      ]
+    },
+    {
+      "Name": "WP 84",
+      "X": 1504,
+      "Y": 2178,
+      "Z": 0,
+      "Connects": [
+        "WP 85",
+        "grstst",
+        "tststs1"
+      ]
+    },
+    {
+      "Name": "WP 85",
+      "X": 1496,
+      "Y": 2192,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 86",
+      "X": 1499,
+      "Y": 2206,
+      "Z": 0,
+      "Connects": [
+        "WP 85",
+        "WP 87"
+      ]
+    },
+    {
+      "Name": "WP 87",
+      "X": 1491,
+      "Y": 2226,
+      "Z": 5,
+      "Connects": []
+    },
+    {
+      "Name": "WP 88",
+      "X": 1494,
+      "Y": 2244,
+      "Z": 0,
+      "Connects": [
+        "WP 87"
+      ]
+    },
+    {
+      "Name": "WP 89",
+      "X": 1512,
+      "Y": 2241,
+      "Z": 5,
+      "Connects": [
+        "WP 88"
+      ]
+    },
+    {
+      "Name": "WP 90",
+      "X": 1526,
+      "Y": 2246,
+      "Z": 5,
+      "Connects": [
+        "WP 89"
+      ]
+    },
+    {
+      "Name": "WP 91",
+      "X": 1541,
+      "Y": 2250,
+      "Z": 5,
+      "Connects": [
+        "WP 90"
+      ]
+    },
+    {
+      "Name": "WP 92",
+      "X": 1550,
+      "Y": 2258,
+      "Z": 0,
+      "Connects": [
+        "WP 91"
+      ]
+    },
+    {
+      "Name": "WP 93",
+      "X": 1563,
+      "Y": 2264,
+      "Z": 0,
+      "Connects": [
+        "WP 92"
+      ]
+    },
+    {
+      "Name": "WP 94",
+      "X": 1560,
+      "Y": 2277,
+      "Z": 0,
+      "Connects": [
+        "WP 93"
+      ]
+    },
+    {
+      "Name": "WP 95",
+      "X": 1566,
+      "Y": 2287,
+      "Z": 0,
+      "Connects": [
+        "WP 94",
+        "WP 93"
+      ]
+    },
+    {
+      "Name": "WP 96",
+      "X": 1580,
+      "Y": 2286,
+      "Z": 0,
+      "Connects": [
+        "WP 95"
+      ]
+    },
+    {
+      "Name": "WP 97",
+      "X": 1592,
+      "Y": 2288,
+      "Z": 0,
+      "Connects": [
+        "WP 96",
+        "WP 98"
+      ]
+    },
+    {
+      "Name": "WP 98",
+      "X": 1603,
+      "Y": 2264,
+      "Z": 5,
+      "Connects": []
+    },
+    {
+      "Name": "WP 99",
+      "X": 1617,
+      "Y": 2272,
+      "Z": 5,
+      "Connects": [
+        "WP 98"
+      ]
+    },
+    {
+      "Name": "WP 100",
+      "X": 1612,
+      "Y": 2291,
+      "Z": 0,
+      "Connects": [
+        "WP 99",
+        "WP 97"
+      ]
+    },
+    {
+      "Name": "WP 101",
+      "X": 1606,
+      "Y": 2307,
+      "Z": 5,
+      "Connects": [
+        "WP 100"
+      ]
+    },
+    {
+      "Name": "WP 102",
+      "X": 1622,
+      "Y": 2315,
+      "Z": 0,
+      "Connects": [
+        "WP 101"
+      ]
+    },
+    {
+      "Name": "WP 103",
+      "X": 1633,
+      "Y": 2326,
+      "Z": 0,
+      "Connects": [
+        "WP 102"
+      ]
+    },
+    {
+      "Name": "WP 104",
+      "X": 1637,
+      "Y": 2345,
+      "Z": 0,
+      "Connects": [
+        "WP 103"
+      ]
+    },
+    {
+      "Name": "WP 105",
+      "X": 1648,
+      "Y": 2362,
+      "Z": 0,
+      "Connects": [
+        "WP 104"
+      ]
+    },
+    {
+      "Name": "WP 106",
+      "X": 1631,
+      "Y": 2373,
+      "Z": 0,
+      "Connects": [
+        "WP 105",
+        "WP 107"
+      ]
+    },
+    {
+      "Name": "WP 107",
+      "X": 1617,
+      "Y": 2368,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 108",
+      "X": 1607,
+      "Y": 2384,
+      "Z": 5,
+      "Connects": [
+        "WP 107",
+        "WP 106"
+      ]
+    },
+    {
+      "Name": "WP 109",
+      "X": 1599,
+      "Y": 2407,
+      "Z": 5,
+      "Connects": [
+        "WP 108"
+      ]
+    },
+    {
+      "Name": "WP 110",
+      "X": 1611,
+      "Y": 2419,
+      "Z": 0,
+      "Connects": [
+        "WP 109"
+      ]
+    },
+    {
+      "Name": "WP 111",
+      "X": 1628,
+      "Y": 2435,
+      "Z": 0,
+      "Connects": [
+        "WP 110"
+      ]
+    },
+    {
+      "Name": "WP 112",
+      "X": 1638,
+      "Y": 2456,
+      "Z": 5,
+      "Connects": [
+        "WP 111"
+      ]
+    },
+    {
+      "Name": "WP 113",
+      "X": 1661,
+      "Y": 2467,
+      "Z": 10,
+      "Connects": [
+        "WP 112"
+      ]
+    },
+    {
+      "Name": "WP 114",
+      "X": 1668,
+      "Y": 2488,
+      "Z": 10,
+      "Connects": [
+        "WP 113"
+      ]
+    },
+    {
+      "Name": "WP 115",
+      "X": 1667,
+      "Y": 2513,
+      "Z": 5,
+      "Connects": [
+        "WP 114"
+      ]
+    },
+    {
+      "Name": "WP 116",
+      "X": 1662,
+      "Y": 2535,
+      "Z": 5,
+      "Connects": [
+        "WP 115"
+      ]
+    },
+    {
+      "Name": "WP 117",
+      "X": 1661,
+      "Y": 2555,
+      "Z": 0,
+      "Connects": [
+        "WP 116"
+      ]
+    },
+    {
+      "Name": "WP 118",
+      "X": 1668,
+      "Y": 2575,
+      "Z": 0,
+      "Connects": [
+        "WP 117"
+      ]
+    },
+    {
+      "Name": "WP 119",
+      "X": 1671,
+      "Y": 2605,
+      "Z": 0,
+      "Connects": [
+        "WP 118"
+      ]
+    },
+    {
+      "Name": "WP 120",
+      "X": 1683,
+      "Y": 2629,
+      "Z": 0,
+      "Connects": [
+        "WP 119"
+      ]
+    },
+    {
+      "Name": "WP 121",
+      "X": 1706,
+      "Y": 2647,
+      "Z": 0,
+      "Connects": [
+        "WP 120"
+      ]
+    },
+    {
+      "Name": "WP 122",
+      "X": 1705,
+      "Y": 2675,
+      "Z": 5,
+      "Connects": [
+        "WP 121"
+      ]
+    },
+    {
+      "Name": "WP 123",
+      "X": 1710,
+      "Y": 2701,
+      "Z": 10,
+      "Connects": [
+        "WP 122"
+      ]
+    },
+    {
+      "Name": "WP 124",
+      "X": 1697,
+      "Y": 2729,
+      "Z": 10,
+      "Connects": [
+        "WP 123"
+      ]
+    },
+    {
+      "Name": "WP 125",
+      "X": 1692,
+      "Y": 2759,
+      "Z": 10,
+      "Connects": [
+        "WP 124"
+      ]
+    },
+    {
+      "Name": "WP 126",
+      "X": 1708,
+      "Y": 2774,
+      "Z": 5,
+      "Connects": [
+        "WP 125"
+      ]
+    },
+    {
+      "Name": "WP 127",
+      "X": 1728,
+      "Y": 2784,
+      "Z": 5,
+      "Connects": [
+        "WP 126"
+      ]
+    },
+    {
+      "Name": "WP 128",
+      "X": 1753,
+      "Y": 2791,
+      "Z": 0,
+      "Connects": [
+        "WP 127"
+      ]
+    },
+    {
+      "Name": "WP 129",
+      "X": 1772,
+      "Y": 2798,
+      "Z": 0,
+      "Connects": [
+        "WP 128"
+      ]
+    },
+    {
+      "Name": "WP 130",
+      "X": 1786,
+      "Y": 2787,
+      "Z": 0,
+      "Connects": [
+        "WP 129"
+      ]
+    },
+    {
+      "Name": "WP 131",
+      "X": 1808,
+      "Y": 2782,
+      "Z": 0,
+      "Connects": [
+        "WP 130"
+      ]
+    },
+    {
+      "Name": "WP 132",
+      "X": 1829,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "WP 131"
+      ]
+    },
+    {
+      "Name": "WP 133",
+      "X": 1478,
+      "Y": 1672,
+      "Z": 0,
+      "Connects": [
+        "Britain Bank Provisioner Entrance",
+        "Britain Provisioner SE Alley",
+        "Britain Gem Shop"
+      ]
+    },
+    {
+      "Name": "WP 134",
+      "X": 1462,
+      "Y": 1698,
+      "Z": 0,
+      "Connects": [
+        "Britain Tailor Entrance",
+        "East Britain Bank Road",
+        "Britain Gem Shop"
+      ]
+    },
+    {
+      "Name": "WP 135",
+      "X": 1453,
+      "Y": 1732,
+      "Z": 0,
+      "Connects": [
+        "britprov9 1",
+        "britprov9 2",
+        "britdockway",
+        "WP 43"
+      ]
+    },
+    {
+      "Name": "trinsicgate",
+      "X": 1844,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "WP 132"
+      ]
+    },
+    {
+      "Name": "WP 136",
+      "X": 1859,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "trinsicgate"
+      ]
+    },
+    {
+      "Name": "trin2",
+      "X": 1867,
+      "Y": 2779,
+      "Z": 0,
+      "Connects": [
+        "WP 136",
+        "WP 183"
+      ]
+    },
+    {
+      "Name": "WP 137",
+      "X": 1868,
+      "Y": 2806,
+      "Z": 0,
+      "Connects": [
+        "trin2",
+        "WP 138"
+      ]
+    },
+    {
+      "Name": "WP 138",
+      "X": 1854,
+      "Y": 2805,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 139",
+      "X": 1823,
+      "Y": 2805,
+      "Z": 0,
+      "Connects": [
+        "WP 138"
+      ]
+    },
+    {
+      "Name": "trinbank",
+      "X": 1823,
+      "Y": 2822,
+      "Z": 0,
+      "Connects": [
+        "WP 139",
+        "WP 138"
+      ]
+    },
+    {
+      "Name": "WP 140",
+      "X": 1824,
+      "Y": 2843,
+      "Z": 0,
+      "Connects": [
+        "trinbank",
+        "WP 141"
+      ]
+    },
+    {
+      "Name": "WP 141",
+      "X": 1851,
+      "Y": 2844,
+      "Z": 10,
+      "Connects": []
+    },
+    {
+      "Name": "WP 142",
+      "X": 1852,
+      "Y": 2852,
+      "Z": 10,
+      "Connects": [
+        "WP 141"
+      ]
+    },
+    {
+      "Name": "WP 143",
+      "X": 1876,
+      "Y": 2853,
+      "Z": 20,
+      "Connects": [
+        "WP 142"
+      ]
+    },
+    {
+      "Name": "WP 159",
+      "X": 1892,
+      "Y": 2849,
+      "Z": 20,
+      "Connects": [
+        "WP 143",
+        "WP 160"
+      ]
+    },
+    {
+      "Name": "WP 160",
+      "X": 1915,
+      "Y": 2852,
+      "Z": 20,
+      "Connects": [
+        "WP 161"
+      ]
+    },
+    {
+      "Name": "WP 161",
+      "X": 1916,
+      "Y": 2827,
+      "Z": 6,
+      "Connects": []
+    },
+    {
+      "Name": "WP 162",
+      "X": 1916,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 161"
+      ]
+    },
+    {
+      "Name": "WP 163",
+      "X": 1899,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 162"
+      ]
+    },
+    {
+      "Name": "WP 164",
+      "X": 1869,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 137",
+        "WP 226"
+      ]
+    },
+    {
+      "Name": "WP 165",
+      "X": 1944,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 162"
+      ]
+    },
+    {
+      "Name": "WP 166",
+      "X": 1943,
+      "Y": 2827,
+      "Z": 10,
+      "Connects": [
+        "WP 165"
+      ]
+    },
+    {
+      "Name": "WP 167",
+      "X": 1945,
+      "Y": 2844,
+      "Z": 15,
+      "Connects": [
+        "WP 166"
+      ]
+    },
+    {
+      "Name": "WP 168",
+      "X": 1944,
+      "Y": 2852,
+      "Z": 7,
+      "Connects": [
+        "WP 167"
+      ]
+    },
+    {
+      "Name": "WP 169",
+      "X": 1968,
+      "Y": 2852,
+      "Z": 0,
+      "Connects": [
+        "WP 168",
+        "WP 170"
+      ]
+    },
+    {
+      "Name": "WP 170",
+      "X": 1987,
+      "Y": 2852,
+      "Z": 15,
+      "Connects": []
+    },
+    {
+      "Name": "WP 171",
+      "X": 2004,
+      "Y": 2852,
+      "Z": 15,
+      "Connects": [
+        "WP 170",
+        "WP 172"
+      ]
+    },
+    {
+      "Name": "WP 172",
+      "X": 2003,
+      "Y": 2834,
+      "Z": 15,
+      "Connects": [
+        "WP 174"
+      ]
+    },
+    {
+      "Name": "WP 173",
+      "X": 1980,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 174",
+      "X": 2004,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 173"
+      ]
+    },
+    {
+      "Name": "WP 175",
+      "X": 1955,
+      "Y": 2817,
+      "Z": 0,
+      "Connects": [
+        "WP 165"
+      ]
+    },
+    {
+      "Name": "WP 176",
+      "X": 1966,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 175",
+        "WP 173"
+      ]
+    },
+    {
+      "Name": "WP 177",
+      "X": 1955,
+      "Y": 2794,
+      "Z": 10,
+      "Connects": [
+        "WP 175",
+        "WP 178"
+      ]
+    },
+    {
+      "Name": "WP 178",
+      "X": 1943,
+      "Y": 2794,
+      "Z": 1,
+      "Connects": []
+    },
+    {
+      "Name": "WP 179",
+      "X": 1886,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "trin2"
+      ]
+    },
+    {
+      "Name": "WP 180",
+      "X": 1914,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "WP 179"
+      ]
+    },
+    {
+      "Name": "WP 181",
+      "X": 1954,
+      "Y": 2781,
+      "Z": 10,
+      "Connects": [
+        "WP 177"
+      ]
+    },
+    {
+      "Name": "WP 182",
+      "X": 1933,
+      "Y": 2780,
+      "Z": 0,
+      "Connects": [
+        "WP 180",
+        "WP 181"
+      ]
+    },
+    {
+      "Name": "WP 183",
+      "X": 1868,
+      "Y": 2747,
+      "Z": 4,
+      "Connects": [
+        "WP 184"
+      ]
+    },
+    {
+      "Name": "WP 184",
+      "X": 1844,
+      "Y": 2747,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 185",
+      "X": 1824,
+      "Y": 2748,
+      "Z": 0,
+      "Connects": [
+        "WP 184"
+      ]
+    },
+    {
+      "Name": "WP 186",
+      "X": 1811,
+      "Y": 2747,
+      "Z": 8,
+      "Connects": [
+        "WP 185"
+      ]
+    },
+    {
+      "Name": "WP 187",
+      "X": 1812,
+      "Y": 2723,
+      "Z": 8,
+      "Connects": [
+        "WP 186"
+      ]
+    },
+    {
+      "Name": "WP 188",
+      "X": 1829,
+      "Y": 2725,
+      "Z": 0,
+      "Connects": [
+        "WP 187",
+        "WP 225"
+      ]
+    },
+    {
+      "Name": "WP 189",
+      "X": 1867,
+      "Y": 2728,
+      "Z": 10,
+      "Connects": [
+        "WP 183"
+      ]
+    },
+    {
+      "Name": "WP 190",
+      "X": 1866,
+      "Y": 2711,
+      "Z": 10,
+      "Connects": [
+        "WP 189",
+        "WP 223"
+      ]
+    },
+    {
+      "Name": "WP 191",
+      "X": 1855,
+      "Y": 2712,
+      "Z": 10,
+      "Connects": [
+        "WP 190"
+      ]
+    },
+    {
+      "Name": "WP 192",
+      "X": 1981,
+      "Y": 2780,
+      "Z": 11,
+      "Connects": [
+        "WP 181"
+      ]
+    },
+    {
+      "Name": "WP 193",
+      "X": 2033,
+      "Y": 2817,
+      "Z": 0,
+      "Connects": [
+        "WP 174"
+      ]
+    },
+    {
+      "Name": "WP 194",
+      "X": 2044,
+      "Y": 2818,
+      "Z": 0,
+      "Connects": [
+        "WP 193",
+        "WP 195"
+      ]
+    },
+    {
+      "Name": "WP 195",
+      "X": 2044,
+      "Y": 2844,
+      "Z": 0,
+      "Connects": [
+        "WP 196"
+      ]
+    },
+    {
+      "Name": "WP 196",
+      "X": 2044,
+      "Y": 2854,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 197",
+      "X": 2054,
+      "Y": 2855,
+      "Z": 0,
+      "Connects": [
+        "WP 196"
+      ]
+    },
+    {
+      "Name": "WP 198",
+      "X": 2004,
+      "Y": 2868,
+      "Z": 10,
+      "Connects": [
+        "WP 171"
+      ]
+    },
+    {
+      "Name": "WP 199",
+      "X": 2002,
+      "Y": 2892,
+      "Z": 5,
+      "Connects": [
+        "WP 198"
+      ]
+    },
+    {
+      "Name": "WP 200",
+      "X": 2004,
+      "Y": 2917,
+      "Z": 0,
+      "Connects": [
+        "WP 199"
+      ]
+    },
+    {
+      "Name": "WP 201",
+      "X": 2030,
+      "Y": 2890,
+      "Z": 0,
+      "Connects": [
+        "WP 199"
+      ]
+    },
+    {
+      "Name": "WP 202",
+      "X": 2029,
+      "Y": 2880,
+      "Z": 0,
+      "Connects": [
+        "WP 201"
+      ]
+    },
+    {
+      "Name": "WP 203",
+      "X": 2045,
+      "Y": 2877,
+      "Z": 0,
+      "Connects": [
+        "WP 202",
+        "WP 196"
+      ]
+    },
+    {
+      "Name": "WP 204",
+      "X": 2044,
+      "Y": 2795,
+      "Z": 0,
+      "Connects": [
+        "WP 194"
+      ]
+    },
+    {
+      "Name": "WP 205",
+      "X": 2071,
+      "Y": 2796,
+      "Z": -15,
+      "Connects": [
+        "WP 204"
+      ]
+    },
+    {
+      "Name": "WP 206",
+      "X": 2103,
+      "Y": 2794,
+      "Z": -1,
+      "Connects": [
+        "WP 205"
+      ]
+    },
+    {
+      "Name": "WP 207",
+      "X": 2005,
+      "Y": 2780,
+      "Z": 20,
+      "Connects": [
+        "WP 192"
+      ]
+    },
+    {
+      "Name": "WP 208",
+      "X": 2003,
+      "Y": 2757,
+      "Z": 30,
+      "Connects": [
+        "WP 207"
+      ]
+    },
+    {
+      "Name": "WP 209",
+      "X": 2013,
+      "Y": 2748,
+      "Z": 30,
+      "Connects": [
+        "WP 208"
+      ]
+    },
+    {
+      "Name": "WP 210",
+      "X": 1994,
+      "Y": 2748,
+      "Z": 30,
+      "Connects": [
+        "WP 208"
+      ]
+    },
+    {
+      "Name": "WP 211",
+      "X": 2003,
+      "Y": 2742,
+      "Z": 30,
+      "Connects": [
+        "WP 209",
+        "WP 210"
+      ]
+    },
+    {
+      "Name": "WP 212",
+      "X": 2004,
+      "Y": 2733,
+      "Z": 30,
+      "Connects": [
+        "WP 211"
+      ]
+    },
+    {
+      "Name": "WP 213",
+      "X": 1956,
+      "Y": 2760,
+      "Z": 10,
+      "Connects": [
+        "WP 181"
+      ]
+    },
+    {
+      "Name": "WP 214",
+      "X": 1957,
+      "Y": 2739,
+      "Z": 10,
+      "Connects": [
+        "WP 213",
+        "WP 215"
+      ]
+    },
+    {
+      "Name": "WP 215",
+      "X": 1957,
+      "Y": 2708,
+      "Z": 18,
+      "Connects": []
+    },
+    {
+      "Name": "WP 216",
+      "X": 1917,
+      "Y": 2758,
+      "Z": 0,
+      "Connects": [
+        "WP 180"
+      ]
+    },
+    {
+      "Name": "WP 217",
+      "X": 1914,
+      "Y": 2727,
+      "Z": 20,
+      "Connects": [
+        "WP 216"
+      ]
+    },
+    {
+      "Name": "WP 218",
+      "X": 1916,
+      "Y": 2700,
+      "Z": 18,
+      "Connects": [
+        "WP 217",
+        "WP 219"
+      ]
+    },
+    {
+      "Name": "WP 219",
+      "X": 1916,
+      "Y": 2688,
+      "Z": 2,
+      "Connects": [
+        "WP 220"
+      ]
+    },
+    {
+      "Name": "WP 220",
+      "X": 1916,
+      "Y": 2668,
+      "Z": 0,
+      "Connects": [
+        "WP 221"
+      ]
+    },
+    {
+      "Name": "WP 221",
+      "X": 1896,
+      "Y": 2666,
+      "Z": 0,
+      "Connects": [
+        "WP 222"
+      ]
+    },
+    {
+      "Name": "WP 222",
+      "X": 1868,
+      "Y": 2668,
+      "Z": -10,
+      "Connects": [
+        "WP 223"
+      ]
+    },
+    {
+      "Name": "WP 223",
+      "X": 1868,
+      "Y": 2692,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 224",
+      "X": 1841,
+      "Y": 2693,
+      "Z": 0,
+      "Connects": [
+        "WP 223",
+        "WP 225"
+      ]
+    },
+    {
+      "Name": "WP 225",
+      "X": 1827,
+      "Y": 2693,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 226",
+      "X": 1885,
+      "Y": 2819,
+      "Z": 0,
+      "Connects": [
+        "WP 163"
+      ]
+    },
+    {
+      "Name": "brittrinbrdg",
+      "X": 1473,
+      "Y": 2161,
+      "Z": 6,
+      "Connects": []
+    },
+    {
+      "Name": "trbrtbrdg",
+      "X": 1483,
+      "Y": 2159,
+      "Z": -4,
+      "Connects": []
+    },
+    {
+      "Name": "tststs1",
+      "X": 1485,
+      "Y": 2175,
+      "Z": 0,
+      "Connects": [
+        "grstst",
+        "WP 80"
+      ]
+    },
+    {
+      "Name": "WP 80",
+      "X": 1482,
+      "Y": 2164,
+      "Z": 0,
+      "Connects": [
+        "WP 80",
+        "grstst",
+        "trbrtbrdg"
+      ]
+    },
+    {
+      "Name": "grstst",
+      "X": 1479,
+      "Y": 2179,
+      "Z": 0,
+      "Connects": [
+        "WP 85",
+        "WP 86"
+      ]
+    },
+    {
+      "Name": "brdgggg",
+      "X": 1477,
+      "Y": 2159,
+      "Z": -15,
+      "Connects": [
+        "trbrtbrdg",
+        "brittrinbrdg"
+      ]
+    },
+    {
+      "Name": "WP 81",
+      "X": 1297,
+      "Y": 1825,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 227",
+      "X": 1297,
+      "Y": 1798,
+      "Z": 0,
+      "Connects": [
+        "WP 81"
+      ]
+    },
+    {
+      "Name": "WP 228",
+      "X": 1344,
+      "Y": 1749,
+      "Z": 20,
+      "Connects": [
+        "WP 229"
+      ]
+    },
+    {
+      "Name": "WP 229",
+      "X": 1321,
+      "Y": 1748,
+      "Z": 10,
+      "Connects": [
+        "WP 230"
+      ]
+    },
+    {
+      "Name": "WP 230",
+      "X": 1289,
+      "Y": 1747,
+      "Z": 10,
+      "Connects": [
+        "WP 231"
+      ]
+    },
+    {
+      "Name": "WP 231",
+      "X": 1263,
+      "Y": 1746,
+      "Z": 0,
+      "Connects": [
+        "WP 232"
+      ]
+    },
+    {
+      "Name": "WP 232",
+      "X": 1252,
+      "Y": 1718,
+      "Z": 0,
+      "Connects": [
+        "WP 233"
+      ]
+    },
+    {
+      "Name": "WP 233",
+      "X": 1232,
+      "Y": 1706,
+      "Z": 0,
+      "Connects": [
+        "WP 234",
+        "WP 235"
+      ]
+    },
+    {
+      "Name": "WP 234",
+      "X": 1207,
+      "Y": 1711,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 235",
+      "X": 1225,
+      "Y": 1677,
+      "Z": 0,
+      "Connects": [
+        "WP 236"
+      ]
+    },
+    {
+      "Name": "WP 236",
+      "X": 1220,
+      "Y": 1651,
+      "Z": 0,
+      "Connects": [
+        "WP 237"
+      ]
+    },
+    {
+      "Name": "WP 237",
+      "X": 1191,
+      "Y": 1646,
+      "Z": 0,
+      "Connects": [
+        "WP 243"
+      ]
+    },
+    {
+      "Name": "WP 238",
+      "X": 1189,
+      "Y": 1617,
+      "Z": 0,
+      "Connects": [
+        "WP 237",
+        "WP 243"
+      ]
+    },
+    {
+      "Name": "WP 239",
+      "X": 1189,
+      "Y": 1587,
+      "Z": 0,
+      "Connects": [
+        "WP 238",
+        "WP 241"
+      ]
+    },
+    {
+      "Name": "WP 240",
+      "X": 1221,
+      "Y": 1587,
+      "Z": 0,
+      "Connects": [
+        "WP 239"
+      ]
+    },
+    {
+      "Name": "WP 241",
+      "X": 1190,
+      "Y": 1559,
+      "Z": 0,
+      "Connects": [
+        "WP 242"
+      ]
+    },
+    {
+      "Name": "WP 242",
+      "X": 1171,
+      "Y": 1549,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 243",
+      "X": 1166,
+      "Y": 1635,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 244",
+      "X": 1250,
+      "Y": 1765,
+      "Z": 0,
+      "Connects": [
+        "WP 231",
+        "WP 245"
+      ]
+    },
+    {
+      "Name": "WP 245",
+      "X": 1250,
+      "Y": 1795,
+      "Z": 0,
+      "Connects": [
+        "WP 246"
+      ]
+    },
+    {
+      "Name": "WP 246",
+      "X": 1229,
+      "Y": 1797,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 247",
+      "X": 1199,
+      "Y": 1798,
+      "Z": 0,
+      "Connects": [
+        "WP 246"
+      ]
+    },
+    {
+      "Name": "WP 248",
+      "X": 1174,
+      "Y": 1798,
+      "Z": 0,
+      "Connects": [
+        "WP 247"
+      ]
+    },
+    {
+      "Name": "WP 249",
+      "X": 1154,
+      "Y": 1816,
+      "Z": 0,
+      "Connects": [
+        "WP 248"
+      ]
+    },
+    {
+      "Name": "WP 250",
+      "X": 1251,
+      "Y": 1819,
+      "Z": 0,
+      "Connects": [
+        "WP 245"
+      ]
+    },
+    {
+      "Name": "WP 251",
+      "X": 1251,
+      "Y": 1842,
+      "Z": 0,
+      "Connects": [
+        "WP 250",
+        "WP 252"
+      ]
+    },
+    {
+      "Name": "WP 252",
+      "X": 1229,
+      "Y": 1848,
+      "Z": 0,
+      "Connects": [
+        "WP 253"
+      ]
+    },
+    {
+      "Name": "WP 253",
+      "X": 1216,
+      "Y": 1860,
+      "Z": 0,
+      "Connects": [
+        "WP 254"
+      ]
+    },
+    {
+      "Name": "WP 254",
+      "X": 1196,
+      "Y": 1867,
+      "Z": 0,
+      "Connects": [
+        "WP 255"
+      ]
+    },
+    {
+      "Name": "WP 255",
+      "X": 1171,
+      "Y": 1868,
+      "Z": 0,
+      "Connects": [
+        "WP 256"
+      ]
+    },
+    {
+      "Name": "WP 256",
+      "X": 1149,
+      "Y": 1867,
+      "Z": 0,
+      "Connects": [
+        "WP 257"
+      ]
+    },
+    {
+      "Name": "WP 257",
+      "X": 1139,
+      "Y": 1877,
+      "Z": 0,
+      "Connects": [
+        "WP 258"
+      ]
+    },
+    {
+      "Name": "WP 258",
+      "X": 1138,
+      "Y": 1887,
+      "Z": 0,
+      "Connects": [
+        "WP 259"
+      ]
+    },
+    {
+      "Name": "WP 259",
+      "X": 1126,
+      "Y": 1896,
+      "Z": 0,
+      "Connects": [
+        "WP 260"
+      ]
+    },
+    {
+      "Name": "WP 260",
+      "X": 1121,
+      "Y": 1906,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 261",
+      "X": 1112,
+      "Y": 1915,
+      "Z": 0,
+      "Connects": [
+        "WP 260"
+      ]
+    },
+    {
+      "Name": "WP 262",
+      "X": 1099,
+      "Y": 1933,
+      "Z": 0,
+      "Connects": [
+        "WP 261"
+      ]
+    },
+    {
+      "Name": "WP 263",
+      "X": 1079,
+      "Y": 1939,
+      "Z": 0,
+      "Connects": [
+        "WP 262"
+      ]
+    },
+    {
+      "Name": "WP 264",
+      "X": 1058,
+      "Y": 1942,
+      "Z": 0,
+      "Connects": [
+        "WP 263"
+      ]
+    },
+    {
+      "Name": "WP 265",
+      "X": 1037,
+      "Y": 1943,
+      "Z": 0,
+      "Connects": [
+        "WP 264"
+      ]
+    },
+    {
+      "Name": "WP 266",
+      "X": 1016,
+      "Y": 1940,
+      "Z": 0,
+      "Connects": [
+        "WP 265"
+      ]
+    },
+    {
+      "Name": "WP 267",
+      "X": 1005,
+      "Y": 1924,
+      "Z": 0,
+      "Connects": [
+        "WP 266",
+        "WP 265"
+      ]
+    },
+    {
+      "Name": "WP 268",
+      "X": 997,
+      "Y": 1905,
+      "Z": 0,
+      "Connects": [
+        "WP 267"
+      ]
+    },
+    {
+      "Name": "WP 269",
+      "X": 1002,
+      "Y": 1881,
+      "Z": 0,
+      "Connects": [
+        "WP 268"
+      ]
+    },
+    {
+      "Name": "WP 270",
+      "X": 995,
+      "Y": 1853,
+      "Z": 0,
+      "Connects": [
+        "WP 269"
+      ]
+    },
+    {
+      "Name": "WP 271",
+      "X": 1005,
+      "Y": 1830,
+      "Z": 0,
+      "Connects": [
+        "WP 270"
+      ]
+    },
+    {
+      "Name": "WP 272",
+      "X": 996,
+      "Y": 1808,
+      "Z": 0,
+      "Connects": [
+        "WP 271",
+        "WP 273"
+      ]
+    },
+    {
+      "Name": "WP 273",
+      "X": 981,
+      "Y": 1778,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 274",
+      "X": 973,
+      "Y": 1755,
+      "Z": 0,
+      "Connects": [
+        "WP 273"
+      ]
+    },
+    {
+      "Name": "WP 275",
+      "X": 956,
+      "Y": 1743,
+      "Z": 0,
+      "Connects": [
+        "WP 274"
+      ]
+    },
+    {
+      "Name": "WP 276",
+      "X": 937,
+      "Y": 1734,
+      "Z": 0,
+      "Connects": [
+        "WP 275"
+      ]
+    },
+    {
+      "Name": "WP 277",
+      "X": 920,
+      "Y": 1724,
+      "Z": 0,
+      "Connects": [
+        "WP 276"
+      ]
+    },
+    {
+      "Name": "WP 278",
+      "X": 920,
+      "Y": 1708,
+      "Z": 0,
+      "Connects": [
+        "WP 277",
+        "WP 276"
+      ]
+    },
+    {
+      "Name": "WP 279",
+      "X": 899,
+      "Y": 1698,
+      "Z": 0,
+      "Connects": [
+        "WP 278",
+        "WP 277"
+      ]
+    },
+    {
+      "Name": "WP 280",
+      "X": 886,
+      "Y": 1682,
+      "Z": 0,
+      "Connects": [
+        "WP 279"
+      ]
+    },
+    {
+      "Name": "WP 281",
+      "X": 879,
+      "Y": 1668,
+      "Z": 0,
+      "Connects": [
+        "WP 280",
+        "WP 279"
+      ]
+    },
+    {
+      "Name": "WP 282",
+      "X": 878,
+      "Y": 1645,
+      "Z": 0,
+      "Connects": [
+        "WP 281"
+      ]
+    },
+    {
+      "Name": "WP 283",
+      "X": 860,
+      "Y": 1625,
+      "Z": 0,
+      "Connects": [
+        "WP 282"
+      ]
+    },
+    {
+      "Name": "WP 284",
+      "X": 844,
+      "Y": 1604,
+      "Z": 0,
+      "Connects": [
+        "WP 283"
+      ]
+    },
+    {
+      "Name": "WP 285",
+      "X": 832,
+      "Y": 1589,
+      "Z": 0,
+      "Connects": [
+        "WP 284"
+      ]
+    },
+    {
+      "Name": "WP 286",
+      "X": 812,
+      "Y": 1581,
+      "Z": 0,
+      "Connects": [
+        "WP 285",
+        "WP 284"
+      ]
+    },
+    {
+      "Name": "WP 287",
+      "X": 797,
+      "Y": 1560,
+      "Z": 0,
+      "Connects": [
+        "WP 286"
+      ]
+    },
+    {
+      "Name": "WP 288",
+      "X": 781,
+      "Y": 1548,
+      "Z": 0,
+      "Connects": [
+        "WP 287"
+      ]
+    },
+    {
+      "Name": "WP 289",
+      "X": 753,
+      "Y": 1544,
+      "Z": 0,
+      "Connects": [
+        "WP 288"
+      ]
+    },
+    {
+      "Name": "WP 290",
+      "X": 732,
+      "Y": 1533,
+      "Z": 0,
+      "Connects": [
+        "WP 289"
+      ]
+    },
+    {
+      "Name": "WP 291",
+      "X": 744,
+      "Y": 1521,
+      "Z": 0,
+      "Connects": [
+        "WP 290"
+      ]
+    },
+    {
+      "Name": "WP 292",
+      "X": 737,
+      "Y": 1497,
+      "Z": 0,
+      "Connects": [
+        "WP 291"
+      ]
+    },
+    {
+      "Name": "WP 293",
+      "X": 730,
+      "Y": 1481,
+      "Z": 0,
+      "Connects": [
+        "WP 292"
+      ]
+    },
+    {
+      "Name": "WP 294",
+      "X": 717,
+      "Y": 1463,
+      "Z": 0,
+      "Connects": [
+        "WP 293"
+      ]
+    },
+    {
+      "Name": "WP 295",
+      "X": 704,
+      "Y": 1440,
+      "Z": 0,
+      "Connects": [
+        "WP 294"
+      ]
+    },
+    {
+      "Name": "WP 296",
+      "X": 707,
+      "Y": 1415,
+      "Z": 0,
+      "Connects": [
+        "WP 295"
+      ]
+    },
+    {
+      "Name": "WP 297",
+      "X": 688,
+      "Y": 1397,
+      "Z": 0,
+      "Connects": [
+        "WP 296"
+      ]
+    },
+    {
+      "Name": "WP 298",
+      "X": 699,
+      "Y": 1370,
+      "Z": 0,
+      "Connects": [
+        "WP 297"
+      ]
+    },
+    {
+      "Name": "WP 299",
+      "X": 710,
+      "Y": 1346,
+      "Z": 0,
+      "Connects": [
+        "WP 298"
+      ]
+    },
+    {
+      "Name": "WP 300",
+      "X": 729,
+      "Y": 1322,
+      "Z": 0,
+      "Connects": [
+        "WP 299"
+      ]
+    },
+    {
+      "Name": "WP 301",
+      "X": 743,
+      "Y": 1307,
+      "Z": 0,
+      "Connects": [
+        "WP 300"
+      ]
+    },
+    {
+      "Name": "WP 302",
+      "X": 766,
+      "Y": 1292,
+      "Z": 0,
+      "Connects": [
+        "WP 301"
+      ]
+    },
+    {
+      "Name": "WP 303",
+      "X": 794,
+      "Y": 1290,
+      "Z": 0,
+      "Connects": [
+        "WP 302"
+      ]
+    },
+    {
+      "Name": "WP 304",
+      "X": 823,
+      "Y": 1266,
+      "Z": 0,
+      "Connects": [
+        "WP 303"
+      ]
+    },
+    {
+      "Name": "WP 305",
+      "X": 841,
+      "Y": 1246,
+      "Z": 0,
+      "Connects": [
+        "WP 304"
+      ]
+    },
+    {
+      "Name": "WP 306",
+      "X": 866,
+      "Y": 1231,
+      "Z": 0,
+      "Connects": [
+        "WP 305"
+      ]
+    },
+    {
+      "Name": "WP 307",
+      "X": 883,
+      "Y": 1212,
+      "Z": 0,
+      "Connects": [
+        "WP 306"
+      ]
+    },
+    {
+      "Name": "WP 308",
+      "X": 867,
+      "Y": 1194,
+      "Z": 0,
+      "Connects": [
+        "WP 307"
+      ]
+    },
+    {
+      "Name": "WP 309",
+      "X": 844,
+      "Y": 1186,
+      "Z": 0,
+      "Connects": [
+        "WP 308"
+      ]
+    },
+    {
+      "Name": "WP 310",
+      "X": 833,
+      "Y": 1175,
+      "Z": 0,
+      "Connects": [
+        "WP 309"
+      ]
+    },
+    {
+      "Name": "WP 311",
+      "X": 827,
+      "Y": 1152,
+      "Z": 0,
+      "Connects": [
+        "WP 310"
+      ]
+    },
+    {
+      "Name": "WP 312",
+      "X": 815,
+      "Y": 1156,
+      "Z": 0,
+      "Connects": [
+        "WP 311"
+      ]
+    },
+    {
+      "Name": "WP 313",
+      "X": 795,
+      "Y": 1154,
+      "Z": 0,
+      "Connects": [
+        "WP 312"
+      ]
+    },
+    {
+      "Name": "WP 314",
+      "X": 776,
+      "Y": 1160,
+      "Z": 0,
+      "Connects": [
+        "WP 313"
+      ]
+    },
+    {
+      "Name": "WP 315",
+      "X": 756,
+      "Y": 1163,
+      "Z": 0,
+      "Connects": [
+        "WP 314",
+        "WP 316"
+      ]
+    },
+    {
+      "Name": "WP 316",
+      "X": 731,
+      "Y": 1139,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 317",
+      "X": 711,
+      "Y": 1139,
+      "Z": 0,
+      "Connects": [
+        "WP 316"
+      ]
+    },
+    {
+      "Name": "WP 318",
+      "X": 695,
+      "Y": 1124,
+      "Z": 0,
+      "Connects": [
+        "WP 317"
+      ]
+    },
+    {
+      "Name": "WP 319",
+      "X": 683,
+      "Y": 1140,
+      "Z": 0,
+      "Connects": [
+        "WP 318",
+        "WP 317"
+      ]
+    },
+    {
+      "Name": "WP 320",
+      "X": 674,
+      "Y": 1149,
+      "Z": 0,
+      "Connects": [
+        "WP 319"
+      ]
+    },
+    {
+      "Name": "WP 321",
+      "X": 662,
+      "Y": 1138,
+      "Z": 0,
+      "Connects": [
+        "WP 320",
+        "WP 319"
+      ]
+    },
+    {
+      "Name": "WP 322",
+      "X": 651,
+      "Y": 1120,
+      "Z": 0,
+      "Connects": [
+        "WP 321",
+        "WP 320"
+      ]
+    },
+    {
+      "Name": "WP 323",
+      "X": 652,
+      "Y": 1093,
+      "Z": 0,
+      "Connects": [
+        "WP 322"
+      ]
+    },
+    {
+      "Name": "WP 324",
+      "X": 627,
+      "Y": 1114,
+      "Z": 0,
+      "Connects": [
+        "WP 322",
+        "WP 338"
+      ]
+    },
+    {
+      "Name": "WP 325",
+      "X": 609,
+      "Y": 1121,
+      "Z": 0,
+      "Connects": [
+        "WP 324"
+      ]
+    },
+    {
+      "Name": "WP 326",
+      "X": 596,
+      "Y": 1145,
+      "Z": 0,
+      "Connects": [
+        "WP 325"
+      ]
+    },
+    {
+      "Name": "WP 327",
+      "X": 587,
+      "Y": 1158,
+      "Z": 0,
+      "Connects": [
+        "WP 326",
+        "WP 344"
+      ]
+    },
+    {
+      "Name": "WP 328",
+      "X": 614,
+      "Y": 1169,
+      "Z": 0,
+      "Connects": [
+        "WP 327",
+        "WP 329"
+      ]
+    },
+    {
+      "Name": "WP 329",
+      "X": 627,
+      "Y": 1167,
+      "Z": 0,
+      "Connects": [
+        "WP 330"
+      ]
+    },
+    {
+      "Name": "WP 330",
+      "X": 621,
+      "Y": 1156,
+      "Z": 0,
+      "Connects": [
+        "WP 328"
+      ]
+    },
+    {
+      "Name": "WP 331",
+      "X": 633,
+      "Y": 1189,
+      "Z": 0,
+      "Connects": [
+        "WP 329",
+        "WP 337"
+      ]
+    },
+    {
+      "Name": "WP 332",
+      "X": 638,
+      "Y": 1205,
+      "Z": 0,
+      "Connects": [
+        "WP 331",
+        "WP 334"
+      ]
+    },
+    {
+      "Name": "WP 333",
+      "X": 663,
+      "Y": 1208,
+      "Z": 0,
+      "Connects": [
+        "WP 332"
+      ]
+    },
+    {
+      "Name": "WP 334",
+      "X": 624,
+      "Y": 1205,
+      "Z": 0,
+      "Connects": [
+        "WP 331"
+      ]
+    },
+    {
+      "Name": "WP 335",
+      "X": 611,
+      "Y": 1223,
+      "Z": 0,
+      "Connects": [
+        "WP 334"
+      ]
+    },
+    {
+      "Name": "WP 336",
+      "X": 592,
+      "Y": 1235,
+      "Z": 0,
+      "Connects": [
+        "WP 335"
+      ]
+    },
+    {
+      "Name": "WP 337",
+      "X": 616,
+      "Y": 1191,
+      "Z": 0,
+      "Connects": [
+        "WP 334"
+      ]
+    },
+    {
+      "Name": "WP 338",
+      "X": 616,
+      "Y": 1097,
+      "Z": 0,
+      "Connects": [
+        "WP 339"
+      ]
+    },
+    {
+      "Name": "WP 339",
+      "X": 614,
+      "Y": 1070,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 340",
+      "X": 631,
+      "Y": 1058,
+      "Z": 0,
+      "Connects": [
+        "WP 339"
+      ]
+    },
+    {
+      "Name": "WP 341",
+      "X": 628,
+      "Y": 1046,
+      "Z": 0,
+      "Connects": [
+        "WP 340",
+        "WP 339"
+      ]
+    },
+    {
+      "Name": "WP 342",
+      "X": 586,
+      "Y": 1066,
+      "Z": 0,
+      "Connects": [
+        "WP 339"
+      ]
+    },
+    {
+      "Name": "WP 343",
+      "X": 558,
+      "Y": 1065,
+      "Z": 0,
+      "Connects": [
+        "WP 342"
+      ]
+    },
+    {
+      "Name": "WP 344",
+      "X": 575,
+      "Y": 1146,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 345",
+      "X": 557,
+      "Y": 1145,
+      "Z": 0,
+      "Connects": [
+        "WP 344",
+        "WP 346"
+      ]
+    },
+    {
+      "Name": "WP 346",
+      "X": 542,
+      "Y": 1129,
+      "Z": 0,
+      "Connects": [
+        "WP 347"
+      ]
+    },
+    {
+      "Name": "WP 347",
+      "X": 536,
+      "Y": 1103,
+      "Z": 0,
+      "Connects": [
+        "WP 348"
+      ]
+    },
+    {
+      "Name": "WP 348",
+      "X": 544,
+      "Y": 1078,
+      "Z": 0,
+      "Connects": [
+        "WP 343",
+        "WP 349"
+      ]
+    },
+    {
+      "Name": "WP 349",
+      "X": 548,
+      "Y": 1058,
+      "Z": 0,
+      "Connects": [
+        "WP 343"
+      ]
+    },
+    {
+      "Name": "WP 350",
+      "X": 549,
+      "Y": 1029,
+      "Z": 0,
+      "Connects": [
+        "WP 349",
+        "WP 351",
+        "WP 352"
+      ]
+    },
+    {
+      "Name": "WP 351",
+      "X": 553,
+      "Y": 1011,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 352",
+      "X": 564,
+      "Y": 1020,
+      "Z": 0,
+      "Connects": [
+        "WP 351"
+      ]
+    },
+    {
+      "Name": "WP 353",
+      "X": 569,
+      "Y": 984,
+      "Z": 0,
+      "Connects": [
+        "WP 419"
+      ]
+    },
+    {
+      "Name": "WP 354",
+      "X": 548,
+      "Y": 1003,
+      "Z": 0,
+      "Connects": [
+        "WP 351",
+        "WP 372"
+      ]
+    },
+    {
+      "Name": "WP 355",
+      "X": 546,
+      "Y": 986,
+      "Z": 0,
+      "Connects": [
+        "WP 354"
+      ]
+    },
+    {
+      "Name": "WP 356",
+      "X": 552,
+      "Y": 967,
+      "Z": 0,
+      "Connects": [
+        "WP 355"
+      ]
+    },
+    {
+      "Name": "WP 357",
+      "X": 594,
+      "Y": 996,
+      "Z": 0,
+      "Connects": [
+        "WP 353",
+        "WP 358"
+      ]
+    },
+    {
+      "Name": "WP 358",
+      "X": 623,
+      "Y": 997,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 359",
+      "X": 642,
+      "Y": 987,
+      "Z": 0,
+      "Connects": [
+        "WP 358"
+      ]
+    },
+    {
+      "Name": "WP 360",
+      "X": 644,
+      "Y": 1010,
+      "Z": 0,
+      "Connects": [
+        "WP 359",
+        "WP 358"
+      ]
+    },
+    {
+      "Name": "WP 361",
+      "X": 649,
+      "Y": 977,
+      "Z": 0,
+      "Connects": [
+        "WP 359",
+        "WP 358"
+      ]
+    },
+    {
+      "Name": "WP 362",
+      "X": 642,
+      "Y": 967,
+      "Z": 0,
+      "Connects": [
+        "WP 361",
+        "WP 359"
+      ]
+    },
+    {
+      "Name": "WP 363",
+      "X": 679,
+      "Y": 984,
+      "Z": 0,
+      "Connects": [
+        "WP 361"
+      ]
+    },
+    {
+      "Name": "WP 364",
+      "X": 699,
+      "Y": 988,
+      "Z": 0,
+      "Connects": [
+        "WP 363"
+      ]
+    },
+    {
+      "Name": "WP 365",
+      "X": 721,
+      "Y": 977,
+      "Z": 0,
+      "Connects": [
+        "WP 364"
+      ]
+    },
+    {
+      "Name": "WP 366",
+      "X": 736,
+      "Y": 964,
+      "Z": 0,
+      "Connects": [
+        "WP 365"
+      ]
+    },
+    {
+      "Name": "WP 367",
+      "X": 748,
+      "Y": 944,
+      "Z": 0,
+      "Connects": [
+        "WP 366"
+      ]
+    },
+    {
+      "Name": "WP 368",
+      "X": 744,
+      "Y": 916,
+      "Z": 0,
+      "Connects": [
+        "WP 367"
+      ]
+    },
+    {
+      "Name": "WP 369",
+      "X": 738,
+      "Y": 896,
+      "Z": 0,
+      "Connects": [
+        "WP 368",
+        "WP 455"
+      ]
+    },
+    {
+      "Name": "WP 370",
+      "X": 645,
+      "Y": 949,
+      "Z": 0,
+      "Connects": [
+        "WP 362",
+        "WP 361"
+      ]
+    },
+    {
+      "Name": "WP 371",
+      "X": 620,
+      "Y": 952,
+      "Z": 0,
+      "Connects": [
+        "WP 362",
+        "WP 379"
+      ]
+    },
+    {
+      "Name": "WP 372",
+      "X": 525,
+      "Y": 989,
+      "Z": 0,
+      "Connects": [
+        "WP 355"
+      ]
+    },
+    {
+      "Name": "WP 373",
+      "X": 524,
+      "Y": 982,
+      "Z": 0,
+      "Connects": [
+        "WP 372",
+        "WP 355"
+      ]
+    },
+    {
+      "Name": "WP 374",
+      "X": 506,
+      "Y": 973,
+      "Z": 0,
+      "Connects": [
+        "WP 373",
+        "WP 387"
+      ]
+    },
+    {
+      "Name": "WP 375",
+      "X": 524,
+      "Y": 1004,
+      "Z": 0,
+      "Connects": [
+        "WP 373"
+      ]
+    },
+    {
+      "Name": "WP 376",
+      "X": 549,
+      "Y": 947,
+      "Z": 0,
+      "Connects": [
+        "WP 356"
+      ]
+    },
+    {
+      "Name": "WP 377",
+      "X": 561,
+      "Y": 930,
+      "Z": 0,
+      "Connects": [
+        "WP 376"
+      ]
+    },
+    {
+      "Name": "WP 378",
+      "X": 570,
+      "Y": 921,
+      "Z": 0,
+      "Connects": [
+        "WP 377",
+        "WP 386"
+      ]
+    },
+    {
+      "Name": "WP 379",
+      "X": 598,
+      "Y": 934,
+      "Z": 0,
+      "Connects": [
+        "WP 378",
+        "WP 380"
+      ]
+    },
+    {
+      "Name": "WP 380",
+      "X": 619,
+      "Y": 929,
+      "Z": 0,
+      "Connects": [
+        "WP 371"
+      ]
+    },
+    {
+      "Name": "WP 381",
+      "X": 631,
+      "Y": 916,
+      "Z": 0,
+      "Connects": [
+        "WP 380"
+      ]
+    },
+    {
+      "Name": "WP 382",
+      "X": 649,
+      "Y": 910,
+      "Z": 0,
+      "Connects": [
+        "WP 381"
+      ]
+    },
+    {
+      "Name": "WP 383",
+      "X": 638,
+      "Y": 889,
+      "Z": 0,
+      "Connects": [
+        "WP 382",
+        "WP 381"
+      ]
+    },
+    {
+      "Name": "WP 384",
+      "X": 635,
+      "Y": 868,
+      "Z": 0,
+      "Connects": [
+        "WP 383"
+      ]
+    },
+    {
+      "Name": "WP 385",
+      "X": 635,
+      "Y": 858,
+      "Z": 0,
+      "Connects": [
+        "WP 384",
+        "Rec 1.3",
+        "Rec 1.4"
+      ]
+    },
+    {
+      "Name": "WP 386",
+      "X": 564,
+      "Y": 904,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 387",
+      "X": 490,
+      "Y": 973,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 388",
+      "X": 471,
+      "Y": 982,
+      "Z": 0,
+      "Connects": [
+        "WP 387",
+        "WP 389"
+      ]
+    },
+    {
+      "Name": "WP 389",
+      "X": 449,
+      "Y": 980,
+      "Z": 0,
+      "Connects": [
+        "WP 390"
+      ]
+    },
+    {
+      "Name": "WP 390",
+      "X": 421,
+      "Y": 981,
+      "Z": 0,
+      "Connects": [
+        "WP 391"
+      ]
+    },
+    {
+      "Name": "WP 391",
+      "X": 409,
+      "Y": 968,
+      "Z": 0,
+      "Connects": [
+        "WP 392",
+        "WP 399"
+      ]
+    },
+    {
+      "Name": "WP 392",
+      "X": 436,
+      "Y": 942,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 393",
+      "X": 447,
+      "Y": 929,
+      "Z": 0,
+      "Connects": [
+        "WP 392"
+      ]
+    },
+    {
+      "Name": "WP 394",
+      "X": 460,
+      "Y": 917,
+      "Z": 0,
+      "Connects": [
+        "WP 393"
+      ]
+    },
+    {
+      "Name": "WP 395",
+      "X": 470,
+      "Y": 910,
+      "Z": 0,
+      "Connects": [
+        "WP 394",
+        "WP 417"
+      ]
+    },
+    {
+      "Name": "WP 396",
+      "X": 431,
+      "Y": 908,
+      "Z": 0,
+      "Connects": [
+        "WP 393",
+        "WP 397"
+      ]
+    },
+    {
+      "Name": "WP 397",
+      "X": 407,
+      "Y": 900,
+      "Z": 0,
+      "Connects": [
+        "WP 411"
+      ]
+    },
+    {
+      "Name": "WP 398",
+      "X": 551,
+      "Y": 879,
+      "Z": 0,
+      "Connects": [
+        "WP 386"
+      ]
+    },
+    {
+      "Name": "WP 399",
+      "X": 391,
+      "Y": 972,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 400",
+      "X": 365,
+      "Y": 984,
+      "Z": 0,
+      "Connects": [
+        "WP 399"
+      ]
+    },
+    {
+      "Name": "WP 401",
+      "X": 336,
+      "Y": 992,
+      "Z": 0,
+      "Connects": [
+        "WP 400"
+      ]
+    },
+    {
+      "Name": "WP 402",
+      "X": 312,
+      "Y": 1005,
+      "Z": 0,
+      "Connects": [
+        "WP 401"
+      ]
+    },
+    {
+      "Name": "WP 403",
+      "X": 380,
+      "Y": 996,
+      "Z": 0,
+      "Connects": [
+        "WP 400"
+      ]
+    },
+    {
+      "Name": "WP 404",
+      "X": 378,
+      "Y": 1026,
+      "Z": 0,
+      "Connects": [
+        "WP 403"
+      ]
+    },
+    {
+      "Name": "WP 405",
+      "X": 405,
+      "Y": 1038,
+      "Z": 0,
+      "Connects": [
+        "WP 404"
+      ]
+    },
+    {
+      "Name": "WP 406",
+      "X": 351,
+      "Y": 1037,
+      "Z": 0,
+      "Connects": [
+        "WP 404"
+      ]
+    },
+    {
+      "Name": "WP 407",
+      "X": 332,
+      "Y": 1049,
+      "Z": 0,
+      "Connects": [
+        "WP 406"
+      ]
+    },
+    {
+      "Name": "WP 408",
+      "X": 422,
+      "Y": 1044,
+      "Z": 0,
+      "Connects": [
+        "WP 405"
+      ]
+    },
+    {
+      "Name": "WP 409",
+      "X": 373,
+      "Y": 956,
+      "Z": 0,
+      "Connects": [
+        "WP 399"
+      ]
+    },
+    {
+      "Name": "WP 410",
+      "X": 373,
+      "Y": 935,
+      "Z": 0,
+      "Connects": [
+        "WP 409"
+      ]
+    },
+    {
+      "Name": "WP 411",
+      "X": 376,
+      "Y": 923,
+      "Z": 0,
+      "Connects": [
+        "WP 410"
+      ]
+    },
+    {
+      "Name": "WP 412",
+      "X": 376,
+      "Y": 905,
+      "Z": 0,
+      "Connects": [
+        "WP 411",
+        "WP 397",
+        "WP 410"
+      ]
+    },
+    {
+      "Name": "WP 413",
+      "X": 490,
+      "Y": 913,
+      "Z": 0,
+      "Connects": [
+        "WP 395"
+      ]
+    },
+    {
+      "Name": "WP 414",
+      "X": 521,
+      "Y": 919,
+      "Z": 0,
+      "Connects": [
+        "WP 413"
+      ]
+    },
+    {
+      "Name": "WP 415",
+      "X": 547,
+      "Y": 907,
+      "Z": 0,
+      "Connects": [
+        "WP 414",
+        "WP 386",
+        "WP 398"
+      ]
+    },
+    {
+      "Name": "WP 416",
+      "X": 547,
+      "Y": 853,
+      "Z": 0,
+      "Connects": [
+        "WP 398"
+      ]
+    },
+    {
+      "Name": "WP 417",
+      "X": 466,
+      "Y": 891,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 418",
+      "X": 483,
+      "Y": 872,
+      "Z": 0,
+      "Connects": [
+        "WP 417"
+      ]
+    },
+    {
+      "Name": "WP 419",
+      "X": 566,
+      "Y": 998,
+      "Z": 0,
+      "Connects": [
+        "WP 351"
+      ]
+    },
+    {
+      "Name": "WP 420",
+      "X": 557,
+      "Y": 980,
+      "Z": 0,
+      "Connects": [
+        "WP 356",
+        "WP 353",
+        "WP 355"
+      ]
+    },
+    {
+      "Name": "Rec 1.3",
+      "X": 657,
+      "Y": 856,
+      "Z": 0,
+      "Connects": [
+        "Rec 2.7",
+        "WP 385"
+      ]
+    },
+    {
+      "Name": "Rec 2.7",
+      "X": 660,
+      "Y": 835,
+      "Z": 0,
+      "Connects": [
+        "Rec 1.3",
+        "Rec 3.4"
+      ]
+    },
+    {
+      "Name": "Rec 3.4",
+      "X": 675,
+      "Y": 835,
+      "Z": 0,
+      "Connects": [
+        "Rec 2.7",
+        "Rec 4.4"
+      ]
+    },
+    {
+      "Name": "Rec 4.4",
+      "X": 675,
+      "Y": 808,
+      "Z": 0,
+      "Connects": [
+        "Rec 3.4",
+        "Rec 5.3"
+      ]
+    },
+    {
+      "Name": "Rec 5.3",
+      "X": 698,
+      "Y": 789,
+      "Z": 0,
+      "Connects": [
+        "Rec 4.4",
+        "Rec 6"
+      ]
+    },
+    {
+      "Name": "Rec 6",
+      "X": 727,
+      "Y": 764,
+      "Z": 0,
+      "Connects": [
+        "Rec 5.3",
+        "Rec 7.2"
+      ]
+    },
+    {
+      "Name": "Rec 7.2",
+      "X": 758,
+      "Y": 745,
+      "Z": 0,
+      "Connects": [
+        "Rec 6",
+        "Rec 8.2"
+      ]
+    },
+    {
+      "Name": "Rec 8.2",
+      "X": 766,
+      "Y": 751,
+      "Z": 0,
+      "Connects": [
+        "Rec 7.2"
+      ]
+    },
+    {
+      "Name": "Rec 1.4",
+      "X": 635,
+      "Y": 858,
+      "Z": 0,
+      "Connects": [
+        "Rec 2.8",
+        "WP 385"
+      ]
+    },
+    {
+      "Name": "Rec 2.8",
+      "X": 635,
+      "Y": 832,
+      "Z": 0,
+      "Connects": [
+        "Rec 1.4",
+        "Rec 3.7",
+        "WP 421"
+      ]
+    },
+    {
+      "Name": "Rec 3.7",
+      "X": 655,
+      "Y": 823,
+      "Z": 0,
+      "Connects": [
+        "Rec 2.8"
+      ]
+    },
+    {
+      "Name": "WP 421",
+      "X": 635,
+      "Y": 824,
+      "Z": 0,
+      "Connects": [
+        "Rec 3.7"
+      ]
+    },
+    {
+      "Name": "WP 422",
+      "X": 642,
+      "Y": 2146,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 423",
+      "X": 621,
+      "Y": 2148,
+      "Z": 0,
+      "Connects": [
+        "WP 422"
+      ]
+    },
+    {
+      "Name": "WP 424",
+      "X": 594,
+      "Y": 2132,
+      "Z": 0,
+      "Connects": [
+        "WP 423"
+      ]
+    },
+    {
+      "Name": "WP 425",
+      "X": 619,
+      "Y": 2174,
+      "Z": 0,
+      "Connects": [
+        "WP 423"
+      ]
+    },
+    {
+      "Name": "WP 426",
+      "X": 661,
+      "Y": 2148,
+      "Z": 0,
+      "Connects": [
+        "WP 422"
+      ]
+    },
+    {
+      "Name": "WP 427",
+      "X": 644,
+      "Y": 2171,
+      "Z": 0,
+      "Connects": [
+        "WP 422"
+      ]
+    },
+    {
+      "Name": "WP 428",
+      "X": 621,
+      "Y": 2181,
+      "Z": 0,
+      "Connects": [
+        "WP 425"
+      ]
+    },
+    {
+      "Name": "WP 429",
+      "X": 635,
+      "Y": 2180,
+      "Z": 0,
+      "Connects": [
+        "WP 428"
+      ]
+    },
+    {
+      "Name": "WP 430",
+      "X": 636,
+      "Y": 2172,
+      "Z": 0,
+      "Connects": [
+        "WP 429",
+        "WP 427"
+      ]
+    },
+    {
+      "Name": "WP 431",
+      "X": 657,
+      "Y": 2173,
+      "Z": 0,
+      "Connects": [
+        "WP 427",
+        "WP 430"
+      ]
+    },
+    {
+      "Name": "WP 432",
+      "X": 637,
+      "Y": 2188,
+      "Z": 0,
+      "Connects": [
+        "WP 429",
+        "WP 430"
+      ]
+    },
+    {
+      "Name": "WP 433",
+      "X": 644,
+      "Y": 2190,
+      "Z": 0,
+      "Connects": [
+        "WP 432"
+      ]
+    },
+    {
+      "Name": "WP 434",
+      "X": 643,
+      "Y": 2203,
+      "Z": 0,
+      "Connects": [
+        "WP 433"
+      ]
+    },
+    {
+      "Name": "WP 435",
+      "X": 635,
+      "Y": 2231,
+      "Z": 0,
+      "Connects": [
+        "WP 434"
+      ]
+    },
+    {
+      "Name": "WP 436",
+      "X": 613,
+      "Y": 2190,
+      "Z": 0,
+      "Connects": [
+        "WP 428"
+      ]
+    },
+    {
+      "Name": "WP 437",
+      "X": 610,
+      "Y": 2229,
+      "Z": 0,
+      "Connects": [
+        "WP 435"
+      ]
+    },
+    {
+      "Name": "WP 438",
+      "X": 600,
+      "Y": 2222,
+      "Z": 0,
+      "Connects": [
+        "WP 437"
+      ]
+    },
+    {
+      "Name": "WP 439",
+      "X": 608,
+      "Y": 2212,
+      "Z": 0,
+      "Connects": [
+        "WP 438"
+      ]
+    },
+    {
+      "Name": "WP 440",
+      "X": 613,
+      "Y": 2204,
+      "Z": 0,
+      "Connects": [
+        "WP 439",
+        "WP 436",
+        "WP 434"
+      ]
+    },
+    {
+      "Name": "WP 441",
+      "X": 595,
+      "Y": 2235,
+      "Z": 0,
+      "Connects": [
+        "WP 438"
+      ]
+    },
+    {
+      "Name": "WP 442",
+      "X": 580,
+      "Y": 2248,
+      "Z": 0,
+      "Connects": [
+        "WP 441"
+      ]
+    },
+    {
+      "Name": "WP 443",
+      "X": 595,
+      "Y": 2266,
+      "Z": 0,
+      "Connects": [
+        "WP 442"
+      ]
+    },
+    {
+      "Name": "WP 444",
+      "X": 570,
+      "Y": 2235,
+      "Z": 0,
+      "Connects": [
+        "WP 442",
+        "WP 446"
+      ]
+    },
+    {
+      "Name": "WP 445",
+      "X": 580,
+      "Y": 2220,
+      "Z": 0,
+      "Connects": [
+        "WP 438"
+      ]
+    },
+    {
+      "Name": "WP 446",
+      "X": 570,
+      "Y": 2226,
+      "Z": 0,
+      "Connects": [
+        "WP 445"
+      ]
+    },
+    {
+      "Name": "WP 447",
+      "X": 576,
+      "Y": 2199,
+      "Z": 0,
+      "Connects": [
+        "WP 445"
+      ]
+    },
+    {
+      "Name": "WP 448",
+      "X": 578,
+      "Y": 2133,
+      "Z": 0,
+      "Connects": [
+        "WP 424"
+      ]
+    },
+    {
+      "Name": "WP 449",
+      "X": 581,
+      "Y": 2160,
+      "Z": 0,
+      "Connects": [
+        "WP 448"
+      ]
+    },
+    {
+      "Name": "WP 450",
+      "X": 582,
+      "Y": 2180,
+      "Z": 0,
+      "Connects": [
+        "WP 449"
+      ]
+    },
+    {
+      "Name": "WP 451",
+      "X": 571,
+      "Y": 2181,
+      "Z": 0,
+      "Connects": [
+        "WP 450",
+        "WP 447"
+      ]
+    },
+    {
+      "Name": "WP 452",
+      "X": 643,
+      "Y": 2114,
+      "Z": 0,
+      "Connects": [
+        "WP 422"
+      ]
+    },
+    {
+      "Name": "WP 453",
+      "X": 643,
+      "Y": 2089,
+      "Z": 0,
+      "Connects": [
+        "WP 452"
+      ]
+    },
+    {
+      "Name": "WP 454",
+      "X": 644,
+      "Y": 2073,
+      "Z": 0,
+      "Connects": [
+        "WP 453"
+      ]
+    },
+    {
+      "Name": "WP 455",
+      "X": 757,
+      "Y": 875,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "WP 456",
+      "X": 754,
+      "Y": 850,
+      "Z": 0,
+      "Connects": [
+        "WP 455"
+      ]
+    },
+    {
+      "Name": "WP 457",
+      "X": 758,
+      "Y": 821,
+      "Z": 0,
+      "Connects": [
+        "WP 456"
+      ]
+    },
+    {
+      "Name": "WP 458",
+      "X": 761,
+      "Y": 797,
+      "Z": 0,
+      "Connects": [
+        "WP 457"
+      ]
+    },
+    {
+      "Name": "WP 459",
+      "X": 765,
+      "Y": 773,
+      "Z": 0,
+      "Connects": [
+        "Rec 7.2",
+        "WP 458"
+      ]
+    },
+    {
+      "Name": "WP 460",
+      "X": 770,
+      "Y": 762,
+      "Z": 0,
+      "Connects": [
+        "WP 459",
+        "Rec 7.2"
+      ]
     }
   ]
 }

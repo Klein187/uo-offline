@@ -28,30 +28,83 @@ namespace Server.CustomBots
         private static readonly string JsonPath =
             Path.Combine(Core.BaseDirectory, "Data", "PlayerBotSpawners.json");
 
-        // Hardcoded fallback list — only used when no JSON file exists.
-        // These coords are educated guesses for ModernUO's T2A maps; expect
-        // some to be inside walls. Better to author the JSON via the
-        // [BotSpawnerHere → [ExportBotSpawners workflow.
-        private sealed record FallbackSpot(
-            string MapName, int X, int Y, int Z,
-            string Behavior, int Amount, int BoundsRadius);
+        // City spawn regions. Each gets a WEIGHTED share of the total
+        // population (BotPopulation.TargetCount). Britain is the hub so it
+        // carries the largest share; the rest split the remainder. Each
+        // city's allotment is spread across multiple spawners so no single
+        // A city may have multiple sub-anchor points — Britain in
+        // particular sprawls east-west across enough tiles that one
+        // anchor + ±35 jitter doesn't cover the whole city. Adding an
+        // east anchor (1605, 1640) lets spawners land in both halves.
+        // SubAnchors is OPTIONAL: cities with a null/empty list use only
+        // the primary (X, Y) coord. The distributor jitters from a
+        // randomly-picked anchor for each spawner.
+        // Name is matched (case-insensitive) against BotDestination.City
+        // so the distributor can pull a city's real destinations out of
+        // the catalog when randomizing spawn points.
+        private sealed record CityRegion(
+            string Name, string MapName, int X, int Y, int Z, double Weight,
+            Point2D[] SubAnchors = null);
 
-        private static readonly FallbackSpot[] FallbackList =
+        private static readonly CityRegion[] Cities =
         {
-            new("Felucca", 1434, 1697, 0, "BankSitter", 15, 10),  // Britain
-            new("Felucca", 2891,  678, 0, "BankSitter",  8, 10),  // Vesper
-            new("Felucca", 1832, 2839, 0, "BankSitter",  8, 10),  // Trinsic
-            new("Felucca",  643,  858, 0, "BankSitter",  6, 10),  // Yew
-            new("Felucca", 2511,  564, 0, "BankSitter",  6, 10),  // Minoc
-            new("Felucca", 3680, 2155, 0, "BankSitter",  8, 10),  // Magincia
-            new("Felucca", 1417, 3821, 0, "BankSitter",  5, 10),  // Jhelom
-            new("Felucca",  591, 2147, 0, "BankSitter",  6, 10),  // Skara Brae
-            new("Felucca", 4471, 1175, 0, "BankSitter",  6, 10),  // Moonglow
+            // Britain — anchors for west (city hall / bank area) AND east
+            // (alchemist / sewer entrance area). Spawners now distribute
+            // across both halves instead of clustering on west side only.
+            new("Britain",    "Felucca", 1434, 1697, 0, 2.5,
+                SubAnchors: new[]
+                {
+                    new Point2D(1434, 1697),  // west — same as primary
+                    new Point2D(1605, 1640),  // east — alchemist/sewer area
+                }),
+            new("Vesper",     "Felucca", 2891,  678, 0, 1.0),
+            new("Trinsic",    "Felucca", 1832, 2839, 0, 1.0),
+            new("Yew",        "Felucca",  643,  858, 0, 0.8),
+            new("Minoc",      "Felucca", 2511,  564, 0, 0.8),
+            new("Magincia",   "Felucca", 3680, 2155, 0, 0.8),
+            new("Jhelom",     "Felucca", 1417, 3821, 0, 0.7),
+            new("Skara Brae", "Felucca",  591, 2147, 0, 0.7),
+            new("Moonglow",   "Felucca", 4471, 1175, 0, 0.7),
+        };
+
+        // Behaviors to assign across a city's spawners, round-robin, so a
+        // city has a believable MIX — bank-sitters, travelers, shoppers —
+        // rather than a hundred identical bots.
+        private static readonly string[] BehaviorMix =
+        {
+            "Traveler", "Traveler", "BankSitter", "Shopper", "Traveler",
         };
 
         public static void Configure()
         {
             CommandSystem.Register("GenerateBots", AccessLevel.Administrator, OnCommand);
+        }
+
+        // Called by BotStartupManager on world load. If the world has NO
+        // PlayerBotSpawners at all (fresh server, or none ever placed), lay
+        // down the default set so the world isn't empty. If spawners
+        // already exist, does nothing — the startup manager respawns those
+        // itself. Returns the number of spawners placed (0 if none needed).
+        public static int EnsurePopulation()
+        {
+            // Already have spawners? Leave them; nothing to do here.
+            foreach (var item in World.Items.Values)
+            {
+                if (item is PlayerBotSpawner sp && !sp.Deleted)
+                    return 0;
+            }
+
+            // No spawners exist — lay down the default population. Prefer
+            // the authored JSON, fall back to the built-in list. Passing
+            // null for `from` is safe (TryPlace null-checks it).
+            int placed = File.Exists(JsonPath)
+                ? LoadFromJson(null)
+                : LoadFromFallback(null);
+
+            Console.WriteLine(
+                $"[GenerateBots] EnsurePopulation: no spawners found, " +
+                $"placed {placed} default spawner(s).");
+            return placed;
         }
 
         [Usage("GenerateBots")]
@@ -87,6 +140,49 @@ namespace Server.CustomBots
             from.SendMessage("Walk to any bank to see the crowd. Bots spawn over the next few seconds.");
         }
 
+        // Called by [SetBotPopulation. Clears existing spawners and lays
+        // down a fresh set sized to the current BotPopulation.TargetCount.
+        // Returns the number of spawners placed.
+        public static int RegenerateForPopulation()
+        {
+            // Clear existing spawners (null-safe — no Mobile needed).
+            var existing = new List<PlayerBotSpawner>();
+            foreach (var item in World.Items.Values)
+            {
+                if (item is PlayerBotSpawner pbs && !pbs.Deleted)
+                    existing.Add(pbs);
+            }
+            foreach (var pbs in existing)
+            {
+                try { pbs.Delete(); } catch { }
+            }
+
+            // Also clear existing bots so the old population doesn't linger
+            // on top of the new one.
+            var bots = new List<PlayerBot>();
+            foreach (var m in World.Mobiles.Values)
+            {
+                if (m is PlayerBot bot && !bot.Deleted)
+                    bots.Add(bot);
+            }
+            foreach (var bot in bots)
+            {
+                try { bot.Delete(); } catch { }
+            }
+
+            // Place the fresh distributed set, then respawn it immediately.
+            int placed = LoadFromFallback(null);
+
+            foreach (var item in World.Items.Values)
+            {
+                if (item is PlayerBotSpawner sp && !sp.Deleted)
+                {
+                    try { sp.Respawn(); } catch { }
+                }
+            }
+            return placed;
+        }
+
         private static void ClearExistingSpawners(Mobile from)
         {
             var existing = new List<PlayerBotSpawner>();
@@ -116,7 +212,7 @@ namespace Server.CustomBots
                 var data = JsonSerializer.Deserialize<ExportBotSpawnersCommand.Wrapper>(json);
                 if (data?.spawners == null)
                 {
-                    from.SendMessage("GenerateBots: JSON parsed but contains no spawners.");
+                    from?.SendMessage("GenerateBots: JSON parsed but contains no spawners.");
                     return 0;
                 }
 
@@ -130,22 +226,125 @@ namespace Server.CustomBots
             }
             catch (Exception ex)
             {
-                from.SendMessage($"GenerateBots: failed to parse JSON ({ex.Message}). No spawners placed.");
+                from?.SendMessage($"GenerateBots: failed to parse JSON ({ex.Message}). No spawners placed.");
             }
             return placed;
         }
 
+        // Distribute BotPopulation.TargetCount across the cities. For each
+        // city, the spawners are placed at RANDOM points: real destinations
+        // (banks, shops, the forge, etc.) when the catalog has any for
+        // this city, plus jittered offsets from the city center as filler.
+        // This is the redesign that breaks up the old "everything stacks
+        // on the city-center tile" behavior — spawners now spread across
+        // each city's actual interesting spots.
         private static int LoadFromFallback(Mobile from)
         {
+            int target = BotPopulation.TargetCount;
+            if (target < 1) target = 1;
+
+            double totalWeight = 0;
+            foreach (var c in Cities) totalWeight += c.Weight;
+            if (totalWeight <= 0) return 0;
+
             int placed = 0;
-            foreach (var s in FallbackList)
+            int botsAssigned = 0;
+            int behaviorIdx = 0;
+
+            for (int ci = 0; ci < Cities.Length; ci++)
             {
-                if (TryPlace(s.MapName, s.X, s.Y, s.Z, s.Behavior, s.Amount, s.BoundsRadius, from))
+                var city = Cities[ci];
+
+                // This city's share of the target.
+                int cityBots;
+                if (ci == Cities.Length - 1)
                 {
-                    placed++;
+                    cityBots = target - botsAssigned;
+                }
+                else
+                {
+                    cityBots = (int)Math.Round(target * (city.Weight / totalWeight));
+                }
+                if (cityBots < 1) cityBots = 1;
+                botsAssigned += cityBots;
+
+                // Build this city's pool of candidate spawn points.
+                var spots = BuildCitySpots(city);
+
+                // Split the city's allotment into small spawners, each at
+                // a RANDOM point from the pool. With enough pool points
+                // each spawner lands at a different spot; with few points,
+                // the small jitter applied per pick still scatters them.
+                int remaining = cityBots;
+                while (remaining > 0)
+                {
+                    int amount = Math.Min(BotPopulation.BotsPerSpawner, remaining);
+                    remaining -= amount;
+
+                    var spot = spots[Utility.Random(spots.Count)];
+
+                    // Round-robin a behavior so each city has a mix.
+                    string behavior = BehaviorMix[behaviorIdx % BehaviorMix.Length];
+                    behaviorIdx++;
+
+                    if (TryPlace(city.MapName, spot.X, spot.Y, spot.Z,
+                                 behavior, amount,
+                                 BotPopulation.SpawnerBoundsRadius, from))
+                    {
+                        placed++;
+                    }
                 }
             }
+
+            from?.SendMessage(
+                $"GenerateBots: distributed ~{botsAssigned} bots across " +
+                $"{Cities.Length} cities ({placed} spawners).");
             return placed;
+        }
+
+        // Build the pool of candidate spawn points for a city: every
+        // matching destination in the catalog, plus several jittered
+        // offsets from each anchor. The jittered offsets guarantee
+        // variety even for cities with zero (or one) destinations marked.
+        // Cities with SubAnchors (currently just Britain, with a west
+        // and east anchor) distribute jitters across all anchors so
+        // sprawling towns don't cluster their spawners in one quadrant.
+        private static List<Point3D> BuildCitySpots(CityRegion city)
+        {
+            var spots = new List<Point3D>();
+
+            // Real destinations belonging to this city.
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (string.Equals(d.City, city.Name,
+                                  StringComparison.OrdinalIgnoreCase))
+                {
+                    spots.Add(d.Location);
+                }
+            }
+
+            // Anchors: use SubAnchors if defined, otherwise fall back to
+            // the single primary (X, Y) coord. Each anchor gets the SAME
+            // number of jitters — so a 2-anchor city like Britain ends up
+            // with twice as many "anchor jitter" spots as a 1-anchor city,
+            // which is the right scaling (more sprawl = more spots needed).
+            var anchors = (city.SubAnchors != null && city.SubAnchors.Length > 0)
+                ? city.SubAnchors
+                : new[] { new Point2D(city.X, city.Y) };
+
+            const int JittersPerAnchor = 8;
+            const int JitterDist       = 35;
+            foreach (var anchor in anchors)
+            {
+                for (int i = 0; i < JittersPerAnchor; i++)
+                {
+                    int dx = Utility.RandomMinMax(-JitterDist, JitterDist);
+                    int dy = Utility.RandomMinMax(-JitterDist, JitterDist);
+                    spots.Add(new Point3D(anchor.X + dx, anchor.Y + dy, city.Z));
+                }
+            }
+
+            return spots;
         }
 
         // Common path used by both JSON and fallback. Returns true on
@@ -158,7 +357,7 @@ namespace Server.CustomBots
             var map = Map.Parse(mapName);
             if (map == null || map == Map.Internal)
             {
-                from.SendMessage($"GenerateBots: unknown map '{mapName}', skipping.");
+                from?.SendMessage($"GenerateBots: unknown map '{mapName}', skipping.");
                 return false;
             }
 

@@ -60,6 +60,12 @@ namespace Server.CustomBots
                     $"Class: {BotClassHelper.DisplayName(bot.Class)}   " +
                     $"Tier: {BotSkillTierHelper.DisplayName(bot.SkillTier)}");
 
+                if (bot.Class == BotClass.Crafter)
+                {
+                    from.SendMessage(0x3B2,
+                        $"Craft: {CrafterTypeHelper.DisplayName(bot.CrafterSpec)}");
+                }
+
                 // Stats
                 from.SendMessage(0x3B2,
                     $"Str/Dex/Int: {bot.RawStr} / {bot.RawDex} / {bot.RawInt}");
@@ -71,6 +77,19 @@ namespace Server.CustomBots
                 // Behavior
                 from.SendMessage(0x3B2,
                     $"Behavior: {bot.Behavior?.SerializableName ?? "Idle"}");
+
+                // Travel state — only meaningful for Travelers (other
+                // behaviors are post-arrival or stationary).
+                if (bot.Behavior is TravelerBehavior tv)
+                {
+                    string dest = string.IsNullOrEmpty(tv.DestinationName)
+                        ? "—" : tv.DestinationName;
+                    string leg = tv.CurrentLegWaypoint ?? "—";
+                    from.SendMessage(0x3B2,
+                        $"Destination: {dest}");
+                    from.SendMessage(0x3B2,
+                        $"Current waypoint: {leg}   Leg: {tv.LegProgress}");
+                }
 
                 // Notoriety / guard-relevant flags. These are what guards
                 // check when deciding whether to attack. If Criminal or

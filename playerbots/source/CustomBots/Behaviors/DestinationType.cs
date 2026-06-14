@@ -38,6 +38,8 @@ namespace Server.CustomBots
         CityCenter,
         Dungeon,
         Inn,
+        Forge,   // a forge fixture — smith crafters station here
+        Dock,    // a pier fixture — fisherman crafters station here
     }
 
     public static class DestinationWeights
@@ -92,6 +94,23 @@ namespace Server.CustomBots
                 ["Default"]  = 0.8,
                 ["Crafter"]  = 3.0,
                 ["Bard"]     = 2.0,
+            },
+
+            [DestinationType.Forge] = new()
+            {
+                // A forge is a crafter station — smiths belong here, and
+                // almost no one else has a reason to stand at a forge.
+                ["Default"]  = 0.2,
+                ["Crafter"]  = 4.0,
+            },
+
+            [DestinationType.Dock] = new()
+            {
+                // A dock is the fisherman's station. Crafters strongly
+                // weighted here (specifically Fishermen, who StationFor at
+                // Dock); almost nobody else has reason to stand on a pier.
+                ["Default"]  = 0.2,
+                ["Crafter"]  = 4.0,
             },
 
             [DestinationType.VendorCarpenter] = new()
@@ -233,6 +252,17 @@ namespace Server.CustomBots
         // "Default" entry; falls back to 1.0 if neither exists.
         public static double GetWeight(DestinationType type, BotClass cls)
         {
+            // Hard exclusion: trader classes never travel to dangerous
+            // destinations. A Crafter is a shopkeeper/artisan — it has no
+            // business wandering into a dungeon or a graveyard and getting
+            // killed. Weight 0 removes it from the roll entirely.
+            if (cls == BotClass.Crafter &&
+                (type == DestinationType.Dungeon ||
+                 type == DestinationType.Graveyard))
+            {
+                return 0.0;
+            }
+
             if (!ClassWeights.TryGetValue(type, out var classMap))
                 return 1.0;
 
