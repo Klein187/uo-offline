@@ -4,3 +4,5 @@
 tools/map/serve_map.log
 tools/map/uomap.png
 tools/map/mapdata.js
+playerbots/data/Navigation/fields_cache.bin
+*.bin

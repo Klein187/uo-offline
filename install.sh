@@ -714,6 +714,32 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Step 4c — Map editor: install the browser-based waypoint/zone/arrival editor
+# ---------------------------------------------------------------------------
+install_map_editor() {
+  banner "Installing map editor"
+
+  local src_dir="${SCRIPT_DIR}/tools/map"
+  if [[ ! -d "${src_dir}" ]]; then
+    say "No tools/map/ in repo; skipping map editor (optional)."
+    return
+  fi
+
+  local map_dir="${HOME}/uo-map"
+  mkdir -p "${map_dir}"
+  for f in serve_map.py map.html uo-map-launch.sh make_interactive_map.py; do
+    [[ -f "${src_dir}/${f}" ]] && cp "${src_dir}/${f}" "${map_dir}/"
+  done
+  [[ -f "${map_dir}/uo-map-launch.sh" ]] && chmod +x "${map_dir}/uo-map-launch.sh"
+
+  say "Map editor installed to ${map_dir}."
+  say "Run ${map_dir}/uo-map-launch.sh to serve it on http://localhost:8777"
+  say "Note: the world background PNG regenerates from your UO data via"
+  say "make_interactive_map.py if not present."
+  ok "Map editor ready."
+}
+
+# ---------------------------------------------------------------------------
 # Step 4b — PlayerBots: deploy bot source files into the ModernUO source tree
 #
 # This runs BEFORE build_modernuo so the bot code is compiled into the same
@@ -729,8 +755,6 @@ install_playerbots() {
   fi
 
   local src_target="${MODERNUO_DIR}/Projects/UOContent/CustomBots"
-  local chat_target="${DIST_DIR}/Data/PlayerBotChat"
-  local waypoints_target="${DIST_DIR}/Data/Waypoints"
 
   # Hash the source we're about to deploy so we know whether to force a
   # rebuild. If the hash matches what's already deployed, skip the touch
@@ -752,24 +776,28 @@ install_playerbots() {
   cp -rT "${src_dir}/source/CustomBots" "${src_target}"
   echo "${new_hash}" > "${hash_file}"
 
-  if [[ -d "${src_dir}/data/PlayerBotChat" ]]; then
-    say "Deploying chat data -> ${chat_target}"
-    mkdir -p "${chat_target}"
-    cp -rT "${src_dir}/data/PlayerBotChat" "${chat_target}"
-  fi
-
-  if [[ -d "${src_dir}/data/Waypoints" ]]; then
-    say "Deploying waypoint graph -> ${waypoints_target}"
-    mkdir -p "${waypoints_target}"
-    cp -rT "${src_dir}/data/Waypoints" "${waypoints_target}"
-  fi
+  # Deploy every bot data directory present in the repo. The bots need
+  # Destinations (where to go), Waypoints (the road graph), Zones (painted
+  # areas + portals for arrival), Navigation (field caches), and
+  # PlayerBotChat (speech lines). Whole-dir copy so new dirs are picked up
+  # automatically.
+  for sub in Destinations Waypoints Zones PlayerBotChat; do
+    if [[ -d "${src_dir}/data/${sub}" ]]; then
+      say "Deploying ${sub} -> ${DIST_DIR}/Data/${sub}"
+      mkdir -p "${DIST_DIR}/Data/${sub}"
+      cp -rT "${src_dir}/data/${sub}" "${DIST_DIR}/Data/${sub}"
+    fi
+  done
+  # Navigation/fields_cache.bin is a generated distance-field cache; the
+  # bots rebuild it on first run. Not shipped (would be stale for a fresh
+  # world). Just ensure the dir exists for them to write into.
+  mkdir -p "${DIST_DIR}/Data/Navigation"
 
   # Clean up any legacy files from older bot system versions
   local legacy_files=(
     "${src_target}/Behaviors/RouteRegistry.cs"
     "${src_target}/Behaviors/ReloadRoutesCommand.cs"
     "${src_target}/Behaviors/DestinationRegistry.cs"
-    "${src_target}/Behaviors/ReloadDestinationsCommand.cs"
   )
   for f in "${legacy_files[@]}"; do
     [[ -f "$f" ]] && rm -f "$f"
@@ -777,7 +805,6 @@ install_playerbots() {
 
   local legacy_dirs=(
     "${DIST_DIR}/Data/Routes"
-    "${DIST_DIR}/Data/Destinations"
   )
   for d in "${legacy_dirs[@]}"; do
     [[ -d "$d" ]] && rm -rf "$d"
@@ -799,6 +826,7 @@ main() {
   fetch_modernuo
   bootstrap_dotnet
   install_playerbots
+  install_map_editor
   build_modernuo
   fix_felucca_season
   find_or_download_uo_data
