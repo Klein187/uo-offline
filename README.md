@@ -1,6 +1,6 @@
 # UO Offline
 
-A one-command installer for offline single-player Ultima Online on Linux and Steam Deck, with a custom PlayerBots system that populates Britannia with bots that fight, travel, chat, ride horses, and live their own lives.
+A one-command installer for offline single-player Ultima Online on Linux and Steam Deck, with a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, cross between cities through moongates, and live their own lives.
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, runs entirely on localhost.
 
@@ -39,7 +39,7 @@ The world starts empty. To populate it:
 
 **1.** Type `[GmPanel` to open the GM admin panel. Click **★ Run All** under "WORLD" — this seeds the world with vendors, monsters, signs, moongates, town criers, and PlayerBots at every bank.
 
-**2.** Done. Bots are now alive. The Lifecycle system takes over — bank-sitters transition to adventurers, adventurers travel to dungeons, etc.
+**2.** Done. Bots are now alive. The Lifecycle system takes over — bank-sitters become shoppers and adventurers, travelers walk the roads to vendors and dungeons, bots step through moongates to other cities.
 
 ---
 
@@ -51,42 +51,89 @@ The world starts empty. To populate it:
 
 **Mounts.** 70% of bots spawn mounted on a horse, ostard, or llama. Horse coat colors vary realistically (browns, grays, palominos). Mounted bots move at proper UO mount speed. Mounts despawn cleanly with their rider on death or removal.
 
-**Behaviors.** Five distinct bot behaviors: Idle, Wander, BankSitter, Adventurer (real combat — sword swings, retreat at low HP, permadeath), and Traveler (walks/rides between destinations along roads).
+**Behaviors.** Bots run one of several behaviors, swapped by the lifecycle system and by arriving at the right kind of place:
+- **Idle / Wander** — light local movement.
+- **BankSitter** — stands at a bank, chats.
+- **Traveler** — walks or rides between destinations along the waypoint road network.
+- **Shopper** — stands at a vendor area and browses ("vendor buy", browsing chatter), then moves on.
+- **Crafter** — settles at its station (Smith → Forge, Tailor, Bowyer) for long working sessions.
+- **Adventurer** — real melee combat: sword swings, retreat at low HP, permadeath.
+- **PK** — hostile player-killer behavior.
 
-**Destinations and waypoints.** Travelers don't just wander to random forest spots — they go to actual places. 17 destinations in Britain so far (bank, tailor, alchemist, inn, healer, bowyer, weaponer, bakery, tavern). Class-weighted destination picking: Bards prefer taverns, Crafters prefer smithies, Mages prefer the moongate. The waypoint graph has 35 nodes covering Britain's road network, with hot-reload via `[ReloadWaypoints`.
+**Destinations, waypoints, and zones.** Travelers go to actual *places*, not random spots. The world is described by three layers:
+- **Waypoints** — the road network. A graph of nodes Travelers thread with A*/Dijkstra routing, hot-reloadable via `[ReloadWaypoints`.
+- **Destinations** — places of interest (banks, vendors, taverns, healers, moongates, dungeon entrances), class-weighted so Bards prefer taverns, Crafters prefer forges, etc.
+- **Zones** — painted *areas* (open regions like bank plazas and docks where a behavior happens throughout) and *portals* (doorway thresholds). Managed by `ZoneRegistry`, hot-reloadable via `[ReloadZones`.
 
-**Combat.** Adventurers engage hostile creatures (negative-Karma monsters) in melee, retreat when wounded, die permanently, get replaced by their spawner. Bots respect the notoriety system — they don't attack innocents or wildlife. No magic combat yet — coming.
+**Arrival points.** The key to bots reaching places they can actually stand. A destination can carry one or more **arrival points** — specific reachable tiles (a vendor counter, a doorstep, a moongate teleporter) — each with its own preferred route waypoints. A bot picks one arrival point, routes to the nearest of its waypoints, and arrives *on a standable tile* instead of grinding a wall trying to reach an unreachable interior coordinate. This is what lets a Shopper stop at the counter and a Traveler step onto a moongate cleanly.
 
-**Stuck recovery.** When bots get pinned against terrain (lightposts, corners, walls), automatic detection nudges them 3 tiles in a random walkable direction every 4 seconds until they're free.
+**Moongate travel.** Bots that reach a moongate have a high chance to step through it and emerge at a random other city's gate, then resume exploring wherever they land — circulating the population across Britannia instead of pooling in one city. Bots whose destination is across water (on an island unreachable by foot) automatically reroute to a reachable moongate and gate out.
 
-**Navigation.** Short-range pathfinding via ModernUO's A*. Long-range via the waypoint graph: Dijkstra picks routes; PathFollower walks each leg. Bots fire dungeon entrance teleporters naturally (no fake "go inside" magic — they actually step on the teleporter tile).
+**Combat.** Adventurers engage hostile creatures (negative-Karma monsters) in melee, retreat when wounded, die permanently, get replaced by their spawner. Bots respect the notoriety system — they don't attack innocents or wildlife. Magic combat is still to come.
 
-**Lifecycle.** Every bot has a personality — weighted tendencies toward each behavior plus optional traits (Restless, Homebody, Brave, Cautious, Wealthy, Rough). Every 60 seconds the lifecycle manager evaluates each bot; if their current phase (30-180 minutes) has elapsed, they transition. Smart placement: bots becoming Adventurers walk or recall to a dungeon, BankSitters teleport to a random bank.
+**Stuck recovery.** When bots get pinned against terrain, automatic detection nudges them in a walkable direction, opens doors in the way, and repaths — with a give-up after repeated failure so nothing paces forever.
 
-**Admin tools.** `[GmPanel` is the central GM gump for everything. World setup, spawning bots with custom behavior mixes, teleporting to cities and dungeons, cleanup (single-target remove, mass spawner remove, all with confirmation gumps for destructive actions).
+**Navigation.** Short-range pathfinding via ModernUO's A*. Long-range via the waypoint graph. A distance-field final-approach system carries bots the last few tiles into areas. Bots fire dungeon/moongate teleporters naturally by stepping on the tile (via arrival points) — no fake "go inside" magic.
 
-**World-marking commands** for capturing waypoints and destinations as you walk:
-- `[MarkWay <name>` — record a waypoint at your position, auto-connects to neighbors within 38 tiles
-- `[MarkSpot <name> <type>` — record a destination (Bank, Tavern, Inn, VendorSmith, etc.) with auto-detected nearest waypoint
-- Both write JSON-ready snippets to draft files, ready to integrate into the live data
+**Lifecycle.** Every bot has a personality — weighted tendencies toward each behavior plus optional traits (Restless, Homebody, Brave, Cautious, Wealthy, Rough). The lifecycle manager periodically evaluates each bot and transitions it when its current phase elapses.
 
-**Diagnostics.** `[BotInfo` targets a bot and dumps their class, tier, stats, skills, and notoriety. `[BotGoals` shows every bot's current state and destination. `[LifecycleStatus` for system health. `[SetBotVerbose true` enables per-bot debug logging.
+---
+
+## The map editor
+
+A browser-based editor for the world's navigation data, served live from the running shard. Under `tools/map/`:
+
+```
+cd ~/uo-map        # (installed location)
+./uo-map-launch.sh # serves on http://localhost:8777
+```
+
+It renders the full Felucca map and overlays your waypoints, destinations, and zones, reading them **live** from the shard's JSON every refresh. In EDIT mode you can:
+
+- **Waypoints** — click to add (snaps to walkable road, auto-connects neighbors), drag to move, link/sever edges, delete.
+- **Destinations** — drag to move, enable/disable (promote from the generated archive into the live catalog), paint **areas** over them (the shape becomes the destination), create new destinations.
+- **Arrival points** — drop one or more on reachable tiles per destination (interior floors included), drag/delete them, and link each to route waypoints (click the gold marker, then a waypoint — a dashed gold line confirms the link).
+
+Changes write straight to the shard's JSON (with backups); `[ReloadDestinations` / `[ReloadWaypoints` / `[ReloadZones` make them live without a restart.
+
+The map background PNG is a generated artifact — regenerate it from your UO client's map files with `make_interactive_map.py` if it's missing.
+
+---
+
+## GM commands
+
+**World marking (capture as you walk):**
+- `[MarkWay <name>` — record a waypoint at your position, walkability-gated, auto-connects to reachable neighbors within 38 tiles.
+- `[MarkSpot <type> <name>` — record a destination (Bank, Tavern, VendorSmith, etc.) with auto-detected city and nearest waypoint.
+- `[RecordWay` … `[RecordWayStop` — drop waypoints automatically as you walk a route.
+- `[DelWay` / `[DelSpot` — remove the nearest waypoint / destination (with confirmation).
+
+**Graph maintenance:**
+- `[ResyncWaypoints` — recompute every destination's nearest waypoint to match the current graph (dry-run by default, `apply` to write).
+- `[AuditEdges` — flag waypoint edges that are blocked, too costly, or too far.
+- `[ReloadWaypoints` / `[ReloadDestinations` / `[ReloadZones` — hot-reload the data files.
+
+**Diagnostics:**
+- `[BotInfo` — target a bot, dump class/tier/stats/skills/notoriety/behavior/destination.
+- `[BotWhere`, `[hpacomponents`, `[hpaedges`, field-debug commands.
+
+**Admin:**
+- `[GmPanel` — central GM gump: world setup, spawning, teleporting, cleanup (with confirmation gumps for destructive actions).
 
 ---
 
 ## Currently being worked on
 
-- **Expanding the waypoint graph beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. Each city needs its own road network + destinations cluster.
-- **Verifying dungeon interior coordinates.** Despise is verified; the other 8 dungeons have placeholder coords pending in-game verification.
-- **Special dungeon-entrance waypoints.** A waypoint flag system that lets bots walk to a dungeon entrance teleporter and step on it naturally, replacing the current teleport-with-pause fallback.
+- **Expanding the world beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. — each city needs its waypoint road network, destination cluster, and painted areas. The map editor makes this point-and-click.
+- **Painting vendor areas and arrival points** across the active destinations so every shop hands off to a Shopper cleanly.
 
 ## What's coming
 
-- **Death and resurrection.** Dead adventurer bots walk as ghosts to the nearest healer, get resurrected, walk back to their corpse, re-equip their loot.
-- **More behaviors.** Shopper, Crafter (with smithing animations), PK, Tamer (with pets), Mage combat.
-- **Random events.** Zombie invasions of towns. Bots will engage them — guards alone won't be enough.
-- **Per-personality chat.** A Wealthy bot says different things than a Rough bot.
-- **Bot story memory.** Click a bot to see their recent history — "this bot was in Despise yesterday, traveled to Britain this morning."
+- **Dungeons.** Design is complete (see `LIFECYCLE-DESIGN.md` / `TODO.md`): a DungeonCrawler behavior scoped to a dungeon by tag, entering via an arrival point on the entrance teleporter, roaming painted combat areas, descending through level teleporters (skill-weighted so weak bots stay shallow), and climbing back out one level at a time. Entrance/exit teleporters reuse the moongate teleport pattern; combat areas reuse the zone painter.
+- **Death and resurrection.** Dead bots walk as ghosts to a healer, resurrect, return to their corpse, re-equip. (Interim: respawn at spawn point.)
+- **Improved combat.** Magic combat; reworked melee.
+- **Random events.** Town invasions bots will turn out to fight.
+- **Per-personality chat** and **bot story memory** (recent travel/history per bot).
 
 ---
 
