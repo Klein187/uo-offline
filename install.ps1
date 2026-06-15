@@ -1,0 +1,455 @@
+# =========================================================================
+# UO Offline (ModernUO edition) — Windows Installer
+#
+# The Windows counterpart to install.sh. Same result: a fully offline
+# single-player UO shard with the PlayerBots system, T2A era, localhost only.
+#
+# What this does:
+#   1. Checks/installs .NET SDK 10 (per-user, no admin needed).
+#   2. Clones ModernUO and deploys the PlayerBots source + data into it.
+#   3. Builds ModernUO (bots compiled in) for Windows x64.
+#   4. Downloads the UO Classic 7.0.23.1 game data from a community mirror
+#      and installs it (or uses an existing install if found).
+#   5. Downloads Nerun's pre-T2A spawn map.
+#   6. Downloads the ClassicUO client (Windows build).
+#   7. Writes ModernUO + ClassicUO configs (T2A, localhost only).
+#   8. Installs start/stop scripts and a Desktop shortcut.
+#
+# Run via install.bat (double-click), or in PowerShell:
+#   powershell -ExecutionPolicy Bypass -File install.ps1
+# =========================================================================
+$ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+# ---------------------------------------------------------------------------
+# Paths and URLs
+# ---------------------------------------------------------------------------
+$InstallRoot   = Join-Path $env:USERPROFILE "uo-modernuo"
+$ModernUORepo  = "https://github.com/modernuo/ModernUO.git"
+$ModernUODir   = Join-Path $InstallRoot "ModernUO"
+$DistDir       = Join-Path $ModernUODir "Distribution"
+$CfgDir        = Join-Path $DistDir "Configuration"
+$SpawnersDir   = Join-Path $DistDir "Spawners\uoclassic"
+
+$ClassicUODir  = Join-Path $InstallRoot "ClassicUO"
+$ClassicUOReleaseUrl = "https://api.github.com/repos/ClassicUO/ClassicUO/releases"
+
+$UODataUrl     = "https://mirror.ashkantra.de/fullclients/7.0.23.1.exe"
+$UODataVersion = "7.0.23.1"
+$UODataDir     = Join-Path $InstallRoot "UOData\$UODataVersion"
+
+$SpawnMapUrl   = "https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/master/Distro/Data/Nerun's%20Distro/Spawns/uoclassic/UOClassic.map"
+
+$DotnetRoot    = Join-Path $env:USERPROFILE ".dotnet"
+$DotnetVersion = "10.0.201"
+
+# Config defaults
+$ExpansionId   = 1
+$ExpansionName = "T2A"
+$OwnerUser     = "admin"
+$OwnerPass     = "admin"
+$ListenAddr    = "127.0.0.1:2593"
+$ShardName     = "UO Offline"
+
+# ---------------------------------------------------------------------------
+# Pretty output
+# ---------------------------------------------------------------------------
+function Banner($m) { Write-Host "`n=== $m ===" -ForegroundColor Cyan }
+function Say($m)    { Write-Host "--> $m" -ForegroundColor Cyan }
+function Ok($m)     { Write-Host "[OK] $m" -ForegroundColor Green }
+function Warn($m)   { Write-Host "[WARN] $m" -ForegroundColor Yellow }
+function Die($m)    { Write-Host "[ERROR] $m" -ForegroundColor Red; exit 1 }
+
+# ---------------------------------------------------------------------------
+# Step 1 — Pre-flight
+# ---------------------------------------------------------------------------
+function Preflight {
+  Banner "Pre-flight checks"
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Die "git is required. Install Git for Windows from https://git-scm.com/download/win and re-run."
+  }
+  New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
+  Ok "Install root: $InstallRoot"
+}
+
+# ---------------------------------------------------------------------------
+# Step 2 — .NET SDK (per-user, no admin)
+# ---------------------------------------------------------------------------
+function BootstrapDotnet {
+  Banner "Bootstrapping .NET SDK $DotnetVersion"
+
+  $dotnetExe = Join-Path $DotnetRoot "dotnet.exe"
+  if (Test-Path $dotnetExe) {
+    $sdks = & $dotnetExe --list-sdks 2>$null
+    if ($sdks -match "^10\.") { Ok "Found compatible .NET SDK at $DotnetRoot"; $env:PATH = "$DotnetRoot;$env:PATH"; $env:DOTNET_ROOT = $DotnetRoot; return }
+  }
+
+  Say "Downloading dotnet-install.ps1..."
+  $installer = Join-Path $InstallRoot "dotnet-install.ps1"
+  Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $installer
+
+  Say "Installing .NET SDK $DotnetVersion into $DotnetRoot..."
+  & $installer -Version $DotnetVersion -InstallDir $DotnetRoot
+  Remove-Item $installer -Force -ErrorAction SilentlyContinue
+
+  $env:PATH = "$DotnetRoot;$env:PATH"
+  $env:DOTNET_ROOT = $DotnetRoot
+  if (-not (Test-Path $dotnetExe)) { Die "dotnet not installed at $dotnetExe" }
+  Ok "Installed: $(& $dotnetExe --version)"
+}
+
+# ---------------------------------------------------------------------------
+# Step 3 — Clone ModernUO (full history, required by Nerdbank.GitVersioning)
+# ---------------------------------------------------------------------------
+function FetchModernUO {
+  Banner "Fetching ModernUO source"
+  if (Test-Path (Join-Path $ModernUODir ".git")) {
+    Say "ModernUO already cloned."
+    Push-Location $ModernUODir
+    if (Test-Path ".git\shallow") { git fetch --unshallow 2>$null; if ($LASTEXITCODE -ne 0) { git fetch --depth=2147483647 } }
+    git fetch --all --tags
+    git checkout main
+    git pull --ff-only
+    Pop-Location
+  } else {
+    Say "Cloning ModernUO (full history)..."
+    git clone $ModernUORepo $ModernUODir
+  }
+  Ok "ModernUO source at $ModernUODir"
+}
+
+# ---------------------------------------------------------------------------
+# Step 4 — Deploy PlayerBots into the ModernUO source tree (BEFORE build)
+# ---------------------------------------------------------------------------
+function InstallPlayerBots {
+  Banner "Installing PlayerBots"
+  $srcDir = Join-Path $ScriptDir "playerbots"
+  if (-not (Test-Path $srcDir)) { Warn "No playerbots\ next to install.ps1; skipping bot install."; return }
+
+  $srcTarget = Join-Path $ModernUODir "Projects\UOContent\CustomBots"
+
+  Say "Deploying bot source -> $srcTarget"
+  New-Item -ItemType Directory -Force -Path $srcTarget | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $srcDir "source\CustomBots\*") $srcTarget
+
+  # Deploy every bot data directory present in the repo (Destinations,
+  # Waypoints, Zones, PlayerBotChat). Navigation/fields_cache.bin is a
+  # generated cache the bots rebuild on first run — not shipped.
+  foreach ($sub in @("Destinations","Waypoints","Zones","PlayerBotChat")) {
+    $from = Join-Path $srcDir "data\$sub"
+    if (Test-Path $from) {
+      $to = Join-Path $DistDir "Data\$sub"
+      Say "Deploying $sub -> $to"
+      New-Item -ItemType Directory -Force -Path $to | Out-Null
+      Copy-Item -Recurse -Force (Join-Path $from "*") $to
+    }
+  }
+  New-Item -ItemType Directory -Force -Path (Join-Path $DistDir "Data\Navigation") | Out-Null
+
+  # Force a rebuild on next build by removing the marker dll.
+  $dll = Join-Path $DistDir "ModernUO.dll"
+  if (Test-Path $dll) { Remove-Item $dll -Force }
+  Ok "PlayerBots deployed (compiled by the next ModernUO build)"
+}
+
+# ---------------------------------------------------------------------------
+# Step 5 — Build ModernUO
+# ---------------------------------------------------------------------------
+function BuildModernUO {
+  Banner "Building ModernUO"
+  $env:PATH = "$DotnetRoot;$env:PATH"
+  $env:DOTNET_ROOT = $DotnetRoot
+
+  if (Test-Path (Join-Path $DistDir "ModernUO.dll")) {
+    Say "ModernUO already built. Skipping (delete Distribution\ModernUO.dll to force rebuild)."
+    return
+  }
+  Push-Location $ModernUODir
+  & .\publish.ps1 release win x64
+  Pop-Location
+  if (-not (Test-Path (Join-Path $DistDir "ModernUO.dll"))) { Die "Build produced no ModernUO.dll. Check output above." }
+  Ok "Build artifacts at $DistDir"
+}
+
+# ---------------------------------------------------------------------------
+# Step 5b — Felucca season -> Summer (leafy trees)
+# ---------------------------------------------------------------------------
+function FixFeluccaSeason {
+  Banner "Setting Felucca season to Summer"
+  $mapdef = Join-Path $ModernUODir "Distribution\Data\map-definitions.json"
+  if (-not (Test-Path $mapdef)) { Warn "map-definitions.json not found. Skipping."; return }
+  $txt = Get-Content $mapdef -Raw
+  # within the Felucca block, change "season": 4 to 1
+  $new = [regex]::Replace($txt, '("name":\s*"Felucca".*?)"season":\s*4', '${1}"season": 1', 'Singleline')
+  if ($new -ne $txt) {
+    Copy-Item $mapdef "$mapdef.original" -Force
+    Set-Content $mapdef $new -NoNewline
+    Ok "Felucca season set to Summer."
+  } else {
+    Say "Felucca already Summer (or pattern not found). Skipping."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Step 6 — UO game data: detect existing, else download + install
+# ---------------------------------------------------------------------------
+function FindOrDownloadUOData {
+  Banner "Locating UO game data"
+  $candidates = @(
+    "${env:ProgramFiles(x86)}\Electronic Arts\Ultima Online Classic",
+    "$env:ProgramFiles\Electronic Arts\Ultima Online Classic",
+    "$env:ProgramFiles\EA Games\Ultima Online Classic",
+    "$env:USERPROFILE\Ultima Online Classic",
+    "$env:USERPROFILE\Desktop\Ultima Online Classic",
+    $UODataDir
+  )
+  foreach ($c in $candidates) {
+    if ((Test-Path (Join-Path $c "art.mul")) -and (Test-Path (Join-Path $c "map0.mul"))) {
+      $script:UOData = $c; Ok "Found UO data: $c"; return
+    }
+  }
+
+  Warn "No existing UO data found. Downloading UO Classic $UODataVersion (~929 MB, third-party mirror, EA content)."
+  New-Item -ItemType Directory -Force -Path (Join-Path $InstallRoot "UOData") | Out-Null
+  $exePath = Join-Path $InstallRoot "UOData\$UODataVersion.exe"
+
+  if (-not (Test-Path $exePath)) {
+    Say "Downloading (5-15 min)..."
+    # The mirror 403s on default UA; send a browser one.
+    $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+    Invoke-WebRequest -Uri $UODataUrl -OutFile $exePath -Headers $headers
+  } else { Say "Installer already at $exePath." }
+
+  # It's a native Windows installer/self-extractor. It extracts relative to
+  # the working directory, so run it FROM the UOData dir to land the files
+  # in a predictable place. If a setup window appears, install to the
+  # default location and click through it.
+  New-Item -ItemType Directory -Force -Path $UODataDir | Out-Null
+  Say "Running the UO data installer. If a setup window appears, click through it (default location is fine)."
+  Start-Process -FilePath $exePath -WorkingDirectory $UODataDir -Wait
+
+  # Locate art.mul. Check the candidates, the UOData dir, AND the script
+  # folder (some builds of this installer extract next to where it was
+  # launched from). Whatever folder holds art.mul becomes the data dir.
+  $searchRoots = @($UODataDir, (Join-Path $InstallRoot "UOData"), $ScriptDir, "${env:ProgramFiles(x86)}", "$env:ProgramFiles") + $candidates
+  foreach ($root in $searchRoots) {
+    if (-not (Test-Path $root)) { continue }
+    $hit = Get-ChildItem -Path $root -Recurse -Filter "art.mul" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($hit) {
+      $dir = $hit.DirectoryName
+      # If it landed somewhere transient (the script folder), move it into UODataDir.
+      if ($dir -ne $UODataDir -and $dir.StartsWith($ScriptDir)) {
+        Say "Moving extracted UO data into $UODataDir"
+        Get-ChildItem -Path $dir | Move-Item -Destination $UODataDir -Force
+        $dir = $UODataDir
+      }
+      $script:UOData = $dir; Ok "UO data: $dir"; return
+    }
+  }
+  Die "UO data installer ran but art.mul not found. Install UO Classic manually, then re-run."
+}
+
+# ---------------------------------------------------------------------------
+# Step 7 — Nerun's spawn map
+# ---------------------------------------------------------------------------
+function FetchSpawnMap {
+  Banner "Fetching Nerun's pre-T2A spawn map"
+  New-Item -ItemType Directory -Force -Path $SpawnersDir | Out-Null
+  $target = Join-Path $SpawnersDir "UOClassic.map"
+  if ((Test-Path $target) -and (Get-Item $target).Length -gt 0) { Say "Spawn map already present."; return }
+  Say "Downloading from Nerun's repository..."
+  Invoke-WebRequest -Uri $SpawnMapUrl -OutFile $target
+  if ((Get-Content $target -First 1) -match '<!doctype|<html') { Remove-Item $target; Die "Spawn map download looks like HTML." }
+  Ok "Spawn map: $target"
+}
+
+# ---------------------------------------------------------------------------
+# Step 8 — ClassicUO (Windows build)
+# ---------------------------------------------------------------------------
+function InstallClassicUO {
+  Banner "Downloading ClassicUO client (Windows)"
+  if ((Test-Path $ClassicUODir) -and (Get-ChildItem $ClassicUODir -ErrorAction SilentlyContinue)) {
+    Say "ClassicUO already present. Skipping."; return
+  }
+  New-Item -ItemType Directory -Force -Path $ClassicUODir | Out-Null
+  $tmpZip = Join-Path $InstallRoot ".classicuo.zip"
+
+  Say "Querying GitHub for the latest Windows release..."
+  $rel = Invoke-RestMethod -Uri "$ClassicUOReleaseUrl/latest" -Headers @{ "User-Agent"="uo-offline-installer" }
+  $asset = $rel.assets | Where-Object { $_.browser_download_url -match "win" } | Select-Object -First 1
+  if (-not $asset) {
+    $rel = Invoke-RestMethod -Uri "$ClassicUOReleaseUrl/tags/ClassicUO-dev-release" -Headers @{ "User-Agent"="uo-offline-installer" }
+    $asset = $rel.assets | Where-Object { $_.browser_download_url -match "win" } | Select-Object -First 1
+  }
+  if (-not $asset) { Die "Could not find a ClassicUO Windows release." }
+
+  Say "Downloading: $($asset.browser_download_url)"
+  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpZip
+  Say "Extracting..."
+  Expand-Archive -Path $tmpZip -DestinationPath $ClassicUODir -Force
+  Remove-Item $tmpZip -Force
+
+  $cuo = Get-ChildItem $ClassicUODir -Recurse -Filter "ClassicUO.exe" | Select-Object -First 1
+  if ($cuo) { Set-Content (Join-Path $InstallRoot ".classicuo-bin-path") $cuo.FullName; Ok "ClassicUO: $($cuo.FullName)" }
+  else { Warn "ClassicUO extracted but ClassicUO.exe not located; start script will search at launch." }
+}
+
+# ---------------------------------------------------------------------------
+# Step 9 — ModernUO config
+# ---------------------------------------------------------------------------
+function WriteModernUOConfig {
+  Banner "Writing ModernUO configuration"
+  New-Item -ItemType Directory -Force -Path $CfgDir | Out-Null
+  $uoData = $script:UOData.Replace([char]92,[char]47)
+
+  @"
+{
+  "assemblyDirectories": ["./Assemblies"],
+  "dataDirectories": ["$uoData"],
+  "listeners": ["$ListenAddr"],
+  "settings": {
+    "accountHandler.maxAccountsPerIP": "10",
+    "autosave.enabled": "true",
+    "autosave.saveDelay": "00:05:00",
+    "serverList.address": "127.0.0.1",
+    "serverList.autoDetect": "false",
+    "serverListing.name": "$ShardName"
+  }
+}
+"@ | Set-Content (Join-Path $CfgDir "modernuo.json")
+  Ok "Wrote modernuo.json"
+
+  @"
+{
+  "Id": $ExpansionId,
+  "ClientFlags": "None",
+  "SupportedFeatures": { "ExpansionT2A": true, "T2A": true, "LiveAccount": true },
+  "CharacterListFlags": { "ExpansionT2A": true },
+  "MapSelectionFlags": { "Felucca": true, "Trammel": false, "Ilshenar": false, "Malas": false, "Tokuno": false, "TerMur": false }
+}
+"@ | Set-Content (Join-Path $CfgDir "expansion.json")
+  Ok "Wrote expansion.json (T2A, Felucca-only)"
+  Warn "NOTE: expansion.json here is abbreviated. If ModernUO rejects it, copy the full schema from the Linux install.sh write_modernuo_config function."
+}
+
+# ---------------------------------------------------------------------------
+# Step 10 — ClassicUO settings.json
+# ---------------------------------------------------------------------------
+function WriteClassicUOSettings {
+  Banner "Writing ClassicUO settings.json"
+  if (-not (Test-Path $ClassicUODir)) { Warn "ClassicUO dir missing; skipping."; return }
+  $uoData = $script:UOData.Replace([char]92,[char]47)
+  $targets = @($ClassicUODir)
+  $binPath = Join-Path $InstallRoot ".classicuo-bin-path"
+  if (Test-Path $binPath) { $nested = Split-Path -Parent (Get-Content $binPath); if ($nested -ne $ClassicUODir) { $targets += $nested } }
+
+  foreach ($t in $targets) {
+    @"
+{
+  "username": "$OwnerUser",
+  "password": "",
+  "ip": "127.0.0.1",
+  "port": 2593,
+  "ultimaonlinedirectory": "$uoData",
+  "clientversion": "$UODataVersion",
+  "lastservernum": 1,
+  "last_server_name": "$ShardName",
+  "fps": 60,
+  "encryption": 0,
+  "save_password": false,
+  "auto_login": false,
+  "plugins": []
+}
+"@ | Set-Content (Join-Path $t "settings.json")
+    Ok "Wrote $t\settings.json"
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Step 11 — start/stop scripts + Desktop shortcut
+# ---------------------------------------------------------------------------
+function InstallRuntimeScripts {
+  Banner "Installing launcher scripts"
+  $cuoBin = ""
+  $binPath = Join-Path $InstallRoot ".classicuo-bin-path"
+  if (Test-Path $binPath) { $cuoBin = Get-Content $binPath }
+
+  $startPs1 = Join-Path $InstallRoot "start.ps1"
+  @"
+# Start the ModernUO server (minimized), wait until it's actually listening
+# on 2593, THEN launch ClassicUO. Polling the port avoids the race where the
+# client connects before the server has finished its (slow) first boot.
+`$dist = "$DistDir"
+`$dotnet = "$DotnetRoot\dotnet.exe"
+`$server = Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist -WindowStyle Minimized -PassThru
+Write-Host "Starting server, waiting for it to listen on 2593..."
+`$ready = `$false
+for (`$i = 0; `$i -lt 120; `$i++) {
+  try {
+    `$c = New-Object System.Net.Sockets.TcpClient
+    `$c.Connect("127.0.0.1", 2593)
+    `$c.Close(); `$ready = `$true; break
+  } catch { Start-Sleep -Seconds 1 }
+}
+if (-not `$ready) { Write-Host "Server didn't come up within 120s; check the server window."; }
+`$cuo = "$cuoBin"
+if (`$cuo -and (Test-Path `$cuo)) { Start-Process -FilePath `$cuo -WorkingDirectory (Split-Path -Parent `$cuo) }
+else { Write-Host "ClassicUO.exe not found; start it manually." }
+"@ | Set-Content $startPs1
+  Ok "Wrote start.ps1"
+
+  # start.bat — double-clickable launcher that bypasses the execution policy
+  # (running start.ps1 directly is blocked by default on Windows).
+  @"
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0start.ps1"
+"@ | Set-Content (Join-Path $InstallRoot "start.bat")
+  Ok "Wrote start.bat"
+
+  # Desktop shortcut to start.ps1
+  $wsh = New-Object -ComObject WScript.Shell
+  $lnk = $wsh.CreateShortcut((Join-Path ([Environment]::GetFolderPath("Desktop")) "UO Offline.lnk"))
+  $lnk.TargetPath = "powershell.exe"
+  $lnk.Arguments = "-ExecutionPolicy Bypass -File `"$startPs1`""
+  $lnk.WorkingDirectory = $InstallRoot
+  $lnk.IconLocation = "shell32.dll,18"
+  $lnk.Save()
+  Ok "Desktop shortcut: UO Offline"
+}
+
+# ---------------------------------------------------------------------------
+function Finish {
+  Banner "Install complete"
+  Write-Host @"
+
+Install root:   $InstallRoot
+Server:         $DistDir
+Client:         $ClassicUODir
+UO data:        $($script:UOData)
+Listener:       $ListenAddr  (localhost only, offline)
+Owner login:    $OwnerUser / $OwnerPass
+
+To play:        Double-click the "UO Offline" desktop shortcut.
+                (or run $InstallRoot\start.ps1)
+
+First launch: create the owner account in-game ($OwnerUser/$OwnerPass),
+make a character, then populate the world with the [-commands in
+$InstallRoot\POPULATE-WORLD.txt (same as the Linux version).
+
+"@
+}
+
+# ---------------------------------------------------------------------------
+Preflight
+BootstrapDotnet
+FetchModernUO
+InstallPlayerBots
+BuildModernUO
+FixFeluccaSeason
+FindOrDownloadUOData
+FetchSpawnMap
+InstallClassicUO
+WriteModernUOConfig
+WriteClassicUOSettings
+InstallRuntimeScripts
+Finish
