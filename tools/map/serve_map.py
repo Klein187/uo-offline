@@ -22,7 +22,7 @@ ZONES_JSON = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Zones/zones.json")
 
 # UO client data dir (for map0.mul: true Z + road-tile snapping).
-UO_DIR = "/home/deck/Downloads/uo-7.0.23.1/7.0.23.1"
+UO_DIR = os.path.expanduser("~/uo-modernuo/UOData/7.0.23.1")
 
 def jload(p): return json.loads(open(p, encoding="utf-8-sig").read())
 

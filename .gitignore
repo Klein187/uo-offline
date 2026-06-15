@@ -2,7 +2,10 @@
 *.bak-*
 *.pre-felucca-patch
 tools/map/serve_map.log
-tools/map/uomap.png
 tools/map/mapdata.js
 playerbots/data/Navigation/fields_cache.bin
 *.bin
+
+7.0.23.1.bmp
+patch_readme_dual.py
+uoico.ico
