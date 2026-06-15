@@ -8,7 +8,11 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 ## Install
 
-**Steam Deck users:** first, run these once to allow installs (Desktop Mode, in a terminal). The first `passwd` sets a sudo password if you've never set one:
+The installer does everything: clones and builds ModernUO with the PlayerBots compiled in, bootstraps .NET, downloads ClassicUO and the UO Classic game data (from a community mirror, or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and sets up a launcher. Takes 15-25 minutes. Re-running it is safe -- it skips steps already done.
+
+### Linux / Steam Deck
+
+**Steam Deck users:** first, in Desktop Mode, run these once to allow installs. The first `passwd` sets a sudo password if you've never set one:
 
 ```
 passwd
@@ -17,7 +21,7 @@ sudo pacman-key --init
 sudo pacman-key --populate
 ```
 
-Then get the code and run the installer. Either clone with git:
+Then clone and run:
 
 ```
 git clone https://github.com/Klein187/uo-offline.git
@@ -26,17 +30,24 @@ chmod +x install.sh
 ./install.sh
 ```
 
-…or, if you don't have git, download the repo as a ZIP instead: on the GitHub page click the green **Code** button → **Download ZIP**, then:
+(No git? On the GitHub page click the green **Code** button, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod`/`./install.sh`.)
+
+### Windows
+
+You need [Git for Windows](https://git-scm.com/download/win) (for the clone) -- the installer handles .NET itself. Then, in a terminal (or PowerShell):
 
 ```
-cd ~/Downloads
-unzip uo-offline-main.zip
-cd uo-offline-main
-chmod +x install.sh
-./install.sh
+git clone https://github.com/Klein187/uo-offline.git
+cd uo-offline
 ```
 
-That's it. The installer handles everything: it clones and builds ModernUO (with the PlayerBots compiled in), bootstraps .NET, downloads ClassicUO, fetches the UO Classic game data from a community mirror (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and installs a desktop launcher. Takes 15-25 minutes. Re-running it is safe — it skips steps already done.
+Now **double-click `install.bat`** in the `uo-offline` folder (or run it from the terminal). It launches the PowerShell installer with the right permissions, so you don't have to change any Windows settings.
+
+(No git? Use the **Code -> Download ZIP** button on GitHub, unzip, open the `uo-offline-main` folder, and double-click `install.bat`.)
+
+Two things to expect during a Windows install:
+- A **UO Classic setup window** may pop up while the game data downloads -- install to the default location and click through it. The installer continues automatically after.
+- When it finishes, launch with the **UO Offline** desktop shortcut (or `start.bat`). Don't run `start.ps1` directly -- Windows blocks unsigned scripts, which the shortcut and `.bat` work around for you.
 
 ---
 
