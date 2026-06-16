@@ -727,7 +727,7 @@ install_map_editor() {
 
   local map_dir="${HOME}/uo-map"
   mkdir -p "${map_dir}"
-  for f in serve_map.py map.html uo-map-launch.sh make_interactive_map.py; do
+  for f in serve_map.py map.html uo-map-launch.sh uomap.png make_map_png.py; do
     [[ -f "${src_dir}/${f}" ]] && cp "${src_dir}/${f}" "${map_dir}/"
   done
   [[ -f "${map_dir}/uo-map-launch.sh" ]] && chmod +x "${map_dir}/uo-map-launch.sh"
