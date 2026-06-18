@@ -27,6 +27,8 @@ Workflow per city:
 
 **Effort:** Open-ended; each city ~45-60 min of in-game walking plus integration time.
 
+**Tip:** the map editor's **WP coverage gaps** layer (red = >38t from any waypoint) shows exactly where coverage is missing — use it to decide where to walk next. After editing, the **Reload in game** button applies waypoint/destination/zone changes without restarting.
+
 ---
 
 ### 2. Verify dungeon interior coordinates
@@ -147,3 +149,10 @@ The Karma filter means bots will defend against any negative-Karma monster — i
 - ✅ Bot mounts — 70% mounted on horse/ostard/llama, realistic colors, mount-speed movement (v24-v24c)
 - ✅ Per-bot destination spread (±5 tile offset on arrival) (v25)
 - ✅ Britain waypoint graph + destinations expanded to 35 nodes / 17 places
+- ✅ Map editor — Spawn Editor (Phase 1): place/filter PlayerBot/Monster/NPC/Vendor spawn layers, `spawns.json` + serve_map endpoints, `[GenerateCustomSpawners`, `spawn_types.json` generator (v26)
+- ✅ Map editor — live world view (Phase 2): `[LiveMap` snapshot + `/live.json`, entities colored by behavior/kind, per-kind filters, density heatmap, click-to-inspect, selected-bot route drawing (v26)
+- ✅ Map editor — waypoint-coverage heatmap (distance-to-nearest-waypoint gaps) (v26)
+- ✅ Map editor — in-game action buttons: "Reload in game" (waypoints/destinations/arrivals/zones) and "Regenerate bots in game" (= `[GenerateBots`), via `EditorReloadWatcher` token-file bridge (v26)
+- ✅ BankSitter/Shopper placement fix — pin to destinations' arrival points, one spawner per point for even spread (no empty/overcrowded shops & banks) (v26)
+- ✅ Fix `RegenerateForPopulation` "Collection was modified" crash (collect-then-respawn) (v26)
+- ✅ Desktop launcher for the map editor (`uo-map-launch.ps1`) (v26)
