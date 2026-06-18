@@ -67,13 +67,21 @@ namespace Server.CustomBots
             new("Moonglow",   "Felucca", 4471, 1175, 0, 0.7),
         };
 
-        // Behaviors to assign across a city's spawners, round-robin, so a
-        // city has a believable MIX — bank-sitters, travelers, shoppers —
-        // rather than a hundred identical bots.
+        // Roaming-population mix, round-robin across the spawners that AREN'T
+        // pinned to a destination. BankSitters and Shoppers are no longer in
+        // here — they're placed explicitly, one spawner per bank/vendor
+        // arrival point (see LoadFromFallback), so they spread evenly across
+        // every point instead of piling onto one. Roamers still become
+        // Shoppers/BankSitters organically when they arrive at a destination.
         private static readonly string[] BehaviorMix =
         {
-            "Traveler", "Traveler", "BankSitter", "Shopper", "Traveler",
+            "Traveler", "Traveler", "Wander", "Traveler",
         };
+
+        // Bots per arrival point for the pinned crowds. Small, so multiple
+        // points read as a spread-out crowd rather than a clump on one tile.
+        private const int BankSittersPerArrival = 2;
+        private const int ShoppersPerArrival    = 1;
 
         public static void Configure()
         {
@@ -173,12 +181,21 @@ namespace Server.CustomBots
             // Place the fresh distributed set, then respawn it immediately.
             int placed = LoadFromFallback(null);
 
+            // Collect the spawners FIRST, then respawn from the list. Respawn()
+            // spawns bots and their equipment, which adds to World.Items — so
+            // iterating World.Items.Values live while respawning throws
+            // "Collection was modified".
+            var fresh = new List<PlayerBotSpawner>();
             foreach (var item in World.Items.Values)
             {
                 if (item is PlayerBotSpawner sp && !sp.Deleted)
                 {
-                    try { sp.Respawn(); } catch { }
+                    fresh.Add(sp);
                 }
+            }
+            foreach (var sp in fresh)
+            {
+                try { sp.Respawn(); } catch { }
             }
             return placed;
         }
@@ -268,22 +285,61 @@ namespace Server.CustomBots
                 if (cityBots < 1) cityBots = 1;
                 botsAssigned += cityBots;
 
-                // Build this city's pool of candidate spawn points.
-                var spots = BuildCitySpots(city);
+                // Arrival-point pools (placed in the map editor) for the pinned
+                // crowds, plus the general roaming pool.
+                var bankSpots   = BuildArrivalSpots(city, BankTypes);
+                var vendorSpots = BuildArrivalSpots(city, ShopVendorTypes);
+                var roamSpots   = BuildCitySpots(city);
 
-                // Split the city's allotment into small spawners, each at
-                // a RANDOM point from the pool. With enough pool points
-                // each spawner lands at a different spot; with few points,
-                // the small jitter applied per pick still scatters them.
-                int remaining = cityBots;
+                // Bots consumed by the pinned crowds — subtracted from the
+                // city's share so the roaming population fills the rest.
+                int cityPinned = 0;
+
+                // --- Pinned crowds: ONE spawner per arrival point, so bots
+                // spread evenly across EVERY bank/vendor point instead of a
+                // random few getting a pile and the rest getting none. Tight
+                // bounds (3) keeps each little crowd on its point.
+                foreach (var pt in bankSpots)
+                {
+                    if (TryPlace(city.MapName, pt.X, pt.Y, pt.Z,
+                                 "BankSitter", BankSittersPerArrival, 3, from))
+                    {
+                        placed++;
+                        cityPinned += BankSittersPerArrival;
+                    }
+                }
+                // No authored bank arrival points, but we know the city's bank
+                // coord: drop one banker crowd there so the bank isn't empty.
+                if (bankSpots.Count == 0 &&
+                    BotPanelActions.CityCoords.TryGetValue(city.Name, out var bankCoord))
+                {
+                    if (TryPlace(city.MapName, bankCoord.X, bankCoord.Y, bankCoord.Z,
+                                 "BankSitter", BankSittersPerArrival, 3, from))
+                    {
+                        placed++;
+                        cityPinned += BankSittersPerArrival;
+                    }
+                }
+                foreach (var pt in vendorSpots)
+                {
+                    if (TryPlace(city.MapName, pt.X, pt.Y, pt.Z,
+                                 "Shopper", ShoppersPerArrival, 3, from))
+                    {
+                        placed++;
+                        cityPinned += ShoppersPerArrival;
+                    }
+                }
+
+                // --- Roaming population: the rest of the city's share, spread
+                // across jittered city points as Travelers/Wanderers (which
+                // also become Shoppers/BankSitters organically on arrival).
+                int remaining = cityBots - cityPinned;
                 while (remaining > 0)
                 {
                     int amount = Math.Min(BotPopulation.BotsPerSpawner, remaining);
                     remaining -= amount;
 
-                    var spot = spots[Utility.Random(spots.Count)];
-
-                    // Round-robin a behavior so each city has a mix.
+                    var spot = roamSpots[Utility.Random(roamSpots.Count)];
                     string behavior = BehaviorMix[behaviorIdx % BehaviorMix.Length];
                     behaviorIdx++;
 
@@ -344,6 +400,53 @@ namespace Server.CustomBots
                 }
             }
 
+            return spots;
+        }
+
+        // Vendor-shop destination types a Shopper browses at (Forge/Dock are
+        // crafter stations, not shopping, so they're excluded).
+        private static readonly HashSet<DestinationType> ShopVendorTypes = new()
+        {
+            DestinationType.VendorSmith, DestinationType.VendorMage,
+            DestinationType.VendorTailor, DestinationType.VendorCarpenter,
+            DestinationType.VendorBowyer, DestinationType.VendorAlchemist,
+            DestinationType.VendorWeaponer, DestinationType.VendorProvisioner,
+        };
+
+        private static readonly HashSet<DestinationType> BankTypes = new()
+        {
+            DestinationType.Bank,
+        };
+
+        // Spawn spots for a destination-pinned behavior: the ARRIVAL POINTS
+        // placed in the map editor for each matching destination in this city
+        // (the precise standable tiles — counter/stall for shops, the teller
+        // spot for banks), so bots land exactly where you placed them. Falls
+        // back to a destination's own coord only if it has no arrival points.
+        // Used for Shoppers (vendor types) and BankSitters (bank type).
+        private static List<Point3D> BuildArrivalSpots(
+            CityRegion city, HashSet<DestinationType> types)
+        {
+            var spots = new List<Point3D>();
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (!string.Equals(d.City, city.Name, StringComparison.OrdinalIgnoreCase)
+                    || !types.Contains(d.Type))
+                {
+                    continue;
+                }
+                if (d.Arrivals != null && d.Arrivals.Count > 0)
+                {
+                    foreach (var a in d.Arrivals)
+                    {
+                        spots.Add(a.Point);
+                    }
+                }
+                else
+                {
+                    spots.Add(d.Location);
+                }
+            }
             return spots;
         }
 

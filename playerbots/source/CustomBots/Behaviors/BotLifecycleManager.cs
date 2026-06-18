@@ -86,6 +86,9 @@ namespace Server.CustomBots
                 var bot = _scratch[i];
                 if (bot.Deleted || bot.Map == Map.Internal) continue;
 
+                // Fixed-role bots (FixedRoleBotSpawner) never transition.
+                if (bot.LifecycleExempt) continue;
+
                 // First sight: assign personality + stamp phase clock.
                 if (!bot.Personality.IsAssigned)
                 {

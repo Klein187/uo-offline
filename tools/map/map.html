@@ -34,12 +34,53 @@
    <option>Dock</option><option>Library</option><option>Graveyard</option>
    <option>Moongate</option><option>CityCenter</option><option>Dungeon</option></select>
  </div>
+ <label><input type="checkbox" id="lSpawns" checked> Spawns</label>
+ <div id="spawnFilters" style="font-size:11px;margin:1px 0 3px 16px;color:#bbb">
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="Monster" checked> <span style="color:#e74c3c">Mon</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="NPC" checked> <span style="color:#f1c40f">NPC</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="Vendor" checked> <span style="color:#2ecc71">Ven</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="PlayerBotFixed" checked> <span style="color:#3498db">BotF</span></label>
+  <label style="display:inline"><input type="checkbox" class="spF" data-k="PlayerBotLifecycle" checked> <span style="color:#9b59b6">BotL</span></label>
+ </div>
+ <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
+ <label style="color:#9fffd0"><input type="checkbox" id="lLive"> Live entities <span id="liveStamp" style="color:#888;font-size:11px"></span></label>
+ <div id="liveFilters" style="display:none;font-size:11px;margin:1px 0 3px 16px;color:#bbb">
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Bot" checked> <span style="color:#3cff5a">Bot</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Monster" checked> <span style="color:#e74c3c">Mon</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="NPC" checked> <span style="color:#f1c40f">NPC</span></label>
+  <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Vendor" checked> <span style="color:#2ecc71">Ven</span></label>
+  <label style="display:inline"><input type="checkbox" class="lvF" data-k="Pet" checked> <span style="color:#1abc9c">Pet</span></label>
+  <label style="display:block;margin-top:2px"><input type="checkbox" id="lHeat"> density heatmap</label>
+ </div>
+ <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
+ <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
+  <select id="spKind" style="width:100%;box-sizing:border-box">
+   <option value="Monster">Monster</option>
+   <option value="NPC">NPC</option>
+   <option value="Vendor">Vendor</option>
+   <option value="PlayerBotFixed">Bot &mdash; fixed role</option>
+   <option value="PlayerBotLifecycle">Bot &mdash; lifecycle seed</option>
+  </select>
+  <input id="spWhat" list="spWhatList" placeholder="type / behavior (blank ok for lifecycle)"
+    style="width:100%;box-sizing:border-box;margin-top:3px;padding:3px;background:#222;color:#eee;border:1px solid #444;border-radius:4px">
+  <datalist id="spWhatList"></datalist>
+  <div style="margin-top:4px">count <input id="spCount" type="number" value="1" min="1" style="width:44px">
+   &nbsp;range <input id="spRange" type="number" value="5" min="0" style="width:44px"></div>
+  <div style="margin-top:3px">respawn <input id="spMin" type="number" value="5" min="0" style="width:40px">&ndash;<input id="spMax" type="number" value="15" min="0" style="width:40px"> min</div>
+  <button id="spApply" style="display:none;width:100%;margin-top:5px;background:#2d4a5a">Apply to selected</button>
+ </div>
  <input id="search" placeholder="search & Enter (e.g. Trinsic Bank)">
  <div style="margin-top:6px">
   <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
   <button onclick="goHome()">Britain</button>
   <button id="refresh" onclick="loadData()">&#10227; Refresh</button>
  </div>
+ <button id="reloadGame" style="width:100%;margin-top:6px;padding:5px;background:#3a2d5a"
+   title="Hot-reload waypoints, destinations/arrivals and zones in the running game">
+   &#8635; Reload in game</button>
+ <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
+   title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
+   &#9851; Regenerate bots in game</button>
  <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
    onclick="toggleActive()"></button>
  <div id="stamp"></div>
@@ -62,6 +103,23 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  VendorAlchemist:"#9b59b6",VendorProvisioner:"#95a5a6",Forge:"#e74c3c",Dock:"#3498db",
  Library:"#f1c40f",Graveyard:"#7f8c8d",Moongate:"#00e5ff",CityCenter:"#fff",
  Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600"};
+const SPAWN_COLORS={Monster:"#e74c3c",NPC:"#f1c40f",Vendor:"#2ecc71",
+ PlayerBotFixed:"#3498db",PlayerBotLifecycle:"#9b59b6"};
+const BOT_BEHAVIORS=["Idle","Wander","Traveler","BankSitter","Shopper","Crafter","Adventurer","PK"];
+let SPAWNS=[], spawnSel=null, spawnDrag=null,
+ SPAWN_TYPES={monster:[],animal:[],npc:[],vendor:[]};
+// ---- live view (Phase 2) ----
+let LIVE={entities:[],count:0,map:null}, liveTimer=null, liveSelName=null;
+let COV=null;  // waypoint-coverage grid cache
+const LIVE_KIND_COLORS={Bot:"#3cff5a",Monster:"#e74c3c",NPC:"#f1c40f",
+ Vendor:"#2ecc71",Pet:"#1abc9c"};
+// bots are colored by their current behavior (live debugging at a glance)
+const BEHAVIOR_COLORS={BankSitter:"#e6b400",Shopper:"#d35400",Traveler:"#3498db",
+ Crafter:"#e67e22",Adventurer:"#9b59b6",Wander:"#1abc9c",Idle:"#95a5a6",PK:"#ff0033"};
+// fetch the spawnable-type list once (for the EDIT-spawns datalist)
+fetch("spawn_types.json?ts="+Date.now()).then(r=>r.ok?r.json():null)
+ .then(d=>{if(d&&d.categories){SPAWN_TYPES=d.categories;refreshWhatList();}})
+ .catch(()=>{});
 const cv=document.getElementById("c"),ctx=cv.getContext("2d");
 const img=new Image(); img.src="uomap.png";
 let scale=3, ox=1380, oy=1500;
@@ -70,8 +128,9 @@ function loadData(){
   if(!r.ok)throw new Error("HTTP "+r.status+" — run serve_map.py, not http.server");
   return r.json();
  }).then(d=>{
-  DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[];
+  DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[]; SPAWNS=d.spawns||[];
   wpByName={}; WPS.forEach(w=>wpByName[w.n]=w);
+  COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
    `loaded ${new Date().toLocaleTimeString()} — ${DESTS.length} dests, ${WPS.length} wps`;
   draw();
@@ -86,6 +145,15 @@ function draw(){
  ctx.fillStyle="#000";ctx.fillRect(0,0,cv.width,cv.height);
  if(img.complete&&img.naturalWidth)
   ctx.drawImage(img,ox,oy,cv.width/scale,cv.height/scale,0,0,cv.width,cv.height);
+ if(lCov.checked&&COV){const{x0,y0,cell,cols,rows,dist}=COV;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const d=dist[r*cols+c];
+   if(d<=28)continue;  // well-covered: leave clear
+   const[px,py]=T(x0+c*cell,y0+r*cell),w=Math.max(1,cell*scale);
+   if(px+w<0||py+w<0||px>cv.width||py>cv.height)continue;
+   // 28-38t marginal (yellow), >38t a real gap (red, intensifying)
+   ctx.fillStyle=d<=38?"rgba(255,210,0,0.28)"
+                      :"rgba(255,40,0,"+Math.min(0.6,0.28+(d-38)/120)+")";
+   ctx.fillRect(px,py,w,w);}}
  if(lEdges.checked){
   const LEG=38;ctx.lineWidth=Math.max(1,scale*.25);
   for(const[a,b]of EDGES){const A=wpByName[a],B=wpByName[b];if(!A||!B)continue;
@@ -170,10 +238,70 @@ function draw(){
   ctx.stroke();
   if(lLabels.checked&&scale>=6){ctx.fillStyle="#ffd";ctx.font="10px sans-serif";
    ctx.fillText(d.n,x+r+2,y+3);}}
+ if(lSpawns.checked){const sf=spawnFilterSet();
+  for(const s of SPAWNS){if(!sf.has(s.Kind))continue;
+   const[x,y]=T(s.X,s.Y);
+   if(x<-30||y<-30||x>cv.width+30||y>cv.height+30)continue;
+   const col=SPAWN_COLORS[s.Kind]||"#fff";
+   if(s.Range>0){ctx.beginPath();ctx.arc(x,y,s.Range*scale,0,7);
+    ctx.strokeStyle=col+"55";ctx.lineWidth=1;ctx.stroke();}
+   const sel=(spawnSel&&spawnSel.Id===s.Id),r=Math.max(3,scale*.8);
+   ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=col;ctx.fill();
+   ctx.lineWidth=sel?3:1.5;ctx.strokeStyle=sel?"#fff":"#000";ctx.stroke();
+   if(scale>=2.5){ctx.fillStyle="#000";ctx.font="bold "+Math.max(8,scale*1.0)+"px sans-serif";
+    ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(s.Count),x,y);
+    ctx.textAlign="left";ctx.textBaseline="alphabetic";}
+   if(lLabels.checked&&scale>=5){ctx.fillStyle=col;ctx.font="10px sans-serif";
+    ctx.fillText(((s.What&&s.What[0])||s.Kind),x+r+3,y+3);}}}
+ if(lLive.checked&&LIVE.entities.length){const lf=liveFilterSet();
+  if(lHeat.checked){
+   const cell=24,bins={};let max=1;
+   for(const e of LIVE.entities){if(!lf.has(e.k))continue;
+    const key=Math.floor(e.x/cell)+","+Math.floor(e.y/cell);
+    bins[key]=(bins[key]||0)+1;if(bins[key]>max)max=bins[key];}
+   for(const key in bins){const p=key.split(",").map(Number);
+    const[px,py]=T(p[0]*cell,p[1]*cell);const w=Math.max(1,cell*scale);
+    const f=bins[key]/max,a=0.15+f*0.7;
+    ctx.fillStyle="rgba(255,"+Math.round(210*(1-f))+",0,"+a+")";
+    ctx.fillRect(px,py,w,w);}
+  }else{
+   for(const e of LIVE.entities){if(!lf.has(e.k))continue;
+    const[x,y]=T(e.x,e.y);
+    if(x<-6||y<-6||x>cv.width+6||y>cv.height+6)continue;
+    const col=e.k==="Bot"?(BEHAVIOR_COLORS[e.b]||"#3cff5a"):(LIVE_KIND_COLORS[e.k]||"#fff");
+    const r=Math.max(1.5,scale*.45);
+    ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=col;ctx.fill();}
+  }
+  // selected bot's planned route (traveled = grey, remaining = green)
+  if(liveSelName){
+   const sel=LIVE.entities.find(e=>e.k==="Bot"&&e.n===liveSelName);
+   if(sel&&sel.r&&sel.r.length>=4){const li=sel.li||0;
+    const lw=Math.max(2,scale*.4);
+    for(let i=0;i+3<sel.r.length;i+=2){
+     const[ax,ay]=T(sel.r[i],sel.r[i+1]),[bx,by]=T(sel.r[i+2],sel.r[i+3]);
+     const done=(i/2)<li;
+     // dark underlay so the route reads on any background
+     ctx.lineWidth=lw+2;ctx.strokeStyle="rgba(0,0,0,.55)";
+     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+     // magenta = remaining (distinct from the green graph edges), grey = traveled
+     ctx.lineWidth=lw;ctx.strokeStyle=done?"rgba(180,180,180,.6)":"rgba(255,60,240,.97)";
+     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}
+    for(let i=0;i+1<sel.r.length;i+=2){const[px,py]=T(sel.r[i],sel.r[i+1]);
+     ctx.fillStyle="#ff3df0";ctx.strokeStyle="#000";ctx.lineWidth=1;
+     ctx.fillRect(px-3,py-3,6,6);ctx.strokeRect(px-3,py-3,6,6);}
+    const[hx,hy]=T(sel.x,sel.y);ctx.strokeStyle="#fff";ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(hx,hy,Math.max(4,scale*.9),0,7);ctx.stroke();}}
+ }
 }
-["lEdges","lWps","lDests","lLabels"].forEach(id=>document.getElementById(id).onchange=draw);
+["lEdges","lWps","lDests","lLabels","lSpawns"].forEach(id=>document.getElementById(id).onchange=draw);
+document.querySelectorAll(".spF").forEach(c=>c.onchange=draw);
 let drag=null,moved=0;
 cv.onmousedown=e=>{
+ if(editSpawns.checked){
+  const tx=ox+e.clientX/scale,ty=oy+e.clientY/scale;
+  const hit=findSpawnNear(tx,ty);
+  if(hit){spawnDrag={s:hit,sx:hit.X,sy:hit.Y,moved:false};cv.style.cursor="move";return;}
+ }
  if(editZones.checked&&drawPts.length===0){
   const tx=ox+e.clientX/scale,ty=oy+e.clientY/scale,tol=Math.max(2,8/scale);
   const mode=document.getElementById("zKind").value;
@@ -204,6 +332,21 @@ cv.onmousedown=e=>{
  }
  drag={x:e.clientX,y:e.clientY};moved=0;cv.style.cursor="grabbing";};
 addEventListener("mouseup",e=>{cv.style.cursor="grab";
+ if(spawnDrag){
+  const sd=spawnDrag;spawnDrag=null;
+  if(sd.moved){
+   fetch("/spawn_move",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id:sd.s.Id,x:sd.s.X,y:sd.s.Y})})
+   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+    r.ok?`moved spawn #${r.id} -> (${r.x},${r.y})\nRun [GenerateCustomSpawners.`
+        :"move failed: "+r.error;loadData();});
+  }else{
+   spawnSel=sd.s;fillPanelFromSpawn(sd.s);
+   document.getElementById("info").textContent=spawnDesc(sd.s)+
+    "\nedit fields + Apply · Delete = remove · Esc = deselect";
+   document.getElementById("spApply").style.display="block";draw();
+  }
+  return;}
  if(arrDrag){
   const ad=arrDrag;arrDrag=null;
   if(ad.moved){
@@ -267,11 +410,15 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
   .catch(er=>{document.getElementById("info").textContent="move failed: "+er;});
   return;}
  if(drag&&moved<5){
-  if(editZones.checked)editClick(e.clientX,e.clientY);
+  if(editSpawns.checked)spawnClick(e.clientX,e.clientY);
+  else if(editZones.checked)editClick(e.clientX,e.clientY);
   else inspect(e.clientX,e.clientY);
  }
  drag=null;});
 addEventListener("mousemove",e=>{
+ if(spawnDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  if(nx!==spawnDrag.s.X||ny!==spawnDrag.s.Y)spawnDrag.moved=true;
+  spawnDrag.s.X=nx;spawnDrag.s.Y=ny;draw();return;}
  if(arrDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
   if(nx!==arrDrag.a.x||ny!==arrDrag.a.y)arrDrag.moved=true;
   arrDrag.a.x=nx;arrDrag.a.y=ny;draw();return;}
@@ -301,6 +448,16 @@ function inspect(px,py){
   pointInZone(tx,ty,{Points:d.poly})){best={k:"D",o:d};break;}}
  for(const w of WPS){const dd=dist(tx,ty,w.x,w.y);if(dd<bd){bd=dd;best={k:"W",o:w};}}
  const el=document.getElementById("info");
+ if(lLive.checked&&LIVE.entities.length){
+  let le=null,led=tol;
+  for(const e of LIVE.entities){const dd=dist(tx,ty,e.x,e.y);if(dd<led){led=dd;le=e;}}
+  if(le&&(!best||led<bd)){
+   if(le.k==="Bot")liveSelName=le.n;
+   el.textContent="◆ live "+le.k+(le.k==="Bot"
+    ?"\n"+(le.n||"")+" — "+(le.b||"?")+" ("+(le.c||"?")+")"+(le.fx?" [fixed]":"")
+     +(le.r?"\nroute: "+(le.r.length/2)+" legs (Esc clears)":"")
+    :"\n"+(le.t||""))+"\nat ("+le.x+", "+le.y+")";
+   draw();return;}}
  if(!best){el.textContent=`(${Math.round(tx)}, ${Math.round(ty)})  — nothing here`;return;}
  if(best.k==="D"){const d=best.o;
   let nw=null,nd=1e9;for(const w of WPS){const x=dist(d.x,d.y,w.x,w.y);if(x<nd){nd=x;nw=w;}}
@@ -499,11 +656,174 @@ addEventListener("keydown",e=>{
    ZONES.splice(selZone,1);selZone=-1;saveZones();}}});
 document.getElementById("editZones").onchange=function(){
  drawPts=[];selZone=-1;
+ if(this.checked){const es=document.getElementById("editSpawns");
+  if(es.checked){es.checked=false;document.getElementById("spawnCtl").style.display="none";
+   spawnSel=null;document.getElementById("spApply").style.display="none";}}
  document.getElementById("zoneCtl").style.display=this.checked?"block":"none";
  draw();};
 document.getElementById("zKind").onchange=function(){
  document.getElementById("zType").style.display=this.value==="Area"?"inline":"none";};
 document.getElementById("lZones").onchange=draw;
+// ---- spawn editor helpers ----
+function spawnFilterSet(){const s=new Set();
+ document.querySelectorAll(".spF").forEach(c=>{if(c.checked)s.add(c.dataset.k);});return s;}
+function refreshWhatList(){
+ const kind=document.getElementById("spKind").value;let opts=[];
+ if(kind==="Monster")opts=(SPAWN_TYPES.monster||[]).concat(SPAWN_TYPES.animal||[]);
+ else if(kind==="NPC")opts=SPAWN_TYPES.npc||[];
+ else if(kind==="Vendor")opts=SPAWN_TYPES.vendor||[];
+ else opts=BOT_BEHAVIORS;
+ document.getElementById("spWhatList").innerHTML=
+  opts.map(o=>`<option value="${o}">`).join("");}
+function findSpawnNear(tx,ty){const sf=spawnFilterSet();const tol=Math.max(2,9/scale);
+ let best=null,bd=tol;
+ for(const s of SPAWNS){if(!sf.has(s.Kind))continue;
+  const dd=Math.max(Math.abs(tx-s.X),Math.abs(ty-s.Y));if(dd<bd){bd=dd;best=s;}}
+ return best;}
+function spawnDesc(s){return `[spawn #${s.Id}] ${s.Kind}\n`+
+ `${(s.What&&s.What.join(", "))||"(lifecycle seed)"} x${s.Count}\n`+
+ `at (${s.X},${s.Y},${s.Z}) range ${s.Range}, ${s.MinDelay}-${s.MaxDelay}m`;}
+function fillPanelFromSpawn(s){
+ document.getElementById("spKind").value=s.Kind;refreshWhatList();
+ document.getElementById("spWhat").value=(s.What&&s.What.join(", "))||"";
+ document.getElementById("spCount").value=s.Count;
+ document.getElementById("spRange").value=s.Range;
+ document.getElementById("spMin").value=s.MinDelay;
+ document.getElementById("spMax").value=s.MaxDelay;}
+function spawnClick(px,py){
+ const tx=Math.round(ox+px/scale),ty=Math.round(oy+py/scale);
+ const kind=document.getElementById("spKind").value;
+ const what=document.getElementById("spWhat").value.split(",").map(s=>s.trim()).filter(Boolean);
+ if(!what.length&&kind!=="PlayerBotLifecycle"){
+  document.getElementById("info").textContent=
+   "pick a type/behavior first (field under the kind dropdown)";return;}
+ fetch("/spawn_add",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({kind:kind,x:tx,y:ty,what:what,
+   count:+document.getElementById("spCount").value||1,
+   range:+document.getElementById("spRange").value||0,
+   mindelay:+document.getElementById("spMin").value||0,
+   maxdelay:+document.getElementById("spMax").value||0})})
+ .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+  r.ok?`added ${r.spawn.Kind} '${r.spawn.What[0]||"(seed)"}' x${r.spawn.Count} `+
+       `#${r.spawn.Id} at (${r.spawn.X},${r.spawn.Y})\nRun [GenerateCustomSpawners.`
+      :"add failed: "+r.error;loadData();});}
+document.getElementById("spKind").onchange=refreshWhatList;
+document.getElementById("spApply").onclick=function(){
+ if(!spawnSel)return;
+ const what=document.getElementById("spWhat").value.split(",").map(s=>s.trim()).filter(Boolean);
+ fetch("/spawn_edit",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({id:spawnSel.Id,kind:document.getElementById("spKind").value,what:what,
+   count:+document.getElementById("spCount").value||1,
+   range:+document.getElementById("spRange").value||0,
+   mindelay:+document.getElementById("spMin").value||0,
+   maxdelay:+document.getElementById("spMax").value||0})})
+ .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+  r.ok?`updated spawn #${r.spawn.Id}\nRun [GenerateCustomSpawners.`:"edit failed: "+r.error;
+  spawnSel=null;document.getElementById("spApply").style.display="none";loadData();});};
+document.getElementById("editSpawns").onchange=function(){
+ if(this.checked){const ez=document.getElementById("editZones");
+  if(ez.checked){ez.checked=false;document.getElementById("zoneCtl").style.display="none";
+   drawPts=[];selZone=-1;}}
+ document.getElementById("spawnCtl").style.display=this.checked?"block":"none";
+ spawnSel=null;document.getElementById("spApply").style.display="none";
+ refreshWhatList();
+ document.getElementById("info").textContent=this.checked
+  ?"EDIT spawns: set kind/type/count/range, click ground to place. "+
+   "click a spawn = select (drag to move, Delete to remove)."
+  :"Click a dot for details.";
+ draw();};
+addEventListener("keydown",e=>{
+ if(!document.getElementById("editSpawns").checked)return;
+ if(e.key==="Escape"){spawnSel=null;
+  document.getElementById("spApply").style.display="none";draw();}
+ else if((e.key==="Delete"||e.key==="Backspace")&&spawnSel){
+  if(confirm(`Delete spawn #${spawnSel.Id} (${spawnSel.Kind} `+
+   `${(spawnSel.What||[]).join(",")})?`)){
+   const id=spawnSel.Id;
+   fetch("/spawn_del",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id:id})})
+   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+    r.ok?`deleted spawn #${id} (${r.remaining} remain)\nRun [GenerateCustomSpawners.`
+        :"delete failed: "+r.error;
+    spawnSel=null;document.getElementById("spApply").style.display="none";loadData();});}}});
+// ---- live view helpers ----
+function liveFilterSet(){const s=new Set();
+ document.querySelectorAll(".lvF").forEach(c=>{if(c.checked)s.add(c.dataset.k);});return s;}
+function pollLive(){
+ fetch("live.json?ts="+Date.now()).then(r=>r.ok?r.json():null).then(d=>{
+  if(!d)return;LIVE=d;
+  document.getElementById("liveStamp").textContent=
+   "· "+(d.count||0)+" @ "+new Date().toLocaleTimeString();
+  if(document.getElementById("lLive").checked)draw();
+ }).catch(()=>{});}
+function startLive(){pollLive();if(!liveTimer)liveTimer=setInterval(pollLive,3000);}
+function stopLive(){if(liveTimer){clearInterval(liveTimer);liveTimer=null;}
+ LIVE={entities:[],count:0,map:null};
+ document.getElementById("liveStamp").textContent="";draw();}
+document.getElementById("lLive").onchange=function(){
+ document.getElementById("liveFilters").style.display=this.checked?"block":"none";
+ if(this.checked){startLive();
+  document.getElementById("info").textContent=
+   "Live view ON. If empty, run [LiveMap on in-game. Bots are colored by "+
+   "behavior; toggle kinds + heatmap at left.";}
+ else{stopLive();}};
+document.querySelectorAll(".lvF").forEach(c=>c.onchange=draw);
+document.getElementById("lHeat").onchange=draw;
+// Esc clears a selected bot's route
+addEventListener("keydown",e=>{
+ if(e.key==="Escape"&&liveSelName){liveSelName=null;draw();}});
+// ---- waypoint coverage heatmap (distance-to-nearest-waypoint) ----
+function computeCoverage(){
+ COV=null;
+ if(!WPS.length)return;
+ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+ for(const w of WPS){if(w.x<minx)minx=w.x;if(w.y<miny)miny=w.y;
+  if(w.x>maxx)maxx=w.x;if(w.y>maxy)maxy=w.y;}
+ const pad=80;minx-=pad;miny-=pad;maxx+=pad;maxy+=pad;
+ let cell=32,cols=Math.ceil((maxx-minx)/cell),rows=Math.ceil((maxy-miny)/cell);
+ while(cols*rows>12000){cell=Math.ceil(cell*1.5);
+  cols=Math.ceil((maxx-minx)/cell);rows=Math.ceil((maxy-miny)/cell);}
+ const dist=new Float32Array(cols*rows);
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+  const cx=minx+c*cell+cell/2,cy=miny+r*cell+cell/2;let best=1e18;
+  for(const w of WPS){const dx=w.x-cx,dy=w.y-cy,d=dx*dx+dy*dy;if(d<best)best=d;}
+  dist[r*cols+c]=Math.sqrt(best);}
+ COV={x0:minx,y0:miny,cell,cols,rows,dist};}
+document.getElementById("lCov").onchange=function(){
+ if(this.checked&&!COV)computeCoverage();
+ document.getElementById("info").textContent=this.checked
+  ?"WP coverage: yellow = marginal (28-38t), red = gap (>38t — bots can "+
+   "strand here). Shows where to add waypoints."
+  :"Click a dot for details.";
+ draw();};
+// Editor->game action buttons. Bump a token via POST, then poll the matching
+// status ack so we can report what the game did. EditorReloadWatcher in-game
+// acts within ~2s; regen also respawns the population, so it polls longer.
+function triggerInGame(postUrl,statusUrl,busyMsg,fmt,maxTries){
+ const info=document.getElementById("info");
+ info.textContent=busyMsg;
+ fetch(postUrl,{method:"POST"}).then(r=>r.json()).then(r=>{
+  if(!r.ok){info.textContent="failed: "+r.error;return;}
+  const tok=r.token;let tries=0;
+  const iv=setInterval(()=>{
+   tries++;
+   fetch(statusUrl+"?ts="+Date.now()).then(s=>s.ok?s.json():null).then(a=>{
+    if(a&&a.token===tok){clearInterval(iv);info.textContent=fmt(a);}
+    else if(tries>=maxTries){clearInterval(iv);
+     info.textContent="requested — applies in-game shortly "+
+      "(no ack yet; is the server running with the latest build?)";}
+   }).catch(()=>{});
+  },500);
+ }).catch(e=>{info.textContent="failed: "+e;});}
+document.getElementById("reloadGame").onclick=()=>triggerInGame(
+ "/reload","/reload_status","reloading in game...",
+ a=>"reloaded in game: "+a.waypoints+" waypoints, "+a.destinations+
+    " destinations, "+a.zones+" zones",10);
+document.getElementById("genBots").onclick=function(){
+ if(!confirm("Regenerate the whole bot population? This clears all bots and "+
+   "spawners and re-lays them (bank/shop crowds move to current arrival points)."))return;
+ triggerInGame("/genbots","/genbots_status","regenerating bots in game...",
+  a=>"regenerated bots: "+a.spawners+" spawner(s) placed",30);};
 goHome();
 loadData();
 </script></body></html>

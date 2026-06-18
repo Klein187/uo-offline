@@ -20,6 +20,24 @@ WP_JSON = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json")
 ZONES_JSON = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Zones/zones.json")
+SPAWNS_JSON = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/CustomSpawns/spawns.json")
+# Phase 2 live view: snapshot written by the game's [LiveMap command.
+LIVE_JSON = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/entities.json")
+# "Reload in game" bridge: editor bumps a token, EditorReloadWatcher acts on it.
+RELOAD_REQ = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/reload_request.txt")
+RELOAD_ACK = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/reload_ack.json")
+# "Regenerate bots" bridge (= [GenerateBots): re-lay the whole bot population.
+GENBOTS_REQ = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_request.txt")
+GENBOTS_ACK = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_ack.json")
+
+# Valid Kind values for a spawn record (drives generator type + filter layer).
+SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
 
 # UO client data dir (for map0.mul: true Z + road-tile snapping).
 UO_DIR = os.path.expanduser("~/uo-modernuo/UOData/7.0.23.1")
@@ -154,6 +172,23 @@ def save_zones(zones):
         import shutil; shutil.copy(ZONES_JSON, ZONES_JSON + ".bak")
     open(ZONES_JSON, "w").write(json.dumps({"Zones": zones}, indent=2))
 
+# ---- spawns (the spawn editor) ----------------------------------------------
+def load_spawns():
+    if not os.path.exists(SPAWNS_JSON): return []
+    try: return jload(SPAWNS_JSON).get("Spawns", [])
+    except Exception: return []
+
+def save_spawns(spawns):
+    os.makedirs(os.path.dirname(SPAWNS_JSON), exist_ok=True)
+    if os.path.exists(SPAWNS_JSON):
+        import shutil; shutil.copy(SPAWNS_JSON, SPAWNS_JSON + ".bak")
+    open(SPAWNS_JSON, "w", encoding="utf-8").write(
+        json.dumps({"Spawns": spawns}, indent=2))
+
+def next_spawn_id(spawns):
+    """Stable integer id, max existing + 1 (survives move/edit)."""
+    return (max((int(s.get("Id", 0)) for s in spawns), default=0) + 1)
+
 def build_data():
     dests, seen = [], set()
     for path, src in ((DEST_JSON, "active"), (GEN_JSON, "generated")):
@@ -180,7 +215,8 @@ def build_data():
         for c in w["co"]:
             if c in names and (c, w["n"]) not in done:
                 edges.append([w["n"], c]); done.add((w["n"], c))
-    return {"dests": dests, "wps": wps, "edges": edges, "zones": load_zones()}
+    return {"dests": dests, "wps": wps, "edges": edges,
+            "zones": load_zones(), "spawns": load_spawns()}
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -197,6 +233,37 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.split("?")[0] == "/mapdata.json":
             try: self._json(200, build_data())
             except Exception as ex: self.send_error(500, str(ex))
+            return
+        if self.path.split("?")[0] == "/live.json":
+            # The game's [LiveMap timer writes this; serve it fresh (no cache).
+            # Empty/absent -> an empty snapshot so the editor polls happily.
+            try:
+                if os.path.exists(LIVE_JSON):
+                    body = open(LIVE_JSON, "rb").read()
+                else:
+                    body = b'{"map":null,"count":0,"entities":[]}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as ex:
+                self.send_error(500, str(ex))
+            return
+        if self.path.split("?")[0] in ("/reload_status", "/genbots_status"):
+            # The game's EditorReloadWatcher writes these acks.
+            ack = RELOAD_ACK if self.path.split("?")[0] == "/reload_status" else GENBOTS_ACK
+            try:
+                body = open(ack, "rb").read() if os.path.exists(ack) else b"{}"
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as ex:
+                self.send_error(500, str(ex))
             return
         super().do_GET()
     def do_POST(self):
@@ -539,6 +606,118 @@ class Handler(SimpleHTTPRequestHandler):
                     z.setdefault("Kind", "Portal")
                 save_zones(zones)
                 self._json(200, {"ok": True, "count": len(zones)})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] in ("/reload", "/genbots"):
+            # Bump a token; EditorReloadWatcher in-game acts on the change.
+            #   /reload  -> reload waypoints + destinations(+arrivals) + zones
+            #   /genbots -> re-lay the whole bot population ([GenerateBots)
+            req = RELOAD_REQ if self.path.split("?")[0] == "/reload" else GENBOTS_REQ
+            try:
+                os.makedirs(os.path.dirname(req), exist_ok=True)
+                tok = 0
+                if os.path.exists(req):
+                    try: tok = int((open(req).read().strip() or "0"))
+                    except Exception: tok = 0
+                tok += 1
+                open(req, "w").write(str(tok))
+                self._json(200, {"ok": True, "token": tok})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/spawn_add":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                kind = p.get("kind")
+                if kind not in SPAWN_KINDS:
+                    self._json(400, {"ok": False,
+                        "error": f"bad kind '{kind}'"}); return
+                x, y = int(p["x"]), int(p["y"])
+                what = p.get("what", [])
+                if isinstance(what, str): what = [what]
+                what = [w for w in (s.strip() for s in what) if w]
+                # bot-lifecycle seeds may legitimately have no 'what'
+                if not what and kind != "PlayerBotLifecycle":
+                    self._json(400, {"ok": False,
+                        "error": "need at least one type/behavior"}); return
+                try: z = land_at(x, y)[1]
+                except Exception: z = int(p.get("z", 0))
+                spawns = load_spawns()
+                rec = {
+                    "Id": next_spawn_id(spawns),
+                    "Kind": kind,
+                    "Map": p.get("map", "Felucca"),
+                    "X": x, "Y": y, "Z": z,
+                    "What": what,
+                    "Count": max(1, int(p.get("count", 1))),
+                    "Range": max(0, int(p.get("range", 5))),
+                    "MinDelay": float(p.get("mindelay", 5)),
+                    "MaxDelay": float(p.get("maxdelay", 15)),
+                    "Source": "custom",
+                }
+                spawns.append(rec)
+                save_spawns(spawns)
+                self._json(200, {"ok": True, "spawn": rec})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/spawn_move":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                sid, x, y = int(p["id"]), int(p["x"]), int(p["y"])
+                spawns = load_spawns()
+                hit = next((s for s in spawns if int(s.get("Id", -1)) == sid), None)
+                if hit is None:
+                    self._json(404, {"ok": False, "error": "spawn not found"}); return
+                try: z = land_at(x, y)[1]
+                except Exception: z = hit.get("Z", 0)
+                hit["X"], hit["Y"], hit["Z"] = x, y, z
+                save_spawns(spawns)
+                self._json(200, {"ok": True, "id": sid, "x": x, "y": y, "z": z})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/spawn_del":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                sid = int(p["id"])
+                spawns = load_spawns()
+                before = len(spawns)
+                spawns[:] = [s for s in spawns if int(s.get("Id", -1)) != sid]
+                if len(spawns) == before:
+                    self._json(404, {"ok": False, "error": "spawn not found"}); return
+                save_spawns(spawns)
+                self._json(200, {"ok": True, "id": sid, "remaining": len(spawns)})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/spawn_edit":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                sid = int(p["id"])
+                spawns = load_spawns()
+                hit = next((s for s in spawns if int(s.get("Id", -1)) == sid), None)
+                if hit is None:
+                    self._json(404, {"ok": False, "error": "spawn not found"}); return
+                if "kind" in p:
+                    if p["kind"] not in SPAWN_KINDS:
+                        self._json(400, {"ok": False, "error": "bad kind"}); return
+                    hit["Kind"] = p["kind"]
+                if "what" in p:
+                    what = p["what"]
+                    if isinstance(what, str): what = [what]
+                    hit["What"] = [w for w in (s.strip() for s in what) if w]
+                if "count" in p:    hit["Count"] = max(1, int(p["count"]))
+                if "range" in p:    hit["Range"] = max(0, int(p["range"]))
+                if "mindelay" in p: hit["MinDelay"] = float(p["mindelay"])
+                if "maxdelay" in p: hit["MaxDelay"] = float(p["maxdelay"])
+                save_spawns(spawns)
+                self._json(200, {"ok": True, "spawn": hit})
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return

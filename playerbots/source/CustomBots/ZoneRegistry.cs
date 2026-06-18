@@ -61,6 +61,14 @@ namespace Server.CustomBots
 
         public static void Initialize() => Load();
 
+        // Public reload entry (used by the editor's "Reload in game" button
+        // via EditorReloadWatcher). Returns the zone count after reloading.
+        public static int Reload()
+        {
+            Load();
+            return _zones.Count;
+        }
+
         private static void Load()
         {
             var fresh = new List<PaintedZone>();

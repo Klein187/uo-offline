@@ -79,6 +79,13 @@ namespace Server.CustomBots
         // Personality.AveragePhaseDuration to decide on transitions.
         public DateTime PhaseStartedAt;
 
+        // When true, BotLifecycleManager never transitions this bot — it stays
+        // locked in its spawned behavior forever. Set at spawn time for bots
+        // placed by a FixedRoleBotSpawner (the spawn editor's "fixed role"
+        // kind). Not serialized: bots are transient and re-derive this from
+        // their spawner each time they're respawned.
+        public bool LifecycleExempt;
+
         // ---- Identity (class + skill tier) ----
 
         // What kind of character this bot is. Rolled at creation, immutable.
@@ -261,6 +268,9 @@ namespace Server.CustomBots
             {
                 behaviorName = pbs.BehaviorName;
                 Behavior = BehaviorRegistry.Create(behaviorName);
+                // Fixed-role bots (placed via the spawn editor) never enter
+                // the lifecycle — they stay locked in this behavior.
+                LifecycleExempt = Spawner is FixedRoleBotSpawner;
             }
 
             // PK setup. PKs are strong (mostly Master/Grandmaster) and may

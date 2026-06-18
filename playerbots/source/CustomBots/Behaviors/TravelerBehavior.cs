@@ -102,6 +102,12 @@ namespace Server.CustomBots
         private List<string> _plannedPath = new();
         private int _legIndex = 0;
 
+        // Read-only exposure for the live map view (LiveMapSnapshot draws a
+        // selected bot's planned route). Names are resolved to coordinates
+        // via WaypointRegistry at snapshot time.
+        public IReadOnlyList<string> PlannedPath => _plannedPath;
+        public int LegIndex => _legIndex;
+
         // Per-bot offset applied ONLY to the final leg's target. Avoids
         // stacking when multiple bots arrive at the same waypoint — each
         // aims for a slightly different spot within a small radius.

@@ -343,9 +343,16 @@
       "Type": "Inn",
       "City": "Britain",
       "NearestWaypoint": "WP 145",
-      "ArrivalX": 1461,
-      "ArrivalY": 1522,
-      "ArrivalZ": 20
+      "Arrivals": [
+        {
+          "X": 1461,
+          "Y": 1522,
+          "Z": 20,
+          "Waypoints": [
+            "WP 149"
+          ]
+        }
+      ]
     },
     {
       "Name": "Britain Weaponer 2",
