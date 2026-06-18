@@ -101,20 +101,34 @@ The world starts empty. To populate it:
 
 ## The map editor
 
-A browser-based editor for the world's navigation data, served live from the running shard. Under `tools/map/`:
+A browser-based editor for the world's navigation data and population, served live from the running shard. Under `tools/map/`:
 
 ```
-cd ~/uo-map        # (installed location)
-./uo-map-launch.sh # serves on http://localhost:8777
+# Linux / Steam Deck
+cd ~/uo-map && ./uo-map-launch.sh    # serves on http://localhost:8777
+
+# Windows — double-click the "UO Map Editor" desktop icon
+#           (or run tools/map/uo-map-launch.ps1)
 ```
 
-It renders the full Felucca map and overlays your waypoints, destinations, and zones, reading them **live** from the shard's JSON every refresh. In EDIT mode you can:
+It renders the full Felucca map and overlays your waypoints, destinations, zones, and spawns, reading them **live** from the shard's JSON every refresh. In EDIT mode you can:
 
 - **Waypoints** — click to add (snaps to walkable road, auto-connects neighbors), drag to move, link/sever edges, delete.
 - **Destinations** — drag to move, enable/disable (promote from the generated archive into the live catalog), paint **areas** over them (the shape becomes the destination), create new destinations.
 - **Arrival points** — drop one or more on reachable tiles per destination (interior floors included), drag/delete them, and link each to route waypoints (click the gold marker, then a waypoint — a dashed gold line confirms the link).
+- **Spawns (spawn editor)** — place spawn points of every kind (PlayerBot fixed-role / PlayerBot lifecycle / Monster / NPC / Vendor) with a count, range, and respawn timer; filter the view by kind; drag/edit/delete. The type dropdown is the full list of spawnable mobiles. `[GenerateCustomSpawners` turns the placed `spawns.json` into real in-game spawners.
 
-Changes write straight to the shard's JSON (with backups); `[ReloadDestinations` / `[ReloadWaypoints` / `[ReloadZones` make them live without a restart.
+Two read-only overlays help you see and debug the world:
+
+- **Live entities** — polls the running shard (`[LiveMap on` in game) and draws every bot and creature at its real position, bots colored by current behavior, filterable by kind, with a **density heatmap** and click-to-inspect. Click a traveling bot to draw its planned route (magenta = remaining, grey = traveled).
+- **WP coverage gaps** — shades the map by distance to the nearest waypoint: yellow = marginal (28–38t), red = a real gap (>38t, where bots can strand). Shows exactly where to extend the road network next.
+
+Changes write straight to the shard's JSON (with backups). Two buttons apply them in the running game without alt-tabbing to the client:
+
+- **↻ Reload in game** — hot-reloads waypoints, destinations (+ arrival points), and zones (= `[ReloadWaypoints` / `[ReloadDestinations` / `[ReloadZones`).
+- **⚛ Regenerate bots in game** — re-lays the whole bot population (= `[GenerateBots`), so bank/shop crowds move onto your current arrival points.
+
+(These work via a small token-file bridge the game polls — `EditorReloadWatcher`. You can still run the `[Reload…` commands by hand if you prefer.)
 
 The map background PNG is a generated artifact — regenerate it from your UO client's map files with `make_interactive_map.py` if it's missing.
 
@@ -137,15 +151,17 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 - `[BotInfo` — target a bot, dump class/tier/stats/skills/notoriety/behavior/destination.
 - `[BotWhere`, `[hpacomponents`, `[hpaedges`, field-debug commands.
 
-**Admin:**
+**Admin / population:**
 - `[GmPanel` — central GM gump: world setup, spawning, teleporting, cleanup (with confirmation gumps for destructive actions).
+- `[GenerateBots` — (re)lay the ambient bot population: BankSitters on bank arrival points, Shoppers on vendor arrival points (one spawner per point, evenly spread), the rest roaming Travelers.
+- `[GenerateCustomSpawners` — materialize the spawn editor's `spawns.json` into real in-game spawners (Monster/NPC/Vendor + fixed/lifecycle PlayerBots).
+- `[LiveMap on|off [seconds]` — stream a live entity snapshot to the map editor's "Live entities" layer.
 
 ---
 
 ## Currently being worked on
 
-- **Expanding the world beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. — each city needs its waypoint road network, destination cluster, and painted areas. The map editor makes this point-and-click.
-- **Painting vendor areas and arrival points** across the active destinations so every shop hands off to a Shopper cleanly.
+- **Expanding the world beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. — each city needs its waypoint road network, destination cluster, arrival points, and painted areas. The map editor makes this point-and-click; the **WP coverage** layer shows where the road network is missing, and bankers/shoppers automatically populate each bank/vendor arrival point you place.
 
 ## What's coming
 
@@ -154,6 +170,7 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 - **Improved combat.** Magic combat; reworked melee.
 - **Random events.** Town invasions bots will turn out to fight.
 - **Per-personality chat** and **bot story memory** (recent travel/history per bot).
+- **Spawn editor Phase 3.** Ingest Nerun's ~1700-spawn map into the editor so all existing spawns are visible/movable/editable alongside your custom ones.
 
 ---
 
