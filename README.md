@@ -1,6 +1,8 @@
 # UO Offline
 
-A one-command installer for offline single-player Ultima Online on Linux and Steam Deck, with a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, cross between cities through moongates, and live their own lives.
+A single-player, fully offline Ultima Online experience you can play on **Windows, Linux, and the Steam Deck**. One installer sets up everything and runs the whole game on your own machine — no servers, no accounts, no internet required after install.
+
+What makes it feel alive is a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, cross between cities through moongates, and live their own lives — so the world feels like a busy shard instead of an empty map.
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, runs entirely on localhost.
 
@@ -8,11 +10,23 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 ## Install
 
-The installer does everything: clones and builds ModernUO with the PlayerBots compiled in, bootstraps .NET, downloads ClassicUO and the UO Classic game data (from a community mirror, or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and sets up a launcher. Takes 15-25 minutes. Re-running it is safe -- it skips steps already done.
+The installer does everything for you: it builds ModernUO with the PlayerBots compiled in, bootstraps .NET, downloads ClassicUO and the UO Classic game data (from a community mirror, or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and sets up a launcher. Takes 15-25 minutes, and re-running it is safe -- it skips anything already done.
+
+### Windows (easiest)
+
+1. On this GitHub page, click the green **Code** button, then **Download ZIP**.
+2. Unzip it anywhere (your Desktop is fine). You'll get a folder named `uo-offline-main`.
+3. Open that folder and **double-click `install.bat`**.
+
+That's it. `install.bat` launches the installer with the right permissions, so you don't have to change any Windows settings or install anything else first.
+
+Two things to expect during the install:
+- A **UO Classic setup window** may pop up while the game data downloads -- just install to the default location and click through it. The installer continues automatically after.
+- When it finishes, launch the game with the **UO Offline** desktop shortcut (or `start.bat`). Don't run `start.ps1` directly -- Windows blocks unsigned scripts, which the shortcut and `.bat` work around for you.
 
 ### Linux / Steam Deck
 
-**Steam Deck users:** first, in Desktop Mode, run these once to allow installs. The first `passwd` sets a sudo password if you've never set one:
+**Steam Deck users only:** first, in Desktop Mode, run these once to allow installs. The first `passwd` sets a sudo password if you've never set one:
 
 ```
 passwd
@@ -32,23 +46,6 @@ chmod +x install.sh
 
 (No git? On the GitHub page click the green **Code** button, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod`/`./install.sh`.)
 
-### Windows
-
-You need [Git for Windows](https://git-scm.com/download/win) (for the clone) -- the installer handles .NET itself. Then, in a terminal (or PowerShell):
-
-```
-git clone https://github.com/Klein187/uo-offline.git
-cd uo-offline
-```
-
-Now **double-click `install.bat`** in the `uo-offline` folder (or run it from the terminal). It launches the PowerShell installer with the right permissions, so you don't have to change any Windows settings.
-
-(No git? Use the **Code -> Download ZIP** button on GitHub, unzip, open the `uo-offline-main` folder, and double-click `install.bat`.)
-
-Two things to expect during a Windows install:
-- A **UO Classic setup window** may pop up while the game data downloads -- install to the default location and click through it. The installer continues automatically after.
-- When it finishes, launch with the **UO Offline** desktop shortcut (or `start.bat`). Don't run `start.ps1` directly -- Windows blocks unsigned scripts, which the shortcut and `.bat` work around for you.
-
 ---
 
 ## First-time setup
@@ -60,6 +57,14 @@ The world starts empty. To populate it:
 **1.** Type `[GmPanel` to open the GM admin panel. Click **★ Run All** under "WORLD" — this seeds the world with vendors, monsters, signs, moongates, town criers, and PlayerBots at every bank.
 
 **2.** Done. Bots are now alive. The Lifecycle system takes over — bank-sitters become shoppers and adventurers, travelers walk the roads to vendors and dungeons, bots step through moongates to other cities.
+
+### Play as a normal (non-GM) character
+
+The `admin` account is a Game Master — it's how you set up and manage the world, but a GM isn't a normal player (other characters treat you differently, and it's easy to accidentally use GM powers). Once the world is seeded, make a separate account for actually *playing*:
+
+**1.** At the login screen, type a new account name and password you haven't used before and log in. The server creates the account automatically the first time you use it.
+
+**2.** Create a character on that account and play normally. You can switch back to `admin` any time you need GM tools — just log out and log back in with the `admin` account.
 
 ---
 
