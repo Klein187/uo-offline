@@ -94,6 +94,34 @@
       ]
     },
     {
+      "Name": "Britain Forge",
+      "_note": "Forge station for Smith crafters (Britain Smith 4 nearby is the VendorSmith shopper spot). Arrivals sit on the raised Z=30 forge platform, on confirmed-walkable forge waypoints.",
+      "X": 1425,
+      "Y": 1557,
+      "Z": 30,
+      "Type": "Forge",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Forge 5",
+      "Arrivals": [
+        {
+          "X": 1429,
+          "Y": 1562,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 5"
+          ]
+        },
+        {
+          "X": 1429,
+          "Y": 1570,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 6"
+          ]
+        }
+      ]
+    },
+    {
       "Name": "britdock 1",
       "X": 1438,
       "Y": 1762,

@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """
-make_map_png.py — render uomap.png from UO's map0.mul + radarcol.mul.
+make_map_png.py — render uomap.png from UO's map0/statics0/staidx0 + radarcol.mul.
 
 The map editor (serve_map.py / map.html) needs a world background image so
 waypoints/zones can be placed against the actual geography. This generates
 that PNG from the client's own data files — no copying between machines.
 
-Output is one pixel per UO tile: 6144 x 4096 for Felucca (map0). Each land
-tile's id is colored via radarcol.mul (the 16-bit BGR555 radar palette),
-exactly the colors the in-client world map uses.
+Output is one pixel per UO tile (6144 x 4096+ for Felucca/map0). Each pixel is
+colored exactly like the in-client world map:
+  * the LAND tile's radar color (radarcol.mul, 16-bit BGR555), UNLESS
+  * a STATIC item covers that tile — then the topmost (highest-Z) static's
+    radar color is drawn on top.
+Statics matter: in UO, rivers and docks are static water/plank items sitting on
+dirt/water LAND. A land-only render shows tan riverbeds and no docks; overlaying
+statics (radarcol index 0x4000 + itemID) makes rivers blue and docks/towns
+visible, matching the client's radar. Set MAP_INCLUDE_STATICS=0 to render land
+only.
 
 Usage:
     python make_map_png.py                # auto paths (UODATA + ~/uo-map)
@@ -55,11 +62,21 @@ def load_radarcol(path):
         pal[i] = ((r << 3) | (r >> 2), (g << 3) | (g >> 2), (b << 3) | (b >> 2))
     return pal
 
+STATIC_RADAR_OFFSET = 0x4000   # radarcol: 0..0x3FFF land, 0x4000.. statics
+STATIC_BYTES = 7               # ushort id, byte x, byte y, sbyte z, ushort hue
+
 def render():
     map_path = os.path.join(UO_DIR, "map0.mul")
     rad_path = os.path.join(UO_DIR, "radarcol.mul")
+    idx_path = os.path.join(UO_DIR, "staidx0.mul")
+    sta_path = os.path.join(UO_DIR, "statics0.mul")
     if not os.path.exists(map_path): sys.exit(f"map0.mul not found at {map_path}")
     if not os.path.exists(rad_path): sys.exit(f"radarcol.mul not found at {rad_path}")
+
+    include_statics = os.environ.get("MAP_INCLUDE_STATICS", "1") != "0"
+    have_statics = include_statics and os.path.exists(idx_path) and os.path.exists(sta_path)
+    if include_statics and not have_statics:
+        print("  (statics overlay requested but staidx0/statics0 missing — land only)")
 
     print(f"Loading radar palette: {rad_path}")
     pal = load_radarcol(rad_path)
@@ -69,12 +86,14 @@ def render():
     MAP_W_TILES = MAP_W_BLOCKS * 8
     MAP_H_TILES = MAP_H_BLOCKS * 8
     print(f"Reading {map_path} ({MAP_W_TILES}x{MAP_H_TILES} tiles, "
-          f"{MAP_W_BLOCKS}x{MAP_H_BLOCKS} blocks)...")
+          f"{MAP_W_BLOCKS}x{MAP_H_BLOCKS} blocks)"
+          f"{' + statics overlay' if have_statics else ''}...")
     mf = open(map_path, "rb")
+    sif = open(idx_path, "rb") if have_statics else None
+    sdf = open(sta_path, "rb") if have_statics else None
 
-    # Build the image row by row. We produce a full-res 6144x4096 RGB image.
-    # That's ~75MB raw; PNG-compressed it's far smaller. We stream rows into
-    # zlib to keep memory reasonable.
+    # Build the image row by row. We produce a full-res RGB image; ~75MB+ raw,
+    # PNG-compressed far smaller. We stream rows into zlib to keep memory sane.
     width, height = MAP_W_TILES, MAP_H_TILES  # derived above
     raw = bytearray()  # PNG scanlines (filter byte + RGB row)
 
@@ -88,14 +107,48 @@ def render():
             block_index = bx * MAP_H_BLOCKS + by
             mf.seek(block_index * BLOCK_BYTES + 4)  # skip 4-byte header
             cells = mf.read(192)  # 64 tiles * 3 bytes
+
+            # Per-cell static override: (cx,cy) -> (z, (r,g,b)) for the topmost
+            # static whose radar color is non-transparent. Drawn over the land,
+            # mirroring how the in-client radar layers statics above terrain.
+            ov = None
+            if have_statics:
+                sif.seek(block_index * 12)
+                lookup, length = struct.unpack("<ii", sif.read(8))  # skip 4-byte extra
+                if lookup >= 0 and length > 0:
+                    sdf.seek(lookup)
+                    sdata = sdf.read(length)
+                    ov = {}
+                    for o in range(0, (length // STATIC_BYTES) * STATIC_BYTES, STATIC_BYTES):
+                        iid = sdata[o] | (sdata[o + 1] << 8)
+                        ridx = STATIC_RADAR_OFFSET + iid
+                        if ridx >= pal_n:
+                            continue
+                        col = pal[ridx]
+                        if col == (0, 0, 0):   # transparent on radar — don't draw
+                            continue
+                        cx = sdata[o + 2] & 7
+                        cy = sdata[o + 3] & 7
+                        z = sdata[o + 4]
+                        if z >= 128:           # sbyte
+                            z -= 256
+                        key = (cx, cy)
+                        prev = ov.get(key)
+                        if prev is None or z >= prev[0]:
+                            ov[key] = (z, col)
+
             for cy in range(8):
                 row = rows[cy]
                 base = cy * 8 * 3
                 for cx in range(8):
-                    off = base + cx * 3
-                    tid = cells[off] | (cells[off + 1] << 8)
-                    col = pal[tid] if tid < pal_n else (0, 0, 0)
-                    row += bytes(col)
+                    cell = ov.get((cx, cy)) if ov else None
+                    if cell is not None:
+                        row += bytes(cell[1])
+                    else:
+                        off = base + cx * 3
+                        tid = cells[off] | (cells[off + 1] << 8)
+                        col = pal[tid] if tid < pal_n else (0, 0, 0)
+                        row += bytes(col)
         # emit the 8 scanlines for this block-row, each prefixed with filter 0
         for cy in range(8):
             raw += b"\x00" + bytes(rows[cy])
@@ -103,6 +156,8 @@ def render():
             print(f"  row-block {by}/{MAP_H_BLOCKS}")
 
     mf.close()
+    if sif: sif.close()
+    if sdf: sdf.close()
     print("Compressing PNG...")
     write_png(OUT_PNG, width, height, bytes(raw))
     print(f"Wrote {OUT_PNG}  ({os.path.getsize(OUT_PNG)//1024} KB)")

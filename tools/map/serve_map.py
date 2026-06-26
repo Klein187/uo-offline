@@ -40,7 +40,17 @@ GENBOTS_ACK = os.path.expanduser(
 SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
 
 # UO client data dir (for map0.mul: true Z + road-tile snapping).
-UO_DIR = os.path.expanduser("~/uo-modernuo/UOData/7.0.23.1")
+# The mul sometimes lives one version-folder deeper, so resolve to the first
+# candidate that actually contains map0.mul (an empty allowlist silently breaks
+# waypoint placing/moving, since both snap to road tiles read from the mul).
+def _resolve_uo_dir():
+    base = os.path.expanduser("~/uo-modernuo/UOData/7.0.23.1")
+    candidates = [base, os.path.join(base, "7.0.23.1")]
+    for c in candidates:
+        if os.path.exists(os.path.join(c, "map0.mul")):
+            return c
+    return base  # fall back to configured path; land_at() callers tolerate failure
+UO_DIR = _resolve_uo_dir()
 
 def jload(p): return json.loads(open(p, encoding="utf-8-sig").read())
 
@@ -221,6 +231,11 @@ def build_data():
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=MAP_DIR, **kw)
+    def log_message(self, *a, **kw):
+        # Default logging writes to sys.stderr, which is None under pythonw.exe
+        # (windowless launch). That write happens inside send_response BEFORE any
+        # bytes go out, so it crashes every request with an empty reply. Swallow it.
+        pass
     def _json(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
