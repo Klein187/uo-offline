@@ -9,6 +9,13 @@ This procedure swaps in genuine **T2A-era (UO Second Age, client 5.0.8.3)**
 Britannia map files so the world looks like it did at The Second Age release.
 It is **fully reversible** — backups are mandatory.
 
+> **The installer now does this automatically.** `install.ps1` / `install.sh`
+> perform this swap by default right after provisioning the UO data (the
+> `SwapT2AMap` / `swap_t2a_map` step), backing the modern files up to
+> `_backup-modern-map/` first. Set `$InstallT2AMap = $false` (PowerShell) or
+> `INSTALL_T2A_MAP=0` (bash) to keep modern map art. The rest of this doc
+> describes the same procedure done by hand / how to revert.
+
 > **Do NOT commit `.mul` files to this repo.** They are large, era-licensed game
 > assets. This doc captures the *process* so it survives a clean reinstall.
 

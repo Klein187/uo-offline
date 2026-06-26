@@ -10,6 +10,8 @@
 #   5. Downloads ClassicUO from GitHub releases.
 #   6. Downloads UO Classic 7.0.23.1 game data from a community mirror
 #      (or uses an existing install if one is already on disk).
+#   6b. Swaps in genuine T2A-era Felucca map art (intact Magincia) from the
+#      UO Second Age distribution. Reversible; INSTALL_T2A_MAP=0 to skip.
 #   7. Downloads Nerun's pre-T2A spawn map for world population.
 #   8. Writes correct ModernUO and ClassicUO configs (T2A, localhost-only).
 #   9. Installs start/stop scripts and a desktop launcher.
@@ -55,6 +57,15 @@ UO_DATA_DIR="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}"
 # Nerun's pre-T2A spawn data. ModernUO's [GenerateSpawners command parses
 # the .map format directly.
 SPAWN_MAP_URL="https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/master/Distro/Data/Nerun's%20Distro/Spawns/uoclassic/UOClassic.map"
+
+# Genuine T2A-era Felucca map art (intact Magincia, pre-destruction world),
+# pulled from the official UO Second Age (client 5.0.8.3) distribution. The
+# 7.0.23.1 data above ships modern map art with 15+ years of EA world edits;
+# swapping these three files restores the T2A look. Set INSTALL_T2A_MAP=0 to
+# keep modern map art. See docs/T2A-MAP.md.
+INSTALL_T2A_MAP=1
+T2A_INSTALLER_URL="https://download.uosecondage.com/UOSA_Client_Setup.exe"
+T2A_SRC_DIR="${INSTALL_ROOT}/t2a-src"
 
 # ---------------------------------------------------------------------------
 # Config defaults
@@ -334,6 +345,69 @@ find_or_download_uo_data() {
   # Keep or delete the installer .exe? Deleting saves 1GB.
   say "Removing installer .exe to save ~929 MB..."
   rm -f "${exe_path}"
+}
+
+# ---------------------------------------------------------------------------
+# Step 6b — Swap in genuine T2A-era Felucca map art
+#
+# The UO data dir is shared by BOTH the ModernUO server and the ClassicUO
+# client, so swapping map0/statics0/staidx0 here updates rendering AND
+# server-side collision/spawn at once, with no desync. radarcol/tiledata are
+# left modern (stable across eras). Fully reversible — the modern files are
+# backed up to _backup-modern-map/ first. See docs/T2A-MAP.md.
+# ---------------------------------------------------------------------------
+swap_t2a_map() {
+  banner "Installing T2A-era map art"
+  [[ "${INSTALL_T2A_MAP}" == "1" ]] || { say "INSTALL_T2A_MAP off; keeping modern map art."; return; }
+  [[ -n "${UO_DATA:-}" ]]           || { warn "UO data dir not resolved; skipping T2A map swap."; return; }
+
+  local backup_dir="${UO_DATA}/_backup-modern-map"
+  if [[ -f "${backup_dir}/map0.mul" ]]; then
+    say "T2A map already swapped (modern backup exists). Skipping."
+    return
+  fi
+
+  command -v 7z >/dev/null || { warn "7z not found; skipping T2A map swap (install p7zip and re-run)."; return; }
+
+  # 1. Obtain the UOSA installer (cached so re-runs don't re-download ~349 MB).
+  mkdir -p "${T2A_SRC_DIR}"
+  local uosa_exe="${T2A_SRC_DIR}/UOSA_Client_Setup.exe"
+  if [[ ! -f "${uosa_exe}" ]]; then
+    say "Downloading UO Second Age client (~349 MB, EA content via uosecondage.com) for its T2A map art..."
+    curl -fL --progress-bar \
+      -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+      -o "${uosa_exe}" "${T2A_INSTALLER_URL}"
+  else
+    say "UOSA installer already cached at ${uosa_exe}."
+  fi
+
+  # 2. Extract the three map files (7z reads the NSIS archive directly).
+  local extract_dir="${T2A_SRC_DIR}/uosa-install"
+  mkdir -p "${extract_dir}"
+  say "Extracting T2A map files with 7z..."
+  7z x -y "-o${extract_dir}" "${uosa_exe}" map0.mul statics0.mul staidx0.mul >/dev/null || true
+
+  # Locate them (the NSIS layout may nest the files).
+  local missing=0 f src
+  declare -A src_path
+  for f in map0.mul statics0.mul staidx0.mul; do
+    src="$(find "${extract_dir}" -maxdepth 4 -name "${f}" -print -quit 2>/dev/null || true)"
+    if [[ -z "${src}" ]]; then warn "T2A ${f} not found after extract."; missing=1; else src_path[${f}]="${src}"; fi
+  done
+  [[ "${missing}" == "0" ]] || { warn "Aborting T2A swap; modern map kept."; return; }
+
+  # 3. Back up the modern files (the 3 swapped + radarcol/tiledata for safety).
+  mkdir -p "${backup_dir}"
+  for f in map0.mul statics0.mul staidx0.mul radarcol.mul tiledata.mul; do
+    [[ -f "${UO_DATA}/${f}" ]] && cp -f "${UO_DATA}/${f}" "${backup_dir}/${f}"
+  done
+  ok "Backed up modern map -> ${backup_dir}"
+
+  # 4. Copy the T2A files over the live data dir.
+  for f in map0.mul statics0.mul staidx0.mul; do
+    cp -f "${src_path[${f}]}" "${UO_DATA}/${f}"
+  done
+  ok "T2A map art installed (intact Magincia). Revert: cp ${backup_dir}/* back over the data dir."
 }
 
 # ---------------------------------------------------------------------------
@@ -830,6 +904,7 @@ main() {
   build_modernuo
   fix_felucca_season
   find_or_download_uo_data
+  swap_t2a_map
   fetch_spawn_map
   install_classicuo
   write_modernuo_config

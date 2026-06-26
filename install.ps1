@@ -10,6 +10,8 @@
 #   3. Builds ModernUO (bots compiled in) for Windows x64.
 #   4. Downloads the UO Classic 7.0.23.1 game data from a community mirror
 #      and installs it (or uses an existing install if found).
+#   4b. Swaps in genuine T2A-era Felucca map art (intact Magincia) from the
+#      UO Second Age distribution. Reversible; $InstallT2AMap = $false to skip.
 #   5. Downloads Nerun's pre-T2A spawn map.
 #   6. Downloads the ClassicUO client (Windows build).
 #   7. Writes ModernUO + ClassicUO configs (T2A, localhost only).
@@ -39,6 +41,16 @@ $UODataVersion = "7.0.23.1"
 $UODataDir     = Join-Path $InstallRoot "UOData\$UODataVersion"
 
 $SpawnMapUrl   = "https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/master/Distro/Data/Nerun's%20Distro/Spawns/uoclassic/UOClassic.map"
+
+# Genuine T2A-era Felucca map art (intact Magincia, pre-destruction world),
+# pulled from the official UO Second Age (client 5.0.8.3) distribution. The
+# 7.0.23.1 data above ships modern map art with 15+ years of EA world edits;
+# swapping these three files restores the T2A look. Set $InstallT2AMap = $false
+# to keep modern map art. See docs/T2A-MAP.md.
+$InstallT2AMap   = $true
+$T2AInstallerUrl = "https://download.uosecondage.com/UOSA_Client_Setup.exe"
+$T2ASrcDir       = Join-Path $InstallRoot "t2a-src"
+$T2AMulFiles     = @("map0.mul", "statics0.mul", "staidx0.mul")
 
 $DotnetRoot    = Join-Path $env:USERPROFILE ".dotnet"
 $DotnetVersion = "10.0.201"
@@ -250,6 +262,88 @@ function FindOrDownloadUOData {
 }
 
 # ---------------------------------------------------------------------------
+# Step 6b — Swap in genuine T2A-era Felucca map art
+#
+# The UO data dir is shared by BOTH the ModernUO server and the ClassicUO
+# client, so swapping map0/statics0/staidx0 here updates rendering AND
+# server-side collision/spawn at once, with no desync. radarcol/tiledata are
+# left modern (stable across eras). Fully reversible — the modern files are
+# backed up to _backup-modern-map\ first. See docs/T2A-MAP.md.
+# ---------------------------------------------------------------------------
+function SwapT2AMap {
+  Banner "Installing T2A-era map art"
+  if (-not $InstallT2AMap) { Say "InstallT2AMap is off; keeping modern map art."; return }
+  if (-not $script:UOData) { Warn "UO data dir not resolved; skipping T2A map swap."; return }
+
+  $backupDir = Join-Path $script:UOData "_backup-modern-map"
+  if (Test-Path (Join-Path $backupDir "map0.mul")) {
+    Say "T2A map already swapped (modern backup exists). Skipping."
+    return
+  }
+
+  # 1. Obtain the UOSA installer (cached so re-runs don't re-download ~349 MB).
+  New-Item -ItemType Directory -Force -Path $T2ASrcDir | Out-Null
+  $uosaExe = Join-Path $T2ASrcDir "UOSA_Client_Setup.exe"
+  if (-not (Test-Path $uosaExe)) {
+    Say "Downloading UO Second Age client (~349 MB, EA content via uosecondage.com) for its T2A map art..."
+    $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+    Invoke-WebRequest -Uri $T2AInstallerUrl -OutFile $uosaExe -Headers $headers
+  } else { Say "UOSA installer already cached at $uosaExe." }
+
+  # 2. Extract the three map files. Prefer 7-Zip (reads the NSIS archive
+  #    directly); fall back to a silent install into a scratch folder.
+  $extractDir = Join-Path $T2ASrcDir "uosa-install"
+  New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+
+  $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
+  if (-not $sevenZip) { $sevenZip = Get-Command 7za -ErrorAction SilentlyContinue }
+
+  $haveMuls = $true
+  foreach ($f in $T2AMulFiles) { if (-not (Test-Path (Join-Path $extractDir $f))) { $haveMuls = $false } }
+
+  if (-not $haveMuls) {
+    if ($sevenZip) {
+      Say "Extracting T2A map files with 7-Zip..."
+      & $sevenZip.Source x -y "-o$extractDir" $uosaExe @T2AMulFiles | Out-Null
+    } elseif ($extractDir -match '\s') {
+      Warn "7-Zip not found and the extract path contains spaces (the silent UOSA installer cannot handle that)."
+      Warn "Install 7-Zip from https://www.7-zip.org and re-run, or follow docs/T2A-MAP.md manually. Keeping modern map."
+      return
+    } else {
+      Say "7-Zip not found; running the UOSA installer silently into $extractDir..."
+      # NSIS switches: /S = silent, /D = install dir (must be last, unquoted).
+      Start-Process -FilePath $uosaExe -ArgumentList "/S", "/D=$extractDir" -Wait
+      # The installer drops a Start-Menu shortcut for the legacy 2D client we
+      # don't use (we run ClassicUO). Remove it.
+      $sm = Join-Path ([Environment]::GetFolderPath("Programs")) "Ultima Online"
+      if (Test-Path $sm) { Remove-Item $sm -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+  }
+
+  # Locate the three muls (a silent install may nest them).
+  $srcMap = @{}
+  foreach ($f in $T2AMulFiles) {
+    $hit = Get-ChildItem -Path $extractDir -Recurse -Filter $f -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($hit) { $srcMap[$f] = $hit.FullName }
+  }
+  foreach ($f in $T2AMulFiles) {
+    if (-not $srcMap.ContainsKey($f)) { Warn "T2A $f not found after extract; aborting swap (modern map kept)."; return }
+  }
+
+  # 3. Back up the modern files (the 3 swapped + radarcol/tiledata for safety).
+  New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+  foreach ($f in @("map0.mul", "statics0.mul", "staidx0.mul", "radarcol.mul", "tiledata.mul")) {
+    $live = Join-Path $script:UOData $f
+    if (Test-Path $live) { Copy-Item $live (Join-Path $backupDir $f) -Force }
+  }
+  Ok "Backed up modern map -> $backupDir"
+
+  # 4. Copy the T2A files over the live data dir.
+  foreach ($f in $T2AMulFiles) { Copy-Item $srcMap[$f] (Join-Path $script:UOData $f) -Force }
+  Ok "T2A map art installed (intact Magincia). Revert: copy _backup-modern-map\* back over the data dir."
+}
+
+# ---------------------------------------------------------------------------
 # Step 7 — Nerun's spawn map
 # ---------------------------------------------------------------------------
 function FetchSpawnMap {
@@ -447,6 +541,7 @@ InstallPlayerBots
 BuildModernUO
 FixFeluccaSeason
 FindOrDownloadUOData
+SwapT2AMap
 FetchSpawnMap
 InstallClassicUO
 WriteModernUOConfig
