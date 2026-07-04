@@ -13953,6 +13953,330 @@
       "Y": 739,
       "Z": 5,
       "Connects": []
+    },
+    {
+      "Name": "Chaos Shrine Path",
+      "X": 1480,
+      "Y": 840,
+      "Z": 0,
+      "Connects": [
+        "WP 653"
+      ]
+    },
+    {
+      "Name": "Chaos Shrine Approach",
+      "X": 1459,
+      "Y": 852,
+      "Z": 0,
+      "Connects": [
+        "Chaos Shrine Path"
+      ]
+    },
+    {
+      "Name": "Spirituality Path",
+      "X": 1614,
+      "Y": 2468,
+      "Z": 0,
+      "Connects": [
+        "WP 112"
+      ]
+    },
+    {
+      "Name": "Spirituality Approach",
+      "X": 1592,
+      "Y": 2480,
+      "Z": 0,
+      "Connects": [
+        "Spirituality Path"
+      ]
+    },
+    {
+      "Name": "Compassion Desert Path",
+      "X": 1861,
+      "Y": 792,
+      "Z": 0,
+      "Connects": [
+        "WP 674"
+      ]
+    },
+    {
+      "Name": "Compassion Desert Path 2",
+      "X": 1855,
+      "Y": 827,
+      "Z": 0,
+      "Connects": [
+        "Compassion Desert Path"
+      ]
+    },
+    {
+      "Name": "Compassion Shrine Approach",
+      "X": 1851,
+      "Y": 858,
+      "Z": 0,
+      "Connects": [
+        "Compassion Desert Path 2"
+      ]
+    },
+    {
+      "Name": "Justice Trail 1",
+      "X": 1252,
+      "Y": 853,
+      "Z": 0,
+      "Connects": [
+        "WP 642"
+      ]
+    },
+    {
+      "Name": "Justice Trail 2",
+      "X": 1223,
+      "Y": 830,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 1"
+      ]
+    },
+    {
+      "Name": "Justice Trail 3",
+      "X": 1207,
+      "Y": 798,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 2"
+      ]
+    },
+    {
+      "Name": "Justice Trail 4",
+      "X": 1200,
+      "Y": 762,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 3"
+      ]
+    },
+    {
+      "Name": "Justice Trail 5",
+      "X": 1207,
+      "Y": 726,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 4"
+      ]
+    },
+    {
+      "Name": "Justice Trail 6",
+      "X": 1215,
+      "Y": 690,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 5"
+      ]
+    },
+    {
+      "Name": "Justice Trail 7",
+      "X": 1233,
+      "Y": 660,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 6"
+      ]
+    },
+    {
+      "Name": "Justice Trail 8",
+      "X": 1266,
+      "Y": 645,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 7"
+      ]
+    },
+    {
+      "Name": "Justice Trail 9",
+      "X": 1293,
+      "Y": 637,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 8"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 1",
+      "X": 3012,
+      "Y": 616,
+      "Z": 0,
+      "Connects": [
+        "WP 879"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 2",
+      "X": 3046,
+      "Y": 590,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 1"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 3",
+      "X": 3080,
+      "Y": 565,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 2"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 4",
+      "X": 3114,
+      "Y": 540,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 3"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 5",
+      "X": 3148,
+      "Y": 516,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 4"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 6",
+      "X": 3182,
+      "Y": 494,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 5"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 7",
+      "X": 3216,
+      "Y": 474,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 6"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 8",
+      "X": 3245,
+      "Y": 450,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 7"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 9",
+      "X": 3262,
+      "Y": 415,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 8"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 10",
+      "X": 3272,
+      "Y": 380,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 9"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 11",
+      "X": 3280,
+      "Y": 345,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 10"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 12",
+      "X": 3286,
+      "Y": 310,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 11"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 13",
+      "X": 3290,
+      "Y": 275,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 12"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 14",
+      "X": 3293,
+      "Y": 240,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 13"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 15",
+      "X": 3295,
+      "Y": 205,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 14"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 16",
+      "X": 3300,
+      "Y": 183,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 15"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 17",
+      "X": 3315,
+      "Y": 180,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 16"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 18",
+      "X": 3330,
+      "Y": 205,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 17"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 19",
+      "X": 3342,
+      "Y": 238,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 18"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 20",
+      "X": 3348,
+      "Y": 266,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 19"
+      ]
     }
   ]
 }

@@ -1,0 +1,481 @@
+{
+  "Dungeon": "Deceit",
+  "Records": [
+    {
+      "Name": "Deceit L1 Entrance",
+      "X": 4113,
+      "Y": 431,
+      "Z": 5,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit",
+      "Level": 1,
+      "ArrivalX": 4111,
+      "ArrivalY": 430,
+      "ArrivalZ": 5,
+      "Arrivals": [
+        {
+          "X": 4111,
+          "Y": 430,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          4110,
+          430,
+          5
+        ],
+        [
+          4111,
+          430,
+          5
+        ],
+        [
+          4112,
+          430,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5187,
+        639,
+        0
+      ]
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5137,
+      "Y": 649,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5137,
+          "Y": 649,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5137,
+          649,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5346,
+        578,
+        5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit L1 Entrance",
+      "X": 5142,
+      "Y": 974,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit",
+      "Level": 1,
+      "ArrivalX": 5140,
+      "ArrivalY": 973,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5140,
+          "Y": 973,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5140,
+          973,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5331,
+        707,
+        0
+      ]
+    },
+    {
+      "Name": "Deceit lvl1 L1 Exit Ascend",
+      "X": 5188,
+      "Y": 639,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5188,
+          "Y": 639,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5186,
+          639,
+          0
+        ],
+        [
+          5187,
+          639,
+          0
+        ],
+        [
+          5188,
+          639,
+          0
+        ],
+        [
+          5189,
+          639,
+          0
+        ]
+      ],
+      "_landsAt": [
+        4110,
+        430,
+        5
+      ]
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5217,
+      "Y": 586,
+      "Z": -13,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5217,
+          "Y": 586,
+          "Z": -13,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5216,
+          586,
+          -13
+        ],
+        [
+          5217,
+          586,
+          -13
+        ],
+        [
+          5218,
+          586,
+          -13
+        ]
+      ],
+      "_landsAt": [
+        5304,
+        533,
+        2
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5219,
+      "Y": 761,
+      "Z": -28,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5219,
+          "Y": 761,
+          "Z": -28,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5218,
+          761,
+          -28
+        ],
+        [
+          5219,
+          761,
+          -28
+        ]
+      ],
+      "_landsAt": [
+        5305,
+        651,
+        7
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Exit Ascend",
+      "X": 5265,
+      "Y": 669,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5265,
+          "Y": 669,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5265,
+          669,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5876,
+        1378,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Exit Ascend",
+      "X": 5265,
+      "Y": 683,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5265,
+          "Y": 683,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5265,
+          683,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5606,
+        802,
+        60
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5305,
+      "Y": 532,
+      "Z": 7,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5305,
+          "Y": 532,
+          "Z": 7,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5304,
+          532,
+          7
+        ],
+        [
+          5305,
+          532,
+          7
+        ],
+        [
+          5306,
+          532,
+          7
+        ]
+      ],
+      "_landsAt": [
+        5216,
+        585,
+        -8
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Exit Ascend",
+      "X": 5304,
+      "Y": 676,
+      "Z": -20,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5304,
+          "Y": 676,
+          "Z": -20,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5304,
+          676,
+          -20
+        ]
+      ],
+      "_landsAt": [
+        7109,
+        1097,
+        18
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5306,
+      "Y": 650,
+      "Z": 12,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5306,
+          "Y": 650,
+          "Z": 12,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5305,
+          650,
+          12
+        ],
+        [
+          5306,
+          650,
+          12
+        ]
+      ],
+      "_landsAt": [
+        5218,
+        760,
+        -23
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit lvl1 L1 Descend",
+      "X": 5346,
+      "Y": 578,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5346,
+          "Y": 578,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5346,
+          578,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5137,
+        649,
+        5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Deceit L1 Entrance",
+      "X": 5358,
+      "Y": 1541,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Deceit",
+      "Level": 1,
+      "ArrivalX": 5356,
+      "ArrivalY": 1540,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5356,
+          "Y": 1540,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5356,
+          1540,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5331,
+        707,
+        0
+      ]
+    }
+  ]
+}

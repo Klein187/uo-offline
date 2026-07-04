@@ -4630,9 +4630,9 @@
       "Level": 1,
       "Arrivals": [
         {
-          "X": 5573,
+          "X": 5572,
           "Y": 633,
-          "Z": 22,
+          "Z": 17,
           "Waypoints": [
             "WP 1310"
           ]
@@ -4672,9 +4672,9 @@
       "Level": 1,
       "Arrivals": [
         {
-          "X": 5521,
+          "X": 5522,
           "Y": 673,
-          "Z": 27,
+          "Z": 32,
           "Waypoints": [
             "despise1"
           ]
@@ -4903,14 +4903,74 @@
       "Level": 1,
       "Arrivals": [
         {
-          "X": 5387,
+          "X": 5386,
           "Y": 756,
-          "Z": -3,
+          "Z": -8,
           "Waypoints": [
             "WP 1348"
           ]
         }
       ]
+    },
+    {
+      "Name": "Chaos Shrine",
+      "X": 1456,
+      "Y": 854,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Britain",
+      "NearestWaypoint": "Chaos Shrine Approach",
+      "ArrivalX": 1459,
+      "ArrivalY": 852,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Spirituality Shrine",
+      "X": 1589,
+      "Y": 2485,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Britain",
+      "NearestWaypoint": "Spirituality Approach",
+      "ArrivalX": 1592,
+      "ArrivalY": 2481,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Compassion Shrine",
+      "X": 1856,
+      "Y": 872,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Britain",
+      "NearestWaypoint": "Compassion Shrine Approach",
+      "ArrivalX": 1851,
+      "ArrivalY": 859,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Justice Shrine",
+      "X": 1300,
+      "Y": 634,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Britain",
+      "NearestWaypoint": "Justice Trail 9",
+      "ArrivalX": 1297,
+      "ArrivalY": 636,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Sacrifice Shrine",
+      "X": 3352,
+      "Y": 287,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Minoc",
+      "NearestWaypoint": "Sacrifice Trail 20",
+      "ArrivalX": 3349,
+      "ArrivalY": 283,
+      "ArrivalZ": 0
     }
   ]
 }
