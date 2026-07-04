@@ -1,0 +1,19 @@
+# combat_assist.txt — Shouted when a bot rushes to help a friendly bot
+# already fighting a monster. Lines starting with # are comments.
+
+im coming!
+hold on!
+i got your back
+leave them alone!
+help is here
+hang in there
+together now!
+for our friend!
+you picked the wrong fight, beast
+two on one now
+need a hand?
+i heard fighting
+nobody fights alone
+hold the line
+im with you
+coming through

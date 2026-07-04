@@ -1,0 +1,23 @@
+# combat_victory.txt — Said right after a bot's foe drops dead.
+# Gloats, relief, deadpan. Lines starting with # are comments.
+
+ez
+gg
+got him
+another one down
+that all you got?
+*wipes blade*
+huzzah!
+vanquished!
+too easy
+im getting good at this
+they dont make monsters like they used to
+victory!
+that was close
+phew
+barely a scratch
+whos next
+and stay down
+*loots the corpse*
+tell your friends
+one less beast in britannia

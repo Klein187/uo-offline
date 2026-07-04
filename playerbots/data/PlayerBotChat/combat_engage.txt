@@ -1,0 +1,25 @@
+# combat_engage.txt — Battle cries when a bot picks a fresh fight with a
+# monster. Said at the moment of engagement, not mid-fight (that's
+# combat_actions). Short, punchy, 1998-UO-player flavored.
+# Lines starting with # are comments. Blank lines ignored.
+
+have at thee!
+die, beast!
+come here you
+ill take this one
+this ones mine
+for honor!
+taste steel
+get over here
+en garde
+prepare to die, monster
+back to the pit with ye
+lets dance
+*draws weapon*
+*cracks knuckles*
+easy gold
+i need the gold anyway
+you picked the wrong road
+fresh kill for me
+here we go
+finally, some action

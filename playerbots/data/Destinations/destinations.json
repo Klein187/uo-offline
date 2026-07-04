@@ -94,107 +94,46 @@
       ]
     },
     {
-      "Name": "Britain Forge",
-      "_note": "Forge station for Smith crafters (Britain Smith 4 nearby is the VendorSmith shopper spot). Arrivals sit on the raised Z=30 forge platform, on confirmed-walkable forge waypoints.",
-      "X": 1425,
-      "Y": 1557,
-      "Z": 30,
-      "Type": "Forge",
-      "City": "Britain",
-      "NearestWaypoint": "Britain Forge 5",
-      "Arrivals": [
-        {
-          "X": 1429,
-          "Y": 1562,
-          "Z": 30,
-          "Waypoints": [
-            "Britain Forge 5"
-          ]
-        },
-        {
-          "X": 1429,
-          "Y": 1570,
-          "Z": 30,
-          "Waypoints": [
-            "Britain Forge 6"
-          ]
-        }
-      ]
-    },
-    {
       "Name": "britdock 1",
       "X": 1438,
       "Y": 1762,
       "Z": -2,
       "Type": "Dock",
       "City": "Britain",
-      "NearestWaypoint": "britdock 2"
-    },
-    {
-      "Name": "brit dock 2",
-      "X": 1482,
-      "Y": 1761,
-      "Z": -2,
-      "Type": "Dock",
-      "City": "Britain",
-      "NearestWaypoint": "britdock2 1",
-      "Polygon": [
-        [
-          1483,
-          1747
-        ],
-        [
-          1491,
-          1747
-        ],
-        [
-          1491,
-          1758
-        ],
-        [
-          1501,
-          1758
-        ],
-        [
-          1501,
-          1763
-        ],
-        [
-          1485,
-          1764
-        ],
-        [
-          1485,
-          1773
-        ],
-        [
-          1480,
-          1773
-        ],
-        [
-          1480,
-          1763
-        ],
-        [
-          1472,
-          1764
-        ],
-        [
-          1472,
-          1772
-        ],
-        [
-          1467,
-          1773
-        ],
-        [
-          1467,
-          1754
-        ],
-        [
-          1483,
-          1754
-        ]
+      "NearestWaypoint": "britdock 2",
+      "Arrivals": [
+        {
+          "X": 1450,
+          "Y": 1757,
+          "Z": -2,
+          "Waypoints": [
+            "britdock 2"
+          ]
+        },
+        {
+          "X": 1450,
+          "Y": 1767,
+          "Z": -2,
+          "Waypoints": [
+            "britdock 2"
+          ]
+        },
+        {
+          "X": 1438,
+          "Y": 1775,
+          "Z": -2,
+          "Waypoints": [
+            "britdock 2"
+          ]
+        },
+        {
+          "X": 1432,
+          "Y": 1767,
+          "Z": -2,
+          "Waypoints": [
+            "britdock 2"
+          ]
+        }
       ]
     },
     {
@@ -233,7 +172,7 @@
       ],
       "Arrivals": [
         {
-          "X": 1645,
+          "X": 1646,
           "Y": 1601,
           "Z": 20,
           "Waypoints": [
@@ -242,8 +181,16 @@
           ]
         },
         {
-          "X": 1648,
-          "Y": 1614,
+          "X": 1647,
+          "Y": 1613,
+          "Z": 20,
+          "Waypoints": [
+            "Rec 10"
+          ]
+        },
+        {
+          "X": 1657,
+          "Y": 1618,
           "Z": 20,
           "Waypoints": [
             "Rec 10"
@@ -251,22 +198,14 @@
         },
         {
           "X": 1655,
-          "Y": 1615,
-          "Z": 20,
-          "Waypoints": [
-            "Rec 10"
-          ]
-        },
-        {
-          "X": 1654,
-          "Y": 1601,
+          "Y": 1598,
           "Z": 20,
           "Waypoints": [
             "WP 17"
           ]
         },
         {
-          "X": 1657,
+          "X": 1659,
           "Y": 1610,
           "Z": 20,
           "Waypoints": []
@@ -417,9 +356,16 @@
       "Type": "Inn",
       "City": "Britain",
       "NearestWaypoint": "Central Britain Road 2",
-      "ArrivalX": 1497,
-      "ArrivalY": 1612,
-      "ArrivalZ": 10
+      "Arrivals": [
+        {
+          "X": 1497,
+          "Y": 1612,
+          "Z": 10,
+          "Waypoints": [
+            "Britain Inn South Stairs"
+          ]
+        }
+      ]
     },
     {
       "Name": "Britain Alchemist 3",
@@ -502,15 +448,15 @@
       "Arrivals": [
         {
           "X": 1475,
-          "Y": 1687,
+          "Y": 1691,
           "Z": 0,
           "Waypoints": [
             "Britain Tailor Entrance"
           ]
         },
         {
-          "X": 1468,
-          "Y": 1687,
+          "X": 1476,
+          "Y": 1690,
           "Z": 0,
           "Waypoints": [
             "Britain Tailor Entrance"
@@ -1298,6 +1244,40 @@
           2056,
           2848
         ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2088,
+          "Y": 2850,
+          "Z": -15,
+          "Waypoints": [
+            "WP 990"
+          ]
+        },
+        {
+          "X": 2088,
+          "Y": 2861,
+          "Z": -15,
+          "Waypoints": [
+            "WP 990"
+          ]
+        },
+        {
+          "X": 2072,
+          "Y": 2848,
+          "Z": -15,
+          "Waypoints": [
+            "WP 990"
+          ]
+        },
+        {
+          "X": 2072,
+          "Y": 2865,
+          "Z": -15,
+          "Waypoints": [
+            "WP 990"
+          ]
+        }
       ]
     },
     {
@@ -1752,6 +1732,3182 @@
             "WP 614",
             "WP 613",
             "WP 618"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 63",
+      "X": 1486,
+      "Y": 1757,
+      "Z": 0,
+      "Type": "Dock",
+      "City": "Britain",
+      "NearestWaypoint": "britdock2 1",
+      "Polygon": [
+        [
+          1499,
+          1745
+        ],
+        [
+          1485,
+          1745
+        ],
+        [
+          1484,
+          1755
+        ],
+        [
+          1467,
+          1755
+        ],
+        [
+          1467,
+          1773
+        ],
+        [
+          1472,
+          1773
+        ],
+        [
+          1472,
+          1763
+        ],
+        [
+          1501,
+          1763
+        ],
+        [
+          1501,
+          1758
+        ],
+        [
+          1491,
+          1758
+        ],
+        [
+          1491,
+          1750
+        ],
+        [
+          1499,
+          1750
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1499,
+          "Y": 1747,
+          "Z": 0,
+          "Waypoints": [
+            "britdock2 1"
+          ]
+        },
+        {
+          "X": 1491,
+          "Y": 1754,
+          "Z": 0,
+          "Waypoints": [
+            "britdock2 1",
+            "britdock2"
+          ]
+        },
+        {
+          "X": 1501,
+          "Y": 1761,
+          "Z": 0,
+          "Waypoints": [
+            "britdock2 1"
+          ]
+        },
+        {
+          "X": 1467,
+          "Y": 1758,
+          "Z": 0,
+          "Waypoints": [
+            "britdock2",
+            "britdock2 1"
+          ]
+        },
+        {
+          "X": 1467,
+          "Y": 1773,
+          "Z": 0,
+          "Waypoints": [
+            "britdock2"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Forge",
+      "X": 1424,
+      "Y": 1558,
+      "Z": 30,
+      "Type": "Forge",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Forge 5",
+      "Arrivals": [
+        {
+          "X": 1423,
+          "Y": 1557,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 5"
+          ]
+        },
+        {
+          "X": 1423,
+          "Y": 1558,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 5"
+          ]
+        },
+        {
+          "X": 1423,
+          "Y": 1559,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 5"
+          ]
+        },
+        {
+          "X": 1424,
+          "Y": 1557,
+          "Z": 30,
+          "Waypoints": [
+            "Britain Forge 5"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Forge 2",
+      "X": 1361,
+      "Y": 1574,
+      "Z": 30,
+      "Type": "Forge",
+      "City": "Britain",
+      "NearestWaypoint": "WP 34",
+      "Arrivals": [
+        {
+          "X": 1360,
+          "Y": 1573,
+          "Z": 30,
+          "Waypoints": [
+            "WP 34"
+          ]
+        },
+        {
+          "X": 1360,
+          "Y": 1574,
+          "Z": 30,
+          "Waypoints": [
+            "WP 34"
+          ]
+        },
+        {
+          "X": 1360,
+          "Y": 1575,
+          "Z": 30,
+          "Waypoints": [
+            "WP 34"
+          ]
+        },
+        {
+          "X": 1361,
+          "Y": 1573,
+          "Z": 30,
+          "Waypoints": [
+            "WP 34"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Forge 3",
+      "X": 1356,
+      "Y": 1784,
+      "Z": 15,
+      "Type": "Forge",
+      "City": "Britain",
+      "NearestWaypoint": "Britain South Road B",
+      "Arrivals": [
+        {
+          "X": 1355,
+          "Y": 1783,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1355,
+          "Y": 1784,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1355,
+          "Y": 1785,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1356,
+          "Y": 1783,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Britain Forge 4",
+      "X": 1344,
+      "Y": 1776,
+      "Z": 15,
+      "Type": "Forge",
+      "City": "Britain",
+      "NearestWaypoint": "Britain South Road B",
+      "Arrivals": [
+        {
+          "X": 1344,
+          "Y": 1775,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1344,
+          "Y": 1777,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1345,
+          "Y": 1775,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        },
+        {
+          "X": 1345,
+          "Y": 1776,
+          "Z": 15,
+          "Waypoints": [
+            "Britain South Road B"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Buccaneer's Den Forge",
+      "X": 2634,
+      "Y": 2089,
+      "Z": 10,
+      "Type": "Forge",
+      "City": "Buccaneer's Den",
+      "NearestWaypoint": "WP 206",
+      "Arrivals": [
+        {
+          "X": 2633,
+          "Y": 2088,
+          "Z": 10,
+          "Waypoints": [
+            "WP 1009"
+          ]
+        },
+        {
+          "X": 2633,
+          "Y": 2089,
+          "Z": 10,
+          "Waypoints": [
+            "WP 1009"
+          ]
+        },
+        {
+          "X": 2633,
+          "Y": 2090,
+          "Z": 10,
+          "Waypoints": [
+            "WP 1009"
+          ]
+        },
+        {
+          "X": 2634,
+          "Y": 2088,
+          "Z": 10,
+          "Waypoints": [
+            "WP 1009"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Forge",
+      "X": 1420,
+      "Y": 3860,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 140",
+      "Arrivals": [
+        {
+          "X": 1421,
+          "Y": 3857,
+          "Z": 0,
+          "Waypoints": [
+            "WP 974"
+          ]
+        },
+        {
+          "X": 1418,
+          "Y": 3858,
+          "Z": 0,
+          "Waypoints": [
+            "WP 974"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Forge 2",
+      "X": 1395,
+      "Y": 3717,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 140",
+      "Arrivals": [
+        {
+          "X": 1394,
+          "Y": 3714,
+          "Z": 0,
+          "Waypoints": [
+            "WP 939"
+          ]
+        },
+        {
+          "X": 1398,
+          "Y": 3715,
+          "Z": 0,
+          "Waypoints": [
+            "WP 939"
+          ]
+        },
+        {
+          "X": 1398,
+          "Y": 3719,
+          "Z": 0,
+          "Waypoints": [
+            "WP 939"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Minoc Forge",
+      "X": 2561,
+      "Y": 501,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 870",
+      "Arrivals": [
+        {
+          "X": 2560,
+          "Y": 501,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1224"
+          ]
+        },
+        {
+          "X": 2561,
+          "Y": 502,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1224"
+          ]
+        },
+        {
+          "X": 2562,
+          "Y": 501,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1224"
+          ]
+        },
+        {
+          "X": 2562,
+          "Y": 502,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1224"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Minoc Forge 2",
+      "X": 2468,
+      "Y": 555,
+      "Z": 5,
+      "Type": "Forge",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 872",
+      "Arrivals": [
+        {
+          "X": 2466,
+          "Y": 556,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1272"
+          ]
+        },
+        {
+          "X": 2466,
+          "Y": 557,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1272"
+          ]
+        },
+        {
+          "X": 2466,
+          "Y": 558,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1272"
+          ]
+        },
+        {
+          "X": 2467,
+          "Y": 556,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1272"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Minoc Forge 3",
+      "X": 2535,
+      "Y": 571,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 869",
+      "Arrivals": [
+        {
+          "X": 2534,
+          "Y": 572,
+          "Z": 0,
+          "Waypoints": [
+            "WP 865"
+          ]
+        },
+        {
+          "X": 2535,
+          "Y": 572,
+          "Z": 0,
+          "Waypoints": []
+        },
+        {
+          "X": 2536,
+          "Y": 570,
+          "Z": 0,
+          "Waypoints": [
+            "WP 865"
+          ]
+        },
+        {
+          "X": 2536,
+          "Y": 571,
+          "Z": 0,
+          "Waypoints": [
+            "WP 865"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moonglow Forge",
+      "X": 4440,
+      "Y": 1154,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 827",
+      "Arrivals": []
+    },
+    {
+      "Name": "Nujel'm Forge",
+      "X": 3549,
+      "Y": 1189,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Nujel'm",
+      "NearestWaypoint": "WP 824",
+      "Arrivals": []
+    },
+    {
+      "Name": "Nujel'm Forge 2",
+      "X": 3552,
+      "Y": 1200,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Nujel'm",
+      "NearestWaypoint": "WP 824",
+      "Arrivals": []
+    },
+    {
+      "Name": "Skara Brae Forge",
+      "X": 634,
+      "Y": 2196,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Skara Brae",
+      "NearestWaypoint": "WP 432",
+      "Arrivals": [
+        {
+          "X": 631,
+          "Y": 2192,
+          "Z": 0,
+          "Waypoints": [
+            "WP 432"
+          ]
+        },
+        {
+          "X": 632,
+          "Y": 2197,
+          "Z": 0,
+          "Waypoints": [
+            "WP 432"
+          ]
+        },
+        {
+          "X": 637,
+          "Y": 2198,
+          "Z": 0,
+          "Waypoints": [
+            "WP 432"
+          ]
+        },
+        {
+          "X": 637,
+          "Y": 2194,
+          "Z": 0,
+          "Waypoints": [
+            "WP 432"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Trinsic Forge",
+      "X": 1884,
+      "Y": 2645,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Trinsic",
+      "NearestWaypoint": "WP 221",
+      "Arrivals": [
+        {
+          "X": 1884,
+          "Y": 2644,
+          "Z": 0,
+          "Waypoints": [
+            "WP 221"
+          ]
+        },
+        {
+          "X": 1884,
+          "Y": 2646,
+          "Z": 0,
+          "Waypoints": [
+            "WP 221"
+          ]
+        },
+        {
+          "X": 1885,
+          "Y": 2645,
+          "Z": 0,
+          "Waypoints": [
+            "WP 221"
+          ]
+        },
+        {
+          "X": 1885,
+          "Y": 2646,
+          "Z": 0,
+          "Waypoints": [
+            "WP 221"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Forge",
+      "X": 2845,
+      "Y": 797,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 757",
+      "Arrivals": [
+        {
+          "X": 2847,
+          "Y": 796,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2848,
+          "Y": 797,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2847,
+          "Y": 798,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2847,
+          "Y": 799,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Forge 2",
+      "X": 2845,
+      "Y": 813,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 755",
+      "Arrivals": [
+        {
+          "X": 2847,
+          "Y": 813,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2847,
+          "Y": 812,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2847,
+          "Y": 816,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        },
+        {
+          "X": 2847,
+          "Y": 815,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1265"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Forge 3",
+      "X": 2869,
+      "Y": 848,
+      "Z": 0,
+      "Type": "Forge",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 752",
+      "Arrivals": [
+        {
+          "X": 2870,
+          "Y": 855,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1266"
+          ]
+        },
+        {
+          "X": 2869,
+          "Y": 853,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1266"
+          ]
+        },
+        {
+          "X": 2872,
+          "Y": 854,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1266"
+          ]
+        },
+        {
+          "X": 2871,
+          "Y": 852,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1266"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Mage",
+      "X": 660,
+      "Y": 2142,
+      "Z": 0,
+      "Type": "VendorMage",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 658,
+          "Y": 2141,
+          "Z": 0,
+          "Waypoints": [
+            "WP 426"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Alchemist",
+      "X": 661,
+      "Y": 2139,
+      "Z": 0,
+      "Type": "VendorAlchemist",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 658,
+          "Y": 2138,
+          "Z": 0,
+          "Waypoints": [
+            "WP 426"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Weaponer 2",
+      "X": 654,
+      "Y": 2163,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 651,
+          "Y": 2166,
+          "Z": 0,
+          "Waypoints": [
+            "WP 431"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Tailor 2",
+      "X": 650,
+      "Y": 2178,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 653,
+          "Y": 2183,
+          "Z": 0,
+          "Waypoints": [
+            "WP 896"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Carpenter",
+      "X": 631,
+      "Y": 2162,
+      "Z": 0,
+      "Type": "VendorCarpenter",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 636,
+          "Y": 2162,
+          "Z": 0,
+          "Waypoints": [
+            "WP 430"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Mage 2",
+      "X": 605,
+      "Y": 2181,
+      "Z": 0,
+      "Type": "VendorMage",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 608,
+          "Y": 2178,
+          "Z": 0,
+          "Waypoints": [
+            "WP 436"
+          ]
+        },
+        {
+          "X": 612,
+          "Y": 2179,
+          "Z": 0,
+          "Waypoints": [
+            "WP 436"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Weaponer",
+      "X": 586,
+      "Y": 2167,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 588,
+          "Y": 2171,
+          "Z": 0,
+          "Waypoints": [
+            "WP 897"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Bank",
+      "X": 591,
+      "Y": 2147,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 594,
+          "Y": 2154,
+          "Z": 0,
+          "Waypoints": [
+            "WP 902",
+            "WP 449"
+          ]
+        },
+        {
+          "X": 583,
+          "Y": 2145,
+          "Z": 0,
+          "Waypoints": [
+            "WP 448",
+            "WP 449"
+          ]
+        },
+        {
+          "X": 594,
+          "Y": 2142,
+          "Z": 0,
+          "Waypoints": [
+            "WP 424",
+            "WP 904"
+          ]
+        },
+        {
+          "X": 602,
+          "Y": 2148,
+          "Z": 0,
+          "Waypoints": [
+            "WP 423",
+            "WP 904",
+            "WP 424",
+            "WP 902"
+          ]
+        },
+        {
+          "X": 587,
+          "Y": 2135,
+          "Z": 0,
+          "Waypoints": [
+            "WP 424",
+            "WP 448"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Bowyer",
+      "X": 590,
+      "Y": 2205,
+      "Z": 0,
+      "Type": "VendorBowyer",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 593,
+          "Y": 2210,
+          "Z": 0,
+          "Waypoints": [
+            "WP 439",
+            "WP 438"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Provisioner 3",
+      "X": 578,
+      "Y": 2227,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 584,
+          "Y": 2228,
+          "Z": 0,
+          "Waypoints": [
+            "WP 437",
+            "WP 438",
+            "WP 441"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Skara Brae Healer",
+      "X": 626,
+      "Y": 2213,
+      "Z": 0,
+      "Type": "Healer",
+      "City": "Skara Brae",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 628,
+          "Y": 2218,
+          "Z": 0,
+          "Waypoints": [
+            "WP 435"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 93",
+      "X": 661,
+      "Y": 2236,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Skara Brae",
+      "NearestWaypoint": "WP 435",
+      "Polygon": [
+        [
+          638,
+          2224
+        ],
+        [
+          647,
+          2224
+        ],
+        [
+          647,
+          2233
+        ],
+        [
+          656,
+          2232
+        ],
+        [
+          657,
+          2223
+        ],
+        [
+          664,
+          2223
+        ],
+        [
+          664,
+          2232
+        ],
+        [
+          674,
+          2232
+        ],
+        [
+          674,
+          2223
+        ],
+        [
+          681,
+          2223
+        ],
+        [
+          681,
+          2249
+        ],
+        [
+          674,
+          2249
+        ],
+        [
+          674,
+          2240
+        ],
+        [
+          665,
+          2240
+        ],
+        [
+          664,
+          2249
+        ],
+        [
+          657,
+          2249
+        ],
+        [
+          657,
+          2240
+        ],
+        [
+          647,
+          2240
+        ],
+        [
+          647,
+          2248
+        ],
+        [
+          638,
+          2248
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 660,
+          "Y": 2224,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 660,
+          "Y": 2248,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 669,
+          "Y": 2233,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 671,
+          "Y": 2239,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 678,
+          "Y": 2224,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 680,
+          "Y": 2248,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 653,
+          "Y": 2239,
+          "Z": -15,
+          "Waypoints": [
+            "WP 906"
+          ]
+        },
+        {
+          "X": 652,
+          "Y": 2233,
+          "Z": -15,
+          "Waypoints": [
+            "WP 435",
+            "WP 906"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 94",
+      "X": 1500,
+      "Y": 3773,
+      "Z": 5,
+      "Type": "Moongate",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 200",
+      "Polygon": [
+        [
+          1497,
+          3770
+        ],
+        [
+          1503,
+          3769
+        ],
+        [
+          1504,
+          3774
+        ],
+        [
+          1501,
+          3777
+        ],
+        [
+          1496,
+          3776
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1502,
+          "Y": 3772,
+          "Z": 0,
+          "Waypoints": [
+            "WP 916"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 95",
+      "X": 1512,
+      "Y": 3990,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 965",
+      "Polygon": [
+        [
+          1500,
+          3982
+        ],
+        [
+          1508,
+          3982
+        ],
+        [
+          1509,
+          3987
+        ],
+        [
+          1517,
+          3986
+        ],
+        [
+          1517,
+          3980
+        ],
+        [
+          1523,
+          3979
+        ],
+        [
+          1524,
+          4001
+        ],
+        [
+          1517,
+          4001
+        ],
+        [
+          1517,
+          3994
+        ],
+        [
+          1509,
+          3994
+        ],
+        [
+          1509,
+          3999
+        ],
+        [
+          1500,
+          3998
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1504,
+          "Y": 3983,
+          "Z": -15,
+          "Waypoints": [
+            "WP 965"
+          ]
+        },
+        {
+          "X": 1504,
+          "Y": 3998,
+          "Z": -15,
+          "Waypoints": [
+            "WP 965"
+          ]
+        },
+        {
+          "X": 1521,
+          "Y": 3980,
+          "Z": -15,
+          "Waypoints": [
+            "WP 965"
+          ]
+        },
+        {
+          "X": 1523,
+          "Y": 3990,
+          "Z": -15,
+          "Waypoints": [
+            "WP 965"
+          ]
+        },
+        {
+          "X": 1521,
+          "Y": 4000,
+          "Z": -15,
+          "Waypoints": [
+            "WP 965"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Carpenter",
+      "X": 1430,
+      "Y": 3820,
+      "Z": 0,
+      "Type": "VendorCarpenter",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1427,
+          "Y": 3820,
+          "Z": 0,
+          "Waypoints": [
+            "WP 972"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Provisioner 11",
+      "X": 1396,
+      "Y": 3810,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1401,
+          "Y": 3811,
+          "Z": 0,
+          "Waypoints": [
+            "WP 922"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Provisioner 13",
+      "X": 1386,
+      "Y": 3828,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1391,
+          "Y": 3829,
+          "Z": 0,
+          "Waypoints": [
+            "WP 973"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Smith",
+      "X": 1423,
+      "Y": 3850,
+      "Z": 0,
+      "Type": "VendorSmith",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1427,
+          "Y": 3851,
+          "Z": 0,
+          "Waypoints": [
+            "WP 974"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Weaponer 2",
+      "X": 1452,
+      "Y": 3858,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1452,
+          "Y": 3861,
+          "Z": 0,
+          "Waypoints": [
+            "WP 952"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Smith 6",
+      "X": 1476,
+      "Y": 3851,
+      "Z": 0,
+      "Type": "VendorSmith",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1475,
+          "Y": 3857,
+          "Z": 0,
+          "Waypoints": [
+            "WP 977"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Weaponer 4",
+      "X": 1482,
+      "Y": 3862,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1477,
+          "Y": 3863,
+          "Z": 0,
+          "Waypoints": [
+            "WP 977"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Tailor",
+      "X": 1441,
+      "Y": 3798,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1438,
+          "Y": 3796,
+          "Z": 0,
+          "Waypoints": [
+            "WP 978"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Provisioner 8",
+      "X": 1443,
+      "Y": 3799,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1436,
+          "Y": 3796,
+          "Z": 0,
+          "Waypoints": [
+            "WP 978"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Provisioner 10",
+      "X": 1447,
+      "Y": 3777,
+      "Z": 1,
+      "Type": "VendorProvisioner",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1438,
+          "Y": 3773,
+          "Z": 0,
+          "Waypoints": [
+            "WP 919"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Healer",
+      "X": 1413,
+      "Y": 3772,
+      "Z": 0,
+      "Type": "Healer",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1412,
+          "Y": 3778,
+          "Z": 0,
+          "Waypoints": [
+            "WP 981"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Provisioner 9",
+      "X": 1387,
+      "Y": 3773,
+      "Z": -20,
+      "Type": "VendorProvisioner",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1390,
+          "Y": 3773,
+          "Z": 0,
+          "Waypoints": [
+            "WP 982"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Tailor 3",
+      "X": 1361,
+      "Y": 3778,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1356,
+          "Y": 3789,
+          "Z": 0,
+          "Waypoints": [
+            "WP 983"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Weaponer 3",
+      "X": 1364,
+      "Y": 3757,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1365,
+          "Y": 3761,
+          "Z": 0,
+          "Waypoints": [
+            "WP 984"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Smith 5",
+      "X": 1361,
+      "Y": 3757,
+      "Z": 0,
+      "Type": "VendorSmith",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1362,
+          "Y": 3761,
+          "Z": 0,
+          "Waypoints": [
+            "WP 984"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 111",
+      "X": 1320,
+      "Y": 3775,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 933",
+      "Polygon": [
+        [
+          1311,
+          3766
+        ],
+        [
+          1330,
+          3767
+        ],
+        [
+          1330,
+          3778
+        ],
+        [
+          1322,
+          3779
+        ],
+        [
+          1322,
+          3786
+        ],
+        [
+          1312,
+          3786
+        ],
+        [
+          1311,
+          3766
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1330,
+          "Y": 3769,
+          "Z": 0,
+          "Waypoints": [
+            "WP 934",
+            "WP 933"
+          ]
+        },
+        {
+          "X": 1322,
+          "Y": 3779,
+          "Z": 0,
+          "Waypoints": [
+            "WP 933"
+          ]
+        },
+        {
+          "X": 1315,
+          "Y": 3767,
+          "Z": 0,
+          "Waypoints": [
+            "WP 985",
+            "WP 986"
+          ]
+        },
+        {
+          "X": 1323,
+          "Y": 3767,
+          "Z": 0,
+          "Waypoints": [
+            "WP 985",
+            "WP 934"
+          ]
+        },
+        {
+          "X": 1311,
+          "Y": 3776,
+          "Z": 0,
+          "Waypoints": [
+            "WP 987",
+            "WP 986"
+          ]
+        },
+        {
+          "X": 1322,
+          "Y": 3782,
+          "Z": 0,
+          "Waypoints": [
+            "WP 933"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Smith 2",
+      "X": 1442,
+      "Y": 3718,
+      "Z": 0,
+      "Type": "VendorSmith",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1443,
+          "Y": 3724,
+          "Z": 0,
+          "Waypoints": [
+            "WP 988"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Jhelom Weaponer",
+      "X": 1439,
+      "Y": 3716,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Jhelom",
+      "NearestWaypoint": "Britain South Road D",
+      "Arrivals": [
+        {
+          "X": 1437,
+          "Y": 3724,
+          "Z": 0,
+          "Waypoints": [
+            "WP 988"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 114",
+      "X": 1503,
+      "Y": 3695,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 907",
+      "Polygon": [
+        [
+          1489,
+          3678
+        ],
+        [
+          1508,
+          3678
+        ],
+        [
+          1508,
+          3684
+        ],
+        [
+          1499,
+          3684
+        ],
+        [
+          1500,
+          3692
+        ],
+        [
+          1507,
+          3692
+        ],
+        [
+          1508,
+          3697
+        ],
+        [
+          1499,
+          3699
+        ],
+        [
+          1499,
+          3706
+        ],
+        [
+          1516,
+          3706
+        ],
+        [
+          1517,
+          3713
+        ],
+        [
+          1489,
+          3713
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1504,
+          "Y": 3679,
+          "Z": -15,
+          "Waypoints": [
+            "WP 907"
+          ]
+        },
+        {
+          "X": 1507,
+          "Y": 3683,
+          "Z": -15,
+          "Waypoints": [
+            "WP 907"
+          ]
+        },
+        {
+          "X": 1507,
+          "Y": 3697,
+          "Z": -15,
+          "Waypoints": [
+            "WP 907",
+            "WP 908"
+          ]
+        },
+        {
+          "X": 1515,
+          "Y": 3707,
+          "Z": -15,
+          "Waypoints": [
+            "WP 908"
+          ]
+        },
+        {
+          "X": 1506,
+          "Y": 3711,
+          "Z": -15,
+          "Waypoints": [
+            "WP 908"
+          ]
+        },
+        {
+          "X": 1506,
+          "Y": 3693,
+          "Z": -15,
+          "Waypoints": [
+            "WP 907",
+            "WP 908"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 115",
+      "X": 1371,
+      "Y": 3900,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Jhelom",
+      "NearestWaypoint": "WP 947",
+      "Polygon": [
+        [
+          1365,
+          3885
+        ],
+        [
+          1365,
+          3890
+        ],
+        [
+          1370,
+          3890
+        ],
+        [
+          1369,
+          3898
+        ],
+        [
+          1362,
+          3898
+        ],
+        [
+          1362,
+          3905
+        ],
+        [
+          1369,
+          3904
+        ],
+        [
+          1369,
+          3912
+        ],
+        [
+          1362,
+          3912
+        ],
+        [
+          1362,
+          3919
+        ],
+        [
+          1383,
+          3918
+        ],
+        [
+          1383,
+          3912
+        ],
+        [
+          1377,
+          3912
+        ],
+        [
+          1376,
+          3890
+        ],
+        [
+          1381,
+          3890
+        ],
+        [
+          1381,
+          3882
+        ],
+        [
+          1365,
+          3881
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1381,
+          "Y": 3917,
+          "Z": -15,
+          "Waypoints": [
+            "WP 989"
+          ]
+        },
+        {
+          "X": 1366,
+          "Y": 3918,
+          "Z": -15,
+          "Waypoints": [
+            "WP 989"
+          ]
+        },
+        {
+          "X": 1376,
+          "Y": 3909,
+          "Z": -15,
+          "Waypoints": [
+            "WP 989"
+          ]
+        },
+        {
+          "X": 1376,
+          "Y": 3895,
+          "Z": -15,
+          "Waypoints": [
+            "WP 947",
+            "WP 989"
+          ]
+        },
+        {
+          "X": 1363,
+          "Y": 3901,
+          "Z": -15,
+          "Waypoints": [
+            "WP 989"
+          ]
+        },
+        {
+          "X": 1369,
+          "Y": 3894,
+          "Z": -15,
+          "Waypoints": [
+            "WP 947",
+            "WP 989"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 116",
+      "X": 3564,
+      "Y": 2140,
+      "Z": 34,
+      "Type": "Moongate",
+      "City": "Magincia",
+      "NearestWaypoint": "WP 1261",
+      "Polygon": [
+        [
+          3561,
+          2137
+        ],
+        [
+          3568,
+          2137
+        ],
+        [
+          3568,
+          2143
+        ],
+        [
+          3561,
+          2143
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 3563,
+          "Y": 2139,
+          "Z": 34,
+          "Waypoints": [
+            "WP 1261"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 117",
+      "X": 3674,
+      "Y": 2291,
+      "Z": -5,
+      "Type": "Dock",
+      "City": "Magincia",
+      "NearestWaypoint": "WP 1240",
+      "Polygon": [
+        [
+          3670,
+          2280
+        ],
+        [
+          3678,
+          2280
+        ],
+        [
+          3678,
+          2288
+        ],
+        [
+          3690,
+          2287
+        ],
+        [
+          3690,
+          2280
+        ],
+        [
+          3695,
+          2279
+        ],
+        [
+          3695,
+          2300
+        ],
+        [
+          3690,
+          2300
+        ],
+        [
+          3690,
+          2292
+        ],
+        [
+          3682,
+          2292
+        ],
+        [
+          3682,
+          2300
+        ],
+        [
+          3677,
+          2300
+        ],
+        [
+          3677,
+          2292
+        ],
+        [
+          3671,
+          2292
+        ],
+        [
+          3671,
+          2300
+        ],
+        [
+          3666,
+          2300
+        ],
+        [
+          3666,
+          2292
+        ],
+        [
+          3658,
+          2292
+        ],
+        [
+          3658,
+          2300
+        ],
+        [
+          3653,
+          2300
+        ],
+        [
+          3653,
+          2279
+        ],
+        [
+          3657,
+          2279
+        ],
+        [
+          3658,
+          2287
+        ],
+        [
+          3670,
+          2287
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 3694,
+          "Y": 2285,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        },
+        {
+          "X": 3695,
+          "Y": 2295,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        },
+        {
+          "X": 3654,
+          "Y": 2285,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        },
+        {
+          "X": 3653,
+          "Y": 2294,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        },
+        {
+          "X": 3668,
+          "Y": 2300,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        },
+        {
+          "X": 3680,
+          "Y": 2300,
+          "Z": -5,
+          "Waypoints": [
+            "magdock"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 118",
+      "X": 3648,
+      "Y": 2666,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Magincia",
+      "NearestWaypoint": "WP 1036",
+      "Polygon": [
+        [
+          3631,
+          2651
+        ],
+        [
+          3615,
+          2652
+        ],
+        [
+          3615,
+          2658
+        ],
+        [
+          3640,
+          2658
+        ],
+        [
+          3640,
+          2667
+        ],
+        [
+          3645,
+          2667
+        ],
+        [
+          3645,
+          2685
+        ],
+        [
+          3651,
+          2685
+        ],
+        [
+          3652,
+          2667
+        ],
+        [
+          3659,
+          2667
+        ],
+        [
+          3659,
+          2685
+        ],
+        [
+          3665,
+          2685
+        ],
+        [
+          3665,
+          2666
+        ],
+        [
+          3672,
+          2667
+        ],
+        [
+          3672,
+          2658
+        ],
+        [
+          3648,
+          2657
+        ],
+        [
+          3648,
+          2649
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 3671,
+          "Y": 2664,
+          "Z": -15,
+          "Waypoints": [
+            "WP 1038"
+          ]
+        },
+        {
+          "X": 3662,
+          "Y": 2684,
+          "Z": -15,
+          "Waypoints": [
+            "WP 1038"
+          ]
+        },
+        {
+          "X": 3648,
+          "Y": 2684,
+          "Z": -15,
+          "Waypoints": [
+            "WP 1036"
+          ]
+        },
+        {
+          "X": 3640,
+          "Y": 2664,
+          "Z": -15,
+          "Waypoints": [
+            "WP 1036"
+          ]
+        },
+        {
+          "X": 3616,
+          "Y": 2655,
+          "Z": -15,
+          "Waypoints": [
+            "WP 1037"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 119",
+      "X": 2886,
+      "Y": 684,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 794",
+      "Polygon": [
+        [
+          2871,
+          671
+        ],
+        [
+          2897,
+          672
+        ],
+        [
+          2897,
+          681
+        ],
+        [
+          2889,
+          682
+        ],
+        [
+          2889,
+          697
+        ],
+        [
+          2872,
+          698
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2894,
+          "Y": 682,
+          "Z": 0,
+          "Waypoints": [
+            "WP 794"
+          ]
+        },
+        {
+          "X": 2890,
+          "Y": 694,
+          "Z": 0,
+          "Waypoints": [
+            "WP 794"
+          ]
+        },
+        {
+          "X": 2885,
+          "Y": 698,
+          "Z": 0,
+          "Waypoints": [
+            "WP 793"
+          ]
+        },
+        {
+          "X": 2876,
+          "Y": 699,
+          "Z": 0,
+          "Waypoints": [
+            "WP 797"
+          ]
+        },
+        {
+          "X": 2897,
+          "Y": 677,
+          "Z": 0,
+          "Waypoints": [
+            "WP 796",
+            "WP 794"
+          ]
+        },
+        {
+          "X": 2893,
+          "Y": 671,
+          "Z": 0,
+          "Waypoints": [
+            "WP 829"
+          ]
+        },
+        {
+          "X": 2882,
+          "Y": 670,
+          "Z": 0,
+          "Waypoints": [
+            "WP 829"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Mage 2",
+      "X": 2891,
+      "Y": 653,
+      "Z": 0,
+      "Type": "VendorMage",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain West Armorer",
+      "Arrivals": [
+        {
+          "X": 2884,
+          "Y": 652,
+          "Z": 0,
+          "Waypoints": [
+            "WP 830"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Mage",
+      "X": 2918,
+      "Y": 670,
+      "Z": 0,
+      "Type": "VendorMage",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2916,
+          "Y": 673,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1262"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Provisioner 3",
+      "X": 2884,
+      "Y": 723,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2880,
+          "Y": 724,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1263"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Tailor 4",
+      "X": 2959,
+      "Y": 621,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain West Armorer",
+      "Arrivals": [
+        {
+          "X": 2966,
+          "Y": 619,
+          "Z": 0,
+          "Waypoints": [
+            "WP 878"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Provisioner 9",
+      "X": 2992,
+      "Y": 638,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2981,
+          "Y": 635,
+          "Z": 0,
+          "Waypoints": [
+            "WP 879"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Provisioner 6",
+      "X": 2899,
+      "Y": 790,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2900,
+          "Y": 796,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1264"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Carpenter",
+      "X": 2915,
+      "Y": 798,
+      "Z": 0,
+      "Type": "VendorCarpenter",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2917,
+          "Y": 803,
+          "Z": 0,
+          "Waypoints": [
+            "WP 769"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Bowyer",
+      "X": 2861,
+      "Y": 812,
+      "Z": 0,
+      "Type": "VendorBowyer",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2858,
+          "Y": 805,
+          "Z": 0,
+          "Waypoints": [
+            "WP 759"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Tailor 3",
+      "X": 2841,
+      "Y": 885,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2845,
+          "Y": 887,
+          "Z": 0,
+          "Waypoints": [
+            "WP 749"
+          ]
+        },
+        {
+          "X": 2845,
+          "Y": 884,
+          "Z": 0,
+          "Waypoints": [
+            "WP 749"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Vesper Tailor",
+      "X": 2840,
+      "Y": 867,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Vesper",
+      "NearestWaypoint": "Britain Inn East Road",
+      "Arrivals": [
+        {
+          "X": 2845,
+          "Y": 867,
+          "Z": 0,
+          "Waypoints": [
+            "WP 749"
+          ]
+        },
+        {
+          "X": 2845,
+          "Y": 871,
+          "Z": 0,
+          "Waypoints": [
+            "WP 749"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Dock 130",
+      "X": 3030,
+      "Y": 829,
+      "Z": -15,
+      "Type": "Dock",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 779",
+      "Polygon": [
+        [
+          3010,
+          816
+        ],
+        [
+          3017,
+          816
+        ],
+        [
+          3017,
+          824
+        ],
+        [
+          3026,
+          824
+        ],
+        [
+          3026,
+          816
+        ],
+        [
+          3032,
+          815
+        ],
+        [
+          3032,
+          825
+        ],
+        [
+          3041,
+          824
+        ],
+        [
+          3041,
+          815
+        ],
+        [
+          3047,
+          816
+        ],
+        [
+          3047,
+          841
+        ],
+        [
+          3041,
+          841
+        ],
+        [
+          3041,
+          832
+        ],
+        [
+          3032,
+          832
+        ],
+        [
+          3032,
+          841
+        ],
+        [
+          3026,
+          841
+        ],
+        [
+          3026,
+          832
+        ],
+        [
+          3017,
+          832
+        ],
+        [
+          3017,
+          840
+        ],
+        [
+          3010,
+          840
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 3047,
+          "Y": 821,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        },
+        {
+          "X": 3047,
+          "Y": 834,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        },
+        {
+          "X": 3029,
+          "Y": 841,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        },
+        {
+          "X": 3031,
+          "Y": 816,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        },
+        {
+          "X": 3022,
+          "Y": 825,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        },
+        {
+          "X": 3022,
+          "Y": 832,
+          "Z": -15,
+          "Waypoints": [
+            "WP 779"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Bank 131",
+      "X": 2504,
+      "Y": 552,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 868",
+      "Polygon": [
+        [
+          2495,
+          544
+        ],
+        [
+          2512,
+          543
+        ],
+        [
+          2513,
+          561
+        ],
+        [
+          2495,
+          561
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2513,
+          "Y": 547,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1218"
+          ]
+        },
+        {
+          "X": 2513,
+          "Y": 557,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1218"
+          ]
+        },
+        {
+          "X": 2495,
+          "Y": 547,
+          "Z": 0,
+          "Waypoints": [
+            "WP 868",
+            "WP 1273"
+          ]
+        },
+        {
+          "X": 2495,
+          "Y": 556,
+          "Z": 0,
+          "Waypoints": [
+            "WP 868",
+            "WP 1273"
+          ]
+        },
+        {
+          "X": 2509,
+          "Y": 562,
+          "Z": 0,
+          "Waypoints": [
+            "WP 868",
+            "WP 867"
+          ]
+        },
+        {
+          "X": 2513,
+          "Y": 561,
+          "Z": 0,
+          "Waypoints": [
+            "WP 868",
+            "WP 867"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Minoc Provisioner",
+      "X": 2526,
+      "Y": 548,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Minoc",
+      "NearestWaypoint": "Britain West Armorer",
+      "Arrivals": [
+        {
+          "X": 2532,
+          "Y": 550,
+          "Z": 0,
+          "Waypoints": [
+            "WP 869"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Minoc Weaponer",
+      "X": 2525,
+      "Y": 573,
+      "Z": 0,
+      "Type": "VendorWeaponer",
+      "City": "Minoc",
+      "NearestWaypoint": "Britain West Armorer",
+      "Arrivals": [
+        {
+          "X": 2526,
+          "Y": 575,
+          "Z": 0,
+          "Waypoints": [
+            "WP 865"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 134",
+      "X": 2702,
+      "Y": 692,
+      "Z": 5,
+      "Type": "Moongate",
+      "City": "Vesper",
+      "NearestWaypoint": "WP 848",
+      "Polygon": [
+        [
+          2698,
+          688
+        ],
+        [
+          2705,
+          688
+        ],
+        [
+          2706,
+          696
+        ],
+        [
+          2698,
+          697
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2702,
+          "Y": 694,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1297",
+            "WP 1296"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5572,
+      "Y": 633,
+      "Z": 17,
+      "Type": "DungeonDescend",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1310",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5573,
+          "Y": 633,
+          "Z": 22,
+          "Waypoints": [
+            "WP 1310"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise Exit L1 Ascend",
+      "X": 5588,
+      "Y": 631,
+      "Z": 30,
+      "Type": "DungeonAscend",
+      "City": "Britain",
+      "NearestWaypoint": "WP 1311",
+      "Dungeon": "Despise",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5588,
+          "Y": 631,
+          "Z": 30,
+          "Waypoints": [
+            "WP 1307"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl2 L1 Ascend",
+      "X": 5522,
+      "Y": 673,
+      "Z": 32,
+      "Type": "DungeonAscend",
+      "City": "Moonglow",
+      "NearestWaypoint": "despise1",
+      "Dungeon": "Despise lvl2",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5521,
+          "Y": 673,
+          "Z": 27,
+          "Waypoints": [
+            "despise1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 L1 Room",
+      "X": 5443,
+      "Y": 677,
+      "Z": 20,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1207",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5449,
+          "Y": 676,
+          "Z": 20,
+          "Waypoints": [
+            "WP 1305",
+            "WP 1306"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise L1 Entrance",
+      "X": 1298,
+      "Y": 1082,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "Britain",
+      "NearestWaypoint": "WP 570",
+      "Dungeon": "Despise",
+      "Level": 1,
+      "ArrivalX": 1296,
+      "ArrivalY": 1081,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 1296,
+          "Y": 1081,
+          "Z": 0,
+          "Waypoints": [
+            "WP 570"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 spiderl L1 Room",
+      "X": 5393,
+      "Y": 663,
+      "Z": 20,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1320",
+      "Dungeon": "Despise lvl1 spiderl",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5396,
+          "Y": 663,
+          "Z": 20,
+          "Waypoints": [
+            "WP 1320"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 spider2 L1 Room",
+      "X": 5392,
+      "Y": 700,
+      "Z": 15,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1324",
+      "Dungeon": "Despise lvl1 spider2",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5389,
+          "Y": 699,
+          "Z": 15,
+          "Waypoints": [
+            "WP 1323"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moongate 142",
+      "X": 4467,
+      "Y": 1283,
+      "Z": 5,
+      "Type": "Moongate",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1127",
+      "Polygon": [
+        [
+          4465,
+          1279
+        ],
+        [
+          4470,
+          1280
+        ],
+        [
+          4471,
+          1287
+        ],
+        [
+          4465,
+          1288
+        ],
+        [
+          4464,
+          1283
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 4469,
+          "Y": 1283,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1356"
+          ]
+        },
+        {
+          "X": 4465,
+          "Y": 1284,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1359"
+          ]
+        },
+        {
+          "X": 4468,
+          "Y": 1285,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1362"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 giantsspider L1 Room",
+      "X": 5406,
+      "Y": 725,
+      "Z": 15,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1353",
+      "Dungeon": "Despise lvl1 giantsspider",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5407,
+          "Y": 722,
+          "Z": 15,
+          "Waypoints": [
+            "WP 1353"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 headlessspider L1 Room",
+      "X": 5430,
+      "Y": 751,
+      "Z": 5,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1343",
+      "Dungeon": "Despise lvl1 headlessspider",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5428,
+          "Y": 750,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1343",
+            "WP 1344",
+            "WP 1342"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl1 ratmen L1 Room",
+      "X": 5472,
+      "Y": 741,
+      "Z": 5,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1363",
+      "Dungeon": "Despise lvl1 ratmen",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5472,
+          "Y": 738,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1363"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Despise lvl2 entrance L1 Descend",
+      "X": 5386,
+      "Y": 756,
+      "Z": -8,
+      "Type": "DungeonDescend",
+      "City": "Moonglow",
+      "NearestWaypoint": "WP 1348",
+      "Dungeon": "Despise lvl2 entrance",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5387,
+          "Y": 756,
+          "Z": -3,
+          "Waypoints": [
+            "WP 1348"
           ]
         }
       ]

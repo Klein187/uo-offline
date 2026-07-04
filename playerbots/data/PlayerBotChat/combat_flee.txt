@@ -1,0 +1,24 @@
+# combat_flee.txt — Shouted when a bot turns and runs for its life:
+# HP retreat, or a monster way out of its league coming at it.
+# Panic. Lines starting with # are comments.
+
+RUN
+too strong!
+im out
+nope nope nope
+HELP
+retreat!
+i yield! i yield!
+not like this
+*screams*
+run away!
+its too powerful
+healer! i need a healer
+legs dont fail me now
+tactical retreat!
+i have a family!
+every man for himself
+what IS that thing
+im not paid enough for this
+flee!
+save yourselves
