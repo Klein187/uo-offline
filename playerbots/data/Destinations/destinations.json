@@ -2018,7 +2018,7 @@
       "Z": 10,
       "Type": "Forge",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "WP 206",
+      "NearestWaypoint": "WP 1009",
       "Arrivals": [
         {
           "X": 2633,
@@ -2061,7 +2061,7 @@
       "Z": 0,
       "Type": "Forge",
       "City": "Jhelom",
-      "NearestWaypoint": "WP 140",
+      "NearestWaypoint": "WP 975",
       "Arrivals": [
         {
           "X": 1421,
@@ -2088,7 +2088,7 @@
       "Z": 0,
       "Type": "Forge",
       "City": "Jhelom",
-      "NearestWaypoint": "WP 140",
+      "NearestWaypoint": "WP 939",
       "Arrivals": [
         {
           "X": 1394,
@@ -2123,7 +2123,7 @@
       "Z": 0,
       "Type": "Forge",
       "City": "Minoc",
-      "NearestWaypoint": "WP 870",
+      "NearestWaypoint": "WP 1224",
       "Arrivals": [
         {
           "X": 2560,
@@ -2250,7 +2250,7 @@
       "Z": 0,
       "Type": "Forge",
       "City": "Moonglow",
-      "NearestWaypoint": "WP 827",
+      "NearestWaypoint": "WP 1074",
       "Arrivals": []
     },
     {
@@ -2495,7 +2495,7 @@
       "Z": 0,
       "Type": "VendorMage",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 426",
       "Arrivals": [
         {
           "X": 658,
@@ -2514,7 +2514,7 @@
       "Z": 0,
       "Type": "VendorAlchemist",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 426",
       "Arrivals": [
         {
           "X": 658,
@@ -2533,7 +2533,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 431",
       "Arrivals": [
         {
           "X": 651,
@@ -2552,7 +2552,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 431",
       "Arrivals": [
         {
           "X": 653,
@@ -2571,7 +2571,7 @@
       "Z": 0,
       "Type": "VendorCarpenter",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 430",
       "Arrivals": [
         {
           "X": 636,
@@ -2590,7 +2590,7 @@
       "Z": 0,
       "Type": "VendorMage",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 897",
       "Arrivals": [
         {
           "X": 608,
@@ -2617,7 +2617,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 449",
       "Arrivals": [
         {
           "X": 588,
@@ -2636,7 +2636,7 @@
       "Z": 0,
       "Type": "Bank",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 901",
       "Arrivals": [
         {
           "X": 594,
@@ -2694,7 +2694,7 @@
       "Z": 0,
       "Type": "VendorBowyer",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 899",
       "Arrivals": [
         {
           "X": 593,
@@ -2714,7 +2714,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 445",
       "Arrivals": [
         {
           "X": 584,
@@ -2735,7 +2735,7 @@
       "Z": 0,
       "Type": "Healer",
       "City": "Skara Brae",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 905",
       "Arrivals": [
         {
           "X": 628,
@@ -2912,7 +2912,7 @@
       "Z": 5,
       "Type": "Moongate",
       "City": "Jhelom",
-      "NearestWaypoint": "WP 200",
+      "NearestWaypoint": "WP 916",
       "Polygon": [
         [
           1497,
@@ -3054,7 +3054,7 @@
       "Z": 0,
       "Type": "VendorCarpenter",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 972",
       "Arrivals": [
         {
           "X": 1427,
@@ -3073,7 +3073,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 925",
       "Arrivals": [
         {
           "X": 1401,
@@ -3092,7 +3092,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 929",
       "Arrivals": [
         {
           "X": 1391,
@@ -3111,7 +3111,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 956",
       "Arrivals": [
         {
           "X": 1427,
@@ -3130,7 +3130,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 952",
       "Arrivals": [
         {
           "X": 1452,
@@ -3149,7 +3149,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 954",
       "Arrivals": [
         {
           "X": 1475,
@@ -3168,7 +3168,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 976",
       "Arrivals": [
         {
           "X": 1477,
@@ -3187,7 +3187,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 978",
       "Arrivals": [
         {
           "X": 1438,
@@ -3206,7 +3206,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 978",
       "Arrivals": [
         {
           "X": 1436,
@@ -3225,7 +3225,7 @@
       "Z": 1,
       "Type": "VendorProvisioner",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 960",
       "Arrivals": [
         {
           "X": 1438,
@@ -3244,7 +3244,7 @@
       "Z": 0,
       "Type": "Healer",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 918",
       "Arrivals": [
         {
           "X": 1412,
@@ -3263,7 +3263,7 @@
       "Z": -20,
       "Type": "VendorProvisioner",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 931",
       "Arrivals": [
         {
           "X": 1390,
@@ -3282,7 +3282,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 984",
       "Arrivals": [
         {
           "X": 1356,
@@ -3301,7 +3301,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 941",
       "Arrivals": [
         {
           "X": 1365,
@@ -3320,7 +3320,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 938",
       "Arrivals": [
         {
           "X": 1362,
@@ -3432,7 +3432,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 944",
       "Arrivals": [
         {
           "X": 1443,
@@ -3451,7 +3451,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Jhelom",
-      "NearestWaypoint": "Britain South Road D",
+      "NearestWaypoint": "WP 944",
       "Arrivals": [
         {
           "X": 1437,
@@ -4121,7 +4121,7 @@
       "Z": 0,
       "Type": "VendorMage",
       "City": "Vesper",
-      "NearestWaypoint": "Britain West Armorer",
+      "NearestWaypoint": "WP 830",
       "Arrivals": [
         {
           "X": 2884,
@@ -4140,7 +4140,7 @@
       "Z": 0,
       "Type": "VendorMage",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 796",
       "Arrivals": [
         {
           "X": 2916,
@@ -4159,7 +4159,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 764",
       "Arrivals": [
         {
           "X": 2880,
@@ -4178,7 +4178,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Vesper",
-      "NearestWaypoint": "Britain West Armorer",
+      "NearestWaypoint": "WP 875",
       "Arrivals": [
         {
           "X": 2966,
@@ -4197,7 +4197,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 879",
       "Arrivals": [
         {
           "X": 2981,
@@ -4216,7 +4216,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 765",
       "Arrivals": [
         {
           "X": 2900,
@@ -4235,7 +4235,7 @@
       "Z": 0,
       "Type": "VendorCarpenter",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1264",
       "Arrivals": [
         {
           "X": 2917,
@@ -4254,7 +4254,7 @@
       "Z": 0,
       "Type": "VendorBowyer",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 759",
       "Arrivals": [
         {
           "X": 2858,
@@ -4273,7 +4273,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 749",
       "Arrivals": [
         {
           "X": 2845,
@@ -4300,7 +4300,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Vesper",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 749",
       "Arrivals": [
         {
           "X": 2845,
@@ -4549,7 +4549,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Minoc",
-      "NearestWaypoint": "Britain West Armorer",
+      "NearestWaypoint": "WP 870",
       "Arrivals": [
         {
           "X": 2532,
@@ -4568,7 +4568,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Minoc",
-      "NearestWaypoint": "Britain West Armorer",
+      "NearestWaypoint": "WP 866",
       "Arrivals": [
         {
           "X": 2526,
@@ -4587,7 +4587,7 @@
       "Z": 5,
       "Type": "Moongate",
       "City": "Vesper",
-      "NearestWaypoint": "WP 848",
+      "NearestWaypoint": "WP 1296",
       "Polygon": [
         [
           2698,
@@ -4688,7 +4688,7 @@
       "Z": 20,
       "Type": "DungeonRoom",
       "City": "Moonglow",
-      "NearestWaypoint": "WP 1207",
+      "NearestWaypoint": "WP 1305",
       "Dungeon": "Despise lvl1",
       "Level": 1,
       "Arrivals": [
@@ -4755,7 +4755,7 @@
       "Z": 15,
       "Type": "DungeonRoom",
       "City": "Moonglow",
-      "NearestWaypoint": "WP 1324",
+      "NearestWaypoint": "WP 1323",
       "Dungeon": "Despise lvl1 spider2",
       "Level": 1,
       "Arrivals": [
