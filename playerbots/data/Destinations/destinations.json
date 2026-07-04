@@ -4949,25 +4949,13 @@
       "ArrivalZ": 0
     },
     {
-      "Name": "Justice Shrine",
-      "X": 1300,
-      "Y": 634,
-      "Z": 0,
-      "Type": "Shrine",
-      "City": "Britain",
-      "NearestWaypoint": "Justice Trail 9",
-      "ArrivalX": 1297,
-      "ArrivalY": 636,
-      "ArrivalZ": 0
-    },
-    {
       "Name": "Sacrifice Shrine",
       "X": 3352,
       "Y": 287,
       "Z": 0,
       "Type": "Shrine",
       "City": "Minoc",
-      "NearestWaypoint": "Sacrifice Trail 20",
+      "NearestWaypoint": "Sacrifice Trail 29",
       "ArrivalX": 3349,
       "ArrivalY": 283,
       "ArrivalZ": 0

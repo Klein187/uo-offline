@@ -14018,90 +14018,9 @@
       ]
     },
     {
-      "Name": "Justice Trail 1",
-      "X": 1252,
-      "Y": 853,
-      "Z": 0,
-      "Connects": [
-        "WP 642"
-      ]
-    },
-    {
-      "Name": "Justice Trail 2",
-      "X": 1223,
-      "Y": 830,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 1"
-      ]
-    },
-    {
-      "Name": "Justice Trail 3",
-      "X": 1207,
-      "Y": 798,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 2"
-      ]
-    },
-    {
-      "Name": "Justice Trail 4",
-      "X": 1200,
-      "Y": 762,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 3"
-      ]
-    },
-    {
-      "Name": "Justice Trail 5",
-      "X": 1207,
-      "Y": 726,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 4"
-      ]
-    },
-    {
-      "Name": "Justice Trail 6",
-      "X": 1215,
-      "Y": 690,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 5"
-      ]
-    },
-    {
-      "Name": "Justice Trail 7",
-      "X": 1233,
-      "Y": 660,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 6"
-      ]
-    },
-    {
-      "Name": "Justice Trail 8",
-      "X": 1266,
-      "Y": 645,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 7"
-      ]
-    },
-    {
-      "Name": "Justice Trail 9",
-      "X": 1293,
-      "Y": 637,
-      "Z": 0,
-      "Connects": [
-        "Justice Trail 8"
-      ]
-    },
-    {
       "Name": "Sacrifice Trail 1",
-      "X": 3012,
-      "Y": 616,
+      "X": 2984,
+      "Y": 648,
       "Z": 0,
       "Connects": [
         "WP 879"
@@ -14109,8 +14028,8 @@
     },
     {
       "Name": "Sacrifice Trail 2",
-      "X": 3046,
-      "Y": 590,
+      "X": 2999,
+      "Y": 648,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 1"
@@ -14118,8 +14037,8 @@
     },
     {
       "Name": "Sacrifice Trail 3",
-      "X": 3080,
-      "Y": 565,
+      "X": 3018,
+      "Y": 629,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 2"
@@ -14127,8 +14046,8 @@
     },
     {
       "Name": "Sacrifice Trail 4",
-      "X": 3114,
-      "Y": 540,
+      "X": 3039,
+      "Y": 614,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 3"
@@ -14136,8 +14055,8 @@
     },
     {
       "Name": "Sacrifice Trail 5",
-      "X": 3148,
-      "Y": 516,
+      "X": 3066,
+      "Y": 613,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 4"
@@ -14145,8 +14064,8 @@
     },
     {
       "Name": "Sacrifice Trail 6",
-      "X": 3182,
-      "Y": 494,
+      "X": 3088,
+      "Y": 613,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 5"
@@ -14154,8 +14073,8 @@
     },
     {
       "Name": "Sacrifice Trail 7",
-      "X": 3216,
-      "Y": 474,
+      "X": 3096,
+      "Y": 610,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 6"
@@ -14163,8 +14082,8 @@
     },
     {
       "Name": "Sacrifice Trail 8",
-      "X": 3245,
-      "Y": 450,
+      "X": 3118,
+      "Y": 593,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 7"
@@ -14172,8 +14091,8 @@
     },
     {
       "Name": "Sacrifice Trail 9",
-      "X": 3262,
-      "Y": 415,
+      "X": 3122,
+      "Y": 590,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 8"
@@ -14181,8 +14100,8 @@
     },
     {
       "Name": "Sacrifice Trail 10",
-      "X": 3272,
-      "Y": 380,
+      "X": 3141,
+      "Y": 571,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 9"
@@ -14190,8 +14109,8 @@
     },
     {
       "Name": "Sacrifice Trail 11",
-      "X": 3280,
-      "Y": 345,
+      "X": 3163,
+      "Y": 554,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 10"
@@ -14199,8 +14118,8 @@
     },
     {
       "Name": "Sacrifice Trail 12",
-      "X": 3286,
-      "Y": 310,
+      "X": 3191,
+      "Y": 554,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 11"
@@ -14208,8 +14127,8 @@
     },
     {
       "Name": "Sacrifice Trail 13",
-      "X": 3290,
-      "Y": 275,
+      "X": 3219,
+      "Y": 554,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 12"
@@ -14217,8 +14136,8 @@
     },
     {
       "Name": "Sacrifice Trail 14",
-      "X": 3293,
-      "Y": 240,
+      "X": 3247,
+      "Y": 554,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 13"
@@ -14226,8 +14145,8 @@
     },
     {
       "Name": "Sacrifice Trail 15",
-      "X": 3295,
-      "Y": 205,
+      "X": 3262,
+      "Y": 554,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 14"
@@ -14235,8 +14154,8 @@
     },
     {
       "Name": "Sacrifice Trail 16",
-      "X": 3300,
-      "Y": 183,
+      "X": 3282,
+      "Y": 536,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 15"
@@ -14244,8 +14163,8 @@
     },
     {
       "Name": "Sacrifice Trail 17",
-      "X": 3315,
-      "Y": 180,
+      "X": 3284,
+      "Y": 535,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 16"
@@ -14253,8 +14172,8 @@
     },
     {
       "Name": "Sacrifice Trail 18",
-      "X": 3330,
-      "Y": 205,
+      "X": 3299,
+      "Y": 513,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 17"
@@ -14262,8 +14181,8 @@
     },
     {
       "Name": "Sacrifice Trail 19",
-      "X": 3342,
-      "Y": 238,
+      "X": 3303,
+      "Y": 509,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 18"
@@ -14271,11 +14190,92 @@
     },
     {
       "Name": "Sacrifice Trail 20",
-      "X": 3348,
-      "Y": 266,
+      "X": 3310,
+      "Y": 500,
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 19"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 21",
+      "X": 3321,
+      "Y": 475,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 20"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 22",
+      "X": 3322,
+      "Y": 455,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 21"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 23",
+      "X": 3322,
+      "Y": 427,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 22"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 24",
+      "X": 3322,
+      "Y": 399,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 23"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 25",
+      "X": 3322,
+      "Y": 371,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 24"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 26",
+      "X": 3323,
+      "Y": 344,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 25"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 27",
+      "X": 3333,
+      "Y": 318,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 26"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 28",
+      "X": 3344,
+      "Y": 293,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 27"
+      ]
+    },
+    {
+      "Name": "Sacrifice Trail 29",
+      "X": 3349,
+      "Y": 283,
+      "Z": 0,
+      "Connects": [
+        "Sacrifice Trail 28"
       ]
     }
   ]
