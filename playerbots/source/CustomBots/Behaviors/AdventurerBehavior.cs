@@ -176,8 +176,122 @@ namespace Server.CustomBots
         private Mobile   _fleeFrom;
         private DateTime _fleeUntil;
 
+        // UNREACHABLE-FOE detection. A bot can lock onto a monster it can SEE
+        // but cannot physically reach — the classic case is a large rat (or
+        // other critter) inside a sealed building: visible through a wall/
+        // window, so FindNearbyEnemy's LOS preference picks it, but there's no
+        // walkable path to it. PathFollower then falls back to stepping
+        // straight at it, the bot jams against the building wall, and nothing
+        // ever gives up (the patrol stuck-check sits past combat's early
+        // return). Bots pile on the wall forever.
+        //
+        // We track the closest tile-distance the bot has achieved toward its
+        // current foe. While the bot is NOT yet in attack position and that
+        // distance stops improving, the foe is declared unreachable: the bot
+        // abandons it and ignores it for a short while so it doesn't instantly
+        // re-lock the same wall-blocked monster.
+        private Mobile   _progressFoe;
+        private int      _bestFoeDist;
+        private DateTime _foeProgressAt;
+        private static readonly TimeSpan UnreachableTimeout = TimeSpan.FromSeconds(7);
+
+        // How long an abandoned foe stays ignored. The ignore list itself
+        // lives on the BOT (PlayerBot.MarkUnreachable / IsUnreachable) so it
+        // survives the Traveler<->defender swap — a monster hitting the bot
+        // through a wall would otherwise respawn a fresh, memory-less defender
+        // every time this one gives up. Bounded so the bot re-tries later
+        // (a door may have opened, or it has wandered to a new spot).
+        private static readonly TimeSpan UnreachableIgnore = TimeSpan.FromSeconds(30);
+
+        // ---- Threat assessment (who a bot dares to pick a fight with) ----
+        //
+        // A bot sizes a monster up before engaging. Foe toughness is proxied
+        // by HitsMax (mongbat ~10, orc ~60, lich ~120, dragon ~800) and each
+        // skill tier has a "dare" ceiling: a Novice picks fights with rats
+        // and skeletons; only a Grandmaster starts one with a dragon.
+        //
+        // Bravery in numbers: every friendly bot ALREADY fighting the foe
+        // raises the effective ceiling by 60% — a monster no single bot
+        // would touch gets swarmed once somebody starts the fight. This is
+        // what lets a crowd of mid-tier bots bring down an event boss.
+        //
+        // A foe that is attacking the bot is never filtered out: the bot
+        // fights back up to ~1.5x its ceiling, and beyond that it turns and
+        // RUNS instead of trading hits it can't afford.
+        private static readonly int[] TierDare =
+        {
+            45,   // Novice      — rats, mongbats, skeletons
+            70,   // Apprentice  — zombies, orcs
+            100,  // Journeyman  — ettins, earth elementals
+            150,  // Adept       — trolls, liches
+            240,  // Expert      — ogre lords, gazers
+            400,  // Master      — daemons
+            700,  // Grandmaster — dragons (and with friends, anything)
+        };
+
+        // A monster this far away registers only because it's in a fight
+        // with the bot or a friendly bot (assist awareness) — plain
+        // hostiles are still only noticed within SightRange. Kept modest so
+        // bots don't aggro across half a screen.
+        public int AssistRange { get; set; } = 14;
+
+        // A kill only makes the event journal (and thus bank gossip) when
+        // the foe was at least this beefy — an ettin or lich is news, a
+        // giant rat is not.
+        protected const int NotableFoeHits = 90;
+
+        // Target-switch hysteresis — don't re-pick mid-fight more than once
+        // per window, or two attackers make the bot ping-pong between them.
+        private DateTime _nextSwitchAllowed = DateTime.MinValue;
+
         private static readonly string[] AmbientChat = { "small_talk", "lfg" };
         private static readonly string[] CombatChat  = { "combat_actions" };
+
+        // Overridable so subclasses can flavor the idle chatter — a
+        // DungeonCrawler whispers in the dark instead of asking for
+        // groups it's already in.
+        protected virtual string[] AmbientChatCategories => AmbientChat;
+
+        // Post-fight breather: while set, the bot stands and bandages
+        // (fighters) or meditates (casters) instead of striding off at
+        // 40% health / 10 mana.
+        private DateTime _restingUntil = DateTime.MinValue;
+
+        // True while the current rest is a MEDITATION (mana came back low)
+        // — restores mana as well as health during the rest ticks.
+        private bool _meditating;
+
+        // Mana thresholds: rest after a fight below 40%; sit down even
+        // mid-patrol below 30% (a caster on fumes doesn't wander into the
+        // next fight with an empty pool).
+        private const double PostFightManaFraction = 0.40;
+        private const double PatrolManaFraction    = 0.30;
+
+        // Classes that fight from the mana pool. SpellcasterMode covers
+        // Mages; Healers and Tamers carry real Magery too.
+        private bool IsCaster(PlayerBot bot) =>
+            SpellcasterMode ||
+            bot.Class is BotClass.Mage or BotClass.Healer or BotClass.Tamer;
+
+        // Begin a rest window. Meditation runs longer than a bandage stop
+        // and announces itself with the era emote + the meditation hum.
+        private void StartRest(PlayerBot bot, bool meditate)
+        {
+            _meditating = meditate;
+            _restingUntil = Core.Now + TimeSpan.FromSeconds(
+                meditate ? Utility.RandomMinMax(15, 30)
+                         : Utility.RandomMinMax(10, 20));
+            BotScene.Deliver(bot, meditate ? "*meditates*" : "*bandages wounds*");
+            if (meditate)
+            {
+                bot.PlaySound(0xF9);
+            }
+            if (CombatDebug)
+            {
+                Console.WriteLine($"[Bot {bot.Name}] resting " +
+                    $"({(meditate ? $"meditating, {bot.Mana}/{bot.ManaMax} mana" : $"bandaging, {bot.Hits}/{bot.HitsMax} hp")})");
+            }
+        }
 
         public AdventurerBehavior()
         {
@@ -194,6 +308,20 @@ namespace Server.CustomBots
             HomeMap = bot.Map;
             _lastLoc        = bot.Location;
             _lastProgressAt = Core.Now;
+
+            // Experience shows in WHEN you bail (IDEAS 3.1): veterans break
+            // off with over half their health; novices misjudge fights and
+            // hang on too long — which is how deaths (UO's most iconic
+            // experience) actually happen now and then. Crawlers inherit
+            // this, so dungeons are where the tail risk mostly lives.
+            RetreatHpFraction = bot.SkillTier switch
+            {
+                BotSkillTier.Novice     => 0.32,
+                BotSkillTier.Apprentice => 0.40,
+                BotSkillTier.Journeyman => 0.47,
+                BotSkillTier.Adept      => 0.52,
+                _                       => 0.55,
+            };
 
             // Archer/Ranger bots fight at range. Unless a caller has
             // already set RangedCombat explicitly, infer it from class.
@@ -225,6 +353,7 @@ namespace Server.CustomBots
             _chaseFoe = null;
             _rangedFoe = null;
             _fleeFrom = null;
+            _progressFoe = null;
             ClearCast();
             _nextCastAllowed = DateTime.MinValue;
             base.OnDetached(bot);
@@ -258,25 +387,43 @@ namespace Server.CustomBots
             // it'll re-check next tick once the combatant clears.
             if (bot.Combatant == null && CheckVisitExpired(bot)) return;
 
-            ChatCategories = bot.Combatant != null ? CombatChat : AmbientChat;
+            ChatCategories = bot.Combatant != null ? CombatChat : AmbientChatCategories;
             TrySpeak(bot);
 
             // -- 1. Combat --
             var combatant = bot.Combatant;
             if (combatant is Mobile foe)
             {
-                bool foeGone = foe.Deleted || !foe.Alive ||
+                bool foeKilled = foe.Deleted || !foe.Alive;
+                bool foeGone = foeKilled ||
                                foe.Map != bot.Map ||
                                !bot.InRange(foe.Location, SightRange + 4);
 
                 if (foeGone)
                 {
+                    // Dropped it (as opposed to it wandering off) — gloat.
+                    if (foeKilled)
+                    {
+                        TryEventLine(bot, 0.35, "combat_victory");
+
+                        // Notable kills go in the shard's event journal so
+                        // bank gossip can retell them. Trash mobs (rats,
+                        // birds) don't make the news, and bot-vs-bot kills
+                        // are journaled by the VICTIM's OnDeath (as pk /
+                        // faction) — don't double-report them here.
+                        if (foe.HitsMax >= NotableFoeHits && foe is not PlayerBot)
+                        {
+                            BotEventJournal.Record("kill", bot, foe.Name ?? "a monster");
+                        }
+                    }
+
                     // This foe is down or out of range.
                     bot.Combatant = null;
                     _goal = null;
                     _follower = null;
                     _chaseFoe = null;
                     _rangedFoe = null;
+                    _progressFoe = null;
                     ClearCast();
                     StopStepTimer();
 
@@ -290,7 +437,17 @@ namespace Server.CustomBots
                     }
                     else
                     {
-                        // Hunting adventurer: foe gone, go idle/patrol.
+                        // Hunting adventurer: foe gone. If the fight left a
+                        // mark, sit a moment before moving on (IDEAS 6.2):
+                        // casters meditate the mana pool back (an empty
+                        // mage is no mage), fighters bandage up.
+                        bool drained = IsCaster(bot) &&
+                            bot.Mana < bot.ManaMax * PostFightManaFraction;
+                        bool hurt = bot.Hits < bot.HitsMax * 0.70;
+                        if (drained || hurt)
+                        {
+                            StartRest(bot, meditate: drained);
+                        }
                         return;
                     }
                 }
@@ -302,15 +459,45 @@ namespace Server.CustomBots
                     // below the threshold, flee instead of fighting.
                     if (CheckRetreat(bot, foe)) return;
 
+                    // Something ELSE beating on us while we chase a foe
+                    // that isn't? Turn on the attacker instead.
+                    var switched = ReconsiderTarget(bot, foe);
+                    if (switched != foe)
+                    {
+                        foe = switched;
+                        bot.Combatant = foe;
+                    }
+
+                    // Can't get to it? Give up before piling on a wall.
+                    if (CheckUnreachable(bot, foe)) return;
+
                     ChaseFoe(bot, foe);
                     return;
                 }
             }
 
             // -- 2. Look for an enemy --
-            var target = FindNearbyEnemy(bot);
+            var target = FindNearbyEnemy(bot, out bool overwhelming);
             if (target != null)
             {
+                // Way out of the bot's league AND coming for it — don't
+                // trade hits it can't afford. Run, screaming.
+                if (overwhelming)
+                {
+                    StartFlee(bot, target);
+                    return;
+                }
+
+                // Rushing into a friend's fight gets an assist shout;
+                // starting a fresh fight gets a battle cry.
+                bool assisting = target is BaseCreature tbc &&
+                                 tbc.Combatant is PlayerBot &&
+                                 tbc.Combatant != bot;
+                TryEventLine(bot, 0.4, assisting ? "combat_assist" : "combat_engage");
+                Console.WriteLine(
+                    $"[Bot {bot.Name}] {(assisting ? "assisting against" : "engaging")} " +
+                    $"'{target.Name}'");
+
                 bot.Combatant = target;
                 // Route by combat style. A ranged bot (mage/archer) must
                 // NOT melee-walk to the foe's tile — hand it straight to
@@ -331,6 +518,35 @@ namespace Server.CustomBots
             if (DefenderMode)
             {
                 ResumeTraveling(bot);
+                return;
+            }
+
+            // -- 2.5 Resting — bandaging/meditating after a fight. Recover
+            // in visible increments; any new combat above already
+            // preempted this.
+            if (Core.Now < _restingUntil)
+            {
+                StopStepTimer();
+                if (bot.Hits < bot.HitsMax)
+                {
+                    bot.Hits = Math.Min(bot.HitsMax,
+                        bot.Hits + Math.Max(2, bot.HitsMax / 16));
+                }
+                if (_meditating && bot.Mana < bot.ManaMax)
+                {
+                    bot.Mana = Math.Min(bot.ManaMax,
+                        bot.Mana + Math.Max(3, bot.ManaMax / 10));
+                }
+                return;
+            }
+
+            // A caster on fumes (repeated skirmishes, foes that fled) sits
+            // and meditates BEFORE wandering into the next fight, even
+            // when no fight just ended.
+            if (!DefenderMode && IsCaster(bot) && bot.ManaMax >= 20 &&
+                bot.Mana < bot.ManaMax * PatrolManaFraction)
+            {
+                StartRest(bot, meditate: true);
                 return;
             }
 
@@ -374,27 +590,52 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void EnsurePatrolGoal(PlayerBot bot)
         {
-            // If we've reached the current goal (or have none), pick new.
-            if (_goal == null || bot.InRange(_goal.Value, ArrivalRange))
-            {
-                // If we're far from home, head back. Otherwise pick a random
-                // point within PatrolRange.
-                int homeDx = bot.X - Home.X;
-                int homeDy = bot.Y - Home.Y;
-                int homeDistSq = homeDx * homeDx + homeDy * homeDy;
-                int wanderRadSq = WanderRadius * WanderRadius;
+            bool reached = _goal != null && bot.InRange(_goal.Value, ArrivalRange);
 
-                if (homeDistSq > wanderRadSq)
+            // Reached the current goal — give a subclass first refusal. A
+            // DungeonCrawler uses this to fire a level transition when it
+            // steps onto a teleporter point. If the hook claims the arrival
+            // (returns true), it has taken over (possibly teleporting or
+            // swapping behavior) and we must not pick a new goal here.
+            if (reached && OnPatrolGoalReached(bot))
+            {
+                _goal = null;
+                _follower = null;
+                return;
+            }
+
+            // If we've reached the current goal (or have none), pick new.
+            if (_goal == null || reached)
+            {
+                // A subclass may supply the next goal (e.g. the crawler's
+                // scoped dungeon points). Null means "use the default
+                // wilderness patrol below".
+                var custom = SelectPatrolGoal(bot);
+                if (custom.HasValue)
                 {
-                    _goal = Home;
+                    _goal = custom.Value;
                 }
                 else
                 {
-                    double angle = Utility.RandomDouble() * Math.PI * 2.0;
-                    int dist = Utility.RandomMinMax(8, PatrolRange);
-                    int tx = bot.X + (int)(Math.Cos(angle) * dist);
-                    int ty = bot.Y + (int)(Math.Sin(angle) * dist);
-                    _goal = new Point3D(tx, ty, bot.Z);
+                    // If we're far from home, head back. Otherwise pick a
+                    // random point within PatrolRange.
+                    int homeDx = bot.X - Home.X;
+                    int homeDy = bot.Y - Home.Y;
+                    int homeDistSq = homeDx * homeDx + homeDy * homeDy;
+                    int wanderRadSq = WanderRadius * WanderRadius;
+
+                    if (homeDistSq > wanderRadSq)
+                    {
+                        _goal = Home;
+                    }
+                    else
+                    {
+                        double angle = Utility.RandomDouble() * Math.PI * 2.0;
+                        int dist = Utility.RandomMinMax(8, PatrolRange);
+                        int tx = bot.X + (int)(Math.Cos(angle) * dist);
+                        int ty = bot.Y + (int)(Math.Sin(angle) * dist);
+                        _goal = new Point3D(tx, ty, bot.Z);
+                    }
                 }
                 _follower = new PathFollower(bot, _goal.Value);
             }
@@ -404,16 +645,50 @@ namespace Server.CustomBots
             }
         }
 
+        // ---- Patrol extension hooks (used by DungeonCrawlerBehavior) ----
+        //
+        // Default Adventurer behavior is unchanged: SelectPatrolGoal returns
+        // null (use the wilderness patrol) and OnPatrolGoalReached returns
+        // false (just pick the next patrol point). A subclass overrides these
+        // to drive goal selection without reimplementing combat/nav/flee.
+
+        // Supply the next patrol goal. Return null to use the default
+        // wilderness patrol.
+        protected virtual Point3D? SelectPatrolGoal(PlayerBot bot) => null;
+
+        // Called when the current patrol goal is reached. Return true to
+        // claim the arrival (the base will NOT pick a new goal this pass).
+        protected virtual bool OnPatrolGoalReached(PlayerBot bot) => false;
+
+        // Stop all movement and clear the current goal — for a subclass that
+        // is about to teleport and must not keep stepping toward a stale goal.
+        protected void HaltMovement()
+        {
+            _goal = null;
+            _follower = null;
+            StopStepTimer();
+        }
+
         // Defender helper: if no enemy remains in sight, the fight is over
         // — swap the bot back to a Traveler so it resumes its trip.
-        // Returns true if it swapped (caller must return immediately).
-        // If an enemy IS still around, returns false and the normal
-        // enemy-search will re-engage it next.
+        // Returns true if it handled the situation (swapped to Traveler, or
+        // started a flee) — the caller must return immediately. Returns
+        // false when an enemy IS still around and worth fighting; the
+        // normal enemy-search will re-engage it next.
         private bool ReturnToTravelIfSafe(PlayerBot bot)
         {
-            var stillHostile = FindNearbyEnemy(bot);
+            var stillHostile = FindNearbyEnemy(bot, out bool overwhelming);
             if (stillHostile != null)
+            {
+                // The remaining hostile is hopeless to fight — run instead
+                // of "resuming travel" straight through its teeth.
+                if (overwhelming)
+                {
+                    StartFlee(bot, stillHostile);
+                    return true;
+                }
                 return false;  // more to fight — stay a defender
+            }
 
             ResumeTraveling(bot);
             return true;
@@ -518,15 +793,43 @@ namespace Server.CustomBots
         // it watches for the target cursor, invokes it, and sets the
         // cooldown when the cast actually resolves.
         //
-        // Spell choice scales with Magery skill (Base):
-        //   < 35  -> Magic Arrow   (Circle 1)
-        //   35-64 -> Fireball      (Circle 3)
-        //   65-89 -> Lightning     (Circle 4)
-        //   >= 90 -> Energy Bolt   (Circle 6)
+        // Spell choice: the mage's POOL is every book entry it has the
+        // Magery AND the mana for, trimmed to the strongest AttackPoolDepth
+        // entries, then weighted-random picked — so a GM mixes Energy
+        // Bolt / Explosion / Flamestrike / Mind Blast instead of spamming
+        // one spell, while a novice still plinks Magic Arrows. A foe that
+        // isn't poisoned yet occasionally eats a Poison instead (mages use
+        // their whole book, not just damage).
         //
         // Spells are built by reflection so an unknown class name fails
-        // gracefully (step down the ladder). Requires LOS and reagents.
+        // gracefully (step down the book). Requires LOS and reagents.
         // -------------------------------------------------------------------
+
+        // The attack spell book, weakest first:
+        // (type, minMagery, mana, cooldown, pick weight).
+        private static readonly
+            (string type, double minMagery, int mana, double cd, int weight)[] AttackSpellBook =
+        {
+            ("Server.Spells.First.MagicArrowSpell",     0.0,  4, 2.0,  2),
+            ("Server.Spells.Second.HarmSpell",         25.0,  6, 2.0,  2),
+            ("Server.Spells.Third.FireballSpell",      40.0,  9, 2.25, 3),
+            ("Server.Spells.Fourth.LightningSpell",    55.0, 11, 2.5,  3),
+            ("Server.Spells.Fifth.MindBlastSpell",     70.0, 14, 2.5,  2),
+            ("Server.Spells.Sixth.EnergyBoltSpell",    85.0, 20, 3.0,  3),
+            ("Server.Spells.Sixth.ExplosionSpell",     90.0, 20, 3.0,  3),
+            ("Server.Spells.Seventh.FlameStrikeSpell", 95.0, 40, 3.5,  2),
+        };
+
+        // How many of the strongest castable entries stay in the pick pool.
+        private const int AttackPoolDepth = 4;
+
+        // Console diagnostics for the high-volume combat events (per-cast
+        // spell picks). The rare events (engage, flee, target switch) are
+        // always logged. Flip to false once the combat pass is verified.
+        // Verbose per-cast spell logging. Runtime-toggleable via
+        // [CombatDebug on|off (no rebuild needed).
+        public static bool CombatDebug = true;
+
         private void BeginCast(PlayerBot bot, Mobile foe, bool pointBlank = false)
         {
             // Live foe required.
@@ -546,46 +849,106 @@ namespace Server.CustomBots
 
             double magery = bot.Skills[SkillName.Magery].Base;
 
-            // The spell ladder, weakest first. A mage casts the strongest
-            // rung its Magery allows; on a build mismatch it steps DOWN
-            // the ladder rather than collapsing to Magic Arrow.
-            (string type, double minMagery, double cd)[] ladder =
+            // Utility: an unpoisoned foe occasionally gets a Poison instead
+            // of another damage spell — variety AND damage-over-time.
+            if (magery >= 40.0 && bot.Mana >= 9 && !foe.Poisoned &&
+                Utility.RandomDouble() < 0.15 &&
+                TryBeginFoeCast(bot, foe, "Server.Spells.Third.PoisonSpell", 2.25, pointBlank))
             {
-                ("Server.Spells.First.MagicArrowSpell",   0.0, 2.0),
-                ("Server.Spells.Third.FireballSpell",    35.0, 2.5),
-                ("Server.Spells.Fourth.LightningSpell",  65.0, 2.5),
-                ("Server.Spells.Sixth.EnergyBoltSpell",  90.0, 3.0),
-            };
-
-            int rung = 0;
-            for (int i = 0; i < ladder.Length; i++)
-                if (magery >= ladder[i].minMagery) rung = i;
-
-            Server.Spells.Spell spell = null;
-            double cooldownSeconds = 2.0;
-            for (int i = rung; i >= 0 && spell == null; i--)
-            {
-                spell = CreateSpell(ladder[i].type, bot);
-                if (spell != null) cooldownSeconds = ladder[i].cd;
-            }
-            if (spell == null)
-            {
-                // Nothing resolved — skip, no crash.
-                _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(3.0);
                 return;
             }
+
+            // Build the eligible pool: skilled enough AND can afford it now.
+            Span<int> eligible = stackalloc int[AttackSpellBook.Length];
+            int count = 0;
+            for (int i = 0; i < AttackSpellBook.Length; i++)
+            {
+                if (magery >= AttackSpellBook[i].minMagery &&
+                    bot.Mana >= AttackSpellBook[i].mana)
+                {
+                    eligible[count++] = i;
+                }
+            }
+
+            if (count == 0)
+            {
+                // Out of mana for anything — keep kiting while it regens.
+                _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(2.0);
+                return;
+            }
+
+            // Keep only the strongest AttackPoolDepth entries, then pick
+            // by weight — variety among a mage's BEST spells, not the
+            // whole book (a GM plinking Magic Arrows looks wrong).
+            int start = count > AttackPoolDepth ? count - AttackPoolDepth : 0;
+
+            int totalWeight = 0;
+            for (int i = start; i < count; i++)
+            {
+                totalWeight += AttackSpellBook[eligible[i]].weight;
+            }
+
+            int roll = Utility.Random(totalWeight);
+            int picked = eligible[count - 1];
+            for (int i = start; i < count; i++)
+            {
+                roll -= AttackSpellBook[eligible[i]].weight;
+                if (roll < 0)
+                {
+                    picked = eligible[i];
+                    break;
+                }
+            }
+
+            if (TryBeginFoeCast(bot, foe,
+                    AttackSpellBook[picked].type, AttackSpellBook[picked].cd, pointBlank))
+            {
+                return;
+            }
+
+            // Build mismatch on the picked spell — step DOWN through the
+            // rest of the eligible book rather than not casting at all.
+            for (int i = count - 1; i >= 0; i--)
+            {
+                int idx = eligible[i];
+                if (idx == picked) continue;
+                if (TryBeginFoeCast(bot, foe,
+                        AttackSpellBook[idx].type, AttackSpellBook[idx].cd, pointBlank))
+                {
+                    return;
+                }
+            }
+
+            // Nothing resolved — skip, no crash.
+            _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(3.0);
+        }
+
+        // Launch one foe-targeted cast and record tracking state. Returns
+        // false (with nothing recorded) if the spell type can't be built
+        // on this build or the engine refused the cast.
+        private bool TryBeginFoeCast(
+            PlayerBot bot, Mobile foe, string spellType, double cooldownSeconds, bool pointBlank)
+        {
+            var spell = CreateSpell(spellType, bot);
+            if (spell == null) return false;
 
             var face = bot.GetDirectionTo(foe);
             if (bot.Direction != face) bot.Direction = face;
 
             try
             {
-                spell.Cast();
+                if (!spell.Cast()) return false;
             }
             catch
             {
-                _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(3.0);
-                return;
+                return false;
+            }
+
+            if (CombatDebug)
+            {
+                int dot = spellType.LastIndexOf('.');
+                var shortName = spellType.Substring(dot + 1);
+                Console.WriteLine($"[Bot {bot.Name}] casting {shortName} at '{foe.Name}'");
             }
 
             // Cast launched — record tracking. The fast loop takes over:
@@ -596,6 +959,7 @@ namespace Server.CustomBots
             _castCooldown   = cooldownSeconds;
             _castPointBlank = pointBlank;
             _castSelfTarget = false;
+            return true;
         }
 
         // -------------------------------------------------------------------
@@ -926,31 +1290,50 @@ namespace Server.CustomBots
         // (AlwaysAttackable OR FightMode != None) included town guards,
         // vendors, healers, etc — all of whom share those flags.
         //
-        // Correct filter:
+        // Base filter:
         //   - Skip controlled pets and summons.
         //   - Skip anything with Karma >= 0. Monsters in UO have very
         //     negative karma (-1000 to -10000); wildlife is 0 or slightly
         //     positive; guards/NPCs are positive.
         //   - Require FightMode != None as a final sanity check.
         //
+        // On top of that, candidates are SCORED rather than nearest-first:
+        //   - A foe attacking ME dominates everything (self-defense).
+        //   - A foe attacking a FRIENDLY BOT ranks next (assist) — and is
+        //     noticed out to AssistRange, beyond normal sight, so bots
+        //     rush into a nearby friend's fight.
+        //   - Visible-with-LOS beats behind-a-wall; then nearer beats far.
+        //
+        // Threat gate: a foe tougher than the bot's dare ceiling (see
+        // TierDare/EffectiveDare) is never PICKED as a fresh fight. If it's
+        // already attacking the bot it stays a valid target — the bot
+        // fights back up to ~1.5x its ceiling; past that `overwhelming`
+        // comes back true and the caller should flee, not engage.
+        //
         // Note: bots WILL engage monsters that invade guarded zones. The
         // Karma filter handles this — zombies/orcs/etc are Karma < 0, so
         // an Adventurer who finds themselves in a city under attack will
         // defend it. This is intentional for "town gets invaded" events.
         // -------------------------------------------------------------------
-        private Mobile FindNearbyEnemy(PlayerBot bot)
+        private Mobile FindNearbyEnemy(PlayerBot bot, out bool overwhelming)
         {
-            Mobile best = null;
-            int bestDistSq = int.MaxValue;
-            bool bestVisible = false;
+            overwhelming = false;
 
-            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, SightRange))
+            Mobile best = null;
+            int bestScore = int.MinValue;
+            bool bestOverwhelming = false;
+
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, AssistRange))
             {
                 if (m == bot || m.Deleted || !m.Alive) continue;
                 if (m is not BaseCreature bc) continue;
 
                 // Skip players' pets and summoned creatures.
                 if (bc.ControlMaster != null || bc.Summoned) continue;
+
+                // Skip foes recently proven unreachable (e.g. a rat sealed
+                // inside a building) so the bot doesn't relock the wall.
+                if (bot.IsUnreachable(bc)) continue;
 
                 // Skip anything that isn't actually hostile.
                 if (bc.FightMode == FightMode.None) continue;
@@ -960,30 +1343,150 @@ namespace Server.CustomBots
                 // positive.
                 if (bc.Karma >= 0) continue;
 
-                int dx = bc.X - bot.X;
-                int dy = bc.Y - bot.Y;
-                int distSq = dx * dx + dy * dy;
+                int dist = TileDist(bot, bc.Location);
+                bool attackingMe     = bc.Combatant == bot;
+                bool attackingFriend = !attackingMe && bc.Combatant is PlayerBot;
 
-                // A foe the bot can SEE always beats one it can't —
-                // engaging a target behind a wall means the bot walks up
-                // and casts at it, and the spell fizzles its own LOS
-                // check. Within the same visibility tier, nearest wins.
-                bool visible = HasLOS(bot, bc);
+                // Beyond the bot's own sight a monster only registers when
+                // it's in a fight with the bot or a friendly bot.
+                if (dist > SightRange && !attackingMe && !attackingFriend)
+                {
+                    continue;
+                }
 
-                bool better;
-                if (visible != bestVisible)
-                    better = visible;            // visible always wins
-                else
-                    better = distSq < bestDistSq; // same tier: nearest
+                // Defenders don't go looking for trouble — no rushing off
+                // to distant friends' fights; they deal with what's here
+                // and get back on the road.
+                if (DefenderMode && attackingFriend && dist > SightRange)
+                {
+                    continue;
+                }
 
-                if (best == null || better)
+                // Threat gate: don't START a fight above the dare ceiling.
+                // A foe already on us stays targetable regardless.
+                int dare   = EffectiveDare(bot, bc);
+                int danger = bc.HitsMax;
+                if (danger > dare && !attackingMe)
+                {
+                    continue;
+                }
+
+                int score = 0;
+                if (attackingMe)
+                {
+                    score += 1000;
+                }
+                if (attackingFriend)
+                {
+                    score += 400;
+                }
+                // A foe the bot can SEE beats one it can't — engaging a
+                // target behind a wall means walking up and casting at it,
+                // and the spell fizzles its own LOS check.
+                if (HasLOS(bot, bc))
+                {
+                    score += 200;
+                }
+                score += (AssistRange - dist) * 10;
+
+                if (score > bestScore)
                 {
                     best = bc;
-                    bestDistSq = distSq;
-                    bestVisible = visible;
+                    bestScore = score;
+                    // Fighting back is right up to ~1.5x the ceiling;
+                    // beyond that the right move is to run.
+                    bestOverwhelming = attackingMe && danger > dare * 3 / 2;
                 }
             }
+
+            overwhelming = bestOverwhelming;
             return best;
+        }
+
+        // Effective dare ceiling for this bot against this foe: the tier's
+        // base ceiling, raised 60% for every friendly bot already fighting
+        // the foe (bravery in numbers — crowds swarm what no one bot would
+        // touch alone).
+        private static int EffectiveDare(PlayerBot bot, BaseCreature foe)
+        {
+            int rank = BotSkillTierHelper.Rank(bot.SkillTier);
+            if (rank < 0)
+            {
+                rank = 0;
+            }
+            else if (rank >= TierDare.Length)
+            {
+                rank = TierDare.Length - 1;
+            }
+            int dare = TierDare[rank];
+
+            int allies = 0;
+            foreach (var m in foe.Map.GetMobilesInRange(foe.Location, 8))
+            {
+                if (m != bot && m is PlayerBot friend && friend.Alive &&
+                    friend.Combatant == foe)
+                {
+                    allies++;
+                }
+            }
+
+            return dare + (int)(dare * 0.6 * allies);
+        }
+
+        // -------------------------------------------------------------------
+        // ReconsiderTarget — mid-fight target switching.
+        //
+        // Without this, a bot locked onto foe A ignores foe B chewing on it
+        // from behind until A is dead. Rule: switch to a monster that is
+        // actively attacking the bot when either (a) the current foe ISN'T
+        // attacking it and the attacker is no farther, or (b) the attacker
+        // is substantially closer than the current foe. Hysteresis-gated so
+        // two attackers don't make the bot ping-pong between them.
+        //
+        // Returns the foe to fight (the current one if no switch is
+        // warranted). Caller updates bot.Combatant when it changes.
+        // -------------------------------------------------------------------
+        private Mobile ReconsiderTarget(PlayerBot bot, Mobile current)
+        {
+            if (Core.Now < _nextSwitchAllowed)
+            {
+                return current;
+            }
+
+            bool currentAttackingMe = current.Combatant == bot;
+            int currentDist = TileDist(bot, current.Location);
+
+            Mobile better = null;
+            int betterDist = int.MaxValue;
+
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, SightRange))
+            {
+                if (m == bot || m == current || m.Deleted || !m.Alive) continue;
+                if (m is not BaseCreature bc) continue;
+                if (bc.Combatant != bot) continue;   // only live attackers matter
+                if (bot.IsUnreachable(bc)) continue;
+
+                int dist = TileDist(bot, bc.Location);
+
+                bool worthIt = (!currentAttackingMe && dist <= currentDist) ||
+                               dist + 3 <= currentDist;
+                if (worthIt && dist < betterDist)
+                {
+                    better = bc;
+                    betterDist = dist;
+                }
+            }
+
+            if (better != null)
+            {
+                _nextSwitchAllowed = Core.Now + TimeSpan.FromSeconds(5);
+                Console.WriteLine(
+                    $"[Bot {bot.Name}] switching target: '{current.Name}' -> " +
+                    $"'{better.Name}' ({betterDist} tiles, attacking me)");
+                return better;
+            }
+
+            return current;
         }
 
         // -------------------------------------------------------------------
@@ -1285,9 +1788,14 @@ namespace Server.CustomBots
             bool arrived = _follower.Follow(_running, ArrivalRange);
             if (arrived)
             {
-                // Reached current goal — decision tick picks the next one.
+                // Reached current goal. KEEP _goal set — the decision tick's
+                // reached-check needs to observe it to fire OnPatrolGoalReached
+                // (route-hop advance, room lingers, teleporter pad-walks all
+                // hang off that hook). Clearing it here made every arrival
+                // invisible to the slow tick: a crawler starting within
+                // ArrivalRange of its first route hop re-selected that hop
+                // forever and stood frozen at the dungeon landing.
                 StopStepTimer();
-                _goal = null;
                 _follower = null;
             }
         }
@@ -1329,6 +1837,15 @@ namespace Server.CustomBots
         // branch, which sprints it away. The flee lasts a bounded window.
         private void StartFlee(PlayerBot bot, Mobile threat)
         {
+            // Every flee funnels through here — HP retreat, overwhelming
+            // foe, all of it. Scream on the way out. (The HP in the log
+            // line tells the two apart: near-full HP = overwhelming dare,
+            // low HP = retreat threshold.)
+            TryEventLine(bot, 0.5, "combat_flee");
+            Console.WriteLine(
+                $"[Bot {bot.Name}] fleeing from '{threat?.Name}' " +
+                $"(hp {bot.Hits}/{bot.HitsMax})");
+
             bot.Combatant = null;
             _chaseFoe  = null;
             _rangedFoe = null;
@@ -1356,6 +1873,103 @@ namespace Server.CustomBots
                 return true;
             }
             return false;
+        }
+
+        // -------------------------------------------------------------------
+        // Unreachable-foe detection — see the field comments above.
+        // -------------------------------------------------------------------
+
+        // True when the bot is positioned to actually attack the foe: adjacent
+        // for melee, or within firing band WITH line of sight for ranged.
+        // While in attack position the bot is fighting, not stuck — progress
+        // tracking treats that as success.
+        private bool InAttackPosition(PlayerBot bot, Mobile foe)
+        {
+            int dist = TileDist(bot, foe.Location);
+            if (RangedCombat)
+            {
+                return dist <= StandoffMax && HasLOS(bot, foe);
+            }
+            return dist <= 1;
+        }
+
+        // Track progress toward the current foe; abandon it if the bot can't
+        // get into attack position within UnreachableTimeout. Returns true if
+        // the foe was given up (caller must return — combat is over for it).
+        private bool CheckUnreachable(PlayerBot bot, Mobile foe)
+        {
+            // Already proven unreachable — possibly re-set as our combatant by
+            // a foe attacking through a wall. Disengage at once; don't restart
+            // the approach (which is what makes the bot pound the wall again).
+            if (bot.IsUnreachable(foe))
+            {
+                AbandonFoe(bot);
+                if (DefenderMode)
+                {
+                    ResumeTraveling(bot);
+                }
+                return true;
+            }
+
+            // New foe (or none tracked) — start the clock fresh; never give up
+            // on the first tick we see it.
+            if (foe != _progressFoe)
+            {
+                _progressFoe   = foe;
+                _bestFoeDist   = TileDist(bot, foe.Location);
+                _foeProgressAt = Core.Now;
+                return false;
+            }
+
+            // Already able to attack it — success, not stuck. Keep the clock
+            // fresh so a foe that LATER runs out of reach still gets a full
+            // grace window before being abandoned.
+            if (InAttackPosition(bot, foe))
+            {
+                _bestFoeDist   = TileDist(bot, foe.Location);
+                _foeProgressAt = Core.Now;
+                return false;
+            }
+
+            int dist = TileDist(bot, foe.Location);
+            if (dist < _bestFoeDist)
+            {
+                // Got closer than ever before — real progress.
+                _bestFoeDist   = dist;
+                _foeProgressAt = Core.Now;
+                return false;
+            }
+
+            // No closer than before AND not in attack position. If that's gone
+            // on too long the foe is effectively unreachable — give up.
+            if (Core.Now - _foeProgressAt > UnreachableTimeout)
+            {
+                bot.MarkUnreachable(foe, UnreachableIgnore);
+                AbandonFoe(bot);
+                // A defender that can't reach what it was fighting returns to
+                // its trip; a hunter falls through to patrol next tick.
+                if (DefenderMode)
+                {
+                    ResumeTraveling(bot);
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        // Drop the current fight entirely (combatant + all pursuit state) so
+        // the bot can move on. Used when a foe is abandoned as unreachable.
+        private void AbandonFoe(PlayerBot bot)
+        {
+            bot.Combatant = null;
+            _goal        = null;
+            _follower    = null;
+            _chaseFoe    = null;
+            _rangedFoe   = null;
+            _progressFoe = null;
+            ClearCast();
+            StopStepTimer();
         }
     }
 }

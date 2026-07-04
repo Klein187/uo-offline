@@ -1,0 +1,22 @@
+# session_hello.txt — a bot just "logged in" and greets the room.
+# Spoken a few seconds after spawn, only if a player is nearby.
+
+hey all
+hey everyone
+hello all
+im back
+back
+just got on
+finally on
+whats up
+anyone on?
+whos on tonight
+evening all
+hail all
+yo
+hey hey
+made it on, server was full
+lag isnt bad tonight
+good to be back
+miss anything?
+what did i miss

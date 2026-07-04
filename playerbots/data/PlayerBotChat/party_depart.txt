@@ -1,0 +1,13 @@
+# party_depart.txt — the party sets out. Spoken by the leader.
+# {dungeon} = target dungeon name (lowercase).
+
+ok lets go
+{dungeon} here we come
+follow me
+everyone ready? lets move
+ok thats enough, lets head out
+stay close
+lets roll
+onward to {dungeon}
+keep up
+move out

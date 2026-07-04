@@ -211,6 +211,10 @@ def build_data():
                           "z": d.get("Z"), "t": d.get("Type"), "c": d.get("City"),
                           "w": d.get("NearestWaypoint"), "s": src,
                           "poly": d.get("Polygon"),
+                          # dungeon scoping + teleporter target (None unless authored)
+                          "dng": d.get("Dungeon"), "lvl": d.get("Level"),
+                          "tx": d.get("TargetX"), "ty": d.get("TargetY"),
+                          "tz": d.get("TargetZ"), "tl": d.get("TargetLevel"),
                           "arrivals": _arrivals_view(d)})
     wdata = jload(WP_JSON)
     key = next(k for k, v in wdata.items()
@@ -511,6 +515,91 @@ class Handler(SimpleHTTPRequestHandler):
                 open(DEST_JSON, "w", encoding="utf-8").write(json.dumps(d, indent=2))
                 self._json(200, {"ok": True, "name": name,
                                  "from": old_xy, "to": [x, y], "z": hit.get("Z")})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/dungeon_add":
+            # Place a dungeon point: a destination tagged with a Dungeon name
+            # + Level, of a dungeon Type. Entrances are real Traveler
+            # destinations (they get an arrival spot on the teleporter tile so
+            # the entry handoff fires); interior points need none — the crawler
+            # walks straight to their Location.
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                dungeon = (p.get("dungeon") or "").strip()
+                if not dungeon:
+                    self._json(400, {"ok": False, "error": "dungeon name required"}); return
+                level = int(p.get("level", 0))
+                dtype = p.get("type", "DungeonRoom")
+                x, y = int(p["x"]), int(p["y"])
+                valid = ("DungeonEntrance", "DungeonRoom", "DungeonDescend", "DungeonAscend")
+                if dtype not in valid:
+                    self._json(400, {"ok": False, "error": f"bad type '{dtype}'"}); return
+                try: z = land_at(x, y)[1]
+                except Exception: z = 0
+                d = jload(DEST_JSON)
+                arr = d.setdefault("Destinations", [])
+                short = {"DungeonEntrance": "Entrance", "DungeonRoom": "Room",
+                         "DungeonDescend": "Descend", "DungeonAscend": "Ascend"}[dtype]
+                existing = {(e.get("Name") or "").lower() for e in arr}
+                base = f"{dungeon} L{level} {short}"
+                name, k = base, 1
+                while name.lower() in existing:
+                    k += 1; name = f"{base} {k}"
+                # nearest waypoint + city (entrances route via the graph;
+                # harmless metadata for interior points)
+                w, key = wp_file(); nodes = w[key]
+                nw, nd = "", 10**9
+                for nd_ in nodes:
+                    dd = max(abs(int(nd_["X"]) - x), abs(int(nd_["Y"]) - y))
+                    if dd < nd: nd, nw = dd, nd_["Name"]
+                cities = [("Britain",1434,1690),("Vesper",2899,676),("Minoc",2466,437),
+                          ("Trinsic",1900,2780),("Yew",632,858),("Skara Brae",596,2138),
+                          ("Moonglow",4442,1172),("Jhelom",1383,3815),("Nujel'm",3732,1279),
+                          ("Magincia",3714,2220),("Cove",2230,1200),("Buccaneer's Den",2706,2150)]
+                city = min(cities, key=lambda c: (c[1]-x)**2 + (c[2]-y)**2)[0]
+                rec = {"Name": name, "X": x, "Y": y, "Z": z, "Type": dtype,
+                       "City": city, "NearestWaypoint": nw,
+                       "Dungeon": dungeon, "Level": level}
+                if dtype == "DungeonEntrance":
+                    rec["ArrivalX"], rec["ArrivalY"], rec["ArrivalZ"] = x, y, z
+                    rec["Arrivals"] = [{"X": x, "Y": y, "Z": z,
+                                        "Waypoints": ([nw] if nw else [])}]
+                arr.append(rec)
+                import shutil
+                shutil.copy(DEST_JSON, DEST_JSON + ".bak-dungeon")
+                open(DEST_JSON, "w", encoding="utf-8").write(json.dumps(d, indent=2))
+                self._json(200, {"ok": True, "name": name, "x": x, "y": y, "z": z,
+                                 "type": dtype, "dungeon": dungeon, "level": level,
+                                 "nearest_wp": nw, "wp_dist": nd,
+                                 "gap": (dtype == "DungeonEntrance" and nd > 38)})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/dungeon_target":
+            # Set where a teleporter point deposits a bot: TargetX/Y/Z +
+            # TargetLevel. Entrance -> interior landing; Descend/Ascend ->
+            # the next level's landing (or the surface, TargetLevel 0).
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                name = p["name"]; tx, ty = int(p["x"]), int(p["y"])
+                tl = int(p.get("targetlevel", 0))
+                d = jload(DEST_JSON)
+                hit = next((e for e in d.get("Destinations", [])
+                            if (e.get("Name") or "").lower() == name.lower()), None)
+                if hit is None:
+                    self._json(404, {"ok": False, "error": f"'{name}' not active"}); return
+                try: tz = land_at(tx, ty)[1]
+                except Exception: tz = hit.get("Z", 0)
+                hit["TargetX"], hit["TargetY"], hit["TargetZ"] = tx, ty, tz
+                hit["TargetLevel"] = tl
+                import shutil
+                shutil.copy(DEST_JSON, DEST_JSON + ".bak-dungeon")
+                open(DEST_JSON, "w", encoding="utf-8").write(json.dumps(d, indent=2))
+                self._json(200, {"ok": True, "name": name,
+                                 "tx": tx, "ty": ty, "tz": tz, "targetlevel": tl})
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return

@@ -1,0 +1,20 @@
+# ghost.txt — what a dead bot says while haunting. The client garbles
+# ghost speech into OoOoOo for the living anyway, so half of these are
+# pre-garbled and half are real words (visible to anyone with Spirit
+# Speak — or another ghost).
+
+OoOoOo
+oOoOoOo
+OoOoOoOoOo
+ooOOoo
+OOoOo oOoO
+res plz
+anyone have a res
+i died
+my corpse is right there
+dont loot me plz
+this sucks
+not again
+wheres a healer
+help
+*hovers*

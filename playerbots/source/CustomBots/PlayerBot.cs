@@ -15,6 +15,7 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using Server;
 using Server.Commands;
 using Server.Items;
@@ -69,6 +70,52 @@ namespace Server.CustomBots
             }
         }
 
+        // ---- Unreachable-foe memory ----
+        //
+        // Monsters this bot has proven it cannot physically reach — the
+        // classic case is a critter (a giant rat, a bird) sealed inside a
+        // building that attacks the bot THROUGH the wall. The bot can see it
+        // and is flagged as its target, but there's no walkable path, so a
+        // naive bot wedges against the wall trying to close.
+        //
+        // This memory lives on the BOT, not on a behavior, so it survives the
+        // Traveler<->defender swap. Without it, each time a defender gives up
+        // and reverts to a Traveler, the through-wall attack instantly spawns
+        // a fresh defender with no memory and the bot pounds the wall again.
+        // Behaviors consult IsUnreachable() before engaging and call
+        // MarkUnreachable() when they give up. Transient; not serialized.
+        private Dictionary<Mobile, DateTime> _unreachableFoes;
+
+        // Remember that this foe can't be reached, for the given window.
+        public void MarkUnreachable(Mobile foe, TimeSpan duration)
+        {
+            if (foe == null)
+            {
+                return;
+            }
+            _unreachableFoes ??= new Dictionary<Mobile, DateTime>();
+            _unreachableFoes[foe] = Core.Now + duration;
+        }
+
+        // Is this foe currently flagged unreachable? Prunes expired/dead
+        // entries as it checks so the map stays small.
+        public bool IsUnreachable(Mobile foe)
+        {
+            if (foe == null || _unreachableFoes == null)
+            {
+                return false;
+            }
+            if (_unreachableFoes.TryGetValue(foe, out var until))
+            {
+                if (!foe.Deleted && Core.Now < until)
+                {
+                    return true;
+                }
+                _unreachableFoes.Remove(foe);
+            }
+            return false;
+        }
+
         // ---- Lifecycle state ----
 
         // Personality drives behavior selection in the lifecycle manager.
@@ -101,6 +148,61 @@ namespace Server.CustomBots
         // rolled at creation. Drives the crafter's station (forge / tailor
         // vendor / bowyer / bank), its "making" animation, and its title.
         public CrafterType CrafterSpec;
+
+        // Guild membership — index into BotGuilds.All, or -1 for the
+        // unguilded majority. Rolled at creation; shown as "Name [TAG]"
+        // via ApplyNameSuffix.
+        public int BotGuildIndex = -1;
+
+        // ---- Session state (BotSessionManager) ----
+        //
+        // When this bot's play session ends — it says goodbye and logs
+        // out. MinValue = not yet stamped (the manager stamps it on first
+        // sight). Transient: bots don't persist, sessions restart with
+        // the server.
+        public DateTime SessionEndsAt;
+
+        // Set while the goodbye-then-delete sequence is running so nothing
+        // schedules it twice.
+        public bool LoggingOut;
+
+        // ---- Death state (BotDeathManager) ----
+        //
+        // True from resurrection until the corpse is reclaimed (or given
+        // up on). TravelerBehavior checks it to break off toward the
+        // corpse; the session manager won't log a bot out mid-run.
+        public bool CorpseRunPending;
+
+        // What the bot was doing when it died, so a red comes back a red
+        // and everyone else resumes a sensible life. Transient.
+        public string PreDeathBehaviorName;
+
+        // Death-spiral brake: consecutive recent deaths (decays after an
+        // hour without one). A bot that dies twice in the same dungeon
+        // takes its stuff and goes home instead of feeding the same
+        // scorpion room forever.
+        public int RecentDeaths;
+        public DateTime LastDeathAt;
+
+        // ---- Home city (IDEAS 1.3) ----
+        //
+        // Rolled at creation; destination picks weigh this city's spots
+        // extra, so the same faces keep turning up at the same bank —
+        // regulars emerge for free. Transient (bots are transient).
+        public string HomeCity;
+
+        // ---- Gatherer haul state ----
+        //
+        // Set when a gatherer's shift ends: the next destination rolls
+        // point at town (bank / buying crafter), where the delivery scene
+        // plays and clears it.
+        public bool HaulPending;
+
+        // ---- Gear progression (IDEAS 4.3) ----
+        //
+        // Dungeon runs survived since the last upgrade. At the bank, three
+        // of them buy a visible step up: tier promotion + fresh kit.
+        public int DungeonRunsSurvived;
 
         // ---- Constructors ----
 
@@ -149,7 +251,9 @@ namespace Server.CustomBots
                 FacialHairHue = HairHue;
             }
 
-            Name = NamePool.PickRandom(Female);
+            // Unique across all live bots — PickUnique claims the name in
+            // NamePool's registry; OnAfterDelete releases it.
+            Name = NamePool.PickUnique(Female);
             SpeechHue = SpeechHues.PickRandom();
 
             // The bot's "identity" — class (what they are) and skill tier
@@ -162,6 +266,14 @@ namespace Server.CustomBots
             // when Class is Crafter. Cheap to always roll; keeps the field
             // valid regardless of class.
             CrafterSpec = CrafterTypeHelper.RollRandom();
+
+            // Guild membership — ~40% of the population, weighted so big
+            // and small guilds emerge.
+            BotGuildIndex = BotGuilds.RollMembership();
+
+            // Home city — where this bot "lives"; its destination rolls
+            // favor home, so regulars emerge at every bank and forge.
+            HomeCity = BotHomeCities.RollHome();
 
             // Apply real UO skills based on class template. The paperdoll
             // title comes from the highest skill, so a GM Warrior naturally
@@ -185,6 +297,12 @@ namespace Server.CustomBots
 
             // Roll equipment from the class+tier specific pool.
             EquipmentTable.RollOutfit(this, Class, SkillTier);
+
+            // Faction guild members carry the era shield — the visible
+            // allegiance marker (and what opposing bots fight on sight
+            // over). Replaces any rolled shield; bots with two-handed
+            // weapons (bows etc) go shieldless but are still in the war.
+            EquipFactionShield();
 
             Behavior = new IdleBehavior();
         }
@@ -236,12 +354,124 @@ namespace Server.CustomBots
             Mana = ManaMax;
         }
 
+        // -------------------------------------------------------------------
+        // Equip the Order/Chaos shield for faction guild members. Shields
+        // live on the TwoHanded layer: an existing rolled shield is
+        // replaced; a two-handed weapon wins (an archer of DOOM carries no
+        // shield but still fights the war).
+        // -------------------------------------------------------------------
+        public void EquipFactionShield()
+        {
+            var faction = BotGuilds.Get(BotGuildIndex)?.Faction ?? BotFaction.None;
+            if (faction == BotFaction.None)
+            {
+                return;
+            }
+
+            if (FindItemOnLayer(Layer.TwoHanded) is Items.BaseShield rolled)
+            {
+                rolled.Delete();
+            }
+            if (FindItemOnLayer(Layer.TwoHanded) != null)
+            {
+                return; // two-handed weapon — no room for a shield
+            }
+
+            Item shield = faction == BotFaction.Order
+                ? new BotOrderShield()
+                : new BotChaosShield();
+            if (!EquipItem(shield))
+            {
+                shield.Delete();
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Re-derive this bot as a specific class. Used when a spawner pins an
+        // artisan to a station (forge -> Smith, dock -> Fisherman, tailor shop
+        // -> Tailor): the constructor already rolled a RANDOM class/outfit, so
+        // we override the identity and rebuild skills, stats, and gear to
+        // match. SkillTier is kept as rolled, for a natural spread of
+        // novice-to-grandmaster artisans.
+        // -------------------------------------------------------------------
+        public void ReinitializeAsClass(BotClass cls)
+        {
+            Class = cls;
+
+            StripGearAndPack();
+
+            ApplyClassSkills();
+            ApplyClassStats();
+            EquipmentTable.RollOutfit(this, Class, SkillTier);
+        }
+
+        // Remove constructor-rolled equipment and backpack contents (they were
+        // rolled for the random class) so a re-derive doesn't stack gear or
+        // leave mismatched loot. The backpack container itself is kept.
+        private void StripGearAndPack()
+        {
+            var equipped = new List<Item>();
+            foreach (var it in Items)
+            {
+                if (it != Backpack && it.Layer != Layer.Bank)
+                {
+                    equipped.Add(it);
+                }
+            }
+            foreach (var it in equipped)
+            {
+                it.Delete();
+            }
+
+            if (Backpack != null)
+            {
+                foreach (var it in new List<Item>(Backpack.Items))
+                {
+                    it.Delete();
+                }
+            }
+        }
+
         public PlayerBot(Serial serial) : base(serial)
         {
             // State restored in Deserialize.
         }
 
         public override bool ShouldCheckStatTimers => false;
+
+        // -------------------------------------------------------------------
+        // Order vs Chaos is LEGAL combat (IDEAS 2.1 phase 3): harming an
+        // opposing faction bot is not a criminal act, so no gray flag and —
+        // crucially — no guard whack. This is what lets shield wars rage in
+        // the middle of Britain while the guards watch, exactly as T2A did.
+        // -------------------------------------------------------------------
+        public override bool IsHarmfulCriminal(Mobile target)
+        {
+            if (target is PlayerBot other &&
+                (BotFactionWar.AreEnemies(this, other) ||
+                 BotDuelManager.AreDueling(this, other)))
+            {
+                return false;
+            }
+            return base.IsHarmfulCriminal(target);
+        }
+
+        // -------------------------------------------------------------------
+        // Show the guild tag exactly where real guilds show theirs: appended
+        // to the name-line suffix ("Corwin the Grandmaster Swordsman [UDL]").
+        // Composes with PlayerMobile's own suffixes (ethics etc) via base.
+        // -------------------------------------------------------------------
+        public override string ApplyNameSuffix(string suffix)
+        {
+            var guild = BotGuilds.Get(BotGuildIndex);
+            if (guild != null)
+            {
+                suffix = string.IsNullOrWhiteSpace(suffix)
+                    ? $"[{guild.Tag}]"
+                    : $"{suffix} [{guild.Tag}]";
+            }
+            return base.ApplyNameSuffix(suffix);
+        }
 
         // -------------------------------------------------------------------
         // OnAfterSpawn — called by Mobile after a spawner places this bot in
@@ -267,10 +497,54 @@ namespace Server.CustomBots
             if (Spawner is PlayerBotSpawner pbs)
             {
                 behaviorName = pbs.BehaviorName;
+
+                // An artisan spawner pins a specific class by encoding it in
+                // the behavior name as "Crafter:<Class>" (e.g. "Crafter:Smith"),
+                // so a forge gets Smiths, a dock Fishermen, a tailor shop
+                // Tailors. Split the class off so the registry sees a plain
+                // behavior name.
+                BotClass? forcedClass = null;
+                int colon = behaviorName?.IndexOf(':') ?? -1;
+                if (colon > 0)
+                {
+                    if (Enum.TryParse<BotClass>(behaviorName[(colon + 1)..], true, out var c))
+                    {
+                        forcedClass = c;
+                    }
+                    behaviorName = behaviorName[..colon];
+                }
+
+                // Pinned artisan: the constructor rolled a random class, so
+                // re-derive this bot as the pinned class — correct skills,
+                // tool, and starter goods for its station. Do this BEFORE
+                // attaching the behavior so the behavior's OnAttached sees the
+                // final class (a fisherman, for instance, only relocates to
+                // the water's edge when its class is already Fisherman).
+                if (forcedClass.HasValue)
+                {
+                    ReinitializeAsClass(forcedClass.Value);
+                }
+
                 Behavior = BehaviorRegistry.Create(behaviorName);
                 // Fixed-role bots (placed via the spawn editor) never enter
                 // the lifecycle — they stay locked in this behavior.
                 LifecycleExempt = Spawner is FixedRoleBotSpawner;
+
+                // Shoppers pinned at vendor spots spawn straight into the
+                // Shopper brain with no visit timer (unlike organic arrivals,
+                // which the Traveler handoff stamps). Give them a staggered
+                // timed visit so they too break off and travel on, rather than
+                // standing at the counter forever. Fixed-role shoppers are
+                // deliberately permanent, so skip them. Derived at spawn time
+                // like LifecycleExempt — not serialized; refills/restarts
+                // re-stamp it on the next OnAfterSpawn.
+                if (!LifecycleExempt && Behavior is ShopperBehavior shopper)
+                {
+                    int minSecs = (int)ShopperBehavior.SpawnVisitMin.TotalSeconds;
+                    int maxSecs = (int)ShopperBehavior.SpawnVisitMax.TotalSeconds;
+                    shopper.VisitExpiresAt = Core.Now +
+                        TimeSpan.FromSeconds(Utility.RandomMinMax(minSecs, maxSecs));
+                }
             }
 
             // PK setup. PKs are strong (mostly Master/Grandmaster) and may
@@ -303,6 +577,21 @@ namespace Server.CustomBots
                 }
             }
 
+            // A bot that spawns INSIDE a dungeon is a dungeon crawler, no
+            // matter what the spawner asked for — a Wanderer/Idler pacing a
+            // dungeon corridor forever reads as broken. Deliberate dungeon
+            // residents are exempt: fixed-role bots (spawn editor) and PKs
+            // (dungeon PKs hunt there on purpose). The crawler spawns
+            // context-less and derives its dungeon+level from the nearest
+            // interior point on its first tick (TryRecoverContext).
+            if (!LifecycleExempt &&
+                Behavior is not PKBehavior &&
+                Behavior is not DungeonCrawlerBehavior &&
+                DungeonRegistry.IsInDungeon(this))
+            {
+                Behavior = new DungeonCrawlerBehavior();
+            }
+
             // BankSitters: most of them lean against the nearest wall.
             // Anyone else (Wanderers, Idle): just stand and face the camera.
             bool hugged = false;
@@ -320,7 +609,9 @@ namespace Server.CustomBots
             // ostards, llamas). Mounts despawn at death + delete.
             // BankSitters who are wall-hugging skip the mount (they're
             // standing pressed against a wall, mount would clip weirdly).
-            if (!hugged && Utility.RandomDouble() < 0.70)
+            // Fishermen never mount — they work the dock edge on foot;
+            // casting a line from horseback looks absurd.
+            if (!hugged && Class != BotClass.Fisherman && Utility.RandomDouble() < 0.70)
             {
                 BotMountHelper.TryMountRandom(this);
             }
@@ -337,6 +628,27 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // OnDeath — record the death in the shard's event journal so bank
+        // gossip can retell it. A murder by a red is bigger news than a
+        // dungeon death, so it gets its own event type.
+        // -------------------------------------------------------------------
+        public override void OnDeath(Container c)
+        {
+            var killer = LastKiller;
+            string type = killer is PlayerBot pk
+                ? pk.Behavior is PKBehavior ? "pk"
+                : BotFactionWar.AreEnemies(this, pk) ? "faction"
+                : "pk"
+                : "death";
+            BotEventJournal.Record(type, this, killer?.Name ?? "");
+
+            base.OnDeath(c);
+
+            // The corpse exists now — start the ghost/res/corpse-run story.
+            BotDeathManager.OnBotDeath(this, killer);
+        }
+
+        // -------------------------------------------------------------------
         // OnAfterDelete — called when the bot is fully removed from the
         // world. Belt + suspenders: if OnBeforeDeath didn't fire (e.g. the
         // bot was [removed by an admin while alive), still clean up the
@@ -345,6 +657,7 @@ namespace Server.CustomBots
         public override void OnAfterDelete()
         {
             BotMountHelper.DismountAndDelete(this);
+            NamePool.Release(Name);
             base.OnAfterDelete();
         }
 
@@ -457,14 +770,15 @@ namespace Server.CustomBots
         {
             base.Serialize(writer);
 
-            writer.Write(4);                                       // version
+            writer.Write(6);                                       // version
             writer.Write(IsBot);
             writer.Write(_behavior?.SerializableName ?? "Idle");
             Personality.Write(writer);
             writer.Write(PhaseStartedAt);
             writer.Write((byte)Class);
             writer.Write((byte)SkillTier);
-            writer.Write((byte)CrafterSpec);                       // v4
+            writer.Write((byte)CrafterSpec);                       // v5 layout (3 subtypes)
+            writer.Write(BotGuildIndex);                           // v6
         }
 
         public override void Deserialize(IGenericReader reader)
@@ -503,14 +817,46 @@ namespace Server.CustomBots
                 Class     = BotClass.Warrior;
                 SkillTier = BotSkillTier.Apprentice;
             }
-            if (version >= 4)
+            if (version >= 5)
             {
+                // Current three-subtype layout — read directly.
                 CrafterSpec = (CrafterType)reader.ReadByte();
+            }
+            else if (version == 4)
+            {
+                // Pre-rebuild seven-subtype layout — remap retired subtypes
+                // (Tinker/Inscriptionist/Carpenter/Bowcrafter) onto a valid
+                // current one so no bot loads with a meaningless spec.
+                CrafterSpec = CrafterTypeHelper.MigrateLegacyByte(reader.ReadByte());
             }
             else
             {
-                // Pre-v4 bots: roll a craft spec so the field is valid.
+                // Pre-v4 bots: no spec stored — roll one so the field is valid.
                 CrafterSpec = CrafterTypeHelper.RollRandom();
+            }
+            if (version >= 6)
+            {
+                BotGuildIndex = reader.ReadInt();
+            }
+            else
+            {
+                // Pre-guild bots roll membership on load so an old save
+                // still produces a guilded population.
+                BotGuildIndex = BotGuilds.RollMembership();
+            }
+
+            // Migrate legacy Crafter-class bots (saved before the split into
+            // separate Smith/Tailor/Fisherman classes) onto their concrete
+            // class, using the old subtype. After this, BotClass.Crafter is
+            // never live — it exists only as this migration's source value.
+            if (Class == BotClass.Crafter)
+            {
+                Class = CrafterSpec switch
+                {
+                    CrafterType.Tailor    => BotClass.Tailor,
+                    CrafterType.Fisherman => BotClass.Fisherman,
+                    _                     => BotClass.Smith,
+                };
             }
 
             // Heal pre-v20c bots whose m_Player flag was never set. Without
@@ -523,6 +869,11 @@ namespace Server.CustomBots
             // hunger/thirst from earlier runs. Reset to max each load.
             Hunger = 20;
             Thirst = 20;
+
+            // Register the loaded name so fresh spawns can't duplicate it.
+            // (Loaded bots are normally purged at startup anyway, but the
+            // claim keeps the registry honest for however long they live.)
+            NamePool.Claim(Name);
 
             // Note: no manual Title set. The paperdoll renders the title
             // from the bot's highest skill above 50 (UO's normal behavior).

@@ -1,15 +1,27 @@
 // =========================================================================
 // NamePool.cs — Period-appropriate name generation for PlayerBots.
 //
-// Two sources combined:
+// Sources combined:
 //   1. Curated lists per gender (~200 names each). Period medieval /
 //      fantasy / Anglo-Saxon / Old Norse / Celtic stylings.
-//   2. Algorithmic prefix + suffix (~10% of the time) for unique-feeling
-//      names that don't appear in any curated list.
+//   2. "Player handle" lists — the names real 1999 players actually used:
+//      fantasy-literature borrows (Gandalf, Drizzt), tough-guy nouns
+//      (Blade, Reaper), and plain lowercase real names (bob, steve).
+//   3. Algorithmic prefix + suffix for unique-feeling names that don't
+//      appear in any curated list.
+//   4. Surnames — a minority of bots get one ("Joe Blackthorn", "Mara of
+//      Yew", "Halric the Grey"), and they're the first collision escape.
 //
-// Use:  var name = NamePool.PickRandom(female: bot.Female);
+// UNIQUENESS: five Tessas at one bank kill the player illusion. Every
+// live bot name is tracked in _inUse; PickUnique never hands out a name
+// that's already walking around. PlayerBot claims its name at creation
+// and releases it on delete.
+//
+// Use:  var name = NamePool.PickUnique(female: bot.Female);
 // =========================================================================
 
+using System;
+using System.Collections.Generic;
 using Server;
 
 namespace Server.CustomBots
@@ -163,6 +175,167 @@ namespace Server.CustomBots
             "ora", "rys", "ndra", "ade", "ene", "ine", "rin",
             "wynn", "lyn", "ya", "ana", "ela", "elia", "ona", "wina"
         };
+
+        // ---- Player handles ----
+        //
+        // What actual 1999 players named themselves: fantasy-lit borrows,
+        // one-word tough-guy nouns, and unadorned lowercase real names.
+        // Rolled at a modest rate so they season the population without
+        // turning it into a Tolkien convention.
+        private static readonly string[] MaleHandles =
+        {
+            "Gandalf", "Merlin", "Legolas", "Aragorn", "Gimli",
+            "Raistlin", "Caramon", "Tanis", "Sturm", "Drizzt",
+            "Elminster", "Conan", "Lancelot", "Galahad", "Mordred",
+            "Strider", "Beowulf", "Roland", "Tristram",
+            "Blade", "Reaper", "Shadow", "Phantom", "Storm",
+            "Hawk", "Wolf", "Viper", "Falcon", "Talon",
+            "Slasher", "Warlord", "Ranger", "Outlaw", "Bandit",
+            "bob", "joe", "dave", "steve", "mike", "matt",
+            "chris", "tom", "dan", "rob", "tim", "jeff",
+            "kevin", "brian", "nick", "pete", "carl", "gary"
+        };
+
+        private static readonly string[] FemaleHandles =
+        {
+            "Xena", "Morgana", "Guinevere", "Arwen", "Eowyn",
+            "Galadriel", "Morrigan", "Circe", "Cassandra", "Ophelia",
+            "Raven", "Willow", "Ember", "Mystique", "Tempest",
+            "Shadowdancer", "Moonshadow", "Starlight", "Silverwind",
+            "Nightshade", "Wildfire", "Whisper",
+            "sarah", "jenny", "lisa", "amy", "katie", "beth",
+            "meg", "kate", "jess", "nikki", "carrie", "dawn"
+        };
+
+        // How often a fresh roll comes from the handle pool instead of the
+        // curated period lists.
+        private const double HandleChance = 0.08;
+
+        // ---- Surnames ----
+        //
+        // A minority of the population carries one from birth; the rest
+        // pick one up only if their first name is already taken.
+        private const double SurnameChance = 0.25;
+
+        private static readonly string[] FamilySurnames =
+        {
+            "Blackthorn", "Stormrider", "Ironheart", "Ravenwood",
+            "Ashdown", "Thornfield", "Winterborne", "Hawkins",
+            "Blackwood", "Greenfield", "Stonebridge", "Fairweather",
+            "Oakhurst", "Redfern", "Silverleaf", "Grimm",
+            "Weatherby", "Holloway", "Marsh", "Frost",
+            "Nightingale", "Swift", "Crowe", "Thatcher",
+            "Fletcher", "Cooper", "Wainwright", "Ashford",
+            "Duskwalker", "Emberfall", "Ironwood", "Wolfsbane",
+            "Stormcrow", "Longstrider", "Coldwater", "Highmoor"
+        };
+
+        private static readonly string[] PlaceSurnames =
+        {
+            "of Britain", "of Trinsic", "of Yew", "of Minoc",
+            "of Vesper", "of Moonglow", "of Skara Brae", "of Jhelom",
+            "of the North", "of the Woods"
+        };
+
+        private static readonly string[] EpithetSurnames =
+        {
+            "the Grey", "the Red", "the Bold", "the Quiet",
+            "the Wanderer", "the Younger", "the Elder", "the Swift",
+            "the Unlucky", "the Lame", "the Pious", "the Black"
+        };
+
+        // ---- Live-name registry ----
+        //
+        // Names currently walking the world. Claim on bot creation,
+        // release on bot delete. Case-insensitive so "Bob" blocks "bob".
+        private static readonly HashSet<string> _inUse =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public static int InUseCount => _inUse.Count;
+
+        // Register a name as live. Returns false if already taken.
+        public static bool Claim(string name) =>
+            !string.IsNullOrEmpty(name) && _inUse.Add(name);
+
+        public static void Release(string name)
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                _inUse.Remove(name);
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // PickUnique — roll a name no live bot is using, and claim it.
+        // Escalating strategy: plain roll → add a surname → algorithmic
+        // generation → generated + surname. The combinatorial space of the
+        // later rungs is tens of thousands deep, so exhaustion is
+        // practically impossible; the final fallback accepts a duplicate
+        // rather than fail.
+        // -------------------------------------------------------------------
+        public static string PickUnique(bool female)
+        {
+            // 1) Plain roll (some get a surname anyway — flavor, not rescue).
+            for (int i = 0; i < 8; i++)
+            {
+                var name = RollBase(female);
+                if (Utility.RandomDouble() < SurnameChance)
+                {
+                    name = AttachSurname(name);
+                }
+                if (Claim(name))
+                {
+                    return name;
+                }
+            }
+
+            // 2) First name taken — a surname disambiguates ("second Tessa
+            //    on the shard becomes Tessa Ravenwood").
+            for (int i = 0; i < 12; i++)
+            {
+                var name = AttachSurname(RollBase(female));
+                if (Claim(name))
+                {
+                    return name;
+                }
+            }
+
+            // 3) Algorithmic space, then algorithmic + surname.
+            for (int i = 0; i < 40; i++)
+            {
+                var name = Generate(female);
+                if (i >= 20)
+                {
+                    name = AttachSurname(name);
+                }
+                if (Claim(name))
+                {
+                    return name;
+                }
+            }
+
+            // Should never get here; accept a duplicate over failing.
+            return PickRandom(female);
+        }
+
+        private static string RollBase(bool female)
+        {
+            if (Utility.RandomDouble() < HandleChance)
+            {
+                var handles = female ? FemaleHandles : MaleHandles;
+                return handles[Utility.Random(handles.Length)];
+            }
+            return PickRandom(female);
+        }
+
+        private static string AttachSurname(string name)
+        {
+            double r = Utility.RandomDouble();
+            var pool = r < 0.70 ? FamilySurnames
+                     : r < 0.85 ? PlaceSurnames
+                     : EpithetSurnames;
+            return $"{name} {pool[Utility.Random(pool.Length)]}";
+        }
 
         public static string PickRandom(bool female)
         {

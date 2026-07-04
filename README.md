@@ -2,7 +2,7 @@
 
 A single-player, fully offline Ultima Online experience you can play on **Windows, Linux, and the Steam Deck**. One installer sets up everything and runs the whole game on your own machine — no servers, no accounts, no internet required after install.
 
-What makes it feel alive is a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, cross between cities through moongates, and live their own lives — so the world feels like a busy shard instead of an empty map.
+What makes it feel alive is a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, crawl dungeons, form guilds and hunting parties, wage the Order/Chaos war in the streets, duel outside the bank, gather and trade, die and run back for their corpses, gossip about things that really happened, and log off for dinner — so the world feels like a busy 1999 shard instead of an empty map.
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, runs entirely on localhost.
 
@@ -70,20 +70,49 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 ## Features
 
-**Bot identity.** Every bot has a class (Warrior, Mage, Fencer, Archer, Tamer, Crafter, Healer, Thief, Bard, Ranger) and a skill tier (Novice through Grandmaster, bell-curve distributed). Skills, stats, equipment, and behavior preferences all derive from class + tier. A Grandmaster Mage really IS a Grandmaster Mage — 99 Magery, 125 Int, with a fancy hued robe and spellbook.
+**Bot identity.** Every bot has a class (Warrior, Mage, Fencer, Archer, Tamer, Healer, Thief, Bard, Ranger, plus the working classes: Smith, Tailor, Fisherman, Lumberjack, Miner) and a skill tier (Novice through Grandmaster, bell-curve distributed). Skills, stats, equipment, and behavior preferences all derive from class + tier. A Grandmaster Mage really IS a Grandmaster Mage — 99 Magery, 125 Int, with a fancy hued robe and a filled spellbook.
+
+**Unique names + home cities.** No two live bots share a name. A minority carry surnames ("Tessa Ravenwood", "Halric the Grey", "Mara of Yew"), and a few use the handles real 1999 players did — Gandalf, Drizzt, lowercase "bob". Every bot also has a home city its travels favor, so *regulars* emerge: keep visiting the Britain forge and you keep seeing the same smith.
+
+**Player guilds + the Order/Chaos war.** Thirteen era-flavored guilds ("The Undead Lords", "DOOM", "Knights of Yew"…) with big-zerg and small-crew rosters; ~40% of bots wear a `[TAG]`. Six guilds carry Order or Chaos shields — and opposing shields fight **on sight, in town, guards ignoring it**, exactly as T2A worked. Street fights outside the bank are back.
+
+**Login/logout sessions.** Bots have play sessions, not eternal existence: they log in, play 1–4 hours, say "gtg dinner", and vanish — and the population follows a daily curve (dead at 5am, packed in the evening). Fresh spawns are logins ("hey all", "what did i miss").
+
+**The event journal + gossip.** The shard keeps a journal of everything notable — kills, deaths, murders, duels, hunts, red sightings — and bots at banks *retell real events*: "Aldreth got pked at despise earlier!!" is only ever said if it actually happened. Bots that hunted or dueled together become friends and greet each other by first name for the rest of their lives.
+
+**Hunting parties.** The LFG spam concludes: a fighter broadcasts "LFG despise anyone?", nearby bots answer and converge, and the group marches down real roads to a dungeon, enters together, and fights as a unit until the run ends with "gg all". Guildmates and friends get invited first.
+
+**Real deaths + corpse runs.** Novices misjudge fights (retreat thresholds scale with experience) and sometimes die. Then UO's most iconic experience plays out: the ghost haunts its corpse moaning OoOoOo, walks to a healer or shrine, resurrects in a death robe, and runs back hoping the loot's still there — self-looting its own corpse the vanilla way, or wailing "WHO LOOTED MY CORPSE" if it rotted.
+
+**PK ecology + region danger.** Murders heat a danger map; hot places drain of foot traffic as the population routes around them. A civilian who spots a red screams "RED AT {PLACE}!!", the sighting hits the gossip mill, and nearby travelers scatter.
+
+**A visible economy.** Lumberjacks and Miners work real wilderness sites (40 generated across the map), fill their packs with actual logs and ore, and haul the load to town — selling to a working crafter in a coins-for-materials scene, or banking it. Adventurers buy from crafters ("how much for a katana" → "800 gold" → *hands over the coins* → "sold!"), and the endless WTS bank spam occasionally *concludes* with a real deal.
+
+**Duels outside the bank.** Two fighters emote a challenge, bow, walk ten tiles clear of the crowd, and fight to low health — never to the death — then bow again while the loser demands a rematch. Era-perfect theater, legal in town.
+
+**Gear progression.** Dungeon runs pay: survive three and the next bank visit is shopping day — a visible tier promotion with better skills and kit ("finally saved up for new gear"). Regulars get better gear over weeks.
+
+**Street characters.** Banks grow their own street life: the beggar ("gold plz") and the lost newbie ("how do i get to minoc??") — both of whom will latch onto a real player and follow them across the plaza.
+
+**Chatter with texture.** Era voice throughout ("ne1", "thx m8", rare all-caps drama), late-night lines after 9pm, nervy whispers inside dungeons ("quiet... something ahead"), real emotes (*bows*, *dances*), gossip about real events, and the occasional "asdf". Ghost speech garbles for the living, exactly as it should.
+
+**Shard status page.** `Data/Live/status.html` regenerates every minute: who's online (names, guild tags, class/tier, what they're doing, where), population vs the daily curve, and a Latest News feed straight from the event journal — the classic 1999 shard status page, telling the truth about 400 bots.
 
 **Equipment variety.** Beyond class signatures (Warriors in plate, Mages in robes), every bot rolls universal accessories: hats from 18 types (floppy hat, jester hat, feathered cap, tribal mask, etc.), cloaks in any color, body sashes, beards, varied hair. Some Warriors wear chain or studded instead of plate. Some Mages wear studded leather. The visual feel matches classic UO bank gatherings.
 
 **Mounts.** 70% of bots spawn mounted on a horse, ostard, or llama. Horse coat colors vary realistically (browns, grays, palominos). Mounted bots move at proper UO mount speed. Mounts despawn cleanly with their rider on death or removal.
 
-**Behaviors.** Bots run one of several behaviors, swapped by the lifecycle system and by arriving at the right kind of place:
+**Behaviors.** Bots run one of many behaviors, swapped by the lifecycle system and by arriving at the right kind of place:
 - **Idle / Wander** — light local movement.
-- **BankSitter** — stands at a bank, chats.
+- **BankSitter** — stands at a bank, chats (and occasionally challenges someone to a duel or closes a WTS deal).
 - **Traveler** — walks or rides between destinations along the waypoint road network.
 - **Shopper** — stands at a vendor area and browses ("vendor buy", browsing chatter), then moves on.
-- **Crafter** — settles at its station (Smith → Forge, Tailor, Bowyer) for long working sessions.
-- **Adventurer** — real melee combat: sword swings, retreat at low HP, permadeath.
-- **PK** — hostile player-killer behavior.
+- **Crafter** — settles at its station (Smith → Forge, Tailor → shop, Fisherman → dock) for long working sessions, producing real goods.
+- **Gatherer** — works a wilderness site (chop/mine animations, real logs and ore into the pack), then hauls to town to sell.
+- **Adventurer** — full combat: melee, archery, and real magic (spell ladders up to Flamestrike, kiting, target switching, threat assessment); retreats scale with experience.
+- **DungeonCrawler** — enters dungeons through the real entrance teleporters, sweeps rooms floor by floor (skill-weighted descent — novices stay shallow), camps respawns, and climbs back out when the run timer expires.
+- **PartyMember / Duelist / Ghost / CorpseReclaim / Beggar / Newbie** — the hunting-party follower, the bank duelist, the death story, and the street characters.
+- **PK** — hostile player-killer behavior (and the reason civilians scream RED).
 
 **Destinations, waypoints, and zones.** Travelers go to actual *places*, not random spots. The world is described by three layers:
 - **Waypoints** — the road network. A graph of nodes Travelers thread with A*/Dijkstra routing, hot-reloadable via `[ReloadWaypoints`.
@@ -92,9 +121,9 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **Arrival points.** The key to bots reaching places they can actually stand. A destination can carry one or more **arrival points** — specific reachable tiles (a vendor counter, a doorstep, a moongate teleporter) — each with its own preferred route waypoints. A bot picks one arrival point, routes to the nearest of its waypoints, and arrives *on a standable tile* instead of grinding a wall trying to reach an unreachable interior coordinate. This is what lets a Shopper stop at the counter and a Traveler step onto a moongate cleanly.
 
-**Moongate travel.** Bots that reach a moongate have a high chance to step through it and emerge at a random other city's gate, then resume exploring wherever they land — circulating the population across Britannia instead of pooling in one city. Bots whose destination is across water (on an island unreachable by foot) automatically reroute to a reachable moongate and gate out.
+**Moongate, Recall, and Gate travel.** Bots that reach a moongate have a high chance to step through and emerge at another city's gate — circulating the population across Britannia. Long hauls reroute through the gate network automatically. Mages with the skill and mana skip the walk entirely: Recall ("Kal Ort Por") straight to their destination, or open a **real** Gate Travel pair ("gate to despise up, hurry") that lingers for anyone — players included — to hop through.
 
-**Combat.** Adventurers engage hostile creatures (negative-Karma monsters) in melee, retreat when wounded, die permanently, get replaced by their spawner. Bots respect the notoriety system — they don't attack innocents or wildlife. Magic combat is still to come.
+**Combat.** Adventurers engage hostile creatures with class-appropriate fighting: melee with attack-slot fanning (bots surround a monster instead of stacking), archer/mage kiting, and a real spell book from Magic Arrow to Flamestrike with era-correct openers. Threat assessment scales with tier (bravery in numbers — crowds swarm bosses), targets switch mid-fight to whoever's actually biting, and after a rough win, fighters sit and *bandage wounds* while casters *meditate* their mana back before moving on. Bots respect notoriety — no attacking innocents or wildlife.
 
 **Stuck recovery.** When bots get pinned against terrain, automatic detection nudges them in a walkable direction, opens doors in the way, and repaths — with a give-up after repeated failure so nothing paces forever.
 
@@ -155,6 +184,17 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 **Diagnostics:**
 - `[BotInfo` — target a bot, dump class/tier/stats/skills/notoriety/behavior/destination.
 - `[BotWhere`, `[hpacomponents`, `[hpaedges`, field-debug commands.
+- `[CombatDebug on|off` — toggle verbose per-cast combat logging at runtime.
+
+**Living shard:**
+- `[BotGuilds` — guild rosters with live member counts.
+- `[BotSessions [on|off]` — session layer status (live vs curve target) or toggle.
+- `[BotParties [form]` — list live hunting parties, or force-form one near you.
+- `[BotFactions [fight]` — Order/Chaos counts and active fights, or force a street fight.
+- `[BotDuel` — force a bank duel near you.
+- `[BotTrade` — force a trade scene (crafter purchase or WTS deal).
+- `[BotDanger` — list places with recent murder heat.
+- Headless test tokens (for soaks, no client needed): drop a number into `Data/Live/party_request.txt`, `death_request.txt`, or `faction_request.txt` and watch the console / `*_ack.json`.
 
 **Admin / population:**
 - `[GmPanel` — central GM gump: world setup, spawning, teleporting, cleanup (with confirmation gumps for destructive actions).
@@ -166,16 +206,22 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 
 ## Currently being worked on
 
-- **Expanding the world beyond Britain.** Trinsic, Vesper, Yew, Minoc, Moonglow, etc. — each city needs its waypoint road network, destination cluster, arrival points, and painted areas. The map editor makes this point-and-click; the **WP coverage** layer shows where the road network is missing, and bankers/shoppers automatically populate each bank/vendor arrival point you place.
+**Cities — the mainland is done.** All eight mainland cities have their waypoint road networks, destination clusters, arrival points, and painted areas live:
 
-## What's coming
+| Done | In progress / planned |
+|---|---|
+| Britain | Magincia (markers only) |
+| Trinsic | Nujel'm (markers only) |
+| Vesper | Buccaneer's Den (markers only) |
+| Minoc | Occlo |
+| Yew | |
+| Moonglow | |
+| Skara Brae | |
+| Jhelom | |
 
-- **Dungeons.** Design is complete (see `LIFECYCLE-DESIGN.md` / `TODO.md`): a DungeonCrawler behavior scoped to a dungeon by tag, entering via an arrival point on the entrance teleporter, roaming painted combat areas, descending through level teleporters (skill-weighted so weak bots stay shallow), and climbing back out one level at a time. Entrance/exit teleporters reuse the moongate teleport pattern; combat areas reuse the zone painter.
-- **Death and resurrection.** Dead bots walk as ghosts to a healer, resurrect, return to their corpse, re-equip. (Interim: respawn at spawn point.)
-- **Improved combat.** Magic combat; reworked melee.
-- **Random events.** Town invasions bots will turn out to fight.
-- **Per-personality chat** and **bot story memory** (recent travel/history per bot).
-- **Spawn editor Phase 3.** Ingest Nerun's ~1700-spawn map into the editor so all existing spawns are visible/movable/editable alongside your custom ones.
+The island cities need boat-arrival illusion + their own waypoint pockets (no moongate lands on Buc's Den, so it needs special handling). Four virtue shrines are live as pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice — the last with a 29-node server-verified desert trail); Justice, Honesty, Honor, Humility, and Valor await their trails.
+
+**Dungeons — Despise is live, the rest are next.** Despise Level 1 is fully authored and soak-verified: bots walk in through the real entrance teleporter, sweep and camp its rooms, descend, and climb back out on their own. Level 2 is partially authored (bots land and hunt locally; full room/waypoint coverage in progress). **Deceit is next** — its skeleton is already generated (`tools/skeleton-deceit.json`), then Shame, Wrong, and Covetous, each following the same pipeline: generate skeleton → author rooms/waypoints per floor → headless audit → soak.
 
 ---
 

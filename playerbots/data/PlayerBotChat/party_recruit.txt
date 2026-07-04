@@ -1,0 +1,15 @@
+# party_recruit.txt — a leader broadcasting for a hunting party.
+# {dungeon} = target dungeon name (lowercase).
+
+LFG {dungeon} anyone?
+lfg {dungeon}
+anyone want to hunt {dungeon}?
+forming group for {dungeon}, who's in
+need 2-3 for {dungeon}
+{dungeon} run, anyone coming?
+going {dungeon}, lf company
+who wants {dungeon}? good loot
+lf group {dungeon}, leaving soon
+{dungeon} anyone? im tanking
+grp for {dungeon} forming here
+ne1 for {dungeon}?

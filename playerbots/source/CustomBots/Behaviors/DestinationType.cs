@@ -40,6 +40,24 @@ namespace Server.CustomBots
         Inn,
         Forge,   // a forge fixture — smith crafters station here
         Dock,    // a pier fixture — fisherman crafters station here
+        Shrine,  // a virtue shrine — remote wilderness ankh; pilgrimage spot
+        // A synthetic wilderness work site (GatherSpots generates these
+        // from waypoint nodes far from any city). Lumberjacks and Miners
+        // travel out, work the spot, and haul the load back to town.
+        GatherSpot,
+
+        // ---- Dungeon points (see DungeonCrawlerBehavior / DungeonRegistry) ----
+        // A surface teleporter into a dungeon. ROLLABLE like Dungeon: combat
+        // bots route here as Travelers, step onto the real Teleporter item,
+        // the game carries them inside, and TravelerBehavior converts them
+        // to a DungeonCrawler.
+        DungeonEntrance,
+        // The three below are INTERIOR points, only ever used by a crawler's
+        // own scoped pool. They carry a Dungeon tag + Level and are excluded
+        // from the normal Traveler destination roll (GetWeight returns 0).
+        DungeonRoom,     // a roam/combat point on a level
+        DungeonDescend,  // a down-teleporter to a deeper level
+        DungeonAscend,   // an up-teleporter to a shallower level / the surface
     }
 
     public static class DestinationWeights
@@ -186,6 +204,14 @@ namespace Server.CustomBots
                 ["Thief"]    = 2.0, // shady haunts
             },
 
+            [DestinationType.Shrine] = new()
+            {
+                ["Default"]  = 0.4, // remote — a deliberate pilgrimage, not a errand
+                ["Healer"]   = 1.6, // shrine tenders
+                ["Mage"]     = 0.8,
+                ["Warrior"]  = 0.6, // Valor has its devotees
+            },
+
             [DestinationType.Moongate] = new()
             {
                 ["Default"]  = 1.5,
@@ -231,6 +257,21 @@ namespace Server.CustomBots
                 ["Healer"]   = 1.5, // following an adventurer party
             },
 
+            // A dungeon ENTRANCE draws the same crowd as a Dungeon — this is
+            // the rollable surface teleporter that actually starts a crawl.
+            [DestinationType.DungeonEntrance] = new()
+            {
+                ["Default"]  = 0.3,
+                ["Warrior"]  = 5.0,
+                ["Fencer"]   = 4.0,
+                ["Archer"]   = 4.0,
+                ["Ranger"]   = 3.5,
+                ["Mage"]     = 4.5,
+                ["Tamer"]    = 3.0,
+                ["Thief"]    = 2.5,
+                ["Healer"]   = 1.5,
+            },
+
             [DestinationType.Inn] = new()
             {
                 // Inns are for resting/sleeping; everyone uses them at
@@ -252,12 +293,63 @@ namespace Server.CustomBots
         // "Default" entry; falls back to 1.0 if neither exists.
         public static double GetWeight(DestinationType type, BotClass cls)
         {
+            // Interior dungeon points are NEVER a Traveler destination. They
+            // sit inside dungeons (unreachable by the city waypoint graph)
+            // and are rolled only from a DungeonCrawler's own scoped pool.
+            // Weight 0 removes them from the surface destination roll for
+            // every class.
+            if (type == DestinationType.DungeonRoom ||
+                type == DestinationType.DungeonDescend ||
+                type == DestinationType.DungeonAscend)
+            {
+                return 0.0;
+            }
+
+            // Artisans (Smith/Tailor/Fisherman) are single-minded: they go to
+            // their own work station and almost nowhere else. This is what
+            // keeps a smith heading to the forge (not shopping at a vendor)
+            // and a fisherman heading to a dock. Their station dominates the
+            // roll; an occasional bank errand is allowed; everything else is
+            // near-zero. Only the matching class is drawn to a given station,
+            // so fishermen don't pile onto forges and vice-versa.
+            if (BotClassHelper.IsArtisan(cls))
+            {
+                if (type == BotClassHelper.StationFor(cls))
+                {
+                    return 8.0;
+                }
+                return type == DestinationType.Bank ? 0.4 : 0.02;
+            }
+
+            // Gatherers are the same single-mindedness pointed at the
+            // wilderness: overwhelmingly they head OUT to a gather spot.
+            // (The haul back to town is handled separately — see
+            // DestinationCatalog.PickWeighted's HaulPending override.)
+            if (BotClassHelper.IsGatherer(cls))
+            {
+                return type switch
+                {
+                    DestinationType.GatherSpot => 8.0,
+                    DestinationType.Bank       => 0.3,
+                    DestinationType.Tavern     => 0.2,  // a drink after a haul
+                    DestinationType.Inn        => 0.2,
+                    _                          => 0.02,
+                };
+            }
+
+            // Nobody else has business at a wilderness work site.
+            if (type == DestinationType.GatherSpot)
+            {
+                return cls == BotClass.Ranger ? 0.15 : 0.02;
+            }
+
             // Hard exclusion: trader classes never travel to dangerous
             // destinations. A Crafter is a shopkeeper/artisan — it has no
             // business wandering into a dungeon or a graveyard and getting
             // killed. Weight 0 removes it from the roll entirely.
             if (cls == BotClass.Crafter &&
                 (type == DestinationType.Dungeon ||
+                 type == DestinationType.DungeonEntrance ||
                  type == DestinationType.Graveyard))
             {
                 return 0.0;

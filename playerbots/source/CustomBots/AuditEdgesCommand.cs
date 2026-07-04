@@ -36,6 +36,76 @@ namespace Server.CustomBots
             CommandSystem.Register("auditedges", AccessLevel.GameMaster, OnCommand);
         }
 
+        // -------------------------------------------------------------------
+        // Headless scan — the same flood-fill edge check as [auditedges,
+        // returning report lines instead of chat output. Used by the
+        // editor/file-token bridge so data authored outside the client can
+        // be verified without logging in. Never fixes; report only.
+        // -------------------------------------------------------------------
+        public static List<string> Scan()
+        {
+            var lines = new List<string>();
+
+            JsonNode root;
+            try
+            {
+                root = JsonNode.Parse(File.ReadAllText(JsonPath));
+            }
+            catch (Exception ex)
+            {
+                lines.Add($"waypoints.json parse failed: {ex.Message}");
+                return lines;
+            }
+
+            string key = null;
+            foreach (var kv in root.AsObject())
+                if (kv.Value is JsonArray a && a.Count > 0 && a[0]?["Connects"] != null)
+                { key = kv.Key; break; }
+            if (key == null)
+            {
+                lines.Add("waypoint list not found");
+                return lines;
+            }
+            var arr = (JsonArray)root[key];
+
+            var pos = new Dictionary<string, (int x, int y, int z)>(StringComparer.OrdinalIgnoreCase);
+            foreach (var n in arr)
+                pos[(string)n["Name"]] = ((int)n["X"], (int)n["Y"],
+                                          n["Z"] != null ? (int)n["Z"] : 0);
+
+            var checkedPairs = new HashSet<string>();
+            foreach (var n in arr)
+            {
+                string an = (string)n["Name"];
+                var (ax, ay, az) = pos[an];
+                DistanceField field = null;
+
+                foreach (var cNode in (n["Connects"] as JsonArray) ?? new JsonArray())
+                {
+                    string bn = (string)cNode;
+                    if (!pos.TryGetValue(bn, out var b)) continue;
+                    string pair = string.CompareOrdinal(an, bn) < 0 ? an + "|" + bn : bn + "|" + an;
+                    if (!checkedPairs.Add(pair)) continue;
+
+                    int dist = Math.Max(Math.Abs(ax - b.x), Math.Abs(ay - b.y));
+                    if (dist > LegLimit)
+                    {
+                        lines.Add($"FAR ({dist}t): {an} <-> {bn}");
+                        continue;
+                    }
+
+                    field ??= DistanceField.Build(Map.Felucca,
+                        new Point3D(ax, ay, az), LegLimit + 6);
+                    int cost = field?.CostAt(b.x, b.y) ?? -1;
+                    if (cost < 0)
+                        lines.Add($"BLOCKED: {an} <-> {bn}");
+                    else if (cost > LegLimit * 14)
+                        lines.Add($"WALKCOST ({cost}): {an} <-> {bn}");
+                }
+            }
+            return lines;
+        }
+
         private static void OnCommand(CommandEventArgs e)
         {
             var from = e.Mobile;

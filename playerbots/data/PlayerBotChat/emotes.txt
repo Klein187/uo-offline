@@ -1,0 +1,21 @@
+# emotes.txt — wordless social layer. Lines in *asterisks* render as
+# real Emotes. Occasionally steals an ambient chat slot for any bot.
+# The stray "asdf" style lines are deliberate — imperfection reads human.
+
+*bows*
+*salutes*
+*stretches*
+*yawns*
+*dances*
+*nods*
+*waves*
+*cracks knuckles*
+*looks around*
+*whistles*
+*taps foot*
+*sits*
+asdf
+test
+oops wrong window
+qwe
+..

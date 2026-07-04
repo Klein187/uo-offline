@@ -69,6 +69,20 @@
   <div style="margin-top:3px">respawn <input id="spMin" type="number" value="5" min="0" style="width:40px">&ndash;<input id="spMax" type="number" value="15" min="0" style="width:40px"> min</div>
   <button id="spApply" style="display:none;width:100%;margin-top:5px;background:#2d4a5a">Apply to selected</button>
  </div>
+ <label style="color:#ffb84d"><input type="checkbox" id="editDungeon"> EDIT dungeon</label>
+ <div id="dungeonCtl" style="display:none;margin:4px 0;font-size:12px">
+  <input id="dgName" placeholder="dungeon name (e.g. Despise)"
+    style="width:100%;box-sizing:border-box;padding:3px;background:#222;color:#eee;border:1px solid #444;border-radius:4px">
+  <div style="margin-top:3px">level <input id="dgLevel" type="number" value="1" min="0" style="width:42px">
+   &nbsp;<select id="dgType">
+    <option value="DungeonEntrance">Entrance</option>
+    <option value="DungeonRoom">Room</option>
+    <option value="DungeonDescend">Descend &darr;</option>
+    <option value="DungeonAscend">Ascend &uarr;</option>
+   </select></div>
+  <div style="margin-top:3px">target lvl <input id="dgTargetLevel" type="number" value="1" min="0" style="width:42px">
+   <button id="dgSetTarget" style="margin-left:4px;background:#4a3a2d">Set target&hellip;</button></div>
+ </div>
  <input id="search" placeholder="search & Enter (e.g. Trinsic Bank)">
  <div style="margin-top:6px">
   <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
@@ -102,7 +116,9 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  VendorTailor:"#d35400",VendorCarpenter:"#a0522d",VendorBowyer:"#27ae60",
  VendorAlchemist:"#9b59b6",VendorProvisioner:"#95a5a6",Forge:"#e74c3c",Dock:"#3498db",
  Library:"#f1c40f",Graveyard:"#7f8c8d",Moongate:"#00e5ff",CityCenter:"#fff",
- Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600"};
+ Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600",
+ DungeonEntrance:"#ffa500",DungeonRoom:"#c8924a",
+ DungeonDescend:"#ff4040",DungeonAscend:"#40c0ff"};
 const SPAWN_COLORS={Monster:"#e74c3c",NPC:"#f1c40f",Vendor:"#2ecc71",
  PlayerBotFixed:"#3498db",PlayerBotLifecycle:"#9b59b6"};
 const BOT_BEHAVIORS=["Idle","Wander","Traveler","BankSitter","Shopper","Crafter","Adventurer","PK"];
@@ -229,6 +245,16 @@ function draw(){
     ctx.beginPath();ctx.moveTo(ax,ay-s2);ctx.lineTo(ax+s2,ay);
     ctx.lineTo(ax,ay+s2);ctx.lineTo(ax-s2,ay);ctx.closePath();ctx.fill();
     ctx.strokeStyle=sel?"#000":"#7a5c00";ctx.lineWidth=sel?2:1;ctx.stroke();}}}
+ // dungeon teleporter -> target tether (where a point sends bots): dashed,
+ // colored by point type, with a hollow square at the landing tile.
+ if(lDests.checked)for(const d of DESTS){
+  if(d.tx==null||d.ty==null)continue;
+  const[ax,ay]=T(d.x,d.y),[bx,by]=T(d.tx,d.ty);
+  const c=TYPE_COLORS[d.t]||"#fff";
+  ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);
+  const s=Math.max(3,scale*.7);ctx.strokeStyle=c;ctx.lineWidth=2;
+  ctx.strokeRect(bx-s,by-s,2*s,2*s);}
  if(lDests.checked)for(const d of DESTS){const[x,y]=T(d.x,d.y);
   if(x<-9||y<-9||x>cv.width+9||y>cv.height+9)continue;
   const r=Math.max(3,scale*.9);
@@ -330,8 +356,38 @@ cv.onmousedown=e=>{
     updateActBtn();draw();return;}
   }
  }
+ if(document.getElementById("editDungeon").checked&&!dgTargetArm){
+  const tx=ox+e.clientX/scale,ty=oy+e.clientY/scale,tol=Math.max(2,9/scale);
+  // 1. teleport-target square (its own tile, away from the point)
+  let bt=null,btd=tol;
+  for(const d of DESTS){if(d.tx==null)continue;
+   const dd=Math.max(Math.abs(tx-d.tx),Math.abs(ty-d.ty));if(dd<btd){btd=dd;bt=d;}}
+  if(bt){dgTargetDrag={d:bt,tx:bt.tx,ty:bt.ty,moved:false};cv.style.cursor="move";return;}
+  // 2. arrival diamond of a dungeon point (the teleporter stand tile)
+  const na=findArrivalNear(tx,ty);
+  if(na&&na.dObj&&na.dObj.dng){
+   arrDrag={dest:na.dest,index:na.index,dObj:na.dObj,a:na.a,moved:false};
+   cv.style.cursor="move";return;}
+  // 3. the dungeon point dot itself
+  let bd2=null,bdd=tol;
+  for(const d of DESTS){if(!d.dng)continue;
+   const dd=Math.max(Math.abs(tx-d.x),Math.abs(ty-d.y));if(dd<bdd){bdd=dd;bd2=d;}}
+  if(bd2){dotDrag={d:bd2,sx:bd2.x,sy:bd2.y,moved:false};cv.style.cursor="move";return;}
+ }
  drag={x:e.clientX,y:e.clientY};moved=0;cv.style.cursor="grabbing";};
 addEventListener("mouseup",e=>{cv.style.cursor="grab";
+ if(dgTargetDrag){
+  const td=dgTargetDrag;dgTargetDrag=null;
+  if(td.moved){
+   fetch("/dungeon_target",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:td.d.n,x:td.tx,y:td.ty,targetlevel:(td.d.tl||0)})})
+   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+    r.ok?`'${r.name}' target → (${r.tx},${r.ty},${r.tz}) L${r.targetlevel}\nRun [ReloadDestinations.`
+        :"target move failed: "+r.error;loadData();});
+  }else{ // a click on the square (no move) = select its owning point
+   selectDungeonPoint(td.d);
+  }
+  return;}
  if(spawnDrag){
   const sd=spawnDrag;spawnDrag=null;
   if(sd.moved){
@@ -394,6 +450,8 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
   const dd=dotDrag;dotDrag=null;
   if(!dd.moved){ // CLICK on a dest in edit mode: select for deletion
    dd.d.x=dd.sx;dd.d.y=dd.sy;
+   if(document.getElementById("editDungeon").checked&&dd.d.dng){
+    selectDungeonPoint(dd.d);return;} // dungeon point: dungeon-flavored select
    destSel=dd.d;wpSel=null;
    document.getElementById("info").textContent=
     `[dest] ${dd.d.n} (${dd.d.t}, ${dd.d.c})\nat (${dd.d.x},${dd.d.y},${dd.d.z})\n`+
@@ -412,10 +470,15 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
  if(drag&&moved<5){
   if(editSpawns.checked)spawnClick(e.clientX,e.clientY);
   else if(editZones.checked)editClick(e.clientX,e.clientY);
+  else if(document.getElementById("editDungeon").checked)dungeonClick(e.clientX,e.clientY);
   else inspect(e.clientX,e.clientY);
  }
  drag=null;});
 addEventListener("mousemove",e=>{
+ if(dgTargetDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  if(nx!==dgTargetDrag.tx||ny!==dgTargetDrag.ty)dgTargetDrag.moved=true;
+  dgTargetDrag.tx=nx;dgTargetDrag.ty=ny;
+  dgTargetDrag.d.tx=nx;dgTargetDrag.d.ty=ny;draw();return;} // live tether preview
  if(spawnDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
   if(nx!==spawnDrag.s.X||ny!==spawnDrag.s.Y)spawnDrag.moved=true;
   spawnDrag.s.X=nx;spawnDrag.s.Y=ny;draw();return;}
@@ -658,7 +721,10 @@ document.getElementById("editZones").onchange=function(){
  drawPts=[];selZone=-1;
  if(this.checked){const es=document.getElementById("editSpawns");
   if(es.checked){es.checked=false;document.getElementById("spawnCtl").style.display="none";
-   spawnSel=null;document.getElementById("spApply").style.display="none";}}
+   spawnSel=null;document.getElementById("spApply").style.display="none";}
+  const ed=document.getElementById("editDungeon");
+  if(ed.checked){ed.checked=false;document.getElementById("dungeonCtl").style.display="none";
+   dgTargetArm=false;}}
  document.getElementById("zoneCtl").style.display=this.checked?"block":"none";
  draw();};
 document.getElementById("zKind").onchange=function(){
@@ -723,7 +789,10 @@ document.getElementById("spApply").onclick=function(){
 document.getElementById("editSpawns").onchange=function(){
  if(this.checked){const ez=document.getElementById("editZones");
   if(ez.checked){ez.checked=false;document.getElementById("zoneCtl").style.display="none";
-   drawPts=[];selZone=-1;}}
+   drawPts=[];selZone=-1;}
+  const ed=document.getElementById("editDungeon");
+  if(ed.checked){ed.checked=false;document.getElementById("dungeonCtl").style.display="none";
+   dgTargetArm=false;}}
  document.getElementById("spawnCtl").style.display=this.checked?"block":"none";
  spawnSel=null;document.getElementById("spApply").style.display="none";
  refreshWhatList();
@@ -746,6 +815,82 @@ addEventListener("keydown",e=>{
     r.ok?`deleted spawn #${id} (${r.remaining} remain)\nRun [GenerateCustomSpawners.`
         :"delete failed: "+r.error;
     spawnSel=null;document.getElementById("spApply").style.display="none";loadData();});}}});
+// ---- dungeon editor ----
+let dgTargetArm=false, dgTargetDrag=null;
+function findDungeonPointNear(tx,ty){
+ const tol=Math.max(2,9/scale);let best=null,bd=tol;
+ for(const d of DESTS){if(!d.dng)continue;
+  const dd=Math.max(Math.abs(tx-d.x),Math.abs(ty-d.y));if(dd<bd){bd=dd;best=d;}}
+ return best;}
+// Select a dungeon point: highlight it, sync the controls, show its details.
+function selectDungeonPoint(hit){
+ destSel=hit;dgTargetArm=false;
+ document.getElementById("info").textContent=
+  `[dungeon] ${hit.n}\n${hit.t} — ${hit.dng} L${hit.lvl}\nat (${hit.x},${hit.y},${hit.z})`+
+  (hit.tx!=null?`\ntarget → (${hit.tx},${hit.ty},${hit.tz}) L${hit.tl}`:"")+
+  `\ndrag dot / arrival / target square to move\n'Set target'+click = set teleport · Delete · Esc`;
+ if(hit.dng)document.getElementById("dgName").value=hit.dng;
+ if(hit.lvl!=null)document.getElementById("dgLevel").value=hit.lvl;
+ document.getElementById("dgType").value=hit.t;
+ draw();}
+function dungeonClick(px,py){
+ const tx=Math.round(ox+px/scale),ty=Math.round(oy+py/scale);
+ // Arming a target set? this click sets the selected teleporter's target.
+ if(dgTargetArm&&destSel){
+  const tl=+document.getElementById("dgTargetLevel").value||0;
+  fetch("/dungeon_target",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name:destSel.n,x:tx,y:ty,targetlevel:tl})})
+  .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+   r.ok?`'${r.name}' target → (${r.tx},${r.ty},${r.tz}) level ${r.targetlevel}\nRun [ReloadDestinations.`
+       :"target failed: "+r.error;dgTargetArm=false;loadData();});
+  return;}
+ // Click an existing dungeon point = select it (and sync the controls).
+ const hit=findDungeonPointNear(tx,ty);
+ if(hit){selectDungeonPoint(hit);return;}
+ // Empty ground = place a new point of the current type.
+ const dungeon=document.getElementById("dgName").value.trim();
+ if(!dungeon){document.getElementById("info").textContent=
+   "enter a dungeon name first (field at left)";return;}
+ const level=+document.getElementById("dgLevel").value||0;
+ const type=document.getElementById("dgType").value;
+ fetch("/dungeon_add",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({dungeon:dungeon,level:level,type:type,x:tx,y:ty})})
+ .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+  r.ok?`+ ${r.type} '${r.name}' at (${r.x},${r.y},${r.z})`+
+       (r.gap?`\n⚠ nearest wp ${r.wp_dist}t — entrance may be unreachable; add a waypoint`:"")+
+       (type!=="DungeonRoom"?"\n'Set target' + click = where it teleports.":"")+
+       `\nRun [ReloadDestinations.`
+      :"add failed: "+r.error;loadData();});}
+document.getElementById("dgSetTarget").onclick=function(){
+ if(!destSel||!destSel.dng){document.getElementById("info").textContent=
+   "select a dungeon teleporter point first (click it)";return;}
+ dgTargetArm=true;
+ document.getElementById("info").textContent=
+  `arming target for '${destSel.n}' — click the tile it should teleport to `+
+  `(target level ${document.getElementById("dgTargetLevel").value}). Esc cancels.`;};
+document.getElementById("editDungeon").onchange=function(){
+ if(this.checked){ // mutually exclusive with the other edit modes
+  ["editZones","editSpawns"].forEach(id=>{const o=document.getElementById(id);
+   if(o.checked){o.checked=false;o.onchange();}});
+ }
+ document.getElementById("dungeonCtl").style.display=this.checked?"block":"none";
+ dgTargetArm=false;destSel=null;
+ document.getElementById("info").textContent=this.checked
+  ?"EDIT dungeon: name+level+type, click ground to place a point. Click a point "+
+   "to select. Drag the dot, its arrival diamond, or its target square to move "+
+   "them. 'Set target' + click sets where a teleporter sends bots."
+  :"Click a dot for details.";
+ draw();};
+addEventListener("keydown",e=>{
+ if(!document.getElementById("editDungeon").checked)return;
+ if(e.key==="Escape"){destSel=null;dgTargetArm=false;draw();}
+ else if((e.key==="Delete"||e.key==="Backspace")&&destSel&&destSel.dng){
+  if(confirm(`Delete dungeon point '${destSel.n}'?`)){
+   fetch("/dest_del",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:destSel.n})})
+   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+    r.ok?`deleted '${r.name}' (${r.remaining} remain)\nRun [ReloadDestinations.`
+        :"delete failed: "+r.error;destSel=null;loadData();});}}});
 // ---- live view helpers ----
 function liveFilterSet(){const s=new Set();
  document.querySelectorAll(".lvF").forEach(c=>{if(c.checked)s.add(c.dataset.k);});return s;}

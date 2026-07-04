@@ -18,6 +18,7 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Server;
 
@@ -32,10 +33,25 @@ namespace Server.CustomBots
         private static readonly string ReloadAck = Live("reload_ack.json");
         private static readonly string GenReq    = Live("genbots_request.txt");
         private static readonly string GenAck    = Live("genbots_ack.json");
+        private static readonly string AuditReq  = Live("audit_request.txt");
+        private static readonly string AuditAck  = Live("audit_report.json");
+        private static readonly string WalkReq   = Live("walkmap_request.txt");
+        private static readonly string WalkAck   = Live("walkmap.pgm");
+        private static readonly string PartyReq  = Live("party_request.txt");
+        private static readonly string PartyAck  = Live("party_ack.json");
+        private static readonly string DeathReq  = Live("death_request.txt");
+        private static readonly string DeathAck  = Live("death_ack.json");
+        private static readonly string FactionReq = Live("faction_request.txt");
+        private static readonly string FactionAck = Live("faction_ack.json");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
         private static long _lastGen = -1;
+        private static long _lastAudit = -1;
+        private static long _lastWalk = -1;
+        private static long _lastParty = -1;
+        private static long _lastDeath = -1;
+        private static long _lastFaction = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -45,6 +61,11 @@ namespace Server.CustomBots
             // Seed from existing tokens so stale files at boot don't trigger.
             _lastReload = ReadToken(ReloadReq) ?? 0;
             _lastGen    = ReadToken(GenReq) ?? 0;
+            _lastAudit  = ReadToken(AuditReq) ?? 0;
+            _lastWalk   = ReadWalkRequest(out _, out _, out _, out _) ?? 0;
+            _lastParty  = ReadToken(PartyReq) ?? 0;
+            _lastDeath  = ReadToken(DeathReq) ?? 0;
+            _lastFaction = ReadToken(FactionReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -80,6 +101,206 @@ namespace Server.CustomBots
                 _lastGen = gen.Value;
                 DoRegen(gen.Value);
             }
+
+            var audit = ReadToken(AuditReq);
+            if (audit != null && audit.Value != _lastAudit)
+            {
+                _lastAudit = audit.Value;
+                DoAudit(audit.Value);
+            }
+
+            var walk = ReadWalkRequest(out int wx0, out int wy0, out int wx1, out int wy1);
+            if (walk != null && walk.Value != _lastWalk)
+            {
+                _lastWalk = walk.Value;
+                DoWalkmap(walk.Value, wx0, wy0, wx1, wy1);
+            }
+
+            var partyTok = ReadToken(PartyReq);
+            if (partyTok != null && partyTok.Value != _lastParty)
+            {
+                _lastParty = partyTok.Value;
+                DoFormParty(partyTok.Value);
+            }
+
+            var deathTok = ReadToken(DeathReq);
+            if (deathTok != null && deathTok.Value != _lastDeath)
+            {
+                _lastDeath = deathTok.Value;
+                DoTestDeath(deathTok.Value);
+            }
+
+            var factionTok = ReadToken(FactionReq);
+            if (factionTok != null && factionTok.Value != _lastFaction)
+            {
+                _lastFaction = factionTok.Value;
+                DoTestFactionFight(factionTok.Value);
+            }
+        }
+
+        // death_request.txt: kill a random eligible surface bot so headless
+        // soaks can exercise the full death story (ghost → healer walk →
+        // res → corpse run) on demand. Watch the [death] console lines.
+        private static void DoTestDeath(long token)
+        {
+            var candidates = new List<PlayerBot>();
+            foreach (var m in World.Mobiles.Values)
+            {
+                if (m is PlayerBot bot && !bot.Deleted && bot.Alive &&
+                    !bot.LifecycleExempt && !bot.LoggingOut &&
+                    !BotPartyManager.IsInParty(bot) &&
+                    !DungeonRegistry.IsInDungeon(bot))
+                {
+                    candidates.Add(bot);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                WriteAck(DeathAck, $"{{\"token\":{token},\"killed\":false}}");
+                return;
+            }
+
+            var victim = candidates[Utility.Random(candidates.Count)];
+            Console.WriteLine($"[EditorReload] test death: killing {victim.Name} (token {token}).");
+            victim.Kill();
+            WriteAck(DeathAck,
+                $"{{\"token\":{token},\"killed\":true," +
+                $"\"name\":\"{victim.Name.Replace("\"", "\\\"")}\"," +
+                $"\"x\":{victim.X},\"y\":{victim.Y}}}");
+        }
+
+        // faction_request.txt: force an Order-vs-Chaos fight (teleporting
+        // one fighter to the other if none are colocated) — headless
+        // equivalent of [BotFactions fight.
+        private static void DoTestFactionFight(long token)
+        {
+            bool started = false;
+            try
+            {
+                started = BotFactionWar.TryStartFight(teleport: true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] faction fight: {ex.Message}");
+            }
+            WriteAck(FactionAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
+        }
+
+        // party_request.txt: force-form a hunting party (= [BotParties form
+        // without a client) so headless soaks can exercise the full party
+        // pipeline on demand. Ack reports who formed and where they're headed.
+        private static void DoFormParty(long token)
+        {
+            BotParty party = null;
+            try { party = BotPartyManager.TryFormParty(null); }
+            catch (Exception ex) { Console.WriteLine($"[EditorReload] party: {ex.Message}"); }
+
+            if (party == null)
+            {
+                Console.WriteLine($"[EditorReload] party request: no eligible leader/recruits (token {token}).");
+                WriteAck(PartyAck, $"{{\"token\":{token},\"formed\":false}}");
+                return;
+            }
+
+            var members = new List<string>();
+            foreach (var m in party.Members)
+            {
+                members.Add("\"" + m.Name.Replace("\"", "\\\"") + "\"");
+            }
+            WriteAck(PartyAck,
+                $"{{\"token\":{token},\"formed\":true," +
+                $"\"leader\":\"{party.Leader.Name.Replace("\"", "\\\"")}\"," +
+                $"\"dungeon\":\"{party.Target.Dungeon}\"," +
+                $"\"members\":[{string.Join(",", members)}]}}");
+        }
+
+        // walkmap_request.txt: "token x0 y0 x1 y1" — dump per-tile
+        // walkability of the rect to Data/Live/walkmap.pgm (P5, 255 =
+        // standable). Lets offline tools plan waypoints against the
+        // server's REAL movement rules instead of guessing from map art.
+        private static long? ReadWalkRequest(out int x0, out int y0, out int x1, out int y1)
+        {
+            x0 = y0 = x1 = y1 = 0;
+            try
+            {
+                if (!File.Exists(WalkReq)) return null;
+                var parts = File.ReadAllText(WalkReq).Split(
+                    new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 5 || !long.TryParse(parts[0], out var t)) return null;
+                x0 = int.Parse(parts[1]); y0 = int.Parse(parts[2]);
+                x1 = int.Parse(parts[3]); y1 = int.Parse(parts[4]);
+                return t;
+            }
+            catch
+            {
+                return null; // mid-write; retry next tick
+            }
+        }
+
+        private static void DoWalkmap(long token, int x0, int y0, int x1, int y1)
+        {
+            const int MaxSide = 512; // bound the game-thread stall
+            if (x1 < x0) (x0, x1) = (x1, x0);
+            if (y1 < y0) (y0, y1) = (y1, y0);
+            x1 = Math.Min(x1, x0 + MaxSide - 1);
+            y1 = Math.Min(y1, y0 + MaxSide - 1);
+            int w = x1 - x0 + 1, h = y1 - y0 + 1;
+
+            var map = Map.Felucca;
+            var bytes = new byte[w * h];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    bytes[y * w + x] = Walkable.TryFindSeedZ(map, x0 + x, y0 + y, 0, out _)
+                        ? (byte)255
+                        : (byte)0;
+                }
+            }
+
+            try
+            {
+                using var fs = new FileStream(WalkAck, FileMode.Create, FileAccess.Write);
+                var header = System.Text.Encoding.ASCII.GetBytes($"P5\n{w} {h}\n255\n");
+                fs.Write(header, 0, header.Length);
+                fs.Write(bytes, 0, bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] walkmap write failed: {ex.Message}");
+            }
+
+            Console.WriteLine(
+                $"[EditorReload] walkmap ({x0},{y0})-({x1},{y1}) {w}x{h} written (token {token}).");
+        }
+
+        // Full nav-data verification without a client: the [AuditNav data
+        // checks plus the [auditedges walkability flood, results to
+        // Data/Live/audit_report.json. Lets data authored outside the game
+        // (map editor, scripts, Claude) be verified headlessly.
+        private static void DoAudit(long token)
+        {
+            var lines = new List<string>();
+            try { lines.AddRange(AuditNavCommand.Run()); }
+            catch (Exception ex) { lines.Add($"AuditNav failed: {ex.Message}"); }
+            try
+            {
+                foreach (var l in AuditEdgesCommand.Scan())
+                {
+                    lines.Add($"EDGEWALK: {l}");
+                }
+            }
+            catch (Exception ex) { lines.Add($"auditedges scan failed: {ex.Message}"); }
+
+            Console.WriteLine($"[EditorReload] audit ran: {lines.Count} finding(s) (token {token}).");
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                lines[i] = "\"" + lines[i].Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+            }
+            WriteAck(AuditAck,
+                $"{{\"token\":{token},\"findings\":[{string.Join(",", lines)}]}}");
         }
 
         private static void DoReload(long token)

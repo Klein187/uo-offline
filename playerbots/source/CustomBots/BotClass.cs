@@ -23,11 +23,26 @@ namespace Server.CustomBots
         Fencer   = 2,
         Archer   = 3,
         Tamer    = 4,
-        Crafter  = 5,
+        Crafter  = 5,  // LEGACY — no longer rolled; old saves migrate to Smith/Tailor/Fisherman
         Healer   = 6,
         Thief    = 7,
         Bard     = 8,
         Ranger   = 9,
+
+        // Artisan classes — each replaces a former Crafter subtype. They
+        // station at, and "work", a specific destination (see StationFor).
+        Smith     = 10,  // forge — weapons & armor
+        Tailor    = 11,  // tailor shop — cloth & leather
+        Fisherman = 12,  // dock — fish & rare sea finds
+
+        // Gatherer classes — the "lumberjack in the middle of nowhere"
+        // (IDEAS 1.5). They work synthetic wilderness GatherSpots, fill
+        // their packs with raw materials, and haul the load back to town
+        // (bank, forge, carpenter) — the visible supply side of the
+        // economy. They carry real tools that double as weapons, so a
+        // lumberjack defends itself with its axe.
+        Lumberjack = 13, // forests — logs
+        Miner      = 14, // mountains — ore
     }
 
     public static class BotClassHelper
@@ -37,16 +52,22 @@ namespace Server.CustomBots
         // on more specialized ones.
         private static readonly (BotClass cls, int weight)[] ClassWeights = new[]
         {
-            (BotClass.Warrior, 18),
-            (BotClass.Mage,    16),
-            (BotClass.Fencer,  12),
-            (BotClass.Archer,  12),
-            (BotClass.Crafter, 12),
-            (BotClass.Healer,   8),
-            (BotClass.Bard,     8),
-            (BotClass.Ranger,   6),
-            (BotClass.Tamer,    5),
-            (BotClass.Thief,    3),
+            (BotClass.Warrior,  15),
+            (BotClass.Mage,     15),
+            (BotClass.Fencer,   11),
+            (BotClass.Archer,   11),
+            // The old Crafter share (12) split across the three artisans.
+            (BotClass.Smith,     5),
+            (BotClass.Tailor,    4),
+            (BotClass.Fisherman, 4),
+            (BotClass.Healer,    8),
+            (BotClass.Bard,      8),
+            (BotClass.Ranger,    6),
+            (BotClass.Tamer,     5),
+            (BotClass.Thief,     3),
+            // Wilderness gatherers — a small but very visible population.
+            (BotClass.Lumberjack, 3),
+            (BotClass.Miner,      2),
         };
 
         public static BotClass RollRandom()
@@ -77,8 +98,36 @@ namespace Server.CustomBots
                 BotClass.Thief   => "Thief",
                 BotClass.Bard    => "Bard",
                 BotClass.Ranger  => "Ranger",
+                BotClass.Smith     => "Blacksmith",
+                BotClass.Tailor    => "Tailor",
+                BotClass.Fisherman => "Fisherman",
+                BotClass.Lumberjack => "Lumberjack",
+                BotClass.Miner      => "Miner",
                 _                => "Wanderer",
             };
         }
+
+        // The destination type an artisan class stations at and "works".
+        // Returns null for non-artisan classes (they have no work station).
+        public static DestinationType? StationFor(BotClass cls)
+        {
+            return cls switch
+            {
+                BotClass.Smith     => DestinationType.Forge,
+                BotClass.Tailor    => DestinationType.VendorTailor,
+                BotClass.Fisherman => DestinationType.Dock,
+                _                  => null,
+            };
+        }
+
+        public static bool IsArtisan(BotClass cls) =>
+            cls is BotClass.Smith or BotClass.Tailor or BotClass.Fisherman;
+
+        // Wilderness resource gatherers. NOT artisans: artisans station at
+        // a town fixture forever; gatherers run a loop (wilderness spot →
+        // work → haul the load to town → back out). They also fight — the
+        // tool is a real weapon.
+        public static bool IsGatherer(BotClass cls) =>
+            cls is BotClass.Lumberjack or BotClass.Miner;
     }
 }

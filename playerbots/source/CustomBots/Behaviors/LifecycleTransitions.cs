@@ -3,17 +3,19 @@
 //
 // Each behavior has a placement policy:
 //   - BankSitter → teleport to a random bank
-//   - Adventurer → enter a random dungeon (multi-stage; see DungeonEntry)
+//   - Adventurer → stay in place (hunt the local wilderness)
 //   - Traveler / Wander / Idle → stay in place
 //
-// Most placements are SYNCHRONOUS: the bot is moved immediately and the
-// caller (BotLifecycleManager.TransitionBot) swaps Behavior right after.
+// All placements here are SYNCHRONOUS: the bot is moved (or left) immediately
+// and the caller (BotLifecycleManager.TransitionBot) swaps Behavior right
+// after.
 //
-// Adventurer placement is ASYNCHRONOUS: the bot starts an entry sequence
-// (walk-or-teleport to entrance, then teleport to interior, possibly via
-// Recall). The behavior swap is deferred until the bot is actually inside.
-// In that case ApplyPlacement returns IsAsync=true and the caller skips
-// the synchronous Behavior swap; DungeonEntry handles it via timer.
+// DUNGEONS are no longer reached by teleporting an Adventurer to a hardcoded
+// coordinate. Instead a bot rolls a DungeonEntrance destination as a normal
+// Traveler, walks onto the surface Teleporter item, the game carries it
+// inside, and TravelerBehavior converts it to a DungeonCrawler (see
+// DungeonCrawlerBehavior / TravelerBehavior's entry handoff). A lifecycle
+// "Adventurer" now just hunts wherever it already is.
 // =========================================================================
 
 using System;
@@ -48,7 +50,10 @@ namespace Server.CustomBots
                     return PlaceAtRandomBank(bot);
 
                 case "Adventurer":
-                    return PlaceAtRandomDungeon(bot);
+                    // Hunts the local wilderness from wherever it is. Dungeon
+                    // diving is no longer a placement — it happens when a
+                    // Traveler rolls a DungeonEntrance and walks into it.
+                    return new PlacementResult("stays in place (hunts locally)");
 
                 case "Traveler":
                 case "Wander":
@@ -76,26 +81,6 @@ namespace Server.CustomBots
 
             bot.MoveToWorld(new Point3D(fx, fy, fz), Map.Felucca);
             return new PlacementResult($"placed at {city} bank ({fx},{fy},{fz})");
-        }
-
-        private static PlacementResult PlaceAtRandomDungeon(PlayerBot bot)
-        {
-            var insideCoords  = BotPanelActions.DungeonInsideCoords;
-            var entranceCoords = BotPanelActions.DungeonCoords;
-            if (insideCoords == null || insideCoords.Count == 0)
-                return new PlacementResult("no dungeon coords available; stays in place");
-
-            var keys = new List<string>(insideCoords.Keys);
-            string dungeon = keys[Utility.Random(keys.Count)];
-
-            // Hand off to DungeonEntry. It picks the right path (recall, walk
-            // from waypoint, or teleport-to-entrance + pause) and schedules
-            // the behavior swap once the bot is actually inside.
-            DungeonEntry.BeginEntry(bot, dungeon);
-
-            return new PlacementResult(
-                $"entering {dungeon} (entry sequence in progress)",
-                isAsync: true);
         }
     }
 }

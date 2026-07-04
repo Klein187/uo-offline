@@ -13992,27 +13992,25 @@
     },
     {
       "Name": "Compassion Desert Path",
-      "X": 1861,
-      "Y": 792,
-      "Z": 0,
-      "Connects": [
-        "WP 674"
-      ]
+      "X": 1881,
+      "Y": 808,
+      "Z": -1,
+      "Connects": []
     },
     {
       "Name": "Compassion Desert Path 2",
-      "X": 1855,
-      "Y": 827,
-      "Z": 0,
+      "X": 1864,
+      "Y": 838,
+      "Z": -1,
       "Connects": [
         "Compassion Desert Path"
       ]
     },
     {
       "Name": "Compassion Shrine Approach",
-      "X": 1851,
-      "Y": 858,
-      "Z": 0,
+      "X": 1859,
+      "Y": 861,
+      "Z": 7,
       "Connects": [
         "Compassion Desert Path 2"
       ]
@@ -14276,6 +14274,17 @@
       "Z": 0,
       "Connects": [
         "Sacrifice Trail 28"
+      ]
+    },
+    {
+      "Name": "WP 1364",
+      "X": 1874,
+      "Y": 782,
+      "Z": 0,
+      "Connects": [
+        "WP 674",
+        "WP 673",
+        "Compassion Desert Path"
       ]
     }
   ]

@@ -1,0 +1,15 @@
+# Gossip/pk.txt — retelling a PK murder from the event journal.
+# {actor} = victim, {other} = the red, {place}, {when}.
+# Murders are THE talk of the town.
+
+{other} killed {actor} at {place} {when}!!
+did you hear? {other} pked {actor} at {place}
+{actor} got pked at {place} {when}, dry looted too
+stay away from {place}, {other} killed {actor} there {when}
+{other} is red, murdered {actor} near {place}
+heard {actor} got jumped by {other} at {place}
+{other} got {actor} at {place}. someone should do something
+another murder at {place}. {actor} this time
+watch yourself at {place}, {other} killed {actor} {when}
+poor {actor}. {other} cut them down at {place}
+{other} strikes again, {actor} dead at {place}

@@ -54,6 +54,22 @@ namespace Server.CustomBots
         public IReadOnlyList<ArrivalSpot> Arrivals { get; init; } =
             System.Array.Empty<ArrivalSpot>();
 
+        // ---- Dungeon scoping (see DungeonCrawlerBehavior / DungeonRegistry) ----
+        // Dungeon tag. Empty for ordinary world destinations. A crawler only
+        // sees/rolls points whose Dungeon matches its own — this is the
+        // "dungeon tag scopes everything" mechanism from the design.
+        public string Dungeon           { get; init; } = "";
+
+        // Which floor this point sits on. 0 = surface. Entrances are surface
+        // points whose TargetLevel is the level they deposit a bot onto.
+        public int Level                { get; init; }
+
+        // For teleporter points (DungeonEntrance/Descend/Ascend): where the
+        // bot is placed after using it, and the level it lands on. Null Target
+        // means "use Location" (a non-teleporter point).
+        public Point3D? Target          { get; init; }
+        public int? TargetLevel         { get; init; }
+
         public ArrivalSpot PickArrival()
         {
             if (Arrivals != null && Arrivals.Count > 0)
@@ -90,23 +106,100 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // Append synthetic (code-generated) destinations — gather spots.
+        // Skips names already present, so re-registration after a catalog
+        // reload is idempotent.
+        // -------------------------------------------------------------------
+        public static void RegisterSynthetic(IReadOnlyList<BotDestination> dests)
+        {
+            if (dests == null || dests.Count == 0) return;
+            lock (_lock)
+            {
+                foreach (var d in dests)
+                {
+                    if (d == null || string.IsNullOrEmpty(d.Name) ||
+                        _byName.ContainsKey(d.Name))
+                    {
+                        continue;
+                    }
+                    _all.Add(d);
+                    _byName[d.Name] = d;
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------
         // Weighted-random pick. Iterates all destinations, computes each's
         // weight for the bot's class, rolls weighted random.
         //
+        // The bot-aware overload layers the living-shard modifiers on top
+        // of the class weight:
+        //   - HOME BIAS (IDEAS 1.3): destinations in the bot's home city
+        //     weigh extra, so regulars emerge — the same smith keeps
+        //     turning up at the Britain forge.
+        //   - DANGER (IDEAS 3.3): places with recent murders weigh less;
+        //     danger is information that propagates through the population.
+        //   - HAUL (gatherers): a loaded gatherer overrides everything and
+        //     heads for town (bank / the crafter who buys its material).
+        //
         // Returns null only if there are zero destinations loaded.
         // -------------------------------------------------------------------
-        public static BotDestination PickWeighted(BotClass cls)
+        public static BotDestination PickWeighted(BotClass cls) =>
+            PickWeightedCore(cls, null);
+
+        public static BotDestination PickWeighted(PlayerBot bot) =>
+            PickWeightedCore(bot?.Class ?? BotClass.Warrior, bot);
+
+        private static BotDestination PickWeightedCore(BotClass cls, PlayerBot bot)
         {
             BotDestination[] snapshot;
             lock (_lock) snapshot = _all.ToArray();
 
             if (snapshot.Length == 0) return null;
 
+            bool hauling = bot != null && bot.HaulPending &&
+                           BotClassHelper.IsGatherer(bot.Class);
+
             double total = 0;
             var weights = new double[snapshot.Length];
             for (int i = 0; i < snapshot.Length; i++)
             {
-                double w = DestinationWeights.GetWeight(snapshot[i].Type, cls);
+                var d = snapshot[i];
+                double w;
+
+                if (hauling)
+                {
+                    // Loaded up — take the goods to town. Miners favor the
+                    // forge/smith (their buyer), lumberjacks the carpenter;
+                    // the bank takes anything.
+                    w = d.Type switch
+                    {
+                        DestinationType.Bank => 4.0,
+                        DestinationType.Forge or DestinationType.VendorSmith
+                            when bot.Class == BotClass.Miner => 6.0,
+                        DestinationType.VendorCarpenter
+                            when bot.Class == BotClass.Lumberjack => 6.0,
+                        _ => 0.02,
+                    };
+                }
+                else
+                {
+                    w = DestinationWeights.GetWeight(d.Type, cls);
+                }
+
+                if (w > 0 && bot != null)
+                {
+                    // Home bias — regulars emerge for free.
+                    if (!string.IsNullOrEmpty(bot.HomeCity) &&
+                        string.Equals(d.City, bot.HomeCity, StringComparison.OrdinalIgnoreCase))
+                    {
+                        w *= 2.5;
+                    }
+
+                    // Danger — everyone's heard about the murders there.
+                    w *= BotDangerMap.Multiplier(d);
+                }
+
                 if (w < 0) w = 0;
                 weights[i] = w;
                 total += w;
@@ -244,6 +337,22 @@ namespace Server.CustomBots
                         continue;
                     }
 
+                    // Dungeon scoping fields (all optional; absent on ordinary
+                    // world destinations).
+                    string dungeon = el.TryGetProperty("Dungeon", out var dv)
+                        ? (dv.GetString() ?? "") : "";
+                    int level = el.TryGetProperty("Level", out var lv) ? lv.GetInt32() : 0;
+
+                    Point3D? target = null;
+                    if (el.TryGetProperty("TargetX", out var txv) &&
+                        el.TryGetProperty("TargetY", out var tyv))
+                    {
+                        int tz = el.TryGetProperty("TargetZ", out var tzv) ? tzv.GetInt32() : 0;
+                        target = new Point3D(txv.GetInt32(), tyv.GetInt32(), tz);
+                    }
+                    int? targetLevel = el.TryGetProperty("TargetLevel", out var tlv)
+                        ? tlv.GetInt32() : (int?)null;
+
                     loaded.Add(new BotDestination
                     {
                         Name             = name,
@@ -253,6 +362,10 @@ namespace Server.CustomBots
                         NearestWaypoint  = wpName ?? "",
                         ArrivalPoint     = arrival,
                         Arrivals         = arrivals,
+                        Dungeon          = dungeon,
+                        Level            = level,
+                        Target           = target,
+                        TargetLevel      = targetLevel,
                     });
                 }
                 catch (Exception ex)
@@ -281,6 +394,11 @@ namespace Server.CustomBots
             }
 
             Console.WriteLine($"[DestinationCatalog] loaded {loaded.Count} destination(s) with {warnings} warning(s)");
+
+            // A reload wiped any synthetic entries — let the generators
+            // put theirs back.
+            GatherSpots.OnCatalogReloaded();
+
             return loaded.Count;
         }
     }

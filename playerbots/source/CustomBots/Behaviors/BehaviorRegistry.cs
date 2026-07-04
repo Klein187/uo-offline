@@ -26,10 +26,27 @@ namespace Server.CustomBots
             Register("Wander",     () => new WanderBehavior());
             Register("BankSitter", () => new BankSitterBehavior());
             Register("Adventurer", () => new AdventurerBehavior());
+            Register("DungeonCrawler", () => new DungeonCrawlerBehavior());
             Register("Traveler",   () => new TravelerBehavior());
             Register("Shopper",    () => new ShopperBehavior());
             Register("Crafter",    () => new CrafterBehavior());
             Register("PK",         () => new PKBehavior());
+            // Parties are transient — a "PartyMember" loaded from a save has
+            // no party anymore. The behavior self-heals to Traveler on its
+            // first tick, so constructing it directly is safe.
+            Register("PartyMember", () => new PartyMemberBehavior());
+            // Death-flow behaviors. A Ghost handles both states (dead →
+            // haunt; alive → corpse run). "CorpseReclaim" from a stale save
+            // maps to Traveler — the corpse it knew is long gone.
+            Register("Ghost",         () => new GhostBehavior());
+            Register("CorpseReclaim", () => new TravelerBehavior());
+            // Street characters + gatherers + duelists. A Duelist loaded
+            // from a save has no duel (they're transient) — its Tick
+            // self-heals to BankSitter.
+            Register("Gatherer", () => new GathererBehavior());
+            Register("Beggar",   () => new BeggarBehavior());
+            Register("Newbie",   () => new NewbieBehavior());
+            Register("Duelist",  () => new DuelistBehavior());
         }
 
         public static void Register(string name, Func<PlayerBotBehavior> factory)

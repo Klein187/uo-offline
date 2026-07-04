@@ -1,0 +1,8 @@
+# Gossip/duel.txt — retelling a bank duel.
+# {actor} = winner, {other} = loser, {place}, {when}.
+
+{actor} beat {other} in a duel at {place} {when}
+did you see the duel at {place}? {actor} won
+{actor} and {other} dueled at {place}. {actor} took it
+good duel at {place} {when} — {actor} over {other}
+{other} lost to {actor} outside {place}. wants a rematch

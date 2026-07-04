@@ -56,5 +56,20 @@ namespace Server.CustomBots
             _behaviorName = behaviorName ?? "Idle";
             Name = $"PlayerBot Spawner ({_behaviorName})";
         }
+
+        // ---------------- Session-curve gate ----------------
+
+        // Every refill asks the session layer first. This is how the
+        // daily population curve shapes the way UP: after the 5am trough,
+        // spawners are allowed to backfill only as the curve target
+        // climbs through the morning.
+        public override void Spawn()
+        {
+            if (!BotSessionManager.AllowSpawn())
+            {
+                return;
+            }
+            base.Spawn();
+        }
     }
 }

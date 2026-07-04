@@ -4944,9 +4944,16 @@
       "Type": "Shrine",
       "City": "Britain",
       "NearestWaypoint": "Compassion Shrine Approach",
-      "ArrivalX": 1851,
-      "ArrivalY": 859,
-      "ArrivalZ": 0
+      "Arrivals": [
+        {
+          "X": 1858,
+          "Y": 868,
+          "Z": -1,
+          "Waypoints": [
+            "Compassion Shrine Approach"
+          ]
+        }
+      ]
     },
     {
       "Name": "Sacrifice Shrine",

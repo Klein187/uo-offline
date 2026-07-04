@@ -82,6 +82,7 @@ namespace Server.CustomBots
         // points read as a spread-out crowd rather than a clump on one tile.
         private const int BankSittersPerArrival = 2;
         private const int ShoppersPerArrival    = 1;
+        private const int CraftersPerArrival    = 1;
 
         public static void Configure()
         {
@@ -330,6 +331,13 @@ namespace Server.CustomBots
                     }
                 }
 
+                // --- Pinned crafters: like the bank/vendor crowds, seed a
+                // working crafter at each craft-station arrival point. The
+                // subtype is forced to match the station (forge -> Smith,
+                // dock -> Fisherman, tailor shop -> Tailor) via the
+                // "Crafter:<Spec>" behavior-name convention.
+                cityPinned += PinCrafters(city, CrafterStations, ref placed, from);
+
                 // --- Roaming population: the rest of the city's share, spread
                 // across jittered city points as Travelers/Wanderers (which
                 // also become Shoppers/BankSitters organically on arrival).
@@ -417,6 +425,44 @@ namespace Server.CustomBots
         {
             DestinationType.Bank,
         };
+
+        // Craft stations and the artisan class that works each. A pinned
+        // artisan is seeded at every arrival point of these destination types,
+        // with its class forced to match (so a forge gets a Smith, not a
+        // random bot). Mirrors the bank/vendor pinned-crowd logic.
+        private static readonly (DestinationType station, BotClass cls)[] CrafterStations =
+        {
+            (DestinationType.Forge,        BotClass.Smith),
+            (DestinationType.Dock,         BotClass.Fisherman),
+            (DestinationType.VendorTailor, BotClass.Tailor),
+        };
+
+        // Seed one artisan at each craft-station arrival point in the city,
+        // forcing the class to match the station. The class is carried in the
+        // behavior name as "Crafter:<Class>" (PlayerBot.OnAfterSpawn parses
+        // it). Returns how many bots were pinned (for roaming accounting).
+        private static int PinCrafters(
+            CityRegion city,
+            (DestinationType station, BotClass cls)[] stations,
+            ref int placed,
+            Mobile from)
+        {
+            int pinned = 0;
+            foreach (var (station, cls) in stations)
+            {
+                var spots = BuildArrivalSpots(city, new HashSet<DestinationType> { station });
+                foreach (var pt in spots)
+                {
+                    if (TryPlace(city.MapName, pt.X, pt.Y, pt.Z,
+                                 $"Crafter:{cls}", CraftersPerArrival, 3, from))
+                    {
+                        placed++;
+                        pinned += CraftersPerArrival;
+                    }
+                }
+            }
+            return pinned;
+        }
 
         // Spawn spots for a destination-pinned behavior: the ARRIVAL POINTS
         // placed in the map editor for each matching destination in this city

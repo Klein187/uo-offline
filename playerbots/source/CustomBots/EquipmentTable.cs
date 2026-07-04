@@ -78,6 +78,11 @@ namespace Server.CustomBots
                               Utility.RandomMinMax(5, 20));
                     MaybeAddToPack(bot, "Server.Items.HealPotion", 0.5,
                                    Utility.RandomMinMax(1, 4));
+                    // ...and often a backup weapon riding in the pack.
+                    if (Utility.RandomDouble() < 0.30)
+                    {
+                        PackSpareWeapon(bot, tier);
+                    }
                     break;
 
                 case BotClass.Mage:
@@ -103,30 +108,14 @@ namespace Server.CustomBots
                     break;
 
                 case BotClass.Crafter:
-                    if (bot.CrafterSpec == CrafterType.Fisherman)
-                    {
-                        // Fishing loot — what a day at the docks produces.
-                        // Use stock ModernUO fishing-product types via
-                        // reflection; missing types fail silently.
-                        MaybeAddToPack(bot, "Server.Items.Fish", 0.85,
-                                       Utility.RandomMinMax(2, 6));
-                        MaybeAddToPack(bot, "Server.Items.RawFishSteak", 0.5,
-                                       Utility.RandomMinMax(1, 4));
-                        MaybeAddToPack(bot, "Server.Items.Lobster", 0.30,
-                                       Utility.RandomMinMax(1, 3));
-                        MaybeAddToPack(bot, "Server.Items.Crab", 0.20,
-                                       Utility.RandomMinMax(1, 2));
-                        // A spare reel — a fisherman always has one.
-                        MaybeAddToPack(bot, "Server.Items.FishingPole", 0.15, 1);
-                    }
-                    else
-                    {
-                        // A few tools / raw materials.
-                        MaybeAddToPack(bot, "Server.Items.IronIngot", 0.6,
-                                       Utility.RandomMinMax(5, 25));
-                        MaybeAddToPack(bot, "Server.Items.Bandage", 0.4,
-                                       Utility.RandomMinMax(3, 10));
-                    }
+                case BotClass.Smith:
+                case BotClass.Tailor:
+                case BotClass.Fisherman:
+                    // Seed a few finished pieces of the bot's trade so a
+                    // freshly-seen artisan already looks established. The set
+                    // is data-driven per class (CrafterProfiles.StarterProps)
+                    // — the same engine the production loop draws from.
+                    SeedCrafterStarterProps(bot);
                     break;
 
                 case BotClass.Bard:
@@ -134,14 +123,577 @@ namespace Server.CustomBots
                                    Utility.RandomMinMax(1, 3));
                     break;
 
+                case BotClass.Lumberjack:
+                case BotClass.Miner:
+                    // A working stash from the last shift, bandages for the
+                    // wolf bites, and camp kit for nights in the wild.
+                    AddToPack(bot, cls == BotClass.Miner
+                        ? "Server.Items.IronOre" : "Server.Items.Log",
+                        Utility.RandomMinMax(3, 15));
+                    AddToPack(bot, "Server.Items.Bandage",
+                              Utility.RandomMinMax(3, 10));
+                    MaybeAddToPack(bot, "Server.Items.Kindling", 0.5,
+                                   Utility.RandomMinMax(2, 5));
+                    break;
+
                 case BotClass.Tamer:
                     AddToPack(bot, "Server.Items.Bandage",
                               Utility.RandomMinMax(5, 15));
+                    // Something to keep the pets keen.
+                    MaybeAddToPack(bot, "Server.Items.RawRibs", 0.5,
+                                   Utility.RandomMinMax(2, 6));
                     break;
             }
 
-            // --- A common odd-and-end most travelers carry ---
+            // --- Spell scrolls — casters carry a working selection ---
+            AddSpellScrolls(bot, cls, tier);
+
+            // --- Travel magic — marked recall runes ---
+            AddTravelMagic(bot, cls, tier);
+
+            // --- Potion belt — heal/cure/refresh and the odd extra ---
+            AddPotionKit(bot, cls, tier);
+
+            // --- Valuables — gems and jewelry, tier-scaled ---
+            AddValuables(bot, cls, tier);
+
+            // --- A bag or pouch with themed contents inside ---
+            AddBagOfGoodies(bot, cls, tier);
+
+            // --- The random-person layer — class-blind grab bag ---
+            AddRandomPersonLayer(bot, tier);
+
+            // --- Odds and ends most travelers carry ---
+            AddOddsAndEnds(bot, cls);
+        }
+
+        // -------------------------------------------------------------------
+        // The random-person layer. Real players' packs were never on-theme:
+        // a mage hauled a magic axe he looted and can't use, a warrior kept
+        // scrolls he can't read to sell, a smith bought reagents for a
+        // friend. Every bot gets 1-3 draws from this CLASS-BLIND grab bag —
+        // it's what breaks the "RPG vendor NPC" feel.
+        // -------------------------------------------------------------------
+        private static readonly string[] ReagentTypes =
+        {
+            "Server.Items.BlackPearl",
+            "Server.Items.Bloodmoss",
+            "Server.Items.Garlic",
+            "Server.Items.Ginseng",
+            "Server.Items.MandrakeRoot",
+            "Server.Items.Nightshade",
+            "Server.Items.SulfurousAsh",
+            "Server.Items.SpidersSilk",
+        };
+
+        // T2A weapons that plausibly turn up in anyone's pack (loot, a
+        // purchase, something to sell).
+        private static readonly string[] SpareWeaponTypes =
+        {
+            "Server.Items.Katana",
+            "Server.Items.Cutlass",
+            "Server.Items.Mace",
+            "Server.Items.Maul",
+            "Server.Items.WarAxe",
+            "Server.Items.BattleAxe",
+            "Server.Items.WarFork",
+            "Server.Items.Spear",
+            "Server.Items.Bow",
+            "Server.Items.QuarterStaff",
+        };
+
+        private static readonly string[] BookTypes =
+        {
+            "Server.Items.RedBook",
+            "Server.Items.BlueBook",
+            "Server.Items.TanBook",
+            "Server.Items.BrownBook",
+        };
+
+        private static readonly string[] InstrumentTypes =
+        {
+            "Server.Items.Lute",
+            "Server.Items.Drums",
+            "Server.Items.Tambourine",
+        };
+
+        // A loose weapon in the pack — possibly magic (looted, bought,
+        // held to sell). Class-blind: this is how a mage ends up hauling
+        // a katana of might.
+        private static void PackSpareWeapon(PlayerBot bot, BotSkillTier tier)
+        {
+            var w = TryNewItem(SpareWeaponTypes[Utility.Random(SpareWeaponTypes.Length)]);
+            if (w == null) return;
+            if (w is BaseWeapon weapon)
+            {
+                MaybeEnchantWeapon(weapon, tier);
+            }
+            bot.AddToBackpack(w);
+        }
+
+        private static void AddRandomPersonLayer(PlayerBot bot, BotSkillTier tier)
+        {
+            int draws = 1 + Utility.Random(3);
+            for (int n = 0; n < draws; n++)
+            {
+                switch (Utility.Random(12))
+                {
+                    case 0: // a weapon they don't necessarily use
+                        PackSpareWeapon(bot, tier);
+                        break;
+
+                    case 1: // scrolls — loot/merchandise, no caster needed
+                        int scrolls = Utility.RandomMinMax(1, 2);
+                        for (int i = 0; i < scrolls; i++)
+                        {
+                            AddToPack(bot,
+                                ScrollPool[Utility.Random(ScrollPool.Length)].type, 1);
+                        }
+                        break;
+
+                    case 2: // a small reagent bundle (anyone buys for a friend)
+                        int kinds = Utility.RandomMinMax(2, 3);
+                        for (int i = 0; i < kinds; i++)
+                        {
+                            AddToPack(bot,
+                                ReagentTypes[Utility.Random(ReagentTypes.Length)],
+                                Utility.RandomMinMax(3, 10));
+                        }
+                        break;
+
+                    case 3: // bandages
+                        AddToPack(bot, "Server.Items.Bandage",
+                                  Utility.RandomMinMax(5, 15));
+                        break;
+
+                    case 4: // a stray potion
+                        string[] pots =
+                        {
+                            "Server.Items.HealPotion",
+                            "Server.Items.CurePotion",
+                            "Server.Items.RefreshPotion",
+                            "Server.Items.AgilityPotion",
+                            "Server.Items.StrengthPotion",
+                        };
+                        AddToPack(bot, pots[Utility.Random(pots.Length)], 1);
+                        break;
+
+                    case 5: // a book
+                        AddToPack(bot, BookTypes[Utility.Random(BookTypes.Length)], 1);
+                        break;
+
+                    case 6: // lockpicks — everyone's a little shady
+                        AddToPack(bot, "Server.Items.Lockpick",
+                                  Utility.RandomMinMax(2, 6));
+                        break;
+
+                    case 7: // a fishing pole — anyone might fish
+                        AddToPack(bot, "Server.Items.FishingPole", 1);
+                        break;
+
+                    case 8: // an instrument
+                        AddToPack(bot,
+                            InstrumentTypes[Utility.Random(InstrumentTypes.Length)], 1);
+                        break;
+
+                    case 9: // camping kit — bedroll and kindling, pure T2A
+                        AddToPack(bot, "Server.Items.Bedroll", 1);
+                        AddToPack(bot, "Server.Items.Kindling",
+                                  Utility.RandomMinMax(2, 5));
+                        break;
+
+                    case 10: // raw materials being hauled somewhere
+                        string[] mats =
+                        {
+                            "Server.Items.IronIngot",
+                            "Server.Items.Cloth",
+                            "Server.Items.Leather",
+                        };
+                        AddToPack(bot, mats[Utility.Random(mats.Length)],
+                                  Utility.RandomMinMax(5, 15));
+                        break;
+
+                    default: // loose coin outside the main purse
+                        AddToPack(bot, "Server.Items.Gold",
+                                  Utility.RandomMinMax(20, 80));
+                        break;
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Potion belt. Real T2A players rarely left town without heal,
+        // cure, and refresh potions — bots shouldn't either. Potion grade
+        // scales with tier (lesser -> regular -> greater), and top-tier
+        // fighters sometimes pack purple pots.
+        // -------------------------------------------------------------------
+        private static void AddPotionKit(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            if (Utility.RandomDouble() >= 0.55) return;
+
+            int rank = BotSkillTierHelper.Rank(tier);
+            string grade = rank <= 1 ? "Lesser" : rank <= 4 ? "" : "Greater";
+
+            AddToPack(bot, $"Server.Items.{grade}HealPotion",
+                      Utility.RandomMinMax(1, 3));
+
+            if (Utility.RandomDouble() < 0.50)
+            {
+                AddToPack(bot, $"Server.Items.{grade}CurePotion",
+                          Utility.RandomMinMax(1, 2));
+            }
+
+            if (Utility.RandomDouble() < 0.40)
+            {
+                AddToPack(bot, rank >= 4
+                        ? "Server.Items.TotalRefreshPotion"
+                        : "Server.Items.RefreshPotion",
+                    Utility.RandomMinMax(1, 2));
+            }
+
+            if (Utility.RandomDouble() < 0.15)
+            {
+                AddToPack(bot, Utility.RandomBool()
+                    ? "Server.Items.AgilityPotion"
+                    : "Server.Items.StrengthPotion", 1);
+            }
+
+            MaybeAddToPack(bot, "Server.Items.NightSightPotion", 0.10, 1);
+
+            // Purple pots — the veteran fighter's surprise.
+            bool fighter = cls is BotClass.Warrior or BotClass.Fencer
+                or BotClass.Archer or BotClass.Ranger;
+            if (fighter && rank >= 5 && Utility.RandomDouble() < 0.15)
+            {
+                AddToPack(bot, "Server.Items.GreaterExplosionPotion",
+                          Utility.RandomMinMax(1, 2));
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // A bag/pouch WITH CONTENTS — nothing reads "real player" like
+        // opening a snooped backpack and finding another bag with someone's
+        // kit organized inside it. One themed container per bot (40%);
+        // thieves also carry someone ELSE'S pouch.
+        // -------------------------------------------------------------------
+        private static void AddBagOfGoodies(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            if (Utility.RandomDouble() < 0.40)
+            {
+                var bag = NewCarryBag();
+
+                // Mages favor a spare reagent pouch; everyone else rolls a
+                // theme.
+                int theme = cls == BotClass.Mage && Utility.RandomDouble() < 0.5
+                    ? 4
+                    : Utility.Random(4);
+
+                switch (theme)
+                {
+                    case 0: // rainy-day purse
+                        AddToBag(bag, "Server.Items.Gold",
+                                 Utility.RandomMinMax(40, 60 + 60 * rank));
+                        if (Utility.RandomDouble() < 0.5)
+                        {
+                            AddToBag(bag, GemTypes[Utility.Random(GemTypes.Length)], 1);
+                        }
+                        break;
+
+                    case 1: // traveler's kit
+                        AddToBag(bag, FoodTypes[Utility.Random(FoodTypes.Length)],
+                                 Utility.RandomMinMax(1, 2));
+                        AddToBag(bag, FoodTypes[Utility.Random(FoodTypes.Length)], 1);
+                        AddToBag(bag, "Server.Items.Torch", 1);
+                        AddToBag(bag, "Server.Items.Bandage",
+                                 Utility.RandomMinMax(3, 10));
+                        break;
+
+                    case 2: // potion pouch
+                        AddToBag(bag, "Server.Items.HealPotion",
+                                 Utility.RandomMinMax(1, 2));
+                        AddToBag(bag, "Server.Items.CurePotion", 1);
+                        if (Utility.RandomDouble() < 0.5)
+                        {
+                            AddToBag(bag, "Server.Items.RefreshPotion", 1);
+                        }
+                        break;
+
+                    case 3: // trinket bag
+                        AddToBag(bag, "Server.Items.Dices", 1);
+                        AddToBag(bag, GemTypes[Utility.Random(GemTypes.Length)], 1);
+                        if (Utility.RandomDouble() < 0.4)
+                        {
+                            AddToBag(bag, JewelryTypes[Utility.Random(JewelryTypes.Length)], 1);
+                        }
+                        break;
+
+                    default: // mage's spare reagent pouch
+                        AddToBag(bag, "Server.Items.BlackPearl",
+                                 Utility.RandomMinMax(5, 15));
+                        AddToBag(bag, "Server.Items.MandrakeRoot",
+                                 Utility.RandomMinMax(5, 15));
+                        AddToBag(bag, "Server.Items.SulfurousAsh",
+                                 Utility.RandomMinMax(5, 15));
+                        AddToBag(bag, "Server.Items.SpidersSilk",
+                                 Utility.RandomMinMax(5, 15));
+                        break;
+                }
+
+                if (bag.Items.Count > 0)
+                {
+                    bot.AddToBackpack(bag);
+                }
+                else
+                {
+                    bag.Delete();
+                }
+            }
+
+            // The thief's second pouch is not, strictly speaking, theirs.
+            if (cls == BotClass.Thief)
+            {
+                var pinched = NewCarryBag();
+                AddToBag(pinched, "Server.Items.Gold",
+                         Utility.RandomMinMax(60, 250));
+                if (Utility.RandomDouble() < 0.6)
+                {
+                    AddToBag(pinched, JewelryTypes[Utility.Random(JewelryTypes.Length)], 1);
+                }
+                if (Utility.RandomDouble() < 0.4)
+                {
+                    AddToBag(pinched, GemTypes[Utility.Random(GemTypes.Length)], 1);
+                }
+                bot.AddToBackpack(pinched);
+            }
+        }
+
+        private static Container NewCarryBag() =>
+            Utility.RandomBool() ? (Container)new Bag() : new Pouch();
+
+        // Drop an item into a carry bag; reflection-graceful like AddToPack.
+        private static void AddToBag(Container bag, string itemType, int amount)
+        {
+            var item = TryNewItem(itemType);
+            if (item == null) return;
+            if (amount > 1 && item.Stackable) item.Amount = amount;
+            bag.DropItem(item);
+        }
+
+        // -------------------------------------------------------------------
+        // Spell scrolls. Mages and Healers always carry a few (scribed or
+        // bought — a caster's working stock); Bards dabble. The pool is
+        // gated by tier so a Novice carries Cure and Teleport scrolls while
+        // a Grandmaster's pack turns up Flamestrike and Gate Travel.
+        // -------------------------------------------------------------------
+        private static readonly (string type, int minRank)[] ScrollPool =
+        {
+            ("Server.Items.CureScroll",         0),
+            ("Server.Items.TeleportScroll",     0),
+            ("Server.Items.FireballScroll",     1),
+            ("Server.Items.RecallScroll",       1),
+            ("Server.Items.GreaterHealScroll",  2),
+            ("Server.Items.LightningScroll",    2),
+            ("Server.Items.MagicReflectScroll", 3),
+            ("Server.Items.EnergyBoltScroll",   4),
+            ("Server.Items.MarkScroll",         4),
+            ("Server.Items.FlamestrikeScroll",  5),
+            ("Server.Items.GateTravelScroll",   5),
+        };
+
+        private static void AddSpellScrolls(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            bool caster = cls == BotClass.Mage || cls == BotClass.Healer;
+            bool dabbler = cls == BotClass.Bard;
+            if (!caster && !(dabbler && Utility.RandomDouble() < 0.30)) return;
+
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            // Eligible slice of the pool for this tier.
+            int eligible = 0;
+            for (int i = 0; i < ScrollPool.Length; i++)
+            {
+                if (ScrollPool[i].minRank <= rank) eligible++;
+            }
+            if (eligible == 0) return;
+
+            // Casters carry more scrolls at higher tiers; a bard just one.
+            int count = dabbler ? 1 : 1 + rank / 2;
+            for (int n = 0; n < count; n++)
+            {
+                var pick = ScrollPool[Utility.Random(eligible)];
+                AddToPack(bot, pick.type, 1);
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Travel magic. Casters carry recall runes MARKED for real places —
+        // snoop a mage and find "a recall rune for Britain Bank". Rune
+        // targets come from the live destination catalog, so they're
+        // genuine locations. Master+ mages sometimes carry a runebook, and
+        // any bot may have picked up a blank rune somewhere.
+        // -------------------------------------------------------------------
+        private static void AddTravelMagic(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            // NO runebooks — those arrived with UO:R (2000). In T2A you
+            // carried loose marked runes, so that's what bots carry.
+            if (cls == BotClass.Mage)
+            {
+                if (rank >= 2 && Utility.RandomDouble() < 0.70)
+                {
+                    // A working mage keeps a small rune collection; the
+                    // best of them carry a proper handful.
+                    int runes = Utility.RandomMinMax(1, rank >= 5 ? 4 : 2);
+                    for (int i = 0; i < runes; i++)
+                    {
+                        AddMarkedRune(bot);
+                    }
+                }
+            }
+            else if (cls == BotClass.Healer)
+            {
+                if (Utility.RandomDouble() < 0.40)
+                {
+                    AddMarkedRune(bot);
+                }
+            }
+            else if (Utility.RandomDouble() < 0.20)
+            {
+                // Everyone else: 1-in-5 keeps a single marked rune — the
+                // classic "rune to home" every real player carried.
+                AddMarkedRune(bot);
+            }
+
+            // Anyone might have a blank rune rattling around the pack.
+            MaybeAddToPack(bot, "Server.Items.RecallRune", 0.08, 1);
+        }
+
+        // A recall rune marked for a random authored destination. Falls
+        // back to a blank rune when the catalog isn't loaded yet.
+        private static void AddMarkedRune(PlayerBot bot)
+        {
+            try
+            {
+                BotDestination dest = null;
+                int seen = 0;
+                foreach (var d in DestinationCatalog.All)
+                {
+                    // Reservoir-pick a random destination in one pass.
+                    seen++;
+                    if (Utility.Random(seen) == 0) dest = d;
+                }
+
+                var rune = new RecallRune();
+                if (dest != null)
+                {
+                    rune.Marked      = true;
+                    rune.Target      = dest.ArrivalPoint ?? dest.Location;
+                    rune.TargetMap   = Map.Felucca;
+                    rune.Description = dest.Name;
+                }
+                bot.AddToBackpack(rune);
+            }
+            catch { }
+        }
+
+        // -------------------------------------------------------------------
+        // Valuables — the "worth robbing" layer. Gem and jewelry chances
+        // scale with tier (rich veterans, threadbare novices). Thieves are
+        // the exception: whatever their skill, their packs are suspiciously
+        // full of OTHER people's valuables.
+        // -------------------------------------------------------------------
+        private static readonly string[] GemTypes =
+        {
+            "Server.Items.Amethyst",
+            "Server.Items.Citrine",
+            "Server.Items.Diamond",
+            "Server.Items.Emerald",
+            "Server.Items.Ruby",
+            "Server.Items.Sapphire",
+            "Server.Items.StarSapphire",
+            "Server.Items.Tourmaline",
+        };
+
+        private static readonly string[] JewelryTypes =
+        {
+            "Server.Items.GoldRing",
+            "Server.Items.SilverRing",
+            "Server.Items.GoldBracelet",
+            "Server.Items.GoldNecklace",
+        };
+
+        private static void AddValuables(PlayerBot bot, BotClass cls, BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+            bool thief = cls == BotClass.Thief;
+
+            // Gems: a handful, likelier and deeper with tier.
+            double gemChance = thief ? 0.90 : 0.15 + 0.08 * rank;
+            if (Utility.RandomDouble() < gemChance)
+            {
+                int gems = Utility.RandomMinMax(1, thief ? 4 : 1 + rank / 2);
+                for (int i = 0; i < gems; i++)
+                {
+                    AddToPack(bot, GemTypes[Utility.Random(GemTypes.Length)], 1);
+                }
+            }
+
+            // Jewelry: one loose piece, rare except on thieves.
+            double jewelChance = thief ? 0.60 : 0.05 + 0.04 * rank;
+            if (Utility.RandomDouble() < jewelChance)
+            {
+                AddToPack(bot, JewelryTypes[Utility.Random(JewelryTypes.Length)], 1);
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Odds and ends — the human clutter that makes a snooped pack read
+        // like a person: half a meal, a torch, dice, a spyglass.
+        // -------------------------------------------------------------------
+        private static readonly string[] FoodTypes =
+        {
+            "Server.Items.BreadLoaf",
+            "Server.Items.Apple",
+            "Server.Items.Pear",
+            "Server.Items.CheeseWedge",
+            "Server.Items.FishSteak",
+        };
+
+        private static void AddOddsAndEnds(PlayerBot bot, BotClass cls)
+        {
+            // Most people carry SOMETHING to eat on the road.
+            if (Utility.RandomDouble() < 0.60)
+            {
+                AddToPack(bot, FoodTypes[Utility.Random(FoodTypes.Length)],
+                          Utility.RandomMinMax(1, 3));
+            }
+
             MaybeAddToPack(bot, "Server.Items.Torch", 0.3, 1);
+
+            // Trinkets. Scouts favor a spyglass; sailors' tools and tavern
+            // dice turn up on anyone.
+            double spyglassChance =
+                cls == BotClass.Ranger || cls == BotClass.Archer ? 0.15 : 0.05;
+            MaybeAddToPack(bot, "Server.Items.Spyglass", spyglassChance, 1);
+            MaybeAddToPack(bot, "Server.Items.Dices", 0.08, 1);
+            MaybeAddToPack(bot, "Server.Items.Sextant", 0.04, 1);
+
+            // Spare equipment riding loose in the pack: a backup dagger,
+            // a folded cloak, a spare bandana.
+            MaybeAddToPack(bot, "Server.Items.Dagger", 0.20, 1);
+            if (Utility.RandomDouble() < 0.12)
+            {
+                var spareCloak = TryNewItem("Server.Items.Cloak", PaletteHue());
+                if (spareCloak != null) bot.AddToBackpack(spareCloak);
+            }
+            if (Utility.RandomDouble() < 0.10)
+            {
+                var spareBandana = TryNewItem("Server.Items.Bandana", PaletteHue());
+                if (spareBandana != null) bot.AddToBackpack(spareBandana);
+            }
         }
 
         // Add a spread of the 8 standard magery reagents to the pack.
@@ -162,18 +714,7 @@ namespace Server.CustomBots
                 _                        => 20,
             };
 
-            string[] regs =
-            {
-                "Server.Items.BlackPearl",
-                "Server.Items.Bloodmoss",
-                "Server.Items.Garlic",
-                "Server.Items.Ginseng",
-                "Server.Items.MandrakeRoot",
-                "Server.Items.Nightshade",
-                "Server.Items.SulfurousAsh",
-                "Server.Items.SpidersSilk",
-            };
-            foreach (var r in regs)
+            foreach (var r in ReagentTypes)
             {
                 // ±30% per-reagent spread so the stash isn't uniform.
                 int amt = (int)(regBase * Utility.RandomMinMax(70, 130) / 100.0);
@@ -188,6 +729,25 @@ namespace Server.CustomBots
         {
             if (Utility.RandomDouble() < chance)
                 AddToPack(bot, itemType, amount);
+        }
+
+        // Seed a crafter's starter props from its subtype profile — a few
+        // finished goods so a fresh crafter isn't empty-handed. Factories
+        // build real item instances (compile-checked, not reflection).
+        private static void SeedCrafterStarterProps(PlayerBot bot)
+        {
+            var profile = CrafterProfiles.For(bot.Class);
+            foreach (var make in profile.StarterProps)
+            {
+                Item item;
+                try { item = make?.Invoke(bot); }
+                catch { item = null; }
+
+                if (item != null)
+                {
+                    bot.AddToBackpack(item);
+                }
+            }
         }
 
         // -------------------------------------------------------------------
@@ -207,7 +767,12 @@ namespace Server.CustomBots
                 case BotClass.Fencer:  RollFencerLook(bot, tier);   break;
                 case BotClass.Archer:  RollArcherLook(bot, tier);   break;
                 case BotClass.Tamer:   RollTamerLook(bot, tier);    break;
-                case BotClass.Crafter: RollCrafterLook(bot, tier);  break;
+                case BotClass.Crafter:
+                case BotClass.Smith:
+                case BotClass.Tailor:
+                case BotClass.Fisherman: RollCrafterLook(bot, tier); break;
+                case BotClass.Lumberjack:
+                case BotClass.Miner:   RollGathererLook(bot, tier);  break;
                 case BotClass.Healer:  RollHealerLook(bot, tier);   break;
                 case BotClass.Thief:   RollThiefLook(bot, tier);    break;
                 case BotClass.Bard:    RollBardLook(bot, tier);     break;
@@ -283,7 +848,7 @@ namespace Server.CustomBots
 
                 var book = new Spellbook();
                 book.Content = content;
-                Add(bot, book, IsHighTier(tier) ? RichHue() : 0);
+                Add(bot, book, 0);   // spellbooks weren't dyeable in T2A
             }
         }
 
@@ -299,7 +864,7 @@ namespace Server.CustomBots
             else if (roll < 98)  RobeAndCasual(bot, tier);
             else                 PlatesUp(bot, tier);
 
-            EquipWeapon(bot, tier, new[] { 20, 21, 22 }); // kryss/wakizashi/spear
+            EquipWeapon(bot, tier, new[] { 20, 21, 22 }); // kryss/war fork/spear
         }
 
         private static void RollArcherLook(PlayerBot bot, BotSkillTier tier)
@@ -312,14 +877,23 @@ namespace Server.CustomBots
             else if (roll < 93)  StuddedUp(bot, tier);
             else                 CommonerUp(bot, tier);
 
-            // Bow — Archers should have one.
+            // Bow — Archers should have one. Plain wood (no dyed bows),
+            // but it can be a MAGIC bow.
             var archBow = TryNewItem("Server.Items.Bow");
-            if (archBow != null) Add(bot, archBow, IsHighTier(tier) ? RichHue() : 0);
+            if (archBow != null)
+            {
+                if (archBow is BaseWeapon bowWeapon) MaybeEnchantWeapon(bowWeapon, tier);
+                Add(bot, archBow, 0);
+            }
 
             if (bot.FindItemOnLayer(Layer.TwoHanded) == null)
             {
                 var xbow = TryNewItem("Server.Items.Crossbow");
-                if (xbow != null) Add(bot, xbow, 0);
+                if (xbow != null)
+                {
+                    if (xbow is BaseWeapon xbowWeapon) MaybeEnchantWeapon(xbowWeapon, tier);
+                    Add(bot, xbow, 0);
+                }
             }
 
             // Ammunition — a ranged weapon needs ammo in the pack or it
@@ -348,30 +922,68 @@ namespace Server.CustomBots
             }
         }
 
+        // -------------------------------------------------------------------
+        // GATHERER — hardy work clothes and the trade tool IN HAND. The
+        // hatchet/pickaxe is a real weapon (Swords skill), so the same tool
+        // that fells trees fends off wolves.
+        // -------------------------------------------------------------------
+        private static void RollGathererLook(PlayerBot bot, BotSkillTier tier)
+        {
+            int roll = Utility.Random(100);
+            //  0–59: commoner work clothes
+            // 60–89: leather (been out in the wild a while)
+            // 90–99: studded (the veterans)
+            if (roll < 60)      CommonerUp(bot, tier);
+            else if (roll < 90) LeatherUp(bot, tier);
+            else                StuddedUp(bot, tier);
+
+            // Half apron — the working man's badge.
+            if (Utility.RandomDouble() < 0.40)
+            {
+                var apron = TryNewItem("Server.Items.HalfApron", Utility.RandomNeutralHue());
+                if (apron != null) Add(bot, apron, 0);
+            }
+
+            // The tool, equipped.
+            var tool = TryNewItem(bot.Class == BotClass.Miner
+                ? "Server.Items.Pickaxe"
+                : "Server.Items.Hatchet", 0);
+            if (tool != null && !bot.EquipItem(tool))
+            {
+                tool.Delete();
+            }
+        }
+
         private static void RollCrafterLook(PlayerBot bot, BotSkillTier tier)
         {
-            // FISHERMAN — different look entirely. Simple shirt and pants,
-            // a straw hat, and a fishing pole as their "tool/weapon." No
-            // apron, no smith hammer. Skip the rest of the crafter rolling.
-            if (bot.CrafterSpec == CrafterType.Fisherman)
+            // FISHERMAN — a weathered dockworker look with real variety so a
+            // row of them doesn't read as identical peasants.
+            if (bot.Class == BotClass.Fisherman)
             {
-                CommonerUp(bot, tier);
+                // Clothes: mostly muted, but a good third in brighter
+                // sea-faring colors. CommonerUp already varies shirt/doublet,
+                // pants/skirt, hues, and footwear per bot.
+                CommonerUp(bot, tier, bright: Utility.RandomDouble() < 0.35);
 
-                // Straw hat ~70% of the time; otherwise bandana / no hat.
-                if (Utility.RandomDouble() < 0.7)
+                // A gutting apron, sometimes.
+                if (Utility.RandomDouble() < 0.30)
                 {
-                    var hat = TryNewItem("Server.Items.StrawHat");
-                    if (hat != null) Add(bot, hat, Utility.RandomNeutralHue());
-                }
-                else if (Utility.RandomDouble() < 0.5)
-                {
-                    var bandana = TryNewItem("Server.Items.Bandana");
-                    if (bandana != null) Add(bot, bandana, Utility.RandomNeutralHue());
+                    Item apron = Utility.RandomBool() ? (Item)new FullApron() : new HalfApron();
+                    Add(bot, apron, Utility.RandomNeutralHue());
                 }
 
-                // Fishing pole — the defining tool. Equipped like a weapon.
-                var pole = TryNewItem("Server.Items.FishingPole");
-                if (pole != null) Add(bot, pole, 0);
+                // Varied headgear — not everyone in the same straw hat.
+                RollFisherHat(bot);
+
+                // An occasional weathered cloak.
+                if (Utility.RandomDouble() < 0.20)
+                {
+                    var cloak = TryNewItem("Server.Items.Cloak", Utility.RandomNeutralHue());
+                    if (cloak != null) Add(bot, cloak, 0);
+                }
+
+                // Equip the hand tool (the fishing pole).
+                EquipCrafterTool(bot);
                 return;
             }
 
@@ -389,9 +1001,21 @@ namespace Server.CustomBots
                 Add(bot, apron, hue);
             }
 
-            // A blacksmith's hammer or similar tool as their "weapon"
-            var hammer = TryNewItem("Server.Items.SmithHammer");
-            if (hammer != null) Add(bot, hammer, 0);
+            // Equip the subtype's hand tool. Smiths get a hammer; tailors
+            // have no hand-held tool (their sewing kit / scissors ride in the
+            // pack via StarterProps), so this no-ops for them.
+            EquipCrafterTool(bot);
+        }
+
+        // Equip the bot's crafter subtype hand tool from its profile, if it
+        // has one (smith hammer, fishing pole). Tailors have a null Tool.
+        private static void EquipCrafterTool(PlayerBot bot)
+        {
+            var tool = CrafterProfiles.For(bot.Class).Tool?.Invoke(bot);
+            if (tool != null)
+            {
+                Add(bot, tool, 0);
+            }
         }
 
         private static void RollHealerLook(PlayerBot bot, BotSkillTier tier)
@@ -459,6 +1083,7 @@ namespace Server.CustomBots
                 var bow = TryNewItem("Server.Items.Bow");
                 if (bow != null)
                 {
+                    if (bow is BaseWeapon rangerBow) MaybeEnchantWeapon(rangerBow, tier);
                     Add(bot, bow, 0);
                     // Bow needs arrows in the pack to fire.
                     AddToPack(bot, "Server.Items.Arrow",
@@ -473,64 +1098,191 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // T2A ITEM MAGIC + ORE METALS
+        //
+        // Magic gear uses the REAL era system: weapons roll damage
+        // (Ruin/Might/Force/Power/Vanquishing) and accuracy (Accurate ..
+        // Supremely Accurate) levels; armor rolls protection (Defense ..
+        // Invulnerability); both may add a durability level. Chance and
+        // ceiling scale with tier — a Novice almost never carries magic,
+        // a Grandmaster often does, but Vanq/Invulnerability stay rare
+        // even then, as they were on OSI.
+        //
+        // Colored metal armor comes from the ORE it was smithed from
+        // (BaseArmor.Resource → the real dull copper/shadow/gold/valorite
+        // hues), never from dye — plate was not dyeable in T2A.
+        // -------------------------------------------------------------------
+
+        // The colored-ore ladder, common to rare. Iron (the default) is
+        // not listed. Order matches the mining skill progression.
+        private static readonly CraftResource[] OreLadder =
+        {
+            CraftResource.DullCopper,
+            CraftResource.ShadowIron,
+            CraftResource.Copper,
+            CraftResource.Bronze,
+            CraftResource.Gold,
+            CraftResource.Agapite,
+            CraftResource.Verite,
+            CraftResource.Valorite,
+        };
+
+        // Roll the metal for a whole suit (a smithed suit is one ore, so
+        // the pieces match). Mostly plain iron; colored ore gets likelier
+        // and reaches deeper down the ladder with tier.
+        private static CraftResource RollMetal(BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            // Novice ~10% colored at all; Grandmaster ~46%.
+            if (Utility.RandomDouble() >= 0.10 + 0.06 * rank)
+            {
+                return CraftResource.Iron;
+            }
+
+            // Ladder depth is tier-capped (a Novice might own dull copper;
+            // valorite is Grandmaster territory), weighted shallow.
+            int cap = 2 + rank;
+            if (cap > OreLadder.Length) cap = OreLadder.Length;
+
+            int idx = 0;
+            while (idx < cap - 1 && Utility.RandomDouble() < 0.45)
+            {
+                idx++;
+            }
+            return OreLadder[idx];
+        }
+
+        // Roll a magic level 1..5 (enum values above Regular), weighted
+        // hard toward the low end and tier-capped: low tiers top out at
+        // Might/Guarding, only Master+ can roll Vanq/Invulnerability.
+        private static int RollMagicLevel(int rank)
+        {
+            int cap = rank switch
+            {
+                <= 1 => 2,
+                <= 3 => 3,
+                4    => 4,
+                _    => 5,
+            };
+
+            int level = 1;
+            while (level < cap && Utility.RandomDouble() < 0.4)
+            {
+                level++;
+            }
+            return level;
+        }
+
+        private static void MaybeEnchantWeapon(BaseWeapon w, BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            // Novice ~6% magic weapon; Grandmaster ~48%.
+            if (Utility.RandomDouble() >= 0.06 + 0.07 * rank) return;
+
+            w.DamageLevel = (WeaponDamageLevel)RollMagicLevel(rank);
+            if (Utility.RandomDouble() < 0.5)
+            {
+                w.AccuracyLevel = (WeaponAccuracyLevel)RollMagicLevel(rank);
+            }
+            if (Utility.RandomDouble() < 0.3)
+            {
+                w.DurabilityLevel = (WeaponDurabilityLevel)RollMagicLevel(rank);
+            }
+            // Bots wear their gear openly — show the name, not "a magic item".
+            w.Identified = true;
+        }
+
+        private static void MaybeEnchantArmor(BaseArmor a, BotSkillTier tier)
+        {
+            int rank = BotSkillTierHelper.Rank(tier);
+
+            // Per PIECE, so a suit averages roughly one magic piece at the
+            // top tiers and almost never at the bottom.
+            if (Utility.RandomDouble() >= 0.02 + 0.03 * rank) return;
+
+            a.ProtectionLevel = (ArmorProtectionLevel)RollMagicLevel(rank);
+            if (Utility.RandomDouble() < 0.3)
+            {
+                a.Durability = (ArmorDurabilityLevel)RollMagicLevel(rank);
+            }
+            a.Identified = true;
+        }
+
+        // Equip one armor piece: ore resource for metal suits (sets the
+        // real ore hue), optional leather tint, and an item-magic roll.
+        private static void AddArmor(PlayerBot bot, Item item, BotSkillTier tier,
+                                     CraftResource? metal = null, int hue = 0)
+        {
+            if (item is BaseArmor armor)
+            {
+                if (metal.HasValue && metal.Value != CraftResource.Iron)
+                {
+                    try { armor.Resource = metal.Value; } catch { }
+                }
+                MaybeEnchantArmor(armor, tier);
+            }
+            if (hue != 0) item.Hue = hue;
+            bot.AddItem(item);
+        }
+
+        // -------------------------------------------------------------------
         // ARMOR ARCHETYPES — building blocks called by class roll functions.
         // -------------------------------------------------------------------
 
         private static void PlatesUp(PlayerBot bot, BotSkillTier tier)
         {
-            int hue = IsHighTier(tier) && Utility.RandomDouble() < 0.5 ? RichHue() : 0;
-            Add(bot, bot.Female ? new FemalePlateChest() : (Item)new PlateChest(), hue);
-            Add(bot, new PlateLegs(),   hue);
-            Add(bot, new PlateArms(),   hue);
-            Add(bot, new PlateGloves(), hue);
-            Add(bot, new PlateGorget(), hue);
+            var metal = RollMetal(tier);
+            AddArmor(bot, bot.Female ? new FemalePlateChest() : (Item)new PlateChest(), tier, metal);
+            AddArmor(bot, new PlateLegs(),   tier, metal);
+            AddArmor(bot, new PlateArms(),   tier, metal);
+            AddArmor(bot, new PlateGloves(), tier, metal);
+            AddArmor(bot, new PlateGorget(), tier, metal);
             // Plate Helm only sometimes — let the accessories pass add a hat instead
             if (Utility.RandomDouble() < 0.45)
             {
-                Add(bot, new PlateHelm(), hue);
+                AddArmor(bot, new PlateHelm(), tier, metal);
             }
-            Add(bot, new Boots(), IsHighTier(tier) ? RichHue() : 0);
+            Add(bot, new Boots(), 0);
         }
 
         private static void ChainsUp(PlayerBot bot, BotSkillTier tier)
         {
-            int hue = IsHighTier(tier) && Utility.RandomDouble() < 0.5 ? RichHue() : 0;
-            Add(bot, new ChainChest(), hue);
-            Add(bot, new ChainLegs(),  hue);
+            var metal = RollMetal(tier);
+            AddArmor(bot, new ChainChest(), tier, metal);
+            AddArmor(bot, new ChainLegs(),  tier, metal);
             if (Utility.RandomDouble() < 0.6)
             {
-                Add(bot, new ChainCoif(), hue);
+                AddArmor(bot, new ChainCoif(), tier, metal);
             }
             Add(bot, new Boots(), 0);
         }
 
         private static void StuddedUp(PlayerBot bot, BotSkillTier tier, bool darkColors = false, bool foresty = false)
         {
-            int hue;
-            if (darkColors) hue = DarkHue();
-            else if (foresty) hue = ForestHue();
-            else hue = IsHighTier(tier) && Utility.RandomDouble() < 0.4 ? RichHue() : 0;
+            // Leather tones only — studded wasn't dyeable rainbow in T2A.
+            // Thieves get a dark set, rangers an earthy one, everyone else
+            // plain leather.
+            int hue = darkColors ? DarkHue() : foresty ? ForestHue() : 0;
 
-            Add(bot, bot.Female ? new FemaleStuddedChest() : (Item)new StuddedChest(), hue);
-            Add(bot, new StuddedLegs(),   hue);
-            Add(bot, new StuddedArms(),   hue);
-            Add(bot, new StuddedGloves(), hue);
-            Add(bot, new StuddedGorget(), hue);
+            AddArmor(bot, bot.Female ? new FemaleStuddedChest() : (Item)new StuddedChest(), tier, null, hue);
+            AddArmor(bot, new StuddedLegs(),   tier, null, hue);
+            AddArmor(bot, new StuddedArms(),   tier, null, hue);
+            AddArmor(bot, new StuddedGloves(), tier, null, hue);
+            AddArmor(bot, new StuddedGorget(), tier, null, hue);
             Add(bot, new Boots(), 0);
         }
 
         private static void LeatherUp(PlayerBot bot, BotSkillTier tier, bool darkColors = false, bool foresty = false)
         {
-            int hue;
-            if (darkColors) hue = DarkHue();
-            else if (foresty) hue = ForestHue();
-            else hue = IsHighTier(tier) && Utility.RandomDouble() < 0.4 ? RichHue() : 0;
+            int hue = darkColors ? DarkHue() : foresty ? ForestHue() : 0;
 
-            Add(bot, bot.Female ? new FemaleLeatherChest() : (Item)new LeatherChest(), hue);
-            Add(bot, new LeatherLegs(),   hue);
-            Add(bot, new LeatherArms(),   hue);
-            Add(bot, new LeatherGloves(), hue);
-            Add(bot, new LeatherGorget(), hue);
+            AddArmor(bot, bot.Female ? new FemaleLeatherChest() : (Item)new LeatherChest(), tier, null, hue);
+            AddArmor(bot, new LeatherLegs(),   tier, null, hue);
+            AddArmor(bot, new LeatherArms(),   tier, null, hue);
+            AddArmor(bot, new LeatherGloves(), tier, null, hue);
+            AddArmor(bot, new LeatherGorget(), tier, null, hue);
             Add(bot, new Boots(), 0);
         }
 
@@ -642,16 +1394,16 @@ namespace Server.CustomBots
                 4  => IsHighTier(tier) ? (BaseWeapon)new Halberd() : new Longsword(),
                 10 => IsHighTier(tier) ? (BaseWeapon)new GnarledStaff() : new QuarterStaff(),
                 20 => new Kryss(),
-                21 => new Wakizashi(),
+                21 => new WarFork(),   // T2A fencing — no wakizashi (SE-era)
                 22 => new ShortSpear(),
                 _  => new Dagger()
             };
+            MaybeEnchantWeapon(w, tier);
             Add(bot, w, 0);
         }
 
         private static void EquipShield(PlayerBot bot, BotSkillTier tier)
         {
-            int hue = IsHighTier(tier) && Utility.RandomDouble() < 0.4 ? RichHue() : 0;
             Item shield = Utility.Random(4) switch
             {
                 0 => new WoodenShield(),
@@ -659,7 +1411,12 @@ namespace Server.CustomBots
                 2 => new BronzeShield(),
                 _ => new HeaterShield()
             };
-            Add(bot, shield, hue);
+            // Magic shields existed too (a heater of guarding).
+            if (shield is BaseArmor shieldArmor)
+            {
+                MaybeEnchantArmor(shieldArmor, tier);
+            }
+            Add(bot, shield, 0);
         }
 
         // -------------------------------------------------------------------
@@ -700,8 +1457,9 @@ namespace Server.CustomBots
                 Add(bot, new BodySash(), hue);
             }
 
-            // -- HALF-APRON (kitchen-y look, secondary chance for non-crafters) --
-            if (cls != BotClass.Crafter &&
+            // -- HALF-APRON (kitchen-y look, secondary chance for non-artisans;
+            //    artisans already get their apron in RollCrafterLook) --
+            if (cls != BotClass.Crafter && !BotClassHelper.IsArtisan(cls) &&
                 bot.FindItemOnLayer(Layer.OuterTorso) == null &&
                 Utility.RandomDouble() < 0.05)
             {
@@ -729,12 +1487,39 @@ namespace Server.CustomBots
             "Server.Items.JesterHat",
             "Server.Items.Bandana",
             "Server.Items.WizardsHat",
-            "Server.Items.ClothNinjaHood",
+            // T2A-era only: no ninja hoods (Samurai Empire, 2004) and no
+            // bear/deer/tribal masks (savage era, UO:R 2000). OrcHelm
+            // stays — orcish helms dropped from orcs since launch.
             "Server.Items.OrcHelm",
-            "Server.Items.BearMask",
-            "Server.Items.DeerMask",
-            "Server.Items.TribalMask",
         };
+
+        // Headgear pool for fishermen — practical, weathered hats. ~20% go
+        // bareheaded. Hue varies so even matching hats look different.
+        private static readonly string[] _fisherHats =
+        {
+            "Server.Items.StrawHat",
+            "Server.Items.TallStrawHat",
+            "Server.Items.WideBrimHat",
+            "Server.Items.FloppyHat",
+            "Server.Items.TricorneHat",
+            "Server.Items.Bandana",
+            "Server.Items.Skullcap",
+            "Server.Items.Bonnet",
+        };
+
+        private static void RollFisherHat(PlayerBot bot)
+        {
+            if (Utility.RandomDouble() < 0.20)
+            {
+                return; // bareheaded
+            }
+
+            var hat = TryNewItem(_fisherHats[Utility.Random(_fisherHats.Length)]);
+            if (hat != null)
+            {
+                Add(bot, hat, Utility.RandomNeutralHue());
+            }
+        }
 
         private static Item RollRandomHat()
         {
@@ -891,9 +1676,21 @@ namespace Server.CustomBots
                 var ctor0 = t.GetConstructor(Type.EmptyTypes);
                 if (ctor0 != null) return ctor0.Invoke(null) as Item;
 
-                // Fall back to (int) ctor with hue=0 (matches default value).
+                // Fall back to the single-int ctor — but that int means
+                // AMOUNT on stackables (Gold, Bandage, Kindling...) and
+                // HUE elsewhere. Passing 0 to an amount-ctor trips the
+                // engine's "Item.Amount <= 0" error on EVERY construction
+                // (the storm of ERR lines at each spawn wave). Inspect the
+                // parameter's name and pass a value that's safe for what
+                // it actually is.
                 var ctorInt = t.GetConstructor(new[] { typeof(int) });
-                if (ctorInt != null) return ctorInt.Invoke(new object[] { 0 }) as Item;
+                if (ctorInt != null)
+                {
+                    bool isAmount = string.Equals(
+                        ctorInt.GetParameters()[0].Name, "amount",
+                        StringComparison.OrdinalIgnoreCase);
+                    return ctorInt.Invoke(new object[] { isAmount ? 1 : 0 }) as Item;
+                }
 
                 return null;
             }

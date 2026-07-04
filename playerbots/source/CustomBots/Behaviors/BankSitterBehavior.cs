@@ -60,6 +60,26 @@ namespace Server.CustomBots
             base.OnAttached(bot);
             HomeMap = bot.Map;
             Home    = PickScatteredHome(bot);
+
+            // Gear progression (IDEAS 4.3): dungeon runs pay. Three
+            // survived runs and this bank visit becomes shopping day —
+            // tier promotion, fresh skills, visibly better kit. Regulars
+            // you keep seeing at the bank get better gear over time.
+            if (bot.DungeonRunsSurvived >= 3 &&
+                bot.SkillTier < BotSkillTier.Grandmaster)
+            {
+                bot.DungeonRunsSurvived = 0;
+                bot.SkillTier++;
+                bot.ReinitializeAsClass(bot.Class);
+                bot.EquipFactionShield();
+                var line = ChatLibrary.PickRandom("gear_up");
+                if (!string.IsNullOrEmpty(line))
+                {
+                    bot.Say(line);
+                }
+                Console.WriteLine(
+                    $"[gear] {bot.Name} promoted to {bot.SkillTier} (dungeon runs paid off)");
+            }
         }
 
         // Pick a home tile near the arrival point instead of standing

@@ -26,6 +26,24 @@ namespace Server.CustomBots
         // Speech range UO vendors respond within; informational only here.
         public int VendorSpeakRange { get; set; } = 3;
 
+        // ---- Spawn-pinned visit window ----
+        //
+        // Shoppers that arrive ORGANICALLY (a Traveler reaching a vendor)
+        // already get a VisitExpiresAt stamped by the handoff, so they break
+        // off and travel again after a minute or two. But shoppers PINNED at
+        // vendor spots by [GenerateBots spawn straight into this behavior with
+        // no timer — left alone they'd shop forever (until the slow 30-180min
+        // lifecycle clock moves them).
+        //
+        // PlayerBot.OnAfterSpawn stamps a visit using this window so pinned
+        // shoppers also break off into the roaming pool. The whole pinned
+        // crowd spawns in the same instant, so the window is kept wide enough
+        // to stagger their departures instead of emptying every vendor at
+        // once. By the time they disperse, organic Traveler arrivals are
+        // flowing in to keep the shops populated.
+        public static TimeSpan SpawnVisitMin = TimeSpan.FromSeconds(30);
+        public static TimeSpan SpawnVisitMax = TimeSpan.FromMinutes(5);
+
         public Point3D Home { get; private set; }
         public Map     HomeMap { get; private set; }
 

@@ -1,0 +1,18 @@
+# friend_greet.txt — greeting a friend or guildmate BY NAME on sight.
+# {name} = the other bot's first name.
+
+yo {name}
+hey {name}
+{name}!
+hail {name}
+sup {name}
+{name} whats up
+hey {name}, long time
+{name} my man
+oi {name}
+well met {name}
+{name}! hows it going
+look who it is, {name}
+hey its {name}
+{name} you still alive?
+{name}! hows the hunting

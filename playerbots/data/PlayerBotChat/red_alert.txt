@@ -1,0 +1,10 @@
+# red_alert.txt — a civilian spots a murderer. {place} = where (upper-cased).
+
+RED AT {place}!!
+RED!! {place}!!
+murderer at {place}, RUN
+pk at {place}!!!
+red red red {place}
+GUARDS... oh right. RED AT {place}
+everyone out of {place}, red hunting
+watch out, red near {place}

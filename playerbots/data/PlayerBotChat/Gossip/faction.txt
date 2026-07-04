@@ -1,0 +1,11 @@
+# Gossip/faction.txt — retelling an Order/Chaos street kill.
+# {actor} = who died, {other} = who killed them, {place}, {when}.
+
+{other} killed {actor} in the shield war at {place} {when}!!
+order chaos fight at {place}, {actor} got cut down
+saw {other} kill {actor} at {place}. shield war again
+{actor} died in the faction fight at {place} {when}
+big fight at {place} {when}, {other} got {actor}
+the war took {actor} at {place}
+{other} and {actor} went at it at {place}. {actor} lost
+guards just WATCHED {other} kill {actor} at {place}

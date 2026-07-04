@@ -1,0 +1,9 @@
+# Gossip/red.txt — retelling a red sighting.
+# {actor} = witness, {other} = the red, {place}, {when}.
+
+{actor} saw {other} at {place} {when}. red alert
+theres a red working {place} — {other}
+{other} was spotted at {place} {when}, stay clear
+red at {place} {when}. {actor} barely got away
+{other} is hunting around {place}
+keep out of {place}, {other}'s camping it

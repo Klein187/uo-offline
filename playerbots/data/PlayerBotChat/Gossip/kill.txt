@@ -1,0 +1,12 @@
+# Gossip/kill.txt — retelling a notable monster kill.
+# {actor} = the bot, {other} = the monster, {place}, {when}.
+# NOTE: creature names already include their article ("a lich",
+# "an ettin") — never write "a {other}".
+
+{actor} killed {other} at {place} {when}
+heard {actor} soloed {other} at {place}
+{actor} took down {other} near {place}
+{other} at {place}? {actor} handled it
+{actor} got {other} {when}. nice
+{actor} killed that {other} that was camping {place}
+{actor} is farming {place}, got {other} {when}

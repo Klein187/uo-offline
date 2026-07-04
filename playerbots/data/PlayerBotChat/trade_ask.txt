@@ -1,0 +1,12 @@
+# trade_ask.txt — a customer opening a purchase.
+
+how much for a katana
+you got any plate gloves?
+need a new weapon, whats good
+how much for repairs
+what will 500 get me
+got anything magic?
+lemme see your best
+need arrows, lots
+you make shields?
+how much for the lot

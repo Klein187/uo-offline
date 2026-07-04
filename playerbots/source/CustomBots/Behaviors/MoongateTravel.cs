@@ -51,15 +51,23 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Begin a moongate trip. Picks a random moongate OTHER than the one
-        // named by `fromMoongateName`, teleports the bot there after a short
-        // delay, and hands off a fresh Traveler aimed at the new area.
+        // Begin a moongate trip.
+        //
+        // Exit gate choice:
+        //   - resumeDestination given (the bot was ROUTED to this gate to
+        //     continue a longer trip — off an island, or a long-haul
+        //     shortcut): pick the gate CLOSEST to that destination, and
+        //     hand off a Traveler still aimed at it. The trip continues.
+        //   - no resumeDestination (the bot picked the gate as a
+        //     destination in its own right): pick a random other gate —
+        //     this is how bots spread between cities.
         //
         // Returns true if a trip was started (caller's behavior is now
         // detached and must return). Returns false if travel couldn't
         // happen (only one moongate exists, etc.) — caller proceeds normally.
         // -------------------------------------------------------------------
-        public static bool BeginTrip(PlayerBot bot, string fromMoongateName)
+        public static bool BeginTrip(PlayerBot bot, string fromMoongateName,
+            string resumeDestination = null)
         {
             if (bot == null || bot.Deleted || !bot.Alive) return false;
             if (bot.Map == null || bot.Map == Map.Internal) return false;
@@ -78,8 +86,41 @@ namespace Server.CustomBots
             }
             if (others.Count == 0) return false;
 
-            // Pick a random destination gate.
-            var target = others[Utility.Random(others.Count)];
+            // Resolve the resume destination's coordinates, if any.
+            Point3D? resumeCoord = null;
+            if (!string.IsNullOrEmpty(resumeDestination))
+            {
+                var resumeObj = DestinationCatalog.GetByName(resumeDestination);
+                if (resumeObj != null)
+                {
+                    resumeCoord = resumeObj.ArrivalPoint ?? resumeObj.Location;
+                }
+            }
+
+            // Pick the destination gate: nearest to where the trip is
+            // ultimately headed, or random for a plain wander.
+            BotDestination target = null;
+            if (resumeCoord.HasValue)
+            {
+                int bestDist = int.MaxValue;
+                foreach (var g in others)
+                {
+                    int d = Math.Max(Math.Abs(g.Location.X - resumeCoord.Value.X),
+                                     Math.Abs(g.Location.Y - resumeCoord.Value.Y));
+                    if (d < bestDist)
+                    {
+                        bestDist = d;
+                        target = g;
+                    }
+                }
+            }
+            target ??= others[Utility.Random(others.Count)];
+            // Stale resume name that resolved to nothing — treat the trip
+            // as a plain wander so the far side picks fresh.
+            if (!resumeCoord.HasValue)
+            {
+                resumeDestination = null;
+            }
 
             // Visuals at the departure gate.
             SafeGateEffect(bot);
@@ -102,14 +143,20 @@ namespace Server.CustomBots
                 // Arrival visuals at the new gate.
                 SafeGateEffect(bot);
 
-                // Hand off a fresh Traveler. Leaving DestinationName null
-                // makes the Traveler pick a new destination on its first
-                // tick — and since the bot is now standing at the target
-                // moongate, the nearest-waypoint routing starts it
-                // exploring whatever city it arrived in.
+                // Hand off a fresh Traveler. A resume destination keeps the
+                // interrupted trip alive — the bot emerges from the gate
+                // and continues toward where it was headed all along.
+                // Otherwise DestinationName stays null and the Traveler
+                // picks fresh on its first tick — since the bot now stands
+                // at the target moongate, the nearest-waypoint routing
+                // starts it exploring whatever city it arrived in.
                 try
                 {
                     var traveler = new TravelerBehavior();
+                    if (resumeDestination != null)
+                    {
+                        traveler.DestinationName = resumeDestination;
+                    }
                     bot.Behavior = traveler;
                 }
                 catch (Exception ex)
@@ -119,7 +166,8 @@ namespace Server.CustomBots
                 }
 
                 Console.WriteLine(
-                    $"[MoongateTravel] {bot.Name}: {fromMoongateName} -> {target.Name}");
+                    $"[MoongateTravel] {bot.Name}: {fromMoongateName} -> {target.Name}" +
+                    (resumeDestination != null ? $" (continuing to '{resumeDestination}')" : ""));
             });
 
             return true;

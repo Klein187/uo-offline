@@ -188,6 +188,7 @@ namespace Server.CustomBots
 
         private static readonly string[] AmbientChat = { "traveling", "small_talk" };
         private static readonly string[] CombatChat  = { "combat_actions" };
+        private static readonly string[] GhostChat   = { "ghost" };
 
         // Chat categories used while the bot is AT a destination, lingering.
         // Picked by the destination's DestinationType so a bot at a bank
@@ -246,6 +247,59 @@ namespace Server.CustomBots
         // off the gate before the teleport fires.
         private bool _moongateTripPending;
 
+        // ---- Dungeon entry (walk-onto-a-real-teleporter) ----
+        // A dungeon entrance is an ORDINARY destination the bot walks to,
+        // whose arrival tile is placed on a real in-game Teleporter item.
+        // The bot walks onto the pad and the GAME teleports it inside (via
+        // Teleporter.OnMoveOver) — there is no custom teleport here, unlike
+        // moongates. When the bot vanishes into the dungeon we convert it to
+        // a DungeonCrawler.
+        //
+        //   _dungeonEntry      — current destination is such an entrance.
+        //   _dungeonEntryTile  — the teleporter tile (the arrival coord).
+        //   _dungeonEntryArmed — bot has reached the pad's vicinity; a sudden
+        //                        jump away from it now means "teleported in".
+        //   _dungeonEntryWalking — final approach is driving the bot straight
+        //                        onto the exact pad tile (range 0).
+        private bool _dungeonEntry;
+        private Point3D _dungeonEntryTile;
+        private bool _dungeonEntryArmed;
+        private DateTime _dungeonEntryArmedAt;
+        private bool _dungeonEntryWalking;
+
+        // A single Move can step at most one tile; a jump larger than this in
+        // one move/tick can only be the teleporter firing.
+        private const int DungeonEntryJump = 20;
+        private const int DungeonEntryArmRange = 3;
+        // If the bot reaches the pad but never gets teleported (inactive
+        // teleporter, or a CanTeleport gate like combat/criminal), give up
+        // after this long rather than loiter on the tile forever.
+        private static readonly TimeSpan DungeonEntryTimeout = TimeSpan.FromSeconds(20);
+
+        // Magic travel (Recall / Gate Travel) — true while the cast +
+        // teleport sequence runs. The Traveler freezes and waits; the
+        // sequence ends by attaching a fresh Traveler on the far side,
+        // which detaches this one.
+        private bool _magicTravelPending;
+
+        // The trip's REAL destination while the route is temporarily aimed
+        // at a moongate (island escape, long-haul shortcut, marooned
+        // rescue). At the gate the bot ALWAYS steps through, exits at the
+        // gate nearest this destination, and the far-side Traveler resumes
+        // toward it. Null = the current DestinationName is the real trip.
+        private string _gateResumeDestination;
+
+        // Re-entrancy guard for PlanPath's salvage retries (unreachable
+        // destination -> pick a reachable one -> re-plan). One level only.
+        private int _planDepth;
+
+        // Long-haul gate shortcut: walking trips at least this long
+        // (straight-line tiles) consider the moongate network instead...
+        private const int GateShortcutMinDistance = 200;
+        // ...and this fraction of them actually take it (the rest walk,
+        // keeping some long-haul foot traffic on the roads).
+        private const double GateShortcutChance = 0.8;
+
         public TravelerBehavior()
         {
             ChatCategories  = AmbientChat;
@@ -278,6 +332,57 @@ namespace Server.CustomBots
 
             // Plan the initial path.
             PlanPath(bot);
+
+            // A mage with the skill and mana may skip the walk entirely.
+            TryMagicTravel(bot);
+        }
+
+        // -------------------------------------------------------------------
+        // TryMagicTravel — called whenever a NEW trip has just been
+        // planned. Rolls whether this bot Recalls / Gates to the
+        // destination instead of walking (MagicTravel gates on Magery,
+        // mana, trip length, and chance). On success the Traveler freezes;
+        // the sequence attaches a fresh Traveler at the far end.
+        // -------------------------------------------------------------------
+        private void TryMagicTravel(PlayerBot bot)
+        {
+            if (_hasArrived || _magicTravelPending) return;
+
+            // Ghosts walk. (A dead Traveler is a ghost on its way to a
+            // healer — Recall needs words, and the dead have none.)
+            if (!bot.Alive) return;
+
+            // A party leader walks — Recalling out from under three bots
+            // mid-march would strand the group. (Members aren't Travelers,
+            // but the check is cheap and future-proof.)
+            if (BotPartyManager.IsInParty(bot)) return;
+
+            // The route may be temporarily aimed at a moongate (island
+            // escape / long-haul shortcut). A caster doesn't need the gate
+            // dance — Recall goes straight to the trip's REAL destination,
+            // ocean or no ocean.
+            string destName = DestinationName;
+            Point3D? coord = _finalCoord;
+            var destType = _destType;
+            if (_gateResumeDestination != null)
+            {
+                var resumeObj = DestinationCatalog.GetByName(_gateResumeDestination);
+                if (resumeObj != null)
+                {
+                    destName = _gateResumeDestination;
+                    coord    = resumeObj.ArrivalPoint ?? resumeObj.Location;
+                    destType = resumeObj.Type;
+                }
+            }
+
+            if (!coord.HasValue) return;
+
+            if (MagicTravel.TryBeginTrip(bot, destName, coord.Value, destType))
+            {
+                _magicTravelPending = true;
+                StopStepTimer();
+                Log(bot, $"Traveling to '{destName}' by magic");
+            }
         }
 
         // -------------------------------------------------------------------
@@ -290,9 +395,113 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private static string PickNewDestinationName(PlayerBot bot)
         {
-            var dest = DestinationCatalog.PickWeighted(bot.Class);
-            if (dest != null) return dest.Name;
+            var botNode = NearestReachableNode(bot);
+
+            // Reroll picks that land on a gateless island (e.g. Buccaneer's
+            // Den): no moongate arrives in that waypoint component, so a bot
+            // elsewhere can never reach them — it just gate-hops forever
+            // chasing a trip that can't complete. A bot ALREADY on such an
+            // island may still pick local spots.
+            string lastPick = null;
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                var dest = DestinationCatalog.PickWeighted(bot);
+                if (dest == null)
+                {
+                    break;
+                }
+                lastPick = dest.Name;
+                if (botNode == null || !IsStrandedIsland(dest, botNode.Name))
+                {
+                    return dest.Name;
+                }
+            }
+            if (lastPick != null)
+            {
+                return lastPick;
+            }
             return WaypointRegistry.Graph.PickRandomName();
+        }
+
+        // -------------------------------------------------------------------
+        // NearestReachableNode — plug the bot into the graph at a node it
+        // can actually WALK to. Plain nearest-by-distance can pick a node
+        // across a river or wall (straight-line distance is blind to
+        // terrain), and every downstream decision then inherits the lie:
+        // empty plans, bogus island reroutes, MAROONED rescues. Probe the
+        // closest few candidates with a real A* check and take the first
+        // that resolves; fall back to the plain nearest so behavior never
+        // degrades below the old lookup.
+        // -------------------------------------------------------------------
+        private static WaypointNode NearestReachableNode(PlayerBot bot)
+        {
+            var graph = WaypointRegistry.Graph;
+            var candidates = new List<WaypointNode>(4);
+            graph.FindNearestNodes(bot.Location, 4, candidates);
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+
+            foreach (var n in candidates)
+            {
+                int d = Math.Max(Math.Abs(n.Location.X - bot.X),
+                                 Math.Abs(n.Location.Y - bot.Y));
+                if (d <= 2)
+                {
+                    return n; // effectively standing on it
+                }
+                if (d > WaypointGraph.MaxLegDistance)
+                {
+                    break; // beyond A*'s search box — probes can't verify
+                }
+                if (new MovementPath(bot, n.Location).Success)
+                {
+                    return n;
+                }
+            }
+            return candidates[0];
+        }
+
+        // -------------------------------------------------------------------
+        // True when `dest` sits in a waypoint component that (a) the bot is
+        // not in, and (b) contains no moongate — unreachable on foot AND by
+        // gate. Dungeon interiors match too (their components hold no gates),
+        // which is correct: Travelers enter dungeons via DungeonEntrance
+        // points on the surface, never by targeting interior points.
+        // -------------------------------------------------------------------
+        private static bool IsStrandedIsland(BotDestination dest, string botNodeName)
+        {
+            var graph = WaypointRegistry.Graph;
+
+            var destWp = dest.NearestWaypoint;
+            if (string.IsNullOrEmpty(destWp) || graph.Get(destWp) == null)
+            {
+                destWp = graph.FindNearestNode(dest.Location)?.Name;
+            }
+            if (destWp == null)
+            {
+                return false; // no graph data — let PlanPath's salvage handle it
+            }
+
+            int destComp = graph.ComponentOf(destWp);
+            if (destComp < 0 || destComp == graph.ComponentOf(botNodeName))
+            {
+                return false;
+            }
+
+            foreach (var mg in DestinationCatalog.All)
+            {
+                if (mg.Type != DestinationType.Moongate)
+                {
+                    continue;
+                }
+                if (graph.ComponentOf(mg.NearestWaypoint) == destComp)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public override void OnDetached(PlayerBot bot)
@@ -312,14 +521,43 @@ namespace Server.CustomBots
                 return;
             }
 
+            // Mid-Recall/Gate — hold still, the words are spoken. The
+            // DelayCall sequence moves the bot and swaps in a fresh
+            // Traveler; this one just has to not wander off the spot.
+            if (_magicTravelPending) return;
+
+            // Dungeon entry: if the bot just stepped onto the entrance
+            // teleporter, the game whisked it inside — convert it to a crawler
+            // before doing anything else.
+            if (DungeonEntryCheck(bot)) return;
+
+            // Ghost overdue for its res (wedged route, blocked gate...) —
+            // a wandering healer finds it right here. Bounded death story.
+            if (!bot.Alive && BotDeathManager.CheckGhostRescue(bot))
+            {
+                return; // resurrected; behavior swapped to the corpse run
+            }
+
+            // Corpse run: once the body is close, stop riding waypoints
+            // and walk straight at it.
+            if (bot.Alive && bot.CorpseRunPending &&
+                BotDeathManager.TryCorpseApproach(bot))
+            {
+                return; // behavior swapped to CorpseReclaim
+            }
+
             // Ambient/combat chatter while traveling. When the bot has
             // ARRIVED, chat is handled by DoArrivalActivity instead (with
             // destination-appropriate categories), so skip it here to
             // avoid a traveling bot saying "still on the road" while
-            // standing in a bank.
+            // standing in a bank. A DEAD traveler is a ghost walking to a
+            // healer — it moans instead (the client garbles ghost speech
+            // for the living, which is exactly the effect).
             if (!_hasArrived)
             {
-                ChatCategories = bot.Combatant != null ? CombatChat : AmbientChat;
+                ChatCategories = !bot.Alive ? GhostChat
+                    : bot.Combatant != null ? CombatChat
+                    : AmbientChat;
                 TrySpeak(bot);
             }
 
@@ -331,22 +569,39 @@ namespace Server.CustomBots
             // (surround, chase-fleeing-monsters) and, crucially, swaps the
             // bot back to a Traveler the instant the fight is over so the
             // trip resumes. Defenders also retreat sooner than hunters.
-            var combatant = bot.Combatant;
+            //
+            // Ghosts have no quarrels — a dead Traveler (a ghost walking
+            // to its res) never acquires a threat, so the whole defender
+            // machinery is skipped while dead.
+            var combatant = bot.Alive ? bot.Combatant : null;
             Mobile threat = combatant as Mobile;
-            if (threat == null || threat.Deleted || !threat.Alive)
+            if (bot.Alive && (threat == null || threat.Deleted || !threat.Alive))
                 threat = FindNearbyEnemy(bot);
+
+            // A foe we've already proven unreachable (e.g. a giant rat walled
+            // inside a building hitting us through the wall) must NOT trigger a
+            // defender swap — that just makes the bot pile on the wall, give
+            // up, revert, and get re-hit in an endless loop. Drop it and keep
+            // traveling. (The bot-level ignore survives the behavior swap, so
+            // this stays sticky across the revert.)
+            if (threat != null && bot.IsUnreachable(threat))
+            {
+                if (bot.Combatant == threat)
+                    bot.Combatant = null;
+                threat = null;
+            }
 
             if (threat != null && !threat.Deleted && threat.Alive)
             {
-                // Crafters are tradespeople — they have no combat training
+                // Artisans are tradespeople — they have no combat training
                 // and shouldn't be fighting monsters. Instead of swapping
                 // to a defender, they BREAK off the trip and pick a new
                 // destination (one that's hopefully not in the threat's
                 // direction). It's their version of fleeing: head somewhere
                 // else and let the threat fall behind.
-                if (bot.Class == BotClass.Crafter)
+                if (BotClassHelper.IsArtisan(bot.Class) || bot.Class == BotClass.Crafter)
                 {
-                    Log(bot, $"Crafter attacked while traveling — abandoning route");
+                    Log(bot, $"Artisan attacked while traveling — abandoning route");
                     bot.Combatant = null;
                     PickNewDestination(bot);
                     return;
@@ -370,6 +625,15 @@ namespace Server.CustomBots
             // -- 3. Arrived? --
             if (_hasArrived)
             {
+                // Dungeon entrance: never linger or hand off. Keep walking the
+                // last tiles straight onto the teleporter pad; the game does
+                // the rest (DungeonEntryCheck converts us once it fires).
+                if (_dungeonEntry)
+                {
+                    WalkOntoEntrance(bot);
+                    return;
+                }
+
                 // While drifting toward the destination, tick the drift
                 // logic. Drift ends naturally when close enough, stuck,
                 // or timed out — then HandleArrival takes over.
@@ -526,7 +790,7 @@ namespace Server.CustomBots
                 return;
             }
 
-            var nearest = graph.FindNearestNode(bot.Location);
+            var nearest = NearestReachableNode(bot);
             if (nearest == null || string.IsNullOrEmpty(DestinationName))
             {
                 _hasArrived = true;
@@ -637,16 +901,20 @@ namespace Server.CustomBots
             // destination are on disconnected landmasses (e.g. Skara Brae
             // island -> mainland) — it can't walk there. Route instead to the
             // nearest moongate the bot CAN reach (non-empty FindPath = same
-            // landmass); the gate's step-through carries it off-island, and it
-            // picks a fresh destination on the far side.
-            if ((_plannedPath == null || _plannedPath.Count == 0) &&
-                _destType != DestinationType.Moongate)
+            // landmass); the gate's step-through carries it off-island and
+            // CONTINUES the trip: the exit gate is chosen nearest the real
+            // destination and the far-side Traveler stays aimed at it.
+            if (_plannedPath == null || _plannedPath.Count == 0)
             {
                 string bestGate = null; string bestGateName = null;
                 int bestDist = int.MaxValue;
                 foreach (var mg in DestinationCatalog.All)
                 {
                     if (mg.Type != DestinationType.Moongate) continue;
+                    // The destination itself may BE an unreachable gate —
+                    // don't "reroute" to the place we can't reach.
+                    if (string.Equals(mg.Name, DestinationName,
+                            StringComparison.OrdinalIgnoreCase)) continue;
                     if (string.IsNullOrEmpty(mg.NearestWaypoint)) continue;
                     var gatePath = graph.FindPath(nearest.Name, mg.NearestWaypoint);
                     if (gatePath == null || gatePath.Count == 0) continue; // unreachable gate
@@ -659,11 +927,13 @@ namespace Server.CustomBots
                 {
                     Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
                              $"(across water) — routing to moongate '{bestGateName}' " +
-                             $"(wp '{bestGate}') to gate off-island");
+                             $"(wp '{bestGate}') to gate toward it");
                     // Become a moongate-bound bot: retarget the route AND the
                     // destination identity, so on arrival the Moongate step-
                     // through branch fires instead of a stale Healer/vendor
-                    // handoff. Without this the bot just stood at the gate.
+                    // handoff — but REMEMBER the real trip so the gate
+                    // continues it instead of scattering the bot randomly.
+                    _gateResumeDestination = DestinationName;
                     DestinationName = bestGateName;
                     _destType = DestinationType.Moongate;
                     routeTargetWaypoint = bestGate;
@@ -673,7 +943,128 @@ namespace Server.CustomBots
                         : (Point3D?)null;
                     _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
                 }
+                else if (_planDepth == 0)
+                {
+                    // No reachable gate either. Without this, the empty
+                    // path fell through to "mark arrived" and the bot did
+                    // arrival activity on the wrong side of the ocean —
+                    // the classic stuck-on-an-island bot.
+                    //
+                    // Salvage 1: pick a destination we CAN walk to and
+                    // re-plan toward that instead.
+                    var salvage = PickReachableDestination(bot, nearest.Name);
+                    if (salvage != null)
+                    {
+                        Log(bot, $"Destination '{DestinationName}' unreachable and no " +
+                                 $"gate in reach — retargeting to reachable '{salvage}'");
+                        DestinationName = salvage;
+                        _gateResumeDestination = null;
+                        _planDepth++;
+                        PlanPath(bot);
+                        _planDepth--;
+                        return;
+                    }
+
+                    // Salvage 2: truly marooned (a waypoint pocket with no
+                    // gate and no reachable destination — a data hole).
+                    // Rescue-teleport to the nearest moongate and let the
+                    // gate network carry the trip on; matches the existing
+                    // LOST-rescue precedent above.
+                    var rescueGate = NearestMoongate(bot);
+                    if (rescueGate != null)
+                    {
+                        Log(bot, $"MAROONED — no reachable destination or gate from here; " +
+                                 $"rescue-teleporting to moongate '{rescueGate.Name}'");
+                        _gateResumeDestination = DestinationName;
+                        bot.MoveToWorld(rescueGate.ArrivalPoint ?? rescueGate.Location, bot.Map);
+                        DestinationName = rescueGate.Name;
+                        _planDepth++;
+                        PlanPath(bot);
+                        _planDepth--;
+                        return;
+                    }
+                    // No moongates authored at all — fall through to the
+                    // legacy empty-path handling below.
+                }
             }
+
+            // ----- long-haul gate shortcut --------------------------------
+            // Even when a walking path EXISTS, a very long haul goes faster
+            // through the moongate network: walk to the nearest reachable
+            // gate, step through to the gate nearest the destination, and
+            // walk the last stretch. Only taken when the two gate legs are
+            // together much shorter than the direct walk.
+            if (_plannedPath != null && _plannedPath.Count > 0 &&
+                _destType != DestinationType.Moongate &&
+                _gateResumeDestination == null && _finalCoord.HasValue &&
+                !BotPartyManager.IsInParty(bot)) // party leaders march on foot
+            {
+                int walkDist = Math.Max(Math.Abs(_finalCoord.Value.X - bot.X),
+                                        Math.Abs(_finalCoord.Value.Y - bot.Y));
+                if (walkDist >= GateShortcutMinDistance &&
+                    Utility.RandomDouble() < GateShortcutChance)
+                {
+                    BotDestination entry = null, exit = null;
+                    int entryDist = int.MaxValue, exitDist = int.MaxValue;
+                    foreach (var mg in DestinationCatalog.All)
+                    {
+                        if (mg.Type != DestinationType.Moongate) continue;
+                        if (string.IsNullOrEmpty(mg.NearestWaypoint)) continue;
+
+                        int dDest = Math.Max(Math.Abs(mg.Location.X - _finalCoord.Value.X),
+                                             Math.Abs(mg.Location.Y - _finalCoord.Value.Y));
+                        if (dDest < exitDist)
+                        {
+                            exitDist = dDest;
+                            exit = mg;
+                        }
+
+                        int dMe = Math.Max(Math.Abs(mg.Location.X - bot.X),
+                                           Math.Abs(mg.Location.Y - bot.Y));
+                        if (dMe < entryDist)
+                        {
+                            var gp = graph.FindPath(nearest.Name, mg.NearestWaypoint);
+                            if (gp != null && gp.Count > 0)
+                            {
+                                entryDist = dMe;
+                                entry = mg;
+                            }
+                        }
+                    }
+
+                    if (entry != null && exit != null && entry != exit &&
+                        entryDist + exitDist < walkDist / 2)
+                    {
+                        Log(bot, $"Long haul to '{DestinationName}' ({walkDist} tiles) — " +
+                                 $"taking the moongate at '{entry.Name}' instead " +
+                                 $"(gate legs {entryDist}+{exitDist} tiles)");
+                        _gateResumeDestination = DestinationName;
+                        DestinationName = entry.Name;
+                        _destType = DestinationType.Moongate;
+                        routeTargetWaypoint = entry.NearestWaypoint;
+                        _finalCoord = entry.ArrivalPoint ?? entry.Location;
+                        _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
+                    }
+                }
+            }
+            // Dungeon entrance: a normal destination the bot walks to, whose
+            // arrival tile sits on a real in-game Teleporter. The bot walks
+            // onto the pad and the GAME teleports it inside (no custom
+            // teleport); DungeonEntryCheck then converts it to a crawler.
+            _dungeonEntry        = false;
+            _dungeonEntryArmed   = false;
+            _dungeonEntryWalking = false;
+            if ((_destType == DestinationType.DungeonEntrance ||
+                 _destType == DestinationType.Dungeon) && _finalCoord.HasValue)
+            {
+                var de = DestinationCatalog.GetByName(DestinationName);
+                if (de != null && !string.IsNullOrEmpty(de.Dungeon))
+                {
+                    _dungeonEntry     = true;
+                    _dungeonEntryTile = _finalCoord.Value;
+                }
+            }
+
             _legIndex = 0;
             // Fresh path, fresh best-distance tracker. NOTE: the stuck
             // cycle counter is deliberately NOT reset here; stuck recovery
@@ -723,6 +1114,73 @@ namespace Server.CustomBots
             {
                 Log(bot, $"Plan ({_plannedPath.Count} legs): {string.Join(" -> ", _plannedPath)}");
             }
+        }
+
+        // -------------------------------------------------------------------
+        // PickReachableDestination — roll the class-weighted catalog a few
+        // times and return the first candidate with a walkable path from
+        // fromNode. Null if nothing reachable turned up (marooned).
+        // -------------------------------------------------------------------
+        private string PickReachableDestination(PlayerBot bot, string fromNode)
+        {
+            var graph = WaypointRegistry.Graph;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var cand = PickNewDestinationName(bot);
+                if (string.IsNullOrEmpty(cand) ||
+                    string.Equals(cand, DestinationName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string wp = null;
+                var cObj = DestinationCatalog.GetByName(cand);
+                if (cObj != null)
+                {
+                    wp = cObj.NearestWaypoint;
+                    if (string.IsNullOrEmpty(wp) || graph.Get(wp) == null)
+                    {
+                        var n = graph.FindNearestNode(cObj.ArrivalPoint ?? cObj.Location);
+                        wp = n?.Name;
+                    }
+                }
+                else if (graph.Get(cand) != null)
+                {
+                    wp = cand;   // bare waypoint destination
+                }
+
+                if (wp == null) continue;
+
+                var path = graph.FindPath(fromNode, wp);
+                if (path != null && path.Count > 0)
+                {
+                    return cand;
+                }
+            }
+
+            return null;
+        }
+
+        // Nearest moongate destination by straight-line distance.
+        // Reachability deliberately NOT required — this is the marooned
+        // rescue, where nothing is reachable by definition.
+        private static BotDestination NearestMoongate(PlayerBot bot)
+        {
+            BotDestination best = null;
+            int bestDist = int.MaxValue;
+            foreach (var mg in DestinationCatalog.All)
+            {
+                if (mg.Type != DestinationType.Moongate) continue;
+                int d = Math.Max(Math.Abs(mg.Location.X - bot.X),
+                                 Math.Abs(mg.Location.Y - bot.Y));
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = mg;
+                }
+            }
+            return best;
         }
 
         // Track the last leg name we logged so we don't spam every tick.
@@ -914,6 +1372,12 @@ namespace Server.CustomBots
         // Called wherever the bot used to StartDrift directly.
         private void BeginFinalApproach(PlayerBot bot)
         {
+            // Dungeon entrances don't drift to "near" the coord — they must
+            // step exactly ONTO the teleporter pad. WalkOntoEntrance (driven
+            // from the arrived branch in Tick) handles that; don't start the
+            // ordinary drift/field approach here.
+            if (_dungeonEntry) { StopStepTimer(); return; }
+
             if (!_finalCoord.HasValue) { StopStepTimer(); return; }
 
             var field = DestinationFieldCache.Get(DestinationName);
@@ -1050,6 +1514,16 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void HandleArrival(PlayerBot bot)
         {
+            // A ghost completing its walk to a healer/shrine: resurrect
+            // here and start the corpse run. (Only the death flow ever
+            // creates a dead Traveler.)
+            if (!bot.Alive)
+            {
+                StopStepTimer();
+                BotDeathManager.OnTravelerArrival(bot);
+                return;
+            }
+
             // A moongate trip is scheduled — MoongateTravel will teleport
             // the bot and swap its behavior shortly. Do nothing until then;
             // any movement here could carry the bot off the gate.
@@ -1126,6 +1600,7 @@ namespace Server.CustomBots
         {
             return type == DestinationType.Graveyard
                 || type == DestinationType.Dungeon
+                || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
                 || type == DestinationType.VendorSmith
                 || type == DestinationType.VendorMage
                 || type == DestinationType.VendorTailor
@@ -1214,13 +1689,22 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // teleports the bot and attaches a fresh Traveler itself.
             if (_destType == DestinationType.Moongate)
             {
-                const double useChance = 0.80;  // 80% step through the gate
+                // A bot that was ROUTED here to continue a longer trip
+                // (island escape, long-haul shortcut) ALWAYS steps through
+                // — the gate is the whole reason it came. A bot that
+                // picked the gate as a destination in its own right
+                // usually steps through, sometimes just has a look.
+                double useChance = _gateResumeDestination != null ? 1.0 : 0.80;
                 if (Utility.RandomDouble() < useChance)
                 {
-                    if (MoongateTravel.BeginTrip(bot, DestinationName))
+                    if (MoongateTravel.BeginTrip(bot, DestinationName,
+                            _gateResumeDestination))
                     {
                         Log(bot, $"Stepping through the moongate at " +
-                                 $"'{DestinationName}'");
+                                 $"'{DestinationName}'" +
+                                 (_gateResumeDestination != null
+                                     ? $" toward '{_gateResumeDestination}'"
+                                     : ""));
                         // BeginTrip teleports + swaps behavior after a
                         // short delay. Until then, freeze this Traveler so
                         // it doesn't walk the bot off the gate.
@@ -1228,26 +1712,66 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                         return true;
                     }
                 }
+
+                // Gate travel couldn't start (single-gate world). A routed
+                // bot must not camp a gate that goes nowhere — drop the
+                // resume and start a fresh trip instead.
+                if (_gateResumeDestination != null)
+                {
+                    Log(bot, $"Moongate at '{DestinationName}' goes nowhere — " +
+                             $"abandoning trip to '{_gateResumeDestination}'");
+                    _gateResumeDestination = null;
+                    PickNewDestination(bot);
+                    return true;
+                }
+
                 // Didn't roll the chance, or only one gate exists — fall
                 // through; the bot just lingers at the gate like any other
                 // non-handoff destination.
                 return false;
             }
 
+            // Dungeon entrances are no longer handled here. A dungeon entrance
+            // is an ordinary destination whose arrival tile sits on a real
+            // teleporter; the bot walks onto it, the game teleports it inside,
+            // and DungeonEntryCheck converts it to a crawler. There is no
+            // custom teleport/freeze to roll for at arrival.
+
             string targetBehavior = null;
             double chance = 0.0;
             int visitMinMinutes = 5;
             int visitMaxMinutes = 15;
 
-            // Crafter at its own station: a Crafter-class bot that has
-            // arrived at the destination type matching its CrafterType
-            // (Smith->Forge, Tailor->VendorTailor, Bowcrafter->VendorBowyer,
-            // others->Bank) settles in to "work" there. High chance and a
-            // long visit — a crafter stays at its station, it doesn't just
-            // pass through. Set the handoff variables and let the shared
-            // build block below construct and attach the behavior.
-            if (bot.Class == BotClass.Crafter &&
-                _destType == CrafterTypeHelper.StationFor(bot.CrafterSpec))
+            // Artisan at its own station: a Smith/Tailor/Fisherman that has
+            // arrived at the destination type it works (Smith->Forge,
+            // Tailor->VendorTailor, Fisherman->Dock) settles in to "work"
+            // there. High chance and a long visit — an artisan stays at its
+            // station, it doesn't just pass through. Only the matching class
+            // converts, so a fisherman never "works" a forge and nobody but
+            // an artisan ever becomes a crafter. Set the handoff variables
+            // and let the shared build block below construct the behavior.
+            // A loaded gatherer arriving in town: deliver the haul first
+            // (scene at a crafter if one's working nearby, else a bank
+            // deposit) — then fall through to the ordinary handoff rolls.
+            if (bot.HaulPending && BotClassHelper.IsGatherer(bot.Class) &&
+                _destType is DestinationType.Bank or DestinationType.Forge
+                          or DestinationType.VendorSmith
+                          or DestinationType.VendorCarpenter)
+            {
+                BotEconomy.DeliverMaterials(bot, _destType);
+            }
+
+            // A gatherer arriving at a wilderness work site clocks in.
+            if (BotClassHelper.IsGatherer(bot.Class) &&
+                _destType == DestinationType.GatherSpot)
+            {
+                targetBehavior  = "Gatherer";
+                chance          = 0.95;
+                visitMinMinutes = 4;
+                visitMaxMinutes = 8;
+            }
+            else if (BotClassHelper.IsArtisan(bot.Class) &&
+                BotClassHelper.StationFor(bot.Class) == _destType)
             {
                 targetBehavior  = "Crafter";
                 chance          = 0.95;
@@ -1277,7 +1801,13 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                                  $"{(_finalCoord.HasValue ? bot.GetDistanceToSqrt(_finalCoord.Value).ToString("0") : "?")} tiles from the bank proper");
                         return false;
                     }
-                    targetBehavior = "BankSitter";
+                    // Mostly ordinary sitters, but every bank develops its
+                    // street life: the beggar and the lost newbie (IDEAS
+                    // 1.5) are rare arrival outcomes of the same roll.
+                    double who = Utility.RandomDouble();
+                    targetBehavior = who < 0.08 ? "Beggar"
+                                   : who < 0.15 ? "Newbie"
+                                   : "BankSitter";
                     chance = 0.40;  // many bank visitors just pass through
                     break;
 
@@ -1364,6 +1894,79 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
         }
 
+        // -------------------------------------------------------------------
+        // Dungeon entry (walk-onto-a-real-teleporter)
+        //
+        // Called from both the decision tick and the step timer. Once the bot
+        // is in the entrance pad's vicinity it "arms"; a subsequent sudden
+        // jump away from the pad means the game's Teleporter just carried it
+        // inside, so we convert it to a DungeonCrawler. A safety timeout gives
+        // up if the pad never fires (inactive, or a CanTeleport gate).
+        //
+        // Returns true if it handled the bot (converted or bailed) and the
+        // caller must return immediately.
+        // -------------------------------------------------------------------
+        private bool DungeonEntryCheck(PlayerBot bot)
+        {
+            if (!_dungeonEntry) return false;
+
+            int dist = (int)bot.GetDistanceToSqrt(_dungeonEntryTile);
+
+            if (!_dungeonEntryArmed)
+            {
+                if (dist <= DungeonEntryArmRange)
+                {
+                    _dungeonEntryArmed   = true;
+                    _dungeonEntryArmedAt = Core.Now;
+                }
+                return false;
+            }
+
+            // Armed and now far from the pad in a single move/tick → the
+            // teleporter fired and moved us into the dungeon.
+            if (dist > DungeonEntryJump)
+            {
+                EnterDungeonAsCrawler(bot);
+                return true;
+            }
+
+            // On/near the pad but it never teleported us — don't loiter.
+            if (Core.Now - _dungeonEntryArmedAt > DungeonEntryTimeout)
+            {
+                Log(bot, $"Dungeon entrance '{DestinationName}' didn't teleport " +
+                         $"(inactive pad?) — picking a new destination");
+                PickNewDestination(bot);
+                return true;
+            }
+
+            return false;
+        }
+
+        // Drive the bot the last few tiles straight onto the teleporter pad.
+        // The follower targets the exact tile (range applied in StepOnce); the
+        // game teleports the bot the instant it steps on.
+        private void WalkOntoEntrance(PlayerBot bot)
+        {
+            if (!_dungeonEntryWalking || _follower == null)
+            {
+                _follower = new PathFollower(bot, _dungeonEntryTile);
+                _dungeonEntryWalking = true;
+            }
+            EnsureStepTimer(bot, running: false);
+        }
+
+        // The teleporter carried the bot into the dungeon. Hand off to a
+        // DungeonCrawler with no preset context: it derives its dungeon +
+        // level from the nearest interior point where it landed (see
+        // DungeonCrawlerBehavior.TryRecoverContext), and falls back to an
+        // ordinary wilderness hunter if it landed somewhere unmapped.
+        private void EnterDungeonAsCrawler(PlayerBot bot)
+        {
+            StopStepTimer();
+            Log(bot, $"Teleported into a dungeon via '{DestinationName}' — becoming a crawler");
+            bot.Behavior = new DungeonCrawlerBehavior();
+        }
+
         private void PickNewDestination(PlayerBot bot)
         {
             var graph = WaypointRegistry.Graph;
@@ -1384,9 +1987,17 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             _isDrifting = false;
             _handoffRolled = false;
             _moongateTripPending = false;
+            _magicTravelPending = false;
+            _gateResumeDestination = null;
+            _dungeonEntry = false;
+            _dungeonEntryArmed = false;
+            _dungeonEntryWalking = false;
             _nextIdleTurn = DateTime.MinValue;
             _lastLoggedLeg = null;
             PlanPath(bot);
+
+            // A fresh trip is another chance to Recall/Gate instead of walk.
+            TryMagicTravel(bot);
         }
 
         // -------------------------------------------------------------------
@@ -1479,6 +2090,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
 
                 // Skip players' pets and summoned creatures.
                 if (bc.ControlMaster != null || bc.Summoned) continue;
+
+                // Skip foes already proven unreachable (walled-in critters
+                // attacking through a wall) so we don't pick one as the next
+                // threat over a foe we could actually fight.
+                if (bot.IsUnreachable(bc)) continue;
 
                 // Skip anything that isn't actually hostile.
                 if (bc.FightMode == FightMode.None) continue;
@@ -1578,9 +2194,15 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
 
             // Per-node arrival tolerance (door/entrance waypoints can set a
-            // tighter ArrivalRange in JSON).
+            // tighter ArrivalRange in JSON). A dungeon-entry walk aims for the
+            // exact pad tile (range 0) so the bot actually steps ON the
+            // teleporter rather than stopping a few tiles short.
             int followRange = LegArrivalRange;
-            if (_plannedPath.Count > 0 && _legIndex < _plannedPath.Count)
+            if (_dungeonEntryWalking)
+            {
+                followRange = 0;
+            }
+            else if (_plannedPath.Count > 0 && _legIndex < _plannedPath.Count)
             {
                 var curNode = WaypointRegistry.Graph.Get(_plannedPath[_legIndex]);
                 if (curNode != null && curNode.ArrivalRange > 0)
@@ -1590,6 +2212,21 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
 
             bool arrivedLeg = _follower.Follow(_running, followRange);
+
+            // Did that step carry us onto the entrance teleporter? If so the
+            // game already moved us inside — convert and stop.
+            if (DungeonEntryCheck(bot)) return;
+
+            // While walking onto the pad, skip the ordinary leg-advance/arrival
+            // machinery. If we reached the tile without teleporting (inactive
+            // pad), the timeout in DungeonEntryCheck eventually gives up.
+            if (_dungeonEntryWalking)
+            {
+                if (arrivedLeg) StopStepTimer();
+                _lastStepLoc = bot.Location;
+                return;
+            }
+
             if (!arrivedLeg)
             {
                 // Wall-detect fast path: if Follow() didn't move the bot

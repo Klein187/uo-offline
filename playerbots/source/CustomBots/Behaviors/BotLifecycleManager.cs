@@ -89,6 +89,43 @@ namespace Server.CustomBots
                 // Fixed-role bots (FixedRoleBotSpawner) never transition.
                 if (bot.LifecycleExempt) continue;
 
+                // Partied bots are mid-hunt — the party manager owns their
+                // behavior until the group disbands. Without this, a
+                // lifecycle roll would re-brain a follower mid-march (or
+                // convert one to a DungeonCrawler the moment it steps
+                // inside, breaking the follow).
+                if (BotPartyManager.IsInParty(bot)) continue;
+
+                // Dead bots (and freshly-ressed ones mid corpse-run) are
+                // owned by the death flow: ghost → healer walk → res →
+                // reclaim. A lifecycle re-brain would strand a ghost.
+                // Duelists likewise belong to the duel referee.
+                if (!bot.Alive ||
+                    bot.CorpseRunPending ||
+                    bot.Behavior is GhostBehavior or CorpseReclaimBehavior
+                                 or DuelistBehavior)
+                {
+                    continue;
+                }
+
+                // DUNGEON RULE: a bot inside a dungeon is a DungeonCrawler.
+                // A crawler mid-crawl is left alone — its own run timer
+                // decides when to climb out; a lifecycle swap here would
+                // strand a re-brained civilian deep underground. Anything
+                // else caught inside (a mid-phase Wanderer, a stale spawn)
+                // is converted on the spot. PKs hunt dungeons on purpose
+                // and keep their brain.
+                if (bot.Behavior is DungeonCrawlerBehavior) continue;
+                if (bot.Behavior is not PKBehavior &&
+                    DungeonRegistry.IsInDungeon(bot))
+                {
+                    if (transitions >= MaxTransitionsPerTick) continue;
+                    bot.Behavior = new DungeonCrawlerBehavior();
+                    transitions++;
+                    Log($"[{bot.Name}] inside a dungeon — converted to DungeonCrawler");
+                    continue;
+                }
+
                 // First sight: assign personality + stamp phase clock.
                 if (!bot.Personality.IsAssigned)
                 {

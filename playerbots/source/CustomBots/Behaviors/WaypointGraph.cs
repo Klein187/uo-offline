@@ -47,11 +47,13 @@ namespace Server.CustomBots
 
         public int NodeCount => _nodes.Count;
         public IEnumerable<string> AllNames => _nodes.Keys;
+        public IEnumerable<WaypointNode> AllNodes => _nodes.Values;
 
         public void AddNode(WaypointNode n)
         {
             if (n == null || string.IsNullOrEmpty(n.Name)) return;
             _nodes[n.Name] = n;
+            _componentIds = null; // topology changed — relabel lazily
         }
 
         public WaypointNode Get(string name) =>
@@ -170,6 +172,141 @@ namespace Server.CustomBots
             return reverse;
         }
 
+        // ---- Connected component ----
+
+        // All node names walk-reachable from `fromName` — the connected
+        // component containing it. Teleporters are not walk edges, so a
+        // dungeon floor is its own component; this doubles as a "same
+        // floor" test for dungeon crawlers.
+        public HashSet<string> ReachableFrom(string fromName)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var start = Get(fromName);
+            if (start == null)
+            {
+                return seen;
+            }
+
+            var stack = new Stack<WaypointNode>();
+            seen.Add(start.Name);
+            stack.Push(start);
+
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+                foreach (var neighborName in node.Connects)
+                {
+                    if (seen.Contains(neighborName))
+                    {
+                        continue;
+                    }
+                    var neighbor = Get(neighborName);
+                    if (neighbor == null)
+                    {
+                        continue;
+                    }
+                    seen.Add(neighbor.Name);
+                    stack.Push(neighbor);
+                }
+            }
+            return seen;
+        }
+
+        // ---- Connected-component labels ----
+        //
+        // One O(V+E) pass labels every node with a component id, making
+        // "same island / same floor" checks O(1) — ReachableFrom's BFS per
+        // call is only needed when the actual member SET matters. Labels
+        // are computed lazily and invalidated by AddNode ([MarkWay etc.).
+        // Edges are treated as undirected regardless of how the data was
+        // authored (the registry symmetrizes at load; this stays correct
+        // even if a hand edit leaves a one-way edge).
+
+        private Dictionary<string, int> _componentIds;
+        private int _componentCount;
+
+        private void EnsureComponents()
+        {
+            if (_componentIds != null) return;
+
+            // Undirected adjacency (forward + reverse of every edge).
+            var adj = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var node in _nodes.Values)
+            {
+                foreach (var neighborName in node.Connects)
+                {
+                    if (Get(neighborName) == null)
+                    {
+                        continue;
+                    }
+                    if (!adj.TryGetValue(node.Name, out var f))
+                    {
+                        adj[node.Name] = f = new List<string>();
+                    }
+                    f.Add(neighborName);
+                    if (!adj.TryGetValue(neighborName, out var r))
+                    {
+                        adj[neighborName] = r = new List<string>();
+                    }
+                    r.Add(node.Name);
+                }
+            }
+
+            var ids = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            int count = 0;
+            var stack = new Stack<string>();
+
+            foreach (var name in _nodes.Keys)
+            {
+                if (ids.ContainsKey(name))
+                {
+                    continue;
+                }
+                int id = count++;
+                ids[name] = id;
+                stack.Push(name);
+                while (stack.Count > 0)
+                {
+                    var current = stack.Pop();
+                    if (!adj.TryGetValue(current, out var neighbors))
+                    {
+                        continue;
+                    }
+                    foreach (var neighborName in neighbors)
+                    {
+                        if (ids.ContainsKey(neighborName))
+                        {
+                            continue;
+                        }
+                        ids[neighborName] = id;
+                        stack.Push(neighborName);
+                    }
+                }
+            }
+
+            _componentIds = ids;
+            _componentCount = count;
+        }
+
+        // Component id of a node, or -1 if the node isn't in the graph.
+        public int ComponentOf(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return -1;
+            EnsureComponents();
+            return _componentIds.TryGetValue(name, out var id) ? id : -1;
+        }
+
+        public bool SameComponent(string a, string b)
+        {
+            int ca = ComponentOf(a);
+            return ca >= 0 && ca == ComponentOf(b);
+        }
+
+        public int ComponentCount
+        {
+            get { EnsureComponents(); return _componentCount; }
+        }
+
         // ---- Nearest-node lookup ----
 
         // Find the waypoint closest to a world location. Used to plug the
@@ -190,6 +327,43 @@ namespace Server.CustomBots
                 }
             }
             return best;
+        }
+
+        // The K nearest nodes by straight-line distance, closest first.
+        // Small K + cold path, so a simple insertion scan beats building
+        // and sorting the whole node list.
+        public void FindNearestNodes(Point3D loc, int k, List<WaypointNode> results)
+        {
+            results.Clear();
+            if (k <= 0) return;
+
+            foreach (var n in _nodes.Values)
+            {
+                int dx = n.Location.X - loc.X;
+                int dy = n.Location.Y - loc.Y;
+                int distSq = dx * dx + dy * dy;
+
+                int at = results.Count;
+                while (at > 0)
+                {
+                    var p = results[at - 1].Location;
+                    int pdx = p.X - loc.X;
+                    int pdy = p.Y - loc.Y;
+                    if (pdx * pdx + pdy * pdy <= distSq)
+                    {
+                        break;
+                    }
+                    at--;
+                }
+                if (at < k)
+                {
+                    results.Insert(at, n);
+                    if (results.Count > k)
+                    {
+                        results.RemoveAt(results.Count - 1);
+                    }
+                }
+            }
         }
 
         public string PickRandomName()

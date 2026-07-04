@@ -32,6 +32,15 @@ namespace Server.CustomBots
 
         private DateTime _nextChatAllowed = DateTime.MinValue;
 
+        // Event lines (battle cries, victory shouts, flee screams) run on
+        // their OWN cooldown, separate from ambient chat — a dramatic
+        // moment should be able to speak even if the bot small-talked ten
+        // seconds ago, but a bot in constant combat still shouldn't shout
+        // on every engagement.
+        private DateTime _nextEventLineAllowed = DateTime.MinValue;
+
+        protected virtual TimeSpan EventLineCooldown => TimeSpan.FromSeconds(10);
+
         // ---- Destination visit expiry ----
         //
         // When a Traveler arrives somewhere and hands off to a destination
@@ -72,8 +81,17 @@ namespace Server.CustomBots
 
         public virtual void OnDetached(PlayerBot bot) { }
 
+        // How often an ambient chat slot is spent retelling a REAL recent
+        // event from the journal instead of a canned line.
+        private const double GossipShare = 0.20;
+
         // -------------------------------------------------------------------
         // TrySpeak — gate-check, then potentially Say a random line.
+        //
+        // Priority within an allowed slot:
+        //   1. Greet a nearby friend/guildmate by name ("yo Corwin").
+        //   2. Gossip about a real recent journal event (~20%).
+        //   3. Ambient line from this behavior's categories.
         // -------------------------------------------------------------------
         protected bool TrySpeak(PlayerBot bot)
         {
@@ -87,7 +105,143 @@ namespace Server.CustomBots
                 return false;
             }
 
-            if (Utility.RandomDouble() > ChatChance)
+            // Friend greetings skip the ChatChance roll — spotting a friend
+            // IS the trigger — but still respect the cooldown and audience
+            // gates below.
+            bool wantAmbient = Utility.RandomDouble() <= ChatChance;
+
+            if (!IsPlayerNearby(bot))
+            {
+                return false;
+            }
+
+            if (TryGreetFriend(bot))
+            {
+                _nextChatAllowed = Core.Now + RandomCooldown();
+                return true;
+            }
+
+            if (!wantAmbient)
+            {
+                return false;
+            }
+
+            if (Utility.RandomDouble() < GossipShare)
+            {
+                var gossip = BotEventJournal.ComposeGossip(bot.Name);
+                if (!string.IsNullOrEmpty(gossip))
+                {
+                    SpeakLine(bot, gossip);
+                    _nextChatAllowed = Core.Now + RandomCooldown();
+                    return true;
+                }
+            }
+
+            var cats = ChatCategories;
+            if (cats == null || cats.Length == 0)
+            {
+                return false;
+            }
+
+            // Texture layers stealing an occasional ambient slot:
+            //   - late-night lines when it's actually late at night
+            //   - wordless emotes (*stretches*, *dances at the bank*)
+            string line;
+            int hour = DateTime.Now.Hour;
+            bool night = hour >= 21 || hour < 5;
+            double texture = Utility.RandomDouble();
+            if (night && texture < 0.25)
+            {
+                line = ChatLibrary.PickRandom("night_talk");
+            }
+            else if (texture < 0.10)
+            {
+                line = ChatLibrary.PickRandom("emotes");
+            }
+            else
+            {
+                line = null;
+            }
+            line ??= ChatLibrary.PickRandom(cats);
+            if (string.IsNullOrEmpty(line))
+            {
+                return false;
+            }
+
+            SpeakLine(bot, line);
+
+            _nextChatAllowed = Core.Now + RandomCooldown();
+            return true;
+        }
+
+        // -------------------------------------------------------------------
+        // TryGreetFriend — friends (hunted together) and guildmates get
+        // greeted BY FIRST NAME on sight. Per-pair cooldown keeps two
+        // regulars at the same bank from looping.
+        // -------------------------------------------------------------------
+        private bool TryGreetFriend(PlayerBot bot)
+        {
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, 8))
+            {
+                if (m is not PlayerBot other || other == bot || other.Deleted || !other.Alive)
+                {
+                    continue;
+                }
+
+                bool guildmate = bot.BotGuildIndex >= 0 &&
+                                 bot.BotGuildIndex == other.BotGuildIndex;
+                if (!guildmate && !BotSocialGraph.AreFriends(bot, other))
+                {
+                    continue;
+                }
+                if (!BotSocialGraph.CanGreet(bot, other))
+                {
+                    continue;
+                }
+
+                var template = ChatLibrary.PickRandom("friend_greet");
+                if (string.IsNullOrEmpty(template))
+                {
+                    return false;
+                }
+
+                BotSocialGraph.MarkGreeted(bot, other);
+                SpeakLine(bot, template.Replace("{name}", FirstName(other.Name), StringComparison.Ordinal));
+                return true;
+            }
+            return false;
+        }
+
+        // "Tessa Ravenwood" is greeted as "Tessa" — nobody yo's a surname.
+        private static string FirstName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return name;
+            }
+            int space = name.IndexOf(' ');
+            return space > 0 ? name[..space] : name;
+        }
+
+        // -------------------------------------------------------------------
+        // TryEventLine — speak a line for a MOMENT (engaging a foe, fleeing,
+        // a kill) rather than ambient filler. Own chance + cooldown; still
+        // requires a real player nearby — nobody around to hear means don't
+        // bother. Categories are ChatLibrary category names (txt files).
+        // -------------------------------------------------------------------
+        protected bool TryEventLine(PlayerBot bot, double chance, params string[] categories)
+        {
+            if (bot == null || bot.Deleted || bot.Map == null || bot.Map == Map.Internal)
+            {
+                return false;
+            }
+
+            if (Core.Now < _nextEventLineAllowed)
+            {
+                return false;
+            }
+
+            if (Utility.RandomDouble() > chance)
             {
                 return false;
             }
@@ -97,20 +251,31 @@ namespace Server.CustomBots
                 return false;
             }
 
-            var cats = ChatCategories;
-            if (cats == null || cats.Length == 0)
-            {
-                return false;
-            }
-
-            var line = ChatLibrary.PickRandom(cats);
+            var line = ChatLibrary.PickRandom(categories);
             if (string.IsNullOrEmpty(line))
             {
                 return false;
             }
 
+            SpeakLine(bot, line);
+
+            _nextEventLineAllowed = Core.Now + EventLineCooldown;
+            return true;
+        }
+
+        // Say a chat line with the shared voice treatment.
+        private void SpeakLine(PlayerBot bot, string line)
+        {
+            // Lines written as "*bows*" / "*dances*" render as real Emotes
+            // — the wordless social layer that reads as very "players".
+            if (line.Length > 1 && line[0] == '*')
+            {
+                bot.Emote(line.Trim('*', ' '));
+                return;
+            }
+
             // Probabilistic capitalization — sometimes "hail", sometimes "Hail".
-            // Don't touch lines that start with non-letters (e.g. "*sigh*",
+            // Don't touch lines that start with non-letters (e.g.
             // "WTS GM hally"). Those should keep their case as written.
             if (Utility.RandomDouble() < CapitalizeChance
                 && line.Length > 0
@@ -122,9 +287,6 @@ namespace Server.CustomBots
             // Mobile.Say uses bot.SpeechHue automatically. The hue was set
             // on the bot when it was constructed and persists across saves.
             bot.Say(line);
-
-            _nextChatAllowed = Core.Now + RandomCooldown();
-            return true;
         }
 
         private bool IsPlayerNearby(PlayerBot bot)

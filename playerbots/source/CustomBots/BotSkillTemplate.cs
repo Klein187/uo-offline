@@ -46,10 +46,15 @@ namespace Server.CustomBots
         private static readonly (int s, int d, int i) StatsArcher   = ( 60, 125, 40);
         private static readonly (int s, int d, int i) StatsTamer    = ( 70, 60, 95);
         private static readonly (int s, int d, int i) StatsCrafter  = ( 95, 65, 65);
+        private static readonly (int s, int d, int i) StatsSmith    = ( 95, 65, 65); // strong from the forge
+        private static readonly (int s, int d, int i) StatsTailor   = ( 60, 80, 85);
+        private static readonly (int s, int d, int i) StatsFisher   = ( 80, 85, 60);
         private static readonly (int s, int d, int i) StatsHealer   = ( 60, 65, 100);
         private static readonly (int s, int d, int i) StatsThief    = ( 50, 125, 50);
         private static readonly (int s, int d, int i) StatsBard     = ( 60, 70, 95);
         private static readonly (int s, int d, int i) StatsRanger   = ( 75, 100, 50);
+        private static readonly (int s, int d, int i) StatsLumber   = (105, 75, 45); // swings an axe all day
+        private static readonly (int s, int d, int i) StatsMiner    = (110, 65, 50); // swings a pick all day
 
         // ---- Templates ----
         public static SkillTemplate GetTemplate(BotClass cls)
@@ -86,6 +91,23 @@ namespace Server.CustomBots
                     SkillName.ArmsLore, SkillName.Mining, SkillName.Tinkering,
                     SkillName.Carpentry, SkillName.Tailoring),
 
+                // Artisan classes — primary skill drives the paperdoll title
+                // ("Grandmaster Blacksmith", etc.).
+                BotClass.Smith => new SkillTemplate(
+                    SkillName.Blacksmith,
+                    SkillName.ArmsLore, SkillName.Mining, SkillName.Tinkering,
+                    SkillName.Carpentry, SkillName.MagicResist),
+
+                BotClass.Tailor => new SkillTemplate(
+                    SkillName.Tailoring,
+                    SkillName.ArmsLore, SkillName.Cooking, SkillName.Tinkering,
+                    SkillName.Camping, SkillName.MagicResist),
+
+                BotClass.Fisherman => new SkillTemplate(
+                    SkillName.Fishing,
+                    SkillName.Cooking, SkillName.Cartography, SkillName.Camping,
+                    SkillName.Begging, SkillName.MagicResist),
+
                 BotClass.Healer => new SkillTemplate(
                     SkillName.Healing,
                     SkillName.Anatomy,    SkillName.Veterinary, SkillName.SpiritSpeak,
@@ -105,6 +127,19 @@ namespace Server.CustomBots
                     SkillName.Archery,
                     SkillName.Tactics, SkillName.Anatomy, SkillName.Tracking,
                     SkillName.Camping, SkillName.MagicResist),
+
+                // Gatherers — the tool skill leads the paperdoll title
+                // ("Grandmaster Lumberjack"); Swords/Tactics because the
+                // tool IS the weapon when a wolf finds them working.
+                BotClass.Lumberjack => new SkillTemplate(
+                    SkillName.Lumberjacking,
+                    SkillName.Swords, SkillName.Tactics, SkillName.Camping,
+                    SkillName.Tracking, SkillName.MagicResist),
+
+                BotClass.Miner => new SkillTemplate(
+                    SkillName.Mining,
+                    SkillName.Swords, SkillName.Tactics, SkillName.Camping,
+                    SkillName.ArmsLore, SkillName.MagicResist),
 
                 _ => new SkillTemplate(SkillName.Swords,
                     SkillName.Tactics, SkillName.Anatomy, SkillName.Healing,
@@ -162,10 +197,15 @@ namespace Server.CustomBots
                 BotClass.Archer   => StatsArcher,
                 BotClass.Tamer    => StatsTamer,
                 BotClass.Crafter  => StatsCrafter,
+                BotClass.Smith     => StatsSmith,
+                BotClass.Tailor    => StatsTailor,
+                BotClass.Fisherman => StatsFisher,
                 BotClass.Healer   => StatsHealer,
                 BotClass.Thief    => StatsThief,
                 BotClass.Bard     => StatsBard,
                 BotClass.Ranger   => StatsRanger,
+                BotClass.Lumberjack => StatsLumber,
+                BotClass.Miner      => StatsMiner,
                 _                 => StatsWarrior,
             };
 

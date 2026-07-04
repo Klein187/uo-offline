@@ -60,12 +60,6 @@ namespace Server.CustomBots
                     $"Class: {BotClassHelper.DisplayName(bot.Class)}   " +
                     $"Tier: {BotSkillTierHelper.DisplayName(bot.SkillTier)}");
 
-                if (bot.Class == BotClass.Crafter)
-                {
-                    from.SendMessage(0x3B2,
-                        $"Craft: {CrafterTypeHelper.DisplayName(bot.CrafterSpec)}");
-                }
-
                 // Stats
                 from.SendMessage(0x3B2,
                     $"Str/Dex/Int: {bot.RawStr} / {bot.RawDex} / {bot.RawInt}");

@@ -54,6 +54,11 @@ namespace Server.CustomBots
                 return;
             }
 
+            // Synthetic wilderness gather spots must exist before any
+            // gatherer bot rolls its first destination. (Idempotent;
+            // GatherSpots.Initialize also runs it, order unspecified.)
+            GatherSpots.EnsureRegistered();
+
             // If the world has no spawners at all, lay down the default
             // set so it isn't empty. (No-op if spawners already exist.)
             GenerateBotsCommand.EnsurePopulation();
