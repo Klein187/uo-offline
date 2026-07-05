@@ -1,0 +1,263 @@
+{
+  "Dungeon": "Orc Cave",
+  "Records": [
+    {
+      "Name": "Orc Cave L1 Entrance",
+      "X": 1015,
+      "Y": 1435,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave",
+      "Level": 1,
+      "ArrivalX": 1013,
+      "ArrivalY": 1434,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 1013,
+          "Y": 1434,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          1013,
+          1433,
+          0
+        ],
+        [
+          1013,
+          1434,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5138,
+        2016,
+        0
+      ]
+    },
+    {
+      "Name": "Orc Cave lvl1 L1 Descend",
+      "X": 5134,
+      "Y": 1946,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5134,
+          "Y": 1946,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5132,
+          1946,
+          0
+        ],
+        [
+          5133,
+          1946,
+          0
+        ],
+        [
+          5134,
+          1946,
+          0
+        ],
+        [
+          5135,
+          1946,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5332,
+        1379,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Orc Cave lvl1 L1 Exit Ascend",
+      "X": 5139,
+      "Y": 2016,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5139,
+          "Y": 2016,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5139,
+          2015,
+          0
+        ],
+        [
+          5139,
+          2016,
+          0
+        ],
+        [
+          5139,
+          2017,
+          0
+        ]
+      ],
+      "_landsAt": [
+        1014,
+        1434,
+        0
+      ]
+    },
+    {
+      "Name": "Orc Cave lvl1 L1 Descend",
+      "X": 5273,
+      "Y": 2043,
+      "Z": 4,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5273,
+          "Y": 2043,
+          "Z": 4,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5272,
+          2043,
+          4
+        ],
+        [
+          5273,
+          2043,
+          4
+        ]
+      ],
+      "_landsAt": [
+        5363,
+        1290,
+        4
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Orc Cave lvl1 L1 Descend",
+      "X": 5332,
+      "Y": 1381,
+      "Z": 10,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5332,
+          "Y": 1381,
+          "Z": 10,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5329,
+          1381,
+          10
+        ],
+        [
+          5330,
+          1381,
+          10
+        ],
+        [
+          5331,
+          1381,
+          10
+        ],
+        [
+          5332,
+          1381,
+          10
+        ],
+        [
+          5333,
+          1381,
+          10
+        ],
+        [
+          5334,
+          1381,
+          10
+        ]
+      ],
+      "_landsAt": [
+        5134,
+        1947,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Orc Cave lvl1 L1 Descend",
+      "X": 5364,
+      "Y": 1289,
+      "Z": 4,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Orc Cave lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5364,
+          "Y": 1289,
+          "Z": 4,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5363,
+          1289,
+          4
+        ],
+        [
+          5364,
+          1289,
+          4
+        ]
+      ],
+      "_landsAt": [
+        5272,
+        2041,
+        4
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    }
+  ]
+}

@@ -54,7 +54,7 @@ def snap(atlas, w, h, x, y, r=12):
     raise SystemExit(f"no walkable tile within {r} of ({x},{y})")
 
 
-def astar(atlas, w, h, start, goal, margin=80):
+def astar(atlas, w, h, start, goal, margin=700):
     x0 = max(0, min(start[0], goal[0]) - margin)
     y0 = max(0, min(start[1], goal[1]) - margin)
     x1 = min(w - 1, max(start[0], goal[0]) + margin)

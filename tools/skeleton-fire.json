@@ -1,0 +1,435 @@
+{
+  "Dungeon": "Fire",
+  "Records": [
+    {
+      "Name": "Fire L1 Entrance",
+      "X": 2925,
+      "Y": 3406,
+      "Z": 6,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire",
+      "Level": 1,
+      "ArrivalX": 2923,
+      "ArrivalY": 3405,
+      "ArrivalZ": 6,
+      "Arrivals": [
+        {
+          "X": 2923,
+          "Y": 3405,
+          "Z": 6,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2923,
+          3405,
+          6
+        ]
+      ],
+      "_landsAt": [
+        5687,
+        1423,
+        39
+      ]
+    },
+    {
+      "Name": "Fire L1 Entrance",
+      "X": 5267,
+      "Y": 670,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire",
+      "Level": 1,
+      "ArrivalX": 5265,
+      "ArrivalY": 669,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5265,
+          "Y": 669,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5265,
+          669,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5876,
+        1378,
+        0
+      ]
+    },
+    {
+      "Name": "Fire L1 Entrance",
+      "X": 5362,
+      "Y": 1541,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire",
+      "Level": 1,
+      "ArrivalX": 5360,
+      "ArrivalY": 1540,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5360,
+          "Y": 1540,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5360,
+          1540,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5876,
+        1378,
+        0
+      ]
+    },
+    {
+      "Name": "Fire lvl1 L1 Exit Ascend",
+      "X": 5682,
+      "Y": 1437,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5682,
+          "Y": 1437,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5682,
+          1437,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5164,
+        1009,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire lvl1 L1 Exit Ascend",
+      "X": 5682,
+      "Y": 1440,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5682,
+          "Y": 1440,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5682,
+          1440,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5606,
+        802,
+        60
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire lvl1 L1 Exit Ascend",
+      "X": 5687,
+      "Y": 1424,
+      "Z": 38,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5687,
+          "Y": 1424,
+          "Z": 38,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5687,
+          1424,
+          38
+        ]
+      ],
+      "_landsAt": [
+        2923,
+        3406,
+        8
+      ]
+    },
+    {
+      "Name": "Fire lvl1 L1 Descend",
+      "X": 5690,
+      "Y": 1352,
+      "Z": -26,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5690,
+          "Y": 1352,
+          "Z": -26,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5690,
+          1352,
+          -26
+        ]
+      ],
+      "_landsAt": [
+        5691,
+        1348,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire lvl1 L1 Descend",
+      "X": 5691,
+      "Y": 1348,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5691,
+          "Y": 1348,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5691,
+          1348,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5690,
+        1352,
+        -26
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire lvl1 L1 Descend",
+      "X": 5702,
+      "Y": 1320,
+      "Z": 16,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5702,
+          "Y": 1320,
+          "Z": 16,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5701,
+          1320,
+          16
+        ],
+        [
+          5702,
+          1320,
+          16
+        ],
+        [
+          5703,
+          1320,
+          16
+        ]
+      ],
+      "_landsAt": [
+        5786,
+        1336,
+        -8
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire L1 Entrance",
+      "X": 5759,
+      "Y": 2909,
+      "Z": 14,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire",
+      "Level": 1,
+      "ArrivalX": 5757,
+      "ArrivalY": 2908,
+      "ArrivalZ": 14,
+      "Arrivals": [
+        {
+          "X": 5757,
+          "Y": 2908,
+          "Z": 14,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5757,
+          2907,
+          15
+        ],
+        [
+          5757,
+          2908,
+          14
+        ],
+        [
+          5757,
+          2909,
+          15
+        ]
+      ],
+      "_landsAt": [
+        5791,
+        1415,
+        38
+      ]
+    },
+    {
+      "Name": "Fire lvl1 L1 Descend",
+      "X": 5787,
+      "Y": 1335,
+      "Z": -13,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5787,
+          "Y": 1335,
+          "Z": -13,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5786,
+          1335,
+          -13
+        ],
+        [
+          5787,
+          1335,
+          -13
+        ],
+        [
+          5788,
+          1335,
+          -13
+        ]
+      ],
+      "_landsAt": [
+        5701,
+        1319,
+        13
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Fire lvl1 L1 Exit Ascend",
+      "X": 5792,
+      "Y": 1416,
+      "Z": 41,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5792,
+          "Y": 1416,
+          "Z": 41,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5792,
+          1415,
+          41
+        ],
+        [
+          5792,
+          1416,
+          41
+        ],
+        [
+          5792,
+          1417,
+          41
+        ]
+      ],
+      "_landsAt": [
+        5758,
+        2907,
+        15
+      ]
+    }
+  ]
+}

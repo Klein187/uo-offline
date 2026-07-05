@@ -1,0 +1,317 @@
+{
+  "Dungeon": "Wrong",
+  "Records": [
+    {
+      "Name": "Wrong L1 Entrance",
+      "X": 2044,
+      "Y": 216,
+      "Z": 14,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong",
+      "Level": 1,
+      "ArrivalX": 2042,
+      "ArrivalY": 215,
+      "ArrivalZ": 14,
+      "Arrivals": [
+        {
+          "X": 2042,
+          "Y": 215,
+          "Z": 14,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2041,
+          215,
+          14
+        ],
+        [
+          2042,
+          215,
+          14
+        ],
+        [
+          2043,
+          215,
+          14
+        ]
+      ],
+      "_landsAt": [
+        5824,
+        631,
+        5
+      ]
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5690,
+      "Y": 569,
+      "Z": 25,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5690,
+          "Y": 569,
+          "Z": 25,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5690,
+          569,
+          25
+        ]
+      ],
+      "_landsAt": [
+        5829,
+        595,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5698,
+      "Y": 662,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5698,
+          "Y": 662,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5698,
+          662,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5793,
+        527,
+        10
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5705,
+      "Y": 625,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5705,
+          "Y": 625,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5705,
+          625,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5703,
+        639,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5733,
+      "Y": 554,
+      "Z": 20,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5733,
+          "Y": 554,
+          "Z": 20,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5733,
+          554,
+          20
+        ]
+      ],
+      "_landsAt": [
+        5829,
+        595,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Wrong lvl1 L1 Exit Ascend",
+      "X": 5825,
+      "Y": 631,
+      "Z": 5,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5825,
+          "Y": 631,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5824,
+          631,
+          5
+        ],
+        [
+          5825,
+          631,
+          5
+        ]
+      ],
+      "_landsAt": [
+        2041,
+        215,
+        14
+      ]
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5829,
+      "Y": 593,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5829,
+          "Y": 593,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5827,
+          593,
+          0
+        ],
+        [
+          5829,
+          593,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5690,
+        569,
+        25
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Wrong lvl1 L1 Descend",
+      "X": 5870,
+      "Y": 530,
+      "Z": 15,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Wrong lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5870,
+          "Y": 530,
+          "Z": 15,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5867,
+          528,
+          15
+        ],
+        [
+          5867,
+          529,
+          15
+        ],
+        [
+          5868,
+          528,
+          15
+        ],
+        [
+          5868,
+          529,
+          15
+        ],
+        [
+          5870,
+          530,
+          15
+        ],
+        [
+          5870,
+          531,
+          15
+        ],
+        [
+          5871,
+          530,
+          15
+        ],
+        [
+          5871,
+          531,
+          15
+        ]
+      ],
+      "_landsAt": [
+        5690,
+        569,
+        25
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    }
+  ]
+}

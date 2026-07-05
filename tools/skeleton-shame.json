@@ -1,0 +1,346 @@
+{
+  "Dungeon": "Shame",
+  "Records": [
+    {
+      "Name": "Shame L1 Entrance",
+      "X": 515,
+      "Y": 1560,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame",
+      "Level": 1,
+      "ArrivalX": 513,
+      "ArrivalY": 1559,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 513,
+          "Y": 1559,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          512,
+          1559,
+          0
+        ],
+        [
+          513,
+          1559,
+          0
+        ],
+        [
+          514,
+          1559,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5394,
+        127,
+        0
+      ]
+    },
+    {
+      "Name": "Shame lvl1 L1 Exit Ascend",
+      "X": 5395,
+      "Y": 127,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5395,
+          "Y": 127,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5394,
+          127,
+          0
+        ],
+        [
+          5395,
+          127,
+          0
+        ],
+        [
+          5396,
+          127,
+          0
+        ]
+      ],
+      "_landsAt": [
+        512,
+        1559,
+        0
+      ]
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5490,
+      "Y": 19,
+      "Z": -25,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5490,
+          "Y": 19,
+          "Z": -25,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5490,
+          19,
+          -25
+        ]
+      ],
+      "_landsAt": [
+        5514,
+        10,
+        5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5507,
+      "Y": 162,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5507,
+          "Y": 162,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5507,
+          162,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5875,
+        19,
+        -5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5513,
+      "Y": 176,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5513,
+          "Y": 176,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5513,
+          176,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5540,
+        187,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5514,
+      "Y": 10,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5514,
+          "Y": 10,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5514,
+          10,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5490,
+        19,
+        -25
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5514,
+      "Y": 147,
+      "Z": 25,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5514,
+          "Y": 147,
+          "Z": 25,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5514,
+          147,
+          25
+        ]
+      ],
+      "_landsAt": [
+        5604,
+        102,
+        5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5538,
+      "Y": 170,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5538,
+          "Y": 170,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5538,
+          170,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5517,
+        176,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5604,
+      "Y": 102,
+      "Z": 5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5604,
+          "Y": 102,
+          "Z": 5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5604,
+          102,
+          5
+        ]
+      ],
+      "_landsAt": [
+        5514,
+        147,
+        25
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Shame lvl1 L1 Descend",
+      "X": 5875,
+      "Y": 19,
+      "Z": -5,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Shame lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5875,
+          "Y": 19,
+          "Z": -5,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5875,
+          19,
+          -5
+        ]
+      ],
+      "_landsAt": [
+        5507,
+        162,
+        5
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    }
+  ]
+}

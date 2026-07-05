@@ -1,0 +1,712 @@
+{
+  "Dungeon": "Hythloth",
+  "Records": [
+    {
+      "Name": "Hythloth L1 Entrance",
+      "X": 4724,
+      "Y": 3814,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth",
+      "Level": 1,
+      "ArrivalX": 4722,
+      "ArrivalY": 3813,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 4722,
+          "Y": 3813,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          4721,
+          3813,
+          0
+        ],
+        [
+          4722,
+          3813,
+          0
+        ],
+        [
+          4723,
+          3813,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5904,
+        16,
+        64
+      ]
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Exit Ascend",
+      "X": 5905,
+      "Y": 16,
+      "Z": 64,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5905,
+          "Y": 16,
+          "Z": 64,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5904,
+          16,
+          64
+        ],
+        [
+          5905,
+          16,
+          64
+        ],
+        [
+          5906,
+          16,
+          64
+        ]
+      ],
+      "_landsAt": [
+        4721,
+        3813,
+        0
+      ]
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5920,
+      "Y": 168,
+      "Z": 16,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5920,
+          "Y": 168,
+          "Z": 16,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5919,
+          168,
+          22
+        ],
+        [
+          5919,
+          169,
+          22
+        ],
+        [
+          5919,
+          170,
+          22
+        ],
+        [
+          5920,
+          168,
+          16
+        ],
+        [
+          5920,
+          169,
+          16
+        ],
+        [
+          5920,
+          170,
+          16
+        ]
+      ],
+      "_landsAt": [
+        6083,
+        144,
+        -20
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5926,
+      "Y": 147,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5926,
+          "Y": 147,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5926,
+          145,
+          22
+        ],
+        [
+          5926,
+          146,
+          22
+        ],
+        [
+          5926,
+          147,
+          22
+        ],
+        [
+          5926,
+          148,
+          22
+        ],
+        [
+          5926,
+          149,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5970,
+        147,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5933,
+      "Y": 147,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5933,
+          "Y": 147,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5933,
+          145,
+          22
+        ],
+        [
+          5933,
+          146,
+          22
+        ],
+        [
+          5933,
+          147,
+          22
+        ],
+        [
+          5933,
+          149,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5970,
+        147,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5944,
+      "Y": 146,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5944,
+          "Y": 146,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5944,
+          144,
+          22
+        ],
+        [
+          5944,
+          145,
+          22
+        ],
+        [
+          5944,
+          146,
+          22
+        ],
+        [
+          5944,
+          147,
+          22
+        ],
+        [
+          5944,
+          148,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5970,
+        147,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5955,
+      "Y": 148,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5955,
+          "Y": 148,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5955,
+          144,
+          22
+        ],
+        [
+          5955,
+          145,
+          22
+        ],
+        [
+          5955,
+          146,
+          22
+        ],
+        [
+          5955,
+          148,
+          22
+        ],
+        [
+          5955,
+          149,
+          22
+        ],
+        [
+          5955,
+          150,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5970,
+        147,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5963,
+      "Y": 146,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5963,
+          "Y": 146,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5963,
+          144,
+          22
+        ],
+        [
+          5963,
+          145,
+          22
+        ],
+        [
+          5963,
+          146,
+          22
+        ],
+        [
+          5963,
+          147,
+          22
+        ],
+        [
+          5963,
+          148,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5970,
+        147,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 5972,
+      "Y": 168,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5972,
+          "Y": 168,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5972,
+          168,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5905,
+        100,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Exit Ascend",
+      "X": 6026,
+      "Y": 197,
+      "Z": 25,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6026,
+          "Y": 197,
+          "Z": 25,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6026,
+          196,
+          22
+        ],
+        [
+          6026,
+          197,
+          25
+        ]
+      ],
+      "_landsAt": [
+        6987,
+        805,
+        24
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6040,
+      "Y": 194,
+      "Z": 12,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6040,
+          "Y": 194,
+          "Z": 12,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6040,
+          194,
+          12
+        ]
+      ],
+      "_landsAt": [
+        6059,
+        90,
+        24
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6044,
+      "Y": 226,
+      "Z": 44,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6044,
+          "Y": 226,
+          "Z": 44,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6044,
+          226,
+          44
+        ]
+      ],
+      "_landsAt": [
+        6041,
+        204,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6059,
+      "Y": 90,
+      "Z": 24,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6059,
+          "Y": 90,
+          "Z": 24,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6059,
+          90,
+          24
+        ]
+      ],
+      "_landsAt": [
+        6040,
+        194,
+        12
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6083,
+      "Y": 145,
+      "Z": -20,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6083,
+          "Y": 145,
+          "Z": -20,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6083,
+          144,
+          -20
+        ],
+        [
+          6083,
+          145,
+          -20
+        ],
+        [
+          6083,
+          146,
+          -20
+        ]
+      ],
+      "_landsAt": [
+        5918,
+        168,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6107,
+      "Y": 179,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6107,
+          "Y": 179,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6107,
+          179,
+          0
+        ]
+      ],
+      "_landsAt": [
+        6124,
+        155,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth lvl1 L1 Descend",
+      "X": 6115,
+      "Y": 176,
+      "Z": 0,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 6115,
+          "Y": 176,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6115,
+          176,
+          0
+        ]
+      ],
+      "_landsAt": [
+        6107,
+        176,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Hythloth L1 Entrance",
+      "X": 6974,
+      "Y": 803,
+      "Z": 28,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Hythloth",
+      "Level": 1,
+      "ArrivalX": 6972,
+      "ArrivalY": 802,
+      "ArrivalZ": 28,
+      "Arrivals": [
+        {
+          "X": 6972,
+          "Y": 802,
+          "Z": 28,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          6972,
+          802,
+          28
+        ]
+      ],
+      "_landsAt": [
+        5905,
+        21,
+        44
+      ]
+    }
+  ]
+}

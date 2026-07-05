@@ -1,0 +1,2173 @@
+{
+ "Waypoints": [
+  {
+   "Name": "Deceit L1 WP 1",
+   "X": 5186,
+   "Y": 638,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 2",
+    "Deceit L1 WP 9",
+    "Deceit L1 WP 37"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 2",
+   "X": 5187,
+   "Y": 638,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 1",
+    "Deceit L1 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 3",
+   "X": 5196,
+   "Y": 568,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 4",
+   "X": 5179,
+   "Y": 603,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 13"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 5",
+   "X": 5206,
+   "Y": 608,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 10",
+    "Deceit L1 WP 24"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 6",
+   "X": 5176,
+   "Y": 576,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 33"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 7",
+   "X": 5206,
+   "Y": 588,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 19"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 8",
+   "X": 5168,
+   "Y": 622,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 38"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 9",
+   "X": 5186,
+   "Y": 620,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 1",
+    "Deceit L1 WP 2",
+    "Deceit L1 WP 12"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 10",
+   "X": 5206,
+   "Y": 622,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 11",
+   "X": 5192,
+   "Y": 588,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 16",
+    "Deceit L1 WP 25"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 12",
+   "X": 5186,
+   "Y": 603,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 9",
+    "Deceit L1 WP 13"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 13",
+   "X": 5183,
+   "Y": 599,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 4",
+    "Deceit L1 WP 12",
+    "Deceit L1 WP 14"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 14",
+   "X": 5191,
+   "Y": 598,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 13",
+    "Deceit L1 WP 15"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 15",
+   "X": 5192,
+   "Y": 596,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 14",
+    "Deceit L1 WP 16",
+    "Deceit L1 WP 20"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 16",
+   "X": 5193,
+   "Y": 591,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 11",
+    "Deceit L1 WP 15",
+    "Deceit L1 WP 17"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 17",
+   "X": 5202,
+   "Y": 588,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 16",
+    "Deceit L1 WP 18"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 18",
+   "X": 5204,
+   "Y": 590,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 17",
+    "Deceit L1 WP 19"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 19",
+   "X": 5206,
+   "Y": 589,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 7",
+    "Deceit L1 WP 18"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 20",
+   "X": 5189,
+   "Y": 602,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 15",
+    "Deceit L1 WP 21"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 21",
+   "X": 5188,
+   "Y": 603,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 20",
+    "Deceit L1 WP 22"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 22",
+   "X": 5188,
+   "Y": 611,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 21",
+    "Deceit L1 WP 23"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 23",
+   "X": 5191,
+   "Y": 615,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 22",
+    "Deceit L1 WP 24"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 24",
+   "X": 5199,
+   "Y": 608,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 5",
+    "Deceit L1 WP 23"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 25",
+   "X": 5193,
+   "Y": 591,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 11",
+    "Deceit L1 WP 26"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 26",
+   "X": 5192,
+   "Y": 597,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 25",
+    "Deceit L1 WP 27"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 27",
+   "X": 5191,
+   "Y": 598,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 26",
+    "Deceit L1 WP 28"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 28",
+   "X": 5184,
+   "Y": 590,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 27",
+    "Deceit L1 WP 29"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 29",
+   "X": 5186,
+   "Y": 587,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 28",
+    "Deceit L1 WP 30"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 30",
+   "X": 5186,
+   "Y": 583,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 29",
+    "Deceit L1 WP 31"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 31",
+   "X": 5182,
+   "Y": 579,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 30",
+    "Deceit L1 WP 32",
+    "Deceit L1 WP 34"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 32",
+   "X": 5177,
+   "Y": 579,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 31",
+    "Deceit L1 WP 33"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 33",
+   "X": 5176,
+   "Y": 577,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 6",
+    "Deceit L1 WP 32"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 34",
+   "X": 5190,
+   "Y": 574,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 31",
+    "Deceit L1 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 35",
+   "X": 5191,
+   "Y": 569,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 34",
+    "Deceit L1 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 36",
+   "X": 5193,
+   "Y": 568,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 3",
+    "Deceit L1 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 37",
+   "X": 5186,
+   "Y": 619,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 1",
+    "Deceit L1 WP 38"
+   ]
+  },
+  {
+   "Name": "Deceit L1 WP 38",
+   "X": 5178,
+   "Y": 612,
+   "Z": 0,
+   "Connects": [
+    "Deceit L1 WP 8",
+    "Deceit L1 WP 37"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 1",
+   "X": 5136,
+   "Y": 648,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 18"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 2",
+   "X": 5217,
+   "Y": 759,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 3",
+    "Deceit L2 WP 14"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 3",
+   "X": 5218,
+   "Y": 760,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 2",
+    "Deceit L2 WP 14"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 4",
+   "X": 5221,
+   "Y": 673,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 24"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 5",
+   "X": 5168,
+   "Y": 702,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 12",
+    "Deceit L2 WP 34"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 6",
+   "X": 5218,
+   "Y": 716,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 14",
+    "Deceit L2 WP 22"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 7",
+   "X": 5178,
+   "Y": 656,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 28"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 8",
+   "X": 5136,
+   "Y": 680,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 18"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 9",
+   "X": 5180,
+   "Y": 734,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 17",
+    "Deceit L2 WP 21"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 10",
+   "X": 5195,
+   "Y": 689,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 11",
+   "X": 5206,
+   "Y": 648,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 15",
+    "Deceit L2 WP 27"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 12",
+   "X": 5171,
+   "Y": 679,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 5",
+    "Deceit L2 WP 37"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 13",
+   "X": 5226,
+   "Y": 694,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 22",
+    "Deceit L2 WP 23"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 14",
+   "X": 5217,
+   "Y": 737,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 2",
+    "Deceit L2 WP 3",
+    "Deceit L2 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 15",
+   "X": 5201,
+   "Y": 669,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 11",
+    "Deceit L2 WP 26",
+    "Deceit L2 WP 29"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 16",
+   "X": 5154,
+   "Y": 682,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 37"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 17",
+   "X": 5176,
+   "Y": 718,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 9",
+    "Deceit L2 WP 20"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 18",
+   "X": 5142,
+   "Y": 664,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 1",
+    "Deceit L2 WP 8",
+    "Deceit L2 WP 39"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 19",
+   "X": 5192,
+   "Y": 652,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 27",
+    "Deceit L2 WP 28"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 20",
+   "X": 5182,
+   "Y": 704,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 17",
+    "Deceit L2 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 21",
+   "X": 5190,
+   "Y": 720,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 22",
+   "X": 5225,
+   "Y": 704,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 6",
+    "Deceit L2 WP 13"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 23",
+   "X": 5225,
+   "Y": 686,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 13",
+    "Deceit L2 WP 24"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 24",
+   "X": 5220,
+   "Y": 674,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 4",
+    "Deceit L2 WP 23",
+    "Deceit L2 WP 25"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 25",
+   "X": 5215,
+   "Y": 673,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 24",
+    "Deceit L2 WP 26"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 26",
+   "X": 5202,
+   "Y": 668,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 15",
+    "Deceit L2 WP 25"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 27",
+   "X": 5193,
+   "Y": 652,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 11",
+    "Deceit L2 WP 19"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 28",
+   "X": 5182,
+   "Y": 656,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 7",
+    "Deceit L2 WP 19"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 29",
+   "X": 5201,
+   "Y": 662,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 15",
+    "Deceit L2 WP 30"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 30",
+   "X": 5200,
+   "Y": 661,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 29",
+    "Deceit L2 WP 31"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 31",
+   "X": 5175,
+   "Y": 662,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 30",
+    "Deceit L2 WP 32"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 32",
+   "X": 5172,
+   "Y": 666,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 31",
+    "Deceit L2 WP 33"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 33",
+   "X": 5174,
+   "Y": 692,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 32",
+    "Deceit L2 WP 34"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 34",
+   "X": 5174,
+   "Y": 695,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 5",
+    "Deceit L2 WP 33",
+    "Deceit L2 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 35",
+   "X": 5176,
+   "Y": 696,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 20",
+    "Deceit L2 WP 34",
+    "Deceit L2 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 36",
+   "X": 5183,
+   "Y": 696,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 10",
+    "Deceit L2 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 37",
+   "X": 5159,
+   "Y": 677,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 12",
+    "Deceit L2 WP 16",
+    "Deceit L2 WP 38"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 38",
+   "X": 5143,
+   "Y": 672,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 37",
+    "Deceit L2 WP 39"
+   ]
+  },
+  {
+   "Name": "Deceit L2 WP 39",
+   "X": 5140,
+   "Y": 666,
+   "Z": 0,
+   "Connects": [
+    "Deceit L2 WP 18",
+    "Deceit L2 WP 38"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 1",
+   "X": 5345,
+   "Y": 577,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 2",
+   "X": 5308,
+   "Y": 630,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 3",
+   "X": 5342,
+   "Y": 622,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 5",
+    "Deceit L3 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 4",
+   "X": 5312,
+   "Y": 600,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 5",
+   "X": 5338,
+   "Y": 600,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 3",
+    "Deceit L3 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 6",
+   "X": 5325,
+   "Y": 625,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 2",
+    "Deceit L3 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 7",
+   "X": 5327,
+   "Y": 622,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 3",
+    "Deceit L3 WP 6",
+    "Deceit L3 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 8",
+   "X": 5319,
+   "Y": 606,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 4",
+    "Deceit L3 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L3 WP 9",
+   "X": 5341,
+   "Y": 581,
+   "Z": 0,
+   "Connects": [
+    "Deceit L3 WP 1",
+    "Deceit L3 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L4 WP 1",
+   "X": 5330,
+   "Y": 706,
+   "Z": 0,
+   "Connects": []
+  },
+  {
+   "Name": "Deceit L5 WP 1",
+   "X": 5216,
+   "Y": 584,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 2",
+    "Deceit L5 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 2",
+   "X": 5216,
+   "Y": 585,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 1"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 3",
+   "X": 5137,
+   "Y": 627,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 14",
+    "Deceit L5 WP 17"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 4",
+   "X": 5144,
+   "Y": 552,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 12",
+    "Deceit L5 WP 18"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 5",
+   "X": 5203,
+   "Y": 529,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 10",
+    "Deceit L5 WP 15"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 6",
+   "X": 5146,
+   "Y": 590,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 12",
+    "Deceit L5 WP 14"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 7",
+   "X": 5173,
+   "Y": 529,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 15",
+    "Deceit L5 WP 21"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 8",
+   "X": 5219,
+   "Y": 557,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 32",
+    "Deceit L5 WP 33"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 9",
+   "X": 5192,
+   "Y": 558,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 28"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 10",
+   "X": 5222,
+   "Y": 532,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 11",
+   "X": 5163,
+   "Y": 549,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 18",
+    "Deceit L5 WP 19"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 12",
+   "X": 5147,
+   "Y": 571,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 4",
+    "Deceit L5 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 13",
+   "X": 5155,
+   "Y": 627,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 17"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 14",
+   "X": 5146,
+   "Y": 608,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 3",
+    "Deceit L5 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 15",
+   "X": 5188,
+   "Y": 530,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 5",
+    "Deceit L5 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 16",
+   "X": 5230,
+   "Y": 572,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 33",
+    "Deceit L5 WP 34"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 17",
+   "X": 5153,
+   "Y": 625,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 3",
+    "Deceit L5 WP 13"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 18",
+   "X": 5158,
+   "Y": 552,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 4",
+    "Deceit L5 WP 11"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 19",
+   "X": 5163,
+   "Y": 545,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 11",
+    "Deceit L5 WP 20"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 20",
+   "X": 5169,
+   "Y": 539,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 19",
+    "Deceit L5 WP 21",
+    "Deceit L5 WP 22"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 21",
+   "X": 5170,
+   "Y": 531,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 7",
+    "Deceit L5 WP 20"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 22",
+   "X": 5170,
+   "Y": 531,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 20",
+    "Deceit L5 WP 23"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 23",
+   "X": 5172,
+   "Y": 530,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 22",
+    "Deceit L5 WP 24"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 24",
+   "X": 5198,
+   "Y": 530,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 23",
+    "Deceit L5 WP 25"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 25",
+   "X": 5208,
+   "Y": 530,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 24",
+    "Deceit L5 WP 26"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 26",
+   "X": 5209,
+   "Y": 531,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 25",
+    "Deceit L5 WP 27"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 27",
+   "X": 5209,
+   "Y": 556,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 26",
+    "Deceit L5 WP 28",
+    "Deceit L5 WP 29"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 28",
+   "X": 5208,
+   "Y": 557,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 9",
+    "Deceit L5 WP 27"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 29",
+   "X": 5211,
+   "Y": 535,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 27",
+    "Deceit L5 WP 30"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 30",
+   "X": 5213,
+   "Y": 534,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 29",
+    "Deceit L5 WP 31"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 31",
+   "X": 5215,
+   "Y": 534,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 30",
+    "Deceit L5 WP 32"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 32",
+   "X": 5218,
+   "Y": 539,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 8",
+    "Deceit L5 WP 31"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 33",
+   "X": 5220,
+   "Y": 563,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 8",
+    "Deceit L5 WP 16"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 34",
+   "X": 5223,
+   "Y": 567,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 16",
+    "Deceit L5 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 35",
+   "X": 5216,
+   "Y": 577,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 34",
+    "Deceit L5 WP 36"
+   ]
+  },
+  {
+   "Name": "Deceit L5 WP 36",
+   "X": 5218,
+   "Y": 579,
+   "Z": 0,
+   "Connects": [
+    "Deceit L5 WP 1",
+    "Deceit L5 WP 35"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 1",
+   "X": 5304,
+   "Y": 531,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 2"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 2",
+   "X": 5304,
+   "Y": 534,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 1",
+    "Deceit L6 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 3",
+   "X": 5342,
+   "Y": 546,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 4",
+   "X": 5280,
+   "Y": 544,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 5",
+   "X": 5323,
+   "Y": 543,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 6",
+    "Deceit L6 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 6",
+   "X": 5306,
+   "Y": 550,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 4",
+    "Deceit L6 WP 5",
+    "Deceit L6 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 7",
+   "X": 5305,
+   "Y": 535,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 2",
+    "Deceit L6 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 8",
+   "X": 5334,
+   "Y": 544,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 5",
+    "Deceit L6 WP 9"
+   ]
+  },
+  {
+   "Name": "Deceit L6 WP 9",
+   "X": 5335,
+   "Y": 545,
+   "Z": 0,
+   "Connects": [
+    "Deceit L6 WP 3",
+    "Deceit L6 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 1",
+   "X": 5303,
+   "Y": 675,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 4",
+    "Deceit L7 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 2",
+   "X": 5304,
+   "Y": 650,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 3",
+    "Deceit L7 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 3",
+   "X": 5305,
+   "Y": 649,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 2"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 4",
+   "X": 5318,
+   "Y": 684,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 1",
+    "Deceit L7 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 5",
+   "X": 5318,
+   "Y": 668,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 1",
+    "Deceit L7 WP 4",
+    "Deceit L7 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L7 WP 6",
+   "X": 5310,
+   "Y": 663,
+   "Z": 0,
+   "Connects": [
+    "Deceit L7 WP 2",
+    "Deceit L7 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 1",
+   "X": 5264,
+   "Y": 668,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 7",
+    "Deceit L8 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 2",
+   "X": 5264,
+   "Y": 682,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 8"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 3",
+   "X": 5286,
+   "Y": 680,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 4"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 4",
+   "X": 5280,
+   "Y": 664,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 3",
+    "Deceit L8 WP 5"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 5",
+   "X": 5281,
+   "Y": 666,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 4",
+    "Deceit L8 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 6",
+   "X": 5280,
+   "Y": 667,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 5",
+    "Deceit L8 WP 7"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 7",
+   "X": 5265,
+   "Y": 667,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 1",
+    "Deceit L8 WP 6"
+   ]
+  },
+  {
+   "Name": "Deceit L8 WP 8",
+   "X": 5265,
+   "Y": 676,
+   "Z": 0,
+   "Connects": [
+    "Deceit L8 WP 1",
+    "Deceit L8 WP 2"
+   ]
+  }
+ ],
+ "Destinations": [
+  {
+   "Name": "Deceit lvl1 Room 1",
+   "X": 5196,
+   "Y": 568,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 3",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl1 Room 2",
+   "X": 5168,
+   "Y": 622,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 8",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl1 Room 3",
+   "X": 5206,
+   "Y": 608,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 5",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl1 Room 4",
+   "X": 5183,
+   "Y": 599,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 13",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl1 Room 5",
+   "X": 5176,
+   "Y": 576,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 6",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl1 Room 6",
+   "X": 5206,
+   "Y": 588,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 7",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1
+  },
+  {
+   "Name": "Deceit lvl2 Room 1",
+   "X": 5221,
+   "Y": 673,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 4",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl2 Room 2",
+   "X": 5136,
+   "Y": 680,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 8",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl2 Room 3",
+   "X": 5217,
+   "Y": 737,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 14",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl2 Room 4",
+   "X": 5178,
+   "Y": 656,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 7",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl2 Room 5",
+   "X": 5176,
+   "Y": 718,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 17",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl2 Room 6",
+   "X": 5225,
+   "Y": 704,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 22",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2
+  },
+  {
+   "Name": "Deceit lvl3 Room 1",
+   "X": 5308,
+   "Y": 630,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 2",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl3 Room 2",
+   "X": 5341,
+   "Y": 581,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 9",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl3 Room 3",
+   "X": 5342,
+   "Y": 622,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 3",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl3 Room 4",
+   "X": 5312,
+   "Y": 600,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 4",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl3 Room 5",
+   "X": 5338,
+   "Y": 600,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 5",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl3 Room 6",
+   "X": 5325,
+   "Y": 625,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 6",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3
+  },
+  {
+   "Name": "Deceit lvl4 Room 1",
+   "X": 5330,
+   "Y": 706,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L4 WP 1",
+   "Dungeon": "Deceit lvl4",
+   "Level": 4
+  },
+  {
+   "Name": "Deceit lvl5 Room 1",
+   "X": 5137,
+   "Y": 627,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 3",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl5 Room 2",
+   "X": 5203,
+   "Y": 529,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 5",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl5 Room 3",
+   "X": 5144,
+   "Y": 552,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 4",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl5 Room 4",
+   "X": 5218,
+   "Y": 579,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 36",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl5 Room 5",
+   "X": 5146,
+   "Y": 590,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 6",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl5 Room 6",
+   "X": 5173,
+   "Y": 529,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 7",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5
+  },
+  {
+   "Name": "Deceit lvl6 Room 1",
+   "X": 5342,
+   "Y": 546,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 3",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl6 Room 2",
+   "X": 5280,
+   "Y": 544,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 4",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl6 Room 3",
+   "X": 5306,
+   "Y": 550,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 6",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl6 Room 4",
+   "X": 5323,
+   "Y": 543,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 5",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl6 Room 5",
+   "X": 5305,
+   "Y": 535,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 7",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl6 Room 6",
+   "X": 5334,
+   "Y": 544,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 8",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6
+  },
+  {
+   "Name": "Deceit lvl7 Room 1",
+   "X": 5318,
+   "Y": 684,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L7 WP 4",
+   "Dungeon": "Deceit lvl7",
+   "Level": 7
+  },
+  {
+   "Name": "Deceit lvl7 Room 2",
+   "X": 5310,
+   "Y": 663,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L7 WP 6",
+   "Dungeon": "Deceit lvl7",
+   "Level": 7
+  },
+  {
+   "Name": "Deceit lvl7 Room 3",
+   "X": 5318,
+   "Y": 668,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L7 WP 5",
+   "Dungeon": "Deceit lvl7",
+   "Level": 7
+  },
+  {
+   "Name": "Deceit lvl8 Room 1",
+   "X": 5286,
+   "Y": 680,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 3",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit lvl8 Room 2",
+   "X": 5265,
+   "Y": 667,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 7",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit lvl8 Room 3",
+   "X": 5280,
+   "Y": 664,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 4",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit lvl8 Room 4",
+   "X": 5265,
+   "Y": 676,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 8",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit lvl8 Room 5",
+   "X": 5280,
+   "Y": 667,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 6",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit lvl8 Room 6",
+   "X": 5281,
+   "Y": 666,
+   "Z": 0,
+   "Type": "DungeonRoom",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 5",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8
+  },
+  {
+   "Name": "Deceit L1 Entrance",
+   "X": 4113,
+   "Y": 431,
+   "Z": 5,
+   "Type": "DungeonEntrance",
+   "City": "",
+   "NearestWaypoint": "WP 1162",
+   "Dungeon": "Deceit",
+   "Level": 0,
+   "Arrivals": [
+    {
+     "X": 4111,
+     "Y": 430,
+     "Z": 5,
+     "Waypoints": [
+      "WP 1162"
+     ]
+    }
+   ],
+   "ArrivalX": 4111,
+   "ArrivalY": 430,
+   "ArrivalZ": 5,
+   "TargetX": 5187,
+   "TargetY": 639,
+   "TargetZ": 0,
+   "TargetLevel": 1
+  },
+  {
+   "Name": "Deceit lvl2 Descend to L3",
+   "X": 5137,
+   "Y": 649,
+   "Z": 5,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 1",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2,
+   "Arrivals": [
+    {
+     "X": 5137,
+     "Y": 649,
+     "Z": 5,
+     "Waypoints": [
+      "Deceit L2 WP 1"
+     ]
+    }
+   ],
+   "TargetX": 5346,
+   "TargetY": 578,
+   "TargetZ": 5,
+   "TargetLevel": 3
+  },
+  {
+   "Name": "Deceit lvl1 Exit Ascend",
+   "X": 5188,
+   "Y": 639,
+   "Z": 0,
+   "Type": "DungeonAscend",
+   "City": "",
+   "NearestWaypoint": "Deceit L1 WP 2",
+   "Dungeon": "Deceit lvl1",
+   "Level": 1,
+   "Arrivals": [
+    {
+     "X": 5188,
+     "Y": 639,
+     "Z": 0,
+     "Waypoints": [
+      "Deceit L1 WP 2"
+     ]
+    }
+   ],
+   "TargetX": 4110,
+   "TargetY": 430,
+   "TargetZ": 5,
+   "TargetLevel": 0
+  },
+  {
+   "Name": "Deceit lvl5 Descend to L6",
+   "X": 5217,
+   "Y": 586,
+   "Z": -13,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L5 WP 2",
+   "Dungeon": "Deceit lvl5",
+   "Level": 5,
+   "Arrivals": [
+    {
+     "X": 5217,
+     "Y": 586,
+     "Z": -13,
+     "Waypoints": [
+      "Deceit L5 WP 2"
+     ]
+    }
+   ],
+   "TargetX": 5304,
+   "TargetY": 533,
+   "TargetZ": 2,
+   "TargetLevel": 6
+  },
+  {
+   "Name": "Deceit lvl2 Descend to L7",
+   "X": 5219,
+   "Y": 761,
+   "Z": -28,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L2 WP 3",
+   "Dungeon": "Deceit lvl2",
+   "Level": 2,
+   "Arrivals": [
+    {
+     "X": 5219,
+     "Y": 761,
+     "Z": -28,
+     "Waypoints": [
+      "Deceit L2 WP 3"
+     ]
+    }
+   ],
+   "TargetX": 5305,
+   "TargetY": 651,
+   "TargetZ": 7,
+   "TargetLevel": 7
+  },
+  {
+   "Name": "Deceit lvl8 Exit Ascend",
+   "X": 5265,
+   "Y": 669,
+   "Z": 0,
+   "Type": "DungeonAscend",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 1",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8,
+   "Arrivals": [
+    {
+     "X": 5265,
+     "Y": 669,
+     "Z": 0,
+     "Waypoints": [
+      "Deceit L8 WP 1"
+     ]
+    }
+   ],
+   "TargetX": 5876,
+   "TargetY": 1378,
+   "TargetZ": 0,
+   "TargetLevel": 0
+  },
+  {
+   "Name": "Deceit lvl8 Exit Ascend B",
+   "X": 5265,
+   "Y": 683,
+   "Z": 0,
+   "Type": "DungeonAscend",
+   "City": "",
+   "NearestWaypoint": "Deceit L8 WP 2",
+   "Dungeon": "Deceit lvl8",
+   "Level": 8,
+   "Arrivals": [
+    {
+     "X": 5265,
+     "Y": 683,
+     "Z": 0,
+     "Waypoints": [
+      "Deceit L8 WP 2"
+     ]
+    }
+   ],
+   "TargetX": 5606,
+   "TargetY": 802,
+   "TargetZ": 60,
+   "TargetLevel": 0
+  },
+  {
+   "Name": "Deceit lvl6 Ascend to L5",
+   "X": 5305,
+   "Y": 532,
+   "Z": 7,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L6 WP 1",
+   "Dungeon": "Deceit lvl6",
+   "Level": 6,
+   "Arrivals": [
+    {
+     "X": 5305,
+     "Y": 532,
+     "Z": 7,
+     "Waypoints": [
+      "Deceit L6 WP 1"
+     ]
+    }
+   ],
+   "TargetX": 5216,
+   "TargetY": 585,
+   "TargetZ": -8,
+   "TargetLevel": 5
+  },
+  {
+   "Name": "Deceit lvl7 Exit Ascend",
+   "X": 5304,
+   "Y": 676,
+   "Z": -20,
+   "Type": "DungeonAscend",
+   "City": "",
+   "NearestWaypoint": "Deceit L7 WP 1",
+   "Dungeon": "Deceit lvl7",
+   "Level": 7,
+   "Arrivals": [
+    {
+     "X": 5304,
+     "Y": 676,
+     "Z": -20,
+     "Waypoints": [
+      "Deceit L7 WP 1"
+     ]
+    }
+   ],
+   "TargetX": 7109,
+   "TargetY": 1097,
+   "TargetZ": 18,
+   "TargetLevel": 0
+  },
+  {
+   "Name": "Deceit lvl7 Ascend to L2",
+   "X": 5306,
+   "Y": 650,
+   "Z": 12,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L7 WP 3",
+   "Dungeon": "Deceit lvl7",
+   "Level": 7,
+   "Arrivals": [
+    {
+     "X": 5306,
+     "Y": 650,
+     "Z": 12,
+     "Waypoints": [
+      "Deceit L7 WP 3"
+     ]
+    }
+   ],
+   "TargetX": 5218,
+   "TargetY": 760,
+   "TargetZ": -23,
+   "TargetLevel": 2
+  },
+  {
+   "Name": "Deceit lvl3 Ascend to L2",
+   "X": 5346,
+   "Y": 578,
+   "Z": 5,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Deceit L3 WP 1",
+   "Dungeon": "Deceit lvl3",
+   "Level": 3,
+   "Arrivals": [
+    {
+     "X": 5346,
+     "Y": 578,
+     "Z": 5,
+     "Waypoints": [
+      "Deceit L3 WP 1"
+     ]
+    }
+   ],
+   "TargetX": 5137,
+   "TargetY": 649,
+   "TargetZ": 5,
+   "TargetLevel": 2
+  }
+ ]
+}

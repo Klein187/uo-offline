@@ -1,0 +1,588 @@
+{
+  "Dungeon": "Covetous",
+  "Records": [
+    {
+      "Name": "Covetous L1 Entrance",
+      "X": 2386,
+      "Y": 838,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous",
+      "Level": 1,
+      "ArrivalX": 2384,
+      "ArrivalY": 837,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2384,
+          "Y": 837,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2384,
+          836,
+          0
+        ],
+        [
+          2384,
+          837,
+          0
+        ],
+        [
+          2384,
+          838,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5615,
+        1996,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous L1 Entrance",
+      "X": 2423,
+      "Y": 884,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous",
+      "Level": 1,
+      "ArrivalX": 2421,
+      "ArrivalY": 883,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2421,
+          "Y": 883,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2420,
+          883,
+          0
+        ],
+        [
+          2421,
+          883,
+          0
+        ],
+        [
+          2422,
+          883,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5392,
+        1959,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous L1 Entrance",
+      "X": 2458,
+      "Y": 859,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous",
+      "Level": 1,
+      "ArrivalX": 2456,
+      "ArrivalY": 858,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2456,
+          "Y": 858,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2455,
+          858,
+          0
+        ],
+        [
+          2456,
+          858,
+          0
+        ],
+        [
+          2457,
+          858,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5388,
+        2027,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous L1 Entrance",
+      "X": 2501,
+      "Y": 917,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous",
+      "Level": 1,
+      "ArrivalX": 2499,
+      "ArrivalY": 916,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2499,
+          "Y": 916,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2498,
+          916,
+          0
+        ],
+        [
+          2499,
+          916,
+          0
+        ],
+        [
+          2500,
+          916,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5455,
+        1864,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous L1 Entrance",
+      "X": 2547,
+      "Y": 851,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous",
+      "Level": 1,
+      "ArrivalX": 2545,
+      "ArrivalY": 850,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2545,
+          "Y": 850,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          2544,
+          850,
+          0
+        ],
+        [
+          2545,
+          850,
+          0
+        ],
+        [
+          2546,
+          850,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5578,
+        1927,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous lvl1 L1 Exit Ascend",
+      "X": 5389,
+      "Y": 2027,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5389,
+          "Y": 2027,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5388,
+          2027,
+          0
+        ],
+        [
+          5389,
+          2027,
+          0
+        ],
+        [
+          5390,
+          2027,
+          0
+        ]
+      ],
+      "_landsAt": [
+        2455,
+        858,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous lvl1 L1 Exit Ascend",
+      "X": 5393,
+      "Y": 1959,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5393,
+          "Y": 1959,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5392,
+          1959,
+          0
+        ],
+        [
+          5393,
+          1959,
+          0
+        ],
+        [
+          5394,
+          1959,
+          0
+        ]
+      ],
+      "_landsAt": [
+        2420,
+        883,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous lvl1 L1 Exit Ascend",
+      "X": 5456,
+      "Y": 1864,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5456,
+          "Y": 1864,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5455,
+          1864,
+          0
+        ],
+        [
+          5456,
+          1864,
+          0
+        ],
+        [
+          5457,
+          1864,
+          0
+        ]
+      ],
+      "_landsAt": [
+        2498,
+        916,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous lvl1 L1 Descend",
+      "X": 5466,
+      "Y": 1805,
+      "Z": 12,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5466,
+          "Y": 1805,
+          "Z": 12,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5466,
+          1804,
+          12
+        ],
+        [
+          5466,
+          1805,
+          12
+        ],
+        [
+          5466,
+          1806,
+          12
+        ]
+      ],
+      "_landsAt": [
+        5593,
+        1840,
+        -3
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Covetous lvl1 L1 Descend",
+      "X": 5552,
+      "Y": 1805,
+      "Z": 12,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5552,
+          "Y": 1805,
+          "Z": 12,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5551,
+          1805,
+          12
+        ],
+        [
+          5552,
+          1805,
+          12
+        ],
+        [
+          5553,
+          1805,
+          12
+        ]
+      ],
+      "_landsAt": [
+        5556,
+        1825,
+        -3
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Covetous lvl1 L1 Descend",
+      "X": 5557,
+      "Y": 1826,
+      "Z": -10,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5557,
+          "Y": 1826,
+          "Z": -10,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5556,
+          1826,
+          -10
+        ],
+        [
+          5557,
+          1826,
+          -10
+        ]
+      ],
+      "_landsAt": [
+        5551,
+        1806,
+        7
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Covetous lvl1 L1 Exit Ascend",
+      "X": 5579,
+      "Y": 1927,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5579,
+          "Y": 1927,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5578,
+          1927,
+          0
+        ],
+        [
+          5579,
+          1927,
+          0
+        ],
+        [
+          5580,
+          1927,
+          0
+        ]
+      ],
+      "_landsAt": [
+        2544,
+        850,
+        0
+      ]
+    },
+    {
+      "Name": "Covetous lvl1 L1 Descend",
+      "X": 5594,
+      "Y": 1841,
+      "Z": -8,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5594,
+          "Y": 1841,
+          "Z": -8,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5594,
+          1840,
+          -8
+        ],
+        [
+          5594,
+          1841,
+          -8
+        ]
+      ],
+      "_landsAt": [
+        5467,
+        1804,
+        7
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Covetous lvl1 L1 Exit Ascend",
+      "X": 5615,
+      "Y": 1997,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5615,
+          "Y": 1997,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5615,
+          1996,
+          0
+        ],
+        [
+          5615,
+          1997,
+          0
+        ],
+        [
+          5615,
+          1998,
+          0
+        ]
+      ],
+      "_landsAt": [
+        2384,
+        836,
+        0
+      ]
+    }
+  ]
+}

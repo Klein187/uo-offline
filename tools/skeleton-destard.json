@@ -1,0 +1,410 @@
+{
+  "Dungeon": "Destard",
+  "Records": [
+    {
+      "Name": "Destard L1 Entrance",
+      "X": 1178,
+      "Y": 2636,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard",
+      "Level": 1,
+      "ArrivalX": 1176,
+      "ArrivalY": 2635,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 1176,
+          "Y": 2635,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          1175,
+          2635,
+          0
+        ],
+        [
+          1176,
+          2635,
+          0
+        ],
+        [
+          1177,
+          2635,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5242,
+        1007,
+        0
+      ]
+    },
+    {
+      "Name": "Destard lvl1 L1 Descend",
+      "X": 5131,
+      "Y": 909,
+      "Z": -28,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5131,
+          "Y": 909,
+          "Z": -28,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5129,
+          909,
+          -28
+        ],
+        [
+          5130,
+          909,
+          -28
+        ],
+        [
+          5131,
+          909,
+          -28
+        ],
+        [
+          5132,
+          909,
+          -28
+        ]
+      ],
+      "_landsAt": [
+        5142,
+        798,
+        17
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Descend",
+      "X": 5133,
+      "Y": 986,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5133,
+          "Y": 986,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5133,
+          984,
+          22
+        ],
+        [
+          5133,
+          985,
+          22
+        ],
+        [
+          5133,
+          986,
+          22
+        ],
+        [
+          5133,
+          987,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5152,
+        808,
+        -19
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Exit Ascend",
+      "X": 5140,
+      "Y": 973,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5140,
+          "Y": 973,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5140,
+          973,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5331,
+        707,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Descend",
+      "X": 5144,
+      "Y": 797,
+      "Z": 22,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5144,
+          "Y": 797,
+          "Z": 22,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5142,
+          797,
+          22
+        ],
+        [
+          5143,
+          797,
+          22
+        ],
+        [
+          5144,
+          797,
+          22
+        ],
+        [
+          5145,
+          797,
+          22
+        ]
+      ],
+      "_landsAt": [
+        5129,
+        908,
+        -23
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Exit Ascend",
+      "X": 5145,
+      "Y": 973,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5145,
+          "Y": 973,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5145,
+          973,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5201,
+        1564,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Descend",
+      "X": 5153,
+      "Y": 810,
+      "Z": -25,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5153,
+          "Y": 810,
+          "Z": -25,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5153,
+          808,
+          -25
+        ],
+        [
+          5153,
+          809,
+          -25
+        ],
+        [
+          5153,
+          810,
+          -25
+        ],
+        [
+          5153,
+          811,
+          -25
+        ]
+      ],
+      "_landsAt": [
+        5134,
+        984,
+        17
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Destard lvl1 L1 Exit Ascend",
+      "X": 5243,
+      "Y": 1007,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5243,
+          "Y": 1007,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5242,
+          1007,
+          0
+        ],
+        [
+          5243,
+          1007,
+          0
+        ],
+        [
+          5244,
+          1007,
+          0
+        ]
+      ],
+      "_landsAt": [
+        1175,
+        2635,
+        0
+      ]
+    },
+    {
+      "Name": "Destard L1 Entrance",
+      "X": 5508,
+      "Y": 815,
+      "Z": 60,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard",
+      "Level": 1,
+      "ArrivalX": 5506,
+      "ArrivalY": 814,
+      "ArrivalZ": 60,
+      "Arrivals": [
+        {
+          "X": 5506,
+          "Y": 814,
+          "Z": 60,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5506,
+          814,
+          60
+        ]
+      ],
+      "_landsAt": [
+        5164,
+        1009,
+        0
+      ]
+    },
+    {
+      "Name": "Destard L1 Entrance",
+      "X": 5684,
+      "Y": 1438,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Destard",
+      "Level": 1,
+      "ArrivalX": 5682,
+      "ArrivalY": 1437,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5682,
+          "Y": 1437,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5682,
+          1437,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5164,
+        1009,
+        0
+      ]
+    }
+  ]
+}

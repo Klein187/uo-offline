@@ -1,0 +1,474 @@
+{
+  "Dungeon": "Despise",
+  "Records": [
+    {
+      "Name": "Despise L1 Entrance",
+      "X": 1298,
+      "Y": 1082,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise",
+      "Level": 1,
+      "ArrivalX": 1296,
+      "ArrivalY": 1081,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 1296,
+          "Y": 1081,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          1296,
+          1080,
+          0
+        ],
+        [
+          1296,
+          1081,
+          0
+        ],
+        [
+          1296,
+          1082,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5588,
+        630,
+        30
+      ]
+    },
+    {
+      "Name": "Despise L1 Entrance",
+      "X": 5267,
+      "Y": 684,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise",
+      "Level": 1,
+      "ArrivalX": 5265,
+      "ArrivalY": 683,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5265,
+          "Y": 683,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5265,
+          683,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5606,
+        802,
+        60
+      ]
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5386,
+      "Y": 756,
+      "Z": -8,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5386,
+          "Y": 756,
+          "Z": -8,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5386,
+          755,
+          -8
+        ],
+        [
+          5386,
+          756,
+          -8
+        ],
+        [
+          5386,
+          757,
+          -8
+        ]
+      ],
+      "_landsAt": [
+        5408,
+        858,
+        47
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5409,
+      "Y": 859,
+      "Z": 52,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5409,
+          "Y": 859,
+          "Z": 52,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5409,
+          858,
+          52
+        ],
+        [
+          5409,
+          859,
+          52
+        ],
+        [
+          5409,
+          860,
+          52
+        ]
+      ],
+      "_landsAt": [
+        5387,
+        755,
+        -3
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5504,
+      "Y": 570,
+      "Z": 46,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5504,
+          "Y": 570,
+          "Z": 46,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5504,
+          569,
+          46
+        ],
+        [
+          5504,
+          570,
+          46
+        ],
+        [
+          5504,
+          571,
+          46
+        ]
+      ],
+      "_landsAt": [
+        5574,
+        628,
+        37
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Exit Ascend",
+      "X": 5506,
+      "Y": 814,
+      "Z": 60,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5506,
+          "Y": 814,
+          "Z": 60,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5506,
+          814,
+          60
+        ]
+      ],
+      "_landsAt": [
+        5164,
+        1009,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Exit Ascend",
+      "X": 5506,
+      "Y": 817,
+      "Z": 60,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5506,
+          "Y": 817,
+          "Z": 60,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5506,
+          817,
+          60
+        ]
+      ],
+      "_landsAt": [
+        5201,
+        1564,
+        0
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5522,
+      "Y": 673,
+      "Z": 32,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5522,
+          "Y": 673,
+          "Z": 32,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5522,
+          672,
+          32
+        ],
+        [
+          5522,
+          673,
+          32
+        ],
+        [
+          5522,
+          674,
+          32
+        ]
+      ],
+      "_landsAt": [
+        5573,
+        632,
+        22
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5572,
+      "Y": 634,
+      "Z": 17,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5572,
+          "Y": 634,
+          "Z": 17,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5572,
+          632,
+          17
+        ],
+        [
+          5572,
+          633,
+          17
+        ],
+        [
+          5572,
+          634,
+          17
+        ],
+        [
+          5573,
+          630,
+          42
+        ]
+      ],
+      "_landsAt": [
+        5503,
+        571,
+        51
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Descend",
+      "X": 5573,
+      "Y": 629,
+      "Z": 42,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5573,
+          "Y": 629,
+          "Z": 42,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5573,
+          628,
+          42
+        ],
+        [
+          5573,
+          629,
+          42
+        ]
+      ],
+      "_landsAt": [
+        5503,
+        569,
+        51
+      ],
+      "_note": "UNREACHED from entrance \u2014 review"
+    },
+    {
+      "Name": "Despise lvl1 L1 Exit Ascend",
+      "X": 5588,
+      "Y": 631,
+      "Z": 30,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise lvl1",
+      "Level": 1,
+      "Arrivals": [
+        {
+          "X": 5588,
+          "Y": 631,
+          "Z": 30,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5588,
+          630,
+          30
+        ],
+        [
+          5588,
+          631,
+          30
+        ],
+        [
+          5588,
+          632,
+          30
+        ]
+      ],
+      "_landsAt": [
+        1296,
+        1080,
+        0
+      ]
+    },
+    {
+      "Name": "Despise L1 Entrance",
+      "X": 5684,
+      "Y": 1441,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "",
+      "Dungeon": "Despise",
+      "Level": 1,
+      "ArrivalX": 5682,
+      "ArrivalY": 1440,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5682,
+          "Y": 1440,
+          "Z": 0,
+          "Waypoints": []
+        }
+      ],
+      "_padTiles": [
+        [
+          5682,
+          1440,
+          0
+        ]
+      ],
+      "_landsAt": [
+        5606,
+        802,
+        60
+      ]
+    }
+  ]
+}
