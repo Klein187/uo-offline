@@ -252,7 +252,10 @@ namespace Server.CustomBots
                 return;
             }
 
+            // Nearest eligible bot to the destination — exercises the
+            // interesting LAST leg of a route instead of a cross-map trek.
             PlayerBot pick = null;
+            int best = int.MaxValue;
             foreach (var m in World.Mobiles.Values)
             {
                 if (m is PlayerBot bot && !bot.Deleted && bot.Alive &&
@@ -263,8 +266,13 @@ namespace Server.CustomBots
                     (bot.Behavior is TravelerBehavior or BankSitterBehavior
                                   or IdleBehavior or WanderBehavior))
                 {
-                    pick = bot;
-                    break;
+                    int d = Math.Max(Math.Abs(bot.X - dest.Location.X),
+                                     Math.Abs(bot.Y - dest.Location.Y));
+                    if (d < best)
+                    {
+                        best = d;
+                        pick = bot;
+                    }
                 }
             }
 

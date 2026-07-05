@@ -97,19 +97,89 @@ namespace Server.CustomBots
                 }
             }
 
-            // Pick the destination gate: nearest to where the trip is
-            // ultimately headed, or random for a plain wander.
+            // Pick the destination gate: the one the trip can actually
+            // CONTINUE from, or random for a plain wander.
+            //
+            // Plain nearest-coordinate exit choice loops on island
+            // destinations: Valor Isle's nearest gates are Jhelom and
+            // Buccaneer's Den — both islands with no ferry — so a routed
+            // bot ping-ponged between them forever while the real route
+            // (any mainland gate -> walk to the Trinsic ferry) was never
+            // chosen. Rank exits by continuation quality, using waypoint
+            // components for O(1) reachability:
+            //   tier 0 — resume walkable from the gate (same component):
+            //            score = distance gate -> resume.
+            //   tier 1 — a ferry terminal walkable from the gate whose
+            //            partner lands in the resume's component:
+            //            score = gate -> dock + partner -> resume.
+            //   tier 2 — no continuation known: coordinate distance only,
+            //            heavily penalized.
             BotDestination target = null;
             if (resumeCoord.HasValue)
             {
-                int bestDist = int.MaxValue;
+                var graph = WaypointRegistry.Graph;
+                int resumeComp = -1;
+                if (graph != null && graph.NodeCount > 0)
+                {
+                    var resumeNode = graph.FindNearestNode(resumeCoord.Value);
+                    if (resumeNode != null)
+                    {
+                        resumeComp = graph.ComponentOf(resumeNode.Name);
+                    }
+                }
+
+                long bestScore = long.MaxValue;
                 foreach (var g in others)
                 {
-                    int d = Math.Max(Math.Abs(g.Location.X - resumeCoord.Value.X),
-                                     Math.Abs(g.Location.Y - resumeCoord.Value.Y));
-                    if (d < bestDist)
+                    long dResume = Math.Max(
+                        Math.Abs(g.Location.X - resumeCoord.Value.X),
+                        Math.Abs(g.Location.Y - resumeCoord.Value.Y));
+
+                    long score;
+                    int gateComp = graph != null && !string.IsNullOrEmpty(g.NearestWaypoint)
+                        ? graph.ComponentOf(g.NearestWaypoint)
+                        : -1;
+
+                    if (resumeComp < 0 || gateComp < 0)
                     {
-                        bestDist = d;
+                        score = dResume; // no graph data — old behavior
+                    }
+                    else if (gateComp == resumeComp)
+                    {
+                        score = dResume; // tier 0: walk it from here
+                    }
+                    else
+                    {
+                        // tier 1: any ferry from this gate's landmass to
+                        // the destination's landmass?
+                        long bestFerry = long.MaxValue;
+                        foreach (var dk in DestinationCatalog.All)
+                        {
+                            if (dk.Type != DestinationType.Dock) continue;
+                            var pair = FerryTravel.PartnerOf(dk);
+                            if (pair == null) continue;
+                            if (string.IsNullOrEmpty(dk.NearestWaypoint) ||
+                                string.IsNullOrEmpty(pair.NearestWaypoint)) continue;
+                            if (graph.ComponentOf(dk.NearestWaypoint) != gateComp) continue;
+                            if (graph.ComponentOf(pair.NearestWaypoint) != resumeComp) continue;
+
+                            long leg1 = Math.Max(
+                                Math.Abs(g.Location.X - dk.Location.X),
+                                Math.Abs(g.Location.Y - dk.Location.Y));
+                            long leg2 = Math.Max(
+                                Math.Abs(pair.Location.X - resumeCoord.Value.X),
+                                Math.Abs(pair.Location.Y - resumeCoord.Value.Y));
+                            bestFerry = Math.Min(bestFerry, leg1 + leg2);
+                        }
+
+                        score = bestFerry < long.MaxValue
+                            ? bestFerry
+                            : dResume + 1_000_000; // tier 2: dead end
+                    }
+
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
                         target = g;
                     }
                 }
