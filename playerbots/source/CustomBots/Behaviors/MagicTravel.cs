@@ -87,7 +87,7 @@ namespace Server.CustomBots
             bool gate = magery >= GateMinMagery && bot.Mana >= GateManaCost &&
                         Utility.RandomDouble() < GateShare;
 
-            var landing = PickLanding(destCoord, destType);
+            var landing = PickLanding(bot, destName, destCoord, destType);
 
             if (gate)
             {
@@ -107,23 +107,66 @@ namespace Server.CustomBots
         // Dungeon entrances: NEVER land on or beside the pad — the arrival
         // tile sits on a real Teleporter, and materializing onto it would
         // skip the walk-on entry flow that arms the crawler conversion.
-        // Land a handful of tiles short; the fresh Traveler walks the last
+        // Aim at the entrance's approach WAYPOINT (a tile the nav audit has
+        // already proven walkable) so the fresh Traveler walks the last
         // steps through the normal armed path.
+        //
+        // Every candidate is validated with Map.CanSpawnMobile: a blind
+        // coordinate offset at a cliff-face entrance regularly landed the
+        // bot INSIDE the mountain, where it could never step out again —
+        // that was the "recalled into the rocks and stuck" epidemic at the
+        // Orc Cave / Wrong / Ice ledges.
         // -------------------------------------------------------------------
-        private static Point3D PickLanding(Point3D destCoord, DestinationType destType)
+        private static Point3D PickLanding(PlayerBot bot, string destName,
+            Point3D destCoord, DestinationType destType)
         {
-            if (destType == DestinationType.DungeonEntrance ||
-                destType == DestinationType.Dungeon)
+            var map = bot.Map;
+            bool entrance = destType == DestinationType.DungeonEntrance ||
+                            destType == DestinationType.Dungeon;
+
+            // Base point: entrances aim at their approach node instead of
+            // the pad's doorstep.
+            var basePoint = destCoord;
+            if (entrance)
             {
-                int ox = Utility.RandomMinMax(3, 5) * (Utility.RandomBool() ? 1 : -1);
-                int oy = Utility.RandomMinMax(3, 5) * (Utility.RandomBool() ? 1 : -1);
-                return new Point3D(destCoord.X + ox, destCoord.Y + oy, destCoord.Z);
+                var dest = DestinationCatalog.GetByName(destName);
+                var node = dest != null && !string.IsNullOrEmpty(dest.NearestWaypoint)
+                    ? WaypointRegistry.Graph?.Get(dest.NearestWaypoint)
+                    : null;
+                if (node != null)
+                {
+                    basePoint = node.Location;
+                }
             }
 
-            return new Point3D(
-                destCoord.X + Utility.RandomMinMax(-2, 2),
-                destCoord.Y + Utility.RandomMinMax(-2, 2),
-                destCoord.Z);
+            // Spread candidates, validated against the real map. Entrance
+            // landings additionally refuse tiles beside the pad itself.
+            for (int i = 0; i < 10; i++)
+            {
+                int spread = entrance && basePoint == destCoord ? 4 : 2;
+                int x = basePoint.X + Utility.RandomMinMax(-spread, spread);
+                int y = basePoint.Y + Utility.RandomMinMax(-spread, spread);
+                if (entrance &&
+                    Math.Max(Math.Abs(x - destCoord.X), Math.Abs(y - destCoord.Y)) <= 1)
+                {
+                    continue; // on/beside the teleporter pad
+                }
+                int z = map.GetAverageZ(x, y);
+                if (map.CanSpawnMobile(x, y, z))
+                {
+                    return new Point3D(x, y, z);
+                }
+            }
+
+            // The base point itself (waypoint nodes are engine-verified).
+            int bz = map.GetAverageZ(basePoint.X, basePoint.Y);
+            if (map.CanSpawnMobile(basePoint.X, basePoint.Y, bz))
+            {
+                return new Point3D(basePoint.X, basePoint.Y, bz);
+            }
+
+            // Last resort — old behavior, at least at the authored coord.
+            return basePoint;
         }
 
         // -------------------------------------------------------------------

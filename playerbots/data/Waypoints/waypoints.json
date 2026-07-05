@@ -45577,35 +45577,35 @@
     {
       "Name": "Wrong Approach 26",
       "X": 2024,
-      "Y": 233,
-      "Z": 0,
+      "Y": 240,
+      "Z": 14,
       "Connects": [
         "Wrong Approach 25"
       ]
     },
     {
       "Name": "Wrong Approach 27",
-      "X": 2029,
-      "Y": 221,
-      "Z": 0,
+      "X": 2046,
+      "Y": 236,
+      "Z": 13,
       "Connects": [
         "Wrong Approach 26"
       ]
     },
     {
       "Name": "Wrong Approach 28",
-      "X": 2030,
-      "Y": 220,
-      "Z": 0,
+      "X": 2045,
+      "Y": 221,
+      "Z": 14,
       "Connects": [
         "Wrong Approach 27"
       ]
     },
     {
       "Name": "Wrong Approach 29",
-      "X": 2040,
+      "X": 2042,
       "Y": 217,
-      "Z": 0,
+      "Z": 14,
       "Connects": [
         "Wrong Approach 28"
       ]

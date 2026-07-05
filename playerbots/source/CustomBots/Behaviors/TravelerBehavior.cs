@@ -2177,6 +2177,50 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         // direction stops working partway, falls back to any walkable
         // direction for the remaining steps.
         // -------------------------------------------------------------------
+        // Consecutive NudgeAway calls where not one of the 8 directions
+        // produced a step — the physically-wedged detector.
+        private int _hopelessNudges;
+
+        // Teleport a fully wedged bot to the nearest tile the engine will
+        // accept a mobile on. Spiral outward so the extraction stays local
+        // (a couple of tiles for a crowd box-in; a few more for a bot
+        // embedded in a cliff by a bad teleport landing).
+        private void ExtractFromWedge(PlayerBot bot)
+        {
+            var map = bot.Map;
+            if (map == null || map == Map.Internal)
+            {
+                return;
+            }
+
+            for (int r = 1; r <= 10; r++)
+            {
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r)
+                        {
+                            continue; // ring only
+                        }
+                        int x = bot.X + dx;
+                        int y = bot.Y + dy;
+                        int z = map.GetAverageZ(x, y);
+                        if (map.CanSpawnMobile(x, y, z))
+                        {
+                            Log(bot, $"WEDGED in terrain at ({bot.X},{bot.Y},{bot.Z}) — " +
+                                     $"extracted to ({x},{y},{z})");
+                            bot.MoveToWorld(new Point3D(x, y, z), map);
+                            _follower?.ForceRepath();
+                            return;
+                        }
+                    }
+                }
+            }
+            Log(bot, $"WEDGED at ({bot.X},{bot.Y},{bot.Z}) and no valid tile " +
+                     $"within 10 — leaving for the lifecycle to recycle");
+        }
+
         private void NudgeAway(PlayerBot bot)
         {
             const int NudgeTiles = 3;
@@ -2199,7 +2243,21 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             {
                 if (bot.Move(d)) { lockedDir = d; break; }
             }
-            if (lockedDir == null) return; // hopelessly walled in this tick
+            if (lockedDir == null)
+            {
+                // Hopelessly walled in this tick. Once is often a transient
+                // crowd; twice in a row means the bot is physically WEDGED —
+                // teleported into rock (bad magic landing), boxed in by a
+                // bank crowd, or trapped by decor. Extract it to the nearest
+                // engine-valid tile; nothing else can ever free it.
+                if (++_hopelessNudges >= 2)
+                {
+                    _hopelessNudges = 0;
+                    ExtractFromWedge(bot);
+                }
+                return;
+            }
+            _hopelessNudges = 0;
 
             // Continue in the locked direction for additional steps; if a
             // step fails, try any walkable direction for the rest.

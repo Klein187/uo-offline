@@ -7642,34 +7642,6 @@
       "TargetLevel": 1
     },
     {
-      "Name": "Orc Cave lvl3 Ascend to L2",
-      "X": 5273,
-      "Y": 2043,
-      "Z": 4,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L3 WP 2",
-      "Dungeon": "Orc Cave lvl3",
-      "Level": 3,
-      "ArrivalX": 5273,
-      "ArrivalY": 2043,
-      "ArrivalZ": 4,
-      "Arrivals": [
-        {
-          "X": 5273,
-          "Y": 2043,
-          "Z": 4,
-          "Waypoints": [
-            "Orc Cave L3 WP 2"
-          ]
-        }
-      ],
-      "TargetX": 5363,
-      "TargetY": 1290,
-      "TargetZ": 4,
-      "TargetLevel": 2
-    },
-    {
       "Name": "Deceit lvl5 Ascend to L3",
       "X": 5305,
       "Y": 532,
@@ -7698,34 +7670,6 @@
       "TargetLevel": 3
     },
     {
-      "Name": "Deceit lvl6 Exit Ascend",
-      "X": 5304,
-      "Y": 676,
-      "Z": -20,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Deceit L6 WP 1",
-      "Dungeon": "Deceit lvl6",
-      "Level": 6,
-      "ArrivalX": 5304,
-      "ArrivalY": 676,
-      "ArrivalZ": -20,
-      "Arrivals": [
-        {
-          "X": 5304,
-          "Y": 676,
-          "Z": -20,
-          "Waypoints": [
-            "Deceit L6 WP 1"
-          ]
-        }
-      ],
-      "TargetX": 7109,
-      "TargetY": 1097,
-      "TargetZ": 18,
-      "TargetLevel": 0
-    },
-    {
       "Name": "Deceit lvl6 Ascend to L2",
       "X": 5306,
       "Y": 650,
@@ -7752,34 +7696,6 @@
       "TargetY": 760,
       "TargetZ": -23,
       "TargetLevel": 2
-    },
-    {
-      "Name": "Orc Cave lvl2 Ascend to L1",
-      "X": 5332,
-      "Y": 1381,
-      "Z": 10,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 2",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2,
-      "ArrivalX": 5332,
-      "ArrivalY": 1381,
-      "ArrivalZ": 10,
-      "Arrivals": [
-        {
-          "X": 5332,
-          "Y": 1381,
-          "Z": 10,
-          "Waypoints": [
-            "Orc Cave L2 WP 2"
-          ]
-        }
-      ],
-      "TargetX": 5134,
-      "TargetY": 1947,
-      "TargetZ": 0,
-      "TargetLevel": 1
     },
     {
       "Name": "Terathan Keep lvl1 Descend to L2 B",
@@ -7894,34 +7810,6 @@
       "TargetLevel": 1
     },
     {
-      "Name": "Orc Cave lvl2 Descend to L3",
-      "X": 5364,
-      "Y": 1289,
-      "Z": 4,
-      "Type": "DungeonDescend",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 4",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2,
-      "ArrivalX": 5364,
-      "ArrivalY": 1289,
-      "ArrivalZ": 4,
-      "Arrivals": [
-        {
-          "X": 5364,
-          "Y": 1289,
-          "Z": 4,
-          "Waypoints": [
-            "Orc Cave L2 WP 4"
-          ]
-        }
-      ],
-      "TargetX": 5272,
-      "TargetY": 2041,
-      "TargetZ": 4,
-      "TargetLevel": 3
-    },
-    {
       "Name": "Shame lvl1 Exit Ascend",
       "X": 5395,
       "Y": 127,
@@ -7946,34 +7834,6 @@
       ],
       "TargetX": 512,
       "TargetY": 1559,
-      "TargetZ": 0,
-      "TargetLevel": 0
-    },
-    {
-      "Name": "Khaldun lvl1 Exit Ascend",
-      "X": 5400,
-      "Y": 1289,
-      "Z": 0,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Khaldun L1 WP 2",
-      "Dungeon": "Khaldun lvl1",
-      "Level": 1,
-      "ArrivalX": 5400,
-      "ArrivalY": 1289,
-      "ArrivalZ": 0,
-      "Arrivals": [
-        {
-          "X": 5400,
-          "Y": 1289,
-          "Z": 0,
-          "Waypoints": [
-            "Khaldun L1 WP 2"
-          ]
-        }
-      ],
-      "TargetX": 5879,
-      "TargetY": 3817,
       "TargetZ": 0,
       "TargetLevel": 0
     },
@@ -8030,34 +7890,6 @@
       ],
       "TargetX": 5341,
       "TargetY": 1602,
-      "TargetZ": 0,
-      "TargetLevel": 1
-    },
-    {
-      "Name": "Khaldun lvl1 Shortcut",
-      "X": 5453,
-      "Y": 1360,
-      "Z": 5,
-      "Type": "DungeonDescend",
-      "City": "",
-      "NearestWaypoint": "Khaldun L1 WP 7",
-      "Dungeon": "Khaldun lvl1",
-      "Level": 1,
-      "ArrivalX": 5453,
-      "ArrivalY": 1360,
-      "ArrivalZ": 5,
-      "Arrivals": [
-        {
-          "X": 5453,
-          "Y": 1360,
-          "Z": 5,
-          "Waypoints": [
-            "Khaldun L1 WP 7"
-          ]
-        }
-      ],
-      "TargetX": 5435,
-      "TargetY": 1341,
       "TargetZ": 0,
       "TargetLevel": 1
     },
@@ -8846,34 +8678,6 @@
       "TargetLevel": 1
     },
     {
-      "Name": "Fire lvl2 Ascend to L1",
-      "X": 5702,
-      "Y": 1320,
-      "Z": 16,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Fire L2 WP 3",
-      "Dungeon": "Fire lvl2",
-      "Level": 2,
-      "ArrivalX": 5702,
-      "ArrivalY": 1320,
-      "ArrivalZ": 16,
-      "Arrivals": [
-        {
-          "X": 5702,
-          "Y": 1320,
-          "Z": 16,
-          "Waypoints": [
-            "Fire L2 WP 3"
-          ]
-        }
-      ],
-      "TargetX": 5786,
-      "TargetY": 1336,
-      "TargetZ": -8,
-      "TargetLevel": 1
-    },
-    {
       "Name": "Ice lvl1 Descend to L2",
       "X": 5705,
       "Y": 147,
@@ -9266,62 +9070,6 @@
       "TargetLevel": 0
     },
     {
-      "Name": "Hythloth lvl1 Exit Ascend",
-      "X": 5905,
-      "Y": 16,
-      "Z": 64,
-      "Type": "DungeonAscend",
-      "City": "",
-      "NearestWaypoint": "Hythloth L1 WP 4",
-      "Dungeon": "Hythloth lvl1",
-      "Level": 1,
-      "ArrivalX": 5905,
-      "ArrivalY": 16,
-      "ArrivalZ": 64,
-      "Arrivals": [
-        {
-          "X": 5905,
-          "Y": 16,
-          "Z": 64,
-          "Waypoints": [
-            "Hythloth L1 WP 4"
-          ]
-        }
-      ],
-      "TargetX": 4721,
-      "TargetY": 3813,
-      "TargetZ": 0,
-      "TargetLevel": 0
-    },
-    {
-      "Name": "Hythloth lvl2 Descend to L6",
-      "X": 5920,
-      "Y": 168,
-      "Z": 16,
-      "Type": "DungeonDescend",
-      "City": "",
-      "NearestWaypoint": "Hythloth L2 WP 4",
-      "Dungeon": "Hythloth lvl2",
-      "Level": 2,
-      "ArrivalX": 5920,
-      "ArrivalY": 168,
-      "ArrivalZ": 16,
-      "Arrivals": [
-        {
-          "X": 5920,
-          "Y": 168,
-          "Z": 16,
-          "Waypoints": [
-            "Hythloth L2 WP 4"
-          ]
-        }
-      ],
-      "TargetX": 6083,
-      "TargetY": 144,
-      "TargetZ": -20,
-      "TargetLevel": 6
-    },
-    {
       "Name": "Hythloth lvl2 Shortcut",
       "X": 5926,
       "Y": 147,
@@ -9516,34 +9264,6 @@
       "TargetY": 805,
       "TargetZ": 24,
       "TargetLevel": 0
-    },
-    {
-      "Name": "Hythloth lvl3 Descend to L5",
-      "X": 6040,
-      "Y": 194,
-      "Z": 12,
-      "Type": "DungeonDescend",
-      "City": "",
-      "NearestWaypoint": "Hythloth L3 WP 1",
-      "Dungeon": "Hythloth lvl3",
-      "Level": 3,
-      "ArrivalX": 6040,
-      "ArrivalY": 194,
-      "ArrivalZ": 12,
-      "Arrivals": [
-        {
-          "X": 6040,
-          "Y": 194,
-          "Z": 12,
-          "Waypoints": [
-            "Hythloth L3 WP 1"
-          ]
-        }
-      ],
-      "TargetX": 6059,
-      "TargetY": 90,
-      "TargetZ": 24,
-      "TargetLevel": 5
     },
     {
       "Name": "Hythloth lvl4 Ascend to L3",

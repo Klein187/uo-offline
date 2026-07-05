@@ -57,6 +57,8 @@ namespace Server.CustomBots
         private static readonly string HousesAck = Live("houses_ack.json");
         private static readonly string GotoReq = Live("goto_request.txt");
         private static readonly string GotoAck = Live("goto_ack.json");
+        private static readonly string PadReq = Live("padaudit_request.txt");
+        private static readonly string PadAck = Live("padaudit_report.json");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -73,6 +75,7 @@ namespace Server.CustomBots
         private static long _lastTame = -1;
         private static long _lastHouses = -1;
         private static long _lastGoto = -1;
+        private static long _lastPad = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads â€” registries and
@@ -94,6 +97,7 @@ namespace Server.CustomBots
             _lastTame = ReadToken(TameReq) ?? 0;
             _lastHouses = ReadHousesRequest(out _, out _) ?? 0;
             _lastGoto = ReadGotoRequest(out _) ?? 0;
+            _lastPad = ReadToken(PadReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -213,6 +217,37 @@ namespace Server.CustomBots
                 _lastGoto = gotoTok.Value;
                 DoGoto(gotoTok.Value, gotoDest);
             }
+
+            var padTok = ReadToken(PadReq);
+            if (padTok != null && padTok.Value != _lastPad)
+            {
+                _lastPad = padTok.Value;
+                DoPadAudit(padTok.Value);
+            }
+        }
+
+        // padaudit_request.txt: functional teleporter-pad audit — walks a
+        // probe onto every dungeon entrance/descend/ascend pad.
+        private static void DoPadAudit(long token)
+        {
+            List<string> findings;
+            try
+            {
+                findings = BotPadAudit.Run();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] pad audit: {ex.Message}");
+                WriteAck(PadAck, $"{{\"token\":{token},\"error\":\"{ex.Message.Replace("\"", "'")}\"}}");
+                return;
+            }
+            var items = new List<string>();
+            foreach (var f in findings)
+            {
+                items.Add("\"" + f.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+            }
+            WriteAck(PadAck,
+                $"{{\"token\":{token},\"findings\":[{string.Join(",", items)}]}}");
         }
 
         // goto_request.txt: "<token> <destination name>" — send a random
