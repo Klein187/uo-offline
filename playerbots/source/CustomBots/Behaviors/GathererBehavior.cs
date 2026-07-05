@@ -35,6 +35,9 @@ namespace Server.CustomBots
         private DateTime _nextHarvest;
         private Point3D _anchor;
 
+        public override string GetStatusLine(PlayerBot bot) =>
+            bot.Class == BotClass.Miner ? "mining a rock face" : "chopping wood";
+
         public GathererBehavior()
         {
             ChatCategories  = new[] { "gather_talk", "small_talk" };

@@ -158,5 +158,41 @@ namespace Server.CustomBots
             }
             return true;
         }
+
+        // A closed, unlocked door on (x,y) near z? Bots open those on contact
+        // (DoorHelper stuck-recovery + Shopper inbound), so audits treating
+        // them as walls report false BLOCKED edges.
+        public static bool ClosedDoorAt(Map map, int x, int y, int z)
+        {
+            if (map == null || map == Map.Internal)
+            {
+                return false;
+            }
+            foreach (var d in map.GetItemsInRange<Server.Items.BaseDoor>(new Point3D(x, y, z), 0))
+            {
+                if (!d.Open && !d.Locked && System.Math.Abs(d.Z - z) <= 15)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // CanStep, but a tile blocked only by a closed unlocked door counts
+        // as passable (audit/authoring use — NOT for live movement).
+        public static bool CanStepThroughDoors(Map map, int x0, int y0, int z0,
+                                               int x1, int y1, out int z1)
+        {
+            if (CanStep(map, x0, y0, z0, x1, y1, out z1))
+            {
+                return true;
+            }
+            if (ClosedDoorAt(map, x1, y1, z0))
+            {
+                z1 = z0;
+                return true;
+            }
+            return false;
+        }
     }
 }

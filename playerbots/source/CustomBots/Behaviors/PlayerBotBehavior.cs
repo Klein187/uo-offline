@@ -17,6 +17,13 @@ namespace Server.CustomBots
     {
         public abstract string SerializableName { get; }
 
+        // One human-readable line describing what the bot is doing RIGHT NOW
+        // ("→ Vesper Bank · leg 12/31 via Brit-East-4", "fighting a lich").
+        // Exported by LiveMapSnapshot so the map editor's bot inspector can
+        // narrate the world. Null = nothing more specific than the behavior
+        // name. Must be cheap — it runs for every bot on every snapshot.
+        public virtual string GetStatusLine(PlayerBot bot) => null;
+
         // Chat config — override in subclasses.
         public virtual string[] ChatCategories { get; protected set; } = Array.Empty<string>();
         public virtual double ChatChance        { get; protected set; } = 0.15;

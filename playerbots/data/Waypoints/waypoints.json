@@ -1846,8 +1846,8 @@
     },
     {
       "Name": "WP 43",
-      "X": 1468,
-      "Y": 1732,
+      "X": 1467,
+      "Y": 1731,
       "Z": 0,
       "Connects": [
         "britprov9 2",
@@ -3982,8 +3982,7 @@
       "Y": 1581,
       "Z": 0,
       "Connects": [
-        "WP 285",
-        "WP 284"
+        "WP 285"
       ]
     },
     {
@@ -4999,9 +4998,7 @@
       "X": 407,
       "Y": 900,
       "Z": 0,
-      "Connects": [
-        "WP 411"
-      ]
+      "Connects": []
     },
     {
       "Name": "WP 398",
@@ -5258,8 +5255,7 @@
       "Y": 789,
       "Z": 0,
       "Connects": [
-        "Rec 4.4",
-        "Rec 6"
+        "Rec 4.4"
       ]
     },
     {
@@ -5268,7 +5264,6 @@
       "Y": 764,
       "Z": 0,
       "Connects": [
-        "Rec 5.3",
         "Rec 7.2"
       ]
     },
@@ -5314,8 +5309,8 @@
     },
     {
       "Name": "Rec 3.7",
-      "X": 655,
-      "Y": 823,
+      "X": 646,
+      "Y": 827,
       "Z": 0,
       "Connects": [
         "Rec 2.8"
@@ -5850,8 +5845,7 @@
       "Y": 2196,
       "Z": 0,
       "Connects": [
-        "WP 478",
-        "WP 477"
+        "WP 478"
       ]
     },
     {
@@ -6438,8 +6432,8 @@
     },
     {
       "Name": "WP 542",
-      "X": 1340,
-      "Y": 1293,
+      "X": 1339,
+      "Y": 1292,
       "Z": 0,
       "Connects": [
         "WP 541"
@@ -8625,9 +8619,7 @@
       "X": 2981,
       "Y": 738,
       "Z": 0,
-      "Connects": [
-        "WP 783"
-      ]
+      "Connects": []
     },
     {
       "Name": "WP 785",
@@ -13811,8 +13803,8 @@
     },
     {
       "Name": "WP 1348",
-      "X": 5394,
-      "Y": 757,
+      "X": 5393,
+      "Y": 756,
       "Z": 5,
       "Connects": [
         "WP 1347"
@@ -14285,6 +14277,1043 @@
         "WP 674",
         "WP 673",
         "Compassion Desert Path"
+      ]
+    },
+    {
+      "Name": "Justice Trail 1",
+      "X": 1408,
+      "Y": 792,
+      "Z": 0,
+      "Connects": [
+        "WP 648"
+      ]
+    },
+    {
+      "Name": "Justice Trail 2",
+      "X": 1381,
+      "Y": 793,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 1"
+      ]
+    },
+    {
+      "Name": "Justice Trail 3",
+      "X": 1359,
+      "Y": 810,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 2"
+      ]
+    },
+    {
+      "Name": "Justice Trail 4",
+      "X": 1340,
+      "Y": 829,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 3"
+      ]
+    },
+    {
+      "Name": "Justice Trail 5",
+      "X": 1328,
+      "Y": 841,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 4"
+      ]
+    },
+    {
+      "Name": "Justice Trail 6",
+      "X": 1306,
+      "Y": 857,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 5"
+      ]
+    },
+    {
+      "Name": "Justice Trail 7",
+      "X": 1287,
+      "Y": 876,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 6"
+      ]
+    },
+    {
+      "Name": "Justice Trail 8",
+      "X": 1278,
+      "Y": 885,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 7"
+      ]
+    },
+    {
+      "Name": "Justice Trail 9",
+      "X": 1262,
+      "Y": 903,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 8"
+      ]
+    },
+    {
+      "Name": "Justice Trail 10",
+      "X": 1244,
+      "Y": 923,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 9"
+      ]
+    },
+    {
+      "Name": "Justice Trail 13",
+      "X": 1177,
+      "Y": 935,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 11x6"
+      ]
+    },
+    {
+      "Name": "Justice Trail 14",
+      "X": 1152,
+      "Y": 946,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 13"
+      ]
+    },
+    {
+      "Name": "Justice Trail 15",
+      "X": 1145,
+      "Y": 953,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 14"
+      ]
+    },
+    {
+      "Name": "Justice Trail 16",
+      "X": 1142,
+      "Y": 954,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 15"
+      ]
+    },
+    {
+      "Name": "Justice Trail 17",
+      "X": 1127,
+      "Y": 954,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 16"
+      ]
+    },
+    {
+      "Name": "Justice Trail 18",
+      "X": 1121,
+      "Y": 948,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 17"
+      ]
+    },
+    {
+      "Name": "Justice Trail 19",
+      "X": 1120,
+      "Y": 943,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 18"
+      ]
+    },
+    {
+      "Name": "Justice Trail 20",
+      "X": 1119,
+      "Y": 916,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 19"
+      ]
+    },
+    {
+      "Name": "Justice Trail 21",
+      "X": 1118,
+      "Y": 889,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 20"
+      ]
+    },
+    {
+      "Name": "Justice Trail 22",
+      "X": 1116,
+      "Y": 879,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 21"
+      ]
+    },
+    {
+      "Name": "Justice Trail 23",
+      "X": 1113,
+      "Y": 876,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 22"
+      ]
+    },
+    {
+      "Name": "Justice Trail 24",
+      "X": 1113,
+      "Y": 848,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 23"
+      ]
+    },
+    {
+      "Name": "Justice Trail 25",
+      "X": 1115,
+      "Y": 822,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 24"
+      ]
+    },
+    {
+      "Name": "Justice Trail 26",
+      "X": 1132,
+      "Y": 804,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 25"
+      ]
+    },
+    {
+      "Name": "Justice Trail 27",
+      "X": 1151,
+      "Y": 784,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 26"
+      ]
+    },
+    {
+      "Name": "Justice Trail 28",
+      "X": 1161,
+      "Y": 774,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 27"
+      ]
+    },
+    {
+      "Name": "Justice Trail 29",
+      "X": 1180,
+      "Y": 754,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 28"
+      ]
+    },
+    {
+      "Name": "Justice Trail 30",
+      "X": 1199,
+      "Y": 734,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 29"
+      ]
+    },
+    {
+      "Name": "Justice Trail 31",
+      "X": 1200,
+      "Y": 707,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 30"
+      ]
+    },
+    {
+      "Name": "Justice Trail 32",
+      "X": 1200,
+      "Y": 680,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 31"
+      ]
+    },
+    {
+      "Name": "Justice Trail 33",
+      "X": 1203,
+      "Y": 676,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 32"
+      ]
+    },
+    {
+      "Name": "Justice Trail 34",
+      "X": 1222,
+      "Y": 657,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 33"
+      ]
+    },
+    {
+      "Name": "Justice Trail 35",
+      "X": 1236,
+      "Y": 642,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 34"
+      ]
+    },
+    {
+      "Name": "Justice Trail 36",
+      "X": 1241,
+      "Y": 641,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 35"
+      ]
+    },
+    {
+      "Name": "Justice Trail 37",
+      "X": 1269,
+      "Y": 641,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 36"
+      ]
+    },
+    {
+      "Name": "Justice Trail 38",
+      "X": 1296,
+      "Y": 638,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 37"
+      ]
+    },
+    {
+      "Name": "Justice Trail 39",
+      "X": 1299,
+      "Y": 638,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 38"
+      ]
+    },
+    {
+      "Name": "Justice Trail 40",
+      "X": 1300,
+      "Y": 637,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 39"
+      ]
+    },
+    {
+      "Name": "Justice Trail 41",
+      "X": 1300,
+      "Y": 634,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 40"
+      ]
+    },
+    {
+      "Name": "Honor Trail 1",
+      "X": 1824,
+      "Y": 2843,
+      "Z": 0,
+      "Connects": [
+        "WP 140"
+      ]
+    },
+    {
+      "Name": "Honor Trail 8",
+      "X": 1838,
+      "Y": 2781,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 2x6"
+      ]
+    },
+    {
+      "Name": "Honor Trail 9",
+      "X": 1832,
+      "Y": 2781,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 8"
+      ]
+    },
+    {
+      "Name": "Honor Trail 10",
+      "X": 1818,
+      "Y": 2790,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 9"
+      ]
+    },
+    {
+      "Name": "Honor Trail 11",
+      "X": 1795,
+      "Y": 2791,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 10"
+      ]
+    },
+    {
+      "Name": "Honor Trail 12",
+      "X": 1776,
+      "Y": 2810,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 11"
+      ]
+    },
+    {
+      "Name": "Honor Trail 13",
+      "X": 1762,
+      "Y": 2821,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 12"
+      ]
+    },
+    {
+      "Name": "Honor Trail 14",
+      "X": 1743,
+      "Y": 2840,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 13"
+      ]
+    },
+    {
+      "Name": "Honor Trail 15",
+      "X": 1729,
+      "Y": 2852,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 14"
+      ]
+    },
+    {
+      "Name": "Honor Trail 16",
+      "X": 1714,
+      "Y": 2867,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 15"
+      ]
+    },
+    {
+      "Name": "Honor Trail 17",
+      "X": 1704,
+      "Y": 2870,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 16"
+      ]
+    },
+    {
+      "Name": "Honor Trail 18",
+      "X": 1695,
+      "Y": 2875,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 17"
+      ]
+    },
+    {
+      "Name": "Honor Trail 19",
+      "X": 1668,
+      "Y": 2881,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 18"
+      ]
+    },
+    {
+      "Name": "Honor Trail 20",
+      "X": 1662,
+      "Y": 2881,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 19"
+      ]
+    },
+    {
+      "Name": "Honor Trail 21",
+      "X": 1636,
+      "Y": 2886,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 20"
+      ]
+    },
+    {
+      "Name": "Honor Trail 22",
+      "X": 1634,
+      "Y": 2889,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 21"
+      ]
+    },
+    {
+      "Name": "Honor Trail 23",
+      "X": 1633,
+      "Y": 2910,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 22"
+      ]
+    },
+    {
+      "Name": "Honor Trail 24",
+      "X": 1634,
+      "Y": 2929,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 23"
+      ]
+    },
+    {
+      "Name": "Honor Trail 25",
+      "X": 1634,
+      "Y": 2957,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 24"
+      ]
+    },
+    {
+      "Name": "Honor Trail 26",
+      "X": 1634,
+      "Y": 2985,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 25"
+      ]
+    },
+    {
+      "Name": "Honor Trail 27",
+      "X": 1634,
+      "Y": 3010,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 26"
+      ]
+    },
+    {
+      "Name": "Honor Trail 28",
+      "X": 1637,
+      "Y": 3014,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 27"
+      ]
+    },
+    {
+      "Name": "Honor Trail 29",
+      "X": 1638,
+      "Y": 3021,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 28"
+      ]
+    },
+    {
+      "Name": "Honor Trail 30",
+      "X": 1639,
+      "Y": 3048,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 29"
+      ]
+    },
+    {
+      "Name": "Honor Trail 31",
+      "X": 1639,
+      "Y": 3076,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 30"
+      ]
+    },
+    {
+      "Name": "Honor Trail 32",
+      "X": 1640,
+      "Y": 3077,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 31"
+      ]
+    },
+    {
+      "Name": "Honor Trail 33",
+      "X": 1642,
+      "Y": 3096,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 32"
+      ]
+    },
+    {
+      "Name": "Honor Trail 34",
+      "X": 1643,
+      "Y": 3097,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 33"
+      ]
+    },
+    {
+      "Name": "Honor Trail 35",
+      "X": 1643,
+      "Y": 3125,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 34"
+      ]
+    },
+    {
+      "Name": "Honor Trail 36",
+      "X": 1643,
+      "Y": 3153,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 35"
+      ]
+    },
+    {
+      "Name": "Honor Trail 37",
+      "X": 1643,
+      "Y": 3174,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 36"
+      ]
+    },
+    {
+      "Name": "Honor Trail 38",
+      "X": 1644,
+      "Y": 3175,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 37"
+      ]
+    },
+    {
+      "Name": "Honor Trail 39",
+      "X": 1645,
+      "Y": 3202,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 38"
+      ]
+    },
+    {
+      "Name": "Honor Trail 40",
+      "X": 1646,
+      "Y": 3207,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 39"
+      ]
+    },
+    {
+      "Name": "Honor Trail 41",
+      "X": 1646,
+      "Y": 3235,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 40"
+      ]
+    },
+    {
+      "Name": "Honor Trail 42",
+      "X": 1647,
+      "Y": 3248,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 41"
+      ]
+    },
+    {
+      "Name": "Honor Trail 43",
+      "X": 1647,
+      "Y": 3276,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 42"
+      ]
+    },
+    {
+      "Name": "Honor Trail 44",
+      "X": 1650,
+      "Y": 3303,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 43"
+      ]
+    },
+    {
+      "Name": "Honor Trail 45",
+      "X": 1654,
+      "Y": 3308,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 44"
+      ]
+    },
+    {
+      "Name": "Honor Trail 46",
+      "X": 1667,
+      "Y": 3332,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 45"
+      ]
+    },
+    {
+      "Name": "Honor Trail 47",
+      "X": 1686,
+      "Y": 3352,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 46"
+      ]
+    },
+    {
+      "Name": "Honor Trail 48",
+      "X": 1705,
+      "Y": 3371,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 47"
+      ]
+    },
+    {
+      "Name": "Honor Trail 49",
+      "X": 1715,
+      "Y": 3389,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 48"
+      ]
+    },
+    {
+      "Name": "Honor Trail 50",
+      "X": 1721,
+      "Y": 3416,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 49"
+      ]
+    },
+    {
+      "Name": "Honor Trail 51",
+      "X": 1721,
+      "Y": 3444,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 50"
+      ]
+    },
+    {
+      "Name": "Honor Trail 52",
+      "X": 1723,
+      "Y": 3449,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 51"
+      ]
+    },
+    {
+      "Name": "Honor Trail 53",
+      "X": 1723,
+      "Y": 3477,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 52"
+      ]
+    },
+    {
+      "Name": "Honor Trail 54",
+      "X": 1723,
+      "Y": 3505,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 53"
+      ]
+    },
+    {
+      "Name": "Honor Trail 55",
+      "X": 1730,
+      "Y": 3525,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 54"
+      ]
+    },
+    {
+      "Name": "Honor Trail 56",
+      "X": 1729,
+      "Y": 3526,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 55"
+      ]
+    },
+    {
+      "Name": "Honor Trail 57",
+      "X": 1724,
+      "Y": 3528,
+      "Z": 0,
+      "Connects": [
+        "Honor Trail 56"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x1",
+      "X": 1234,
+      "Y": 942,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 10"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x2",
+      "X": 1233,
+      "Y": 957,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 11x1"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x3",
+      "X": 1227,
+      "Y": 969,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 11x2"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x4",
+      "X": 1215,
+      "Y": 968,
+      "Z": 0,
+      "Connects": [
+        "Justice Trail 11x3"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x5",
+      "X": 1194,
+      "Y": 950,
+      "Z": 9,
+      "Connects": [
+        "Justice Trail 11x4"
+      ]
+    },
+    {
+      "Name": "Justice Trail 11x6",
+      "X": 1188,
+      "Y": 944,
+      "Z": 5,
+      "Connects": [
+        "Justice Trail 11x5"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x1",
+      "X": 1837,
+      "Y": 2820,
+      "Z": 6,
+      "Connects": [
+        "Honor Trail 1"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x2",
+      "X": 1858,
+      "Y": 2802,
+      "Z": -2,
+      "Connects": [
+        "Honor Trail 2x1"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x3",
+      "X": 1860,
+      "Y": 2801,
+      "Z": -6,
+      "Connects": [
+        "Honor Trail 2x2"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x4",
+      "X": 1862,
+      "Y": 2799,
+      "Z": -8,
+      "Connects": [
+        "Honor Trail 2x3"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x5",
+      "X": 1862,
+      "Y": 2785,
+      "Z": -8,
+      "Connects": [
+        "Honor Trail 2x4"
+      ]
+    },
+    {
+      "Name": "Honor Trail 2x6",
+      "X": 1861,
+      "Y": 2784,
+      "Z": -4,
+      "Connects": [
+        "Honor Trail 2x5"
+      ]
+    },
+    {
+      "Name": "WP 284 - WP 286 mid",
+      "X": 828,
+      "Y": 1592,
+      "Z": 0,
+      "Connects": [
+        "WP 284",
+        "WP 286"
+      ]
+    },
+    {
+      "Name": "WP 397 - WP 411 mid",
+      "X": 390,
+      "Y": 910,
+      "Z": 0,
+      "Connects": [
+        "WP 397",
+        "WP 411"
+      ]
+    },
+    {
+      "Name": "Rec 5.3 - Rec 6 mid",
+      "X": 712,
+      "Y": 776,
+      "Z": 0,
+      "Connects": [
+        "Rec 5.3",
+        "Rec 6"
+      ]
+    },
+    {
+      "Name": "WP 477 - WP 479 mid",
+      "X": 918,
+      "Y": 2180,
+      "Z": 0,
+      "Connects": [
+        "WP 477",
+        "WP 479"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 1",
+      "X": 4467,
+      "Y": 1275,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "Moonglow Road 2",
+      "X": 4467,
+      "Y": 1247,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 1"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 3",
+      "X": 4467,
+      "Y": 1219,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 2"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 4",
+      "X": 4473,
+      "Y": 1195,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 3"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 5",
+      "X": 4485,
+      "Y": 1183,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 4"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 6",
+      "X": 4485,
+      "Y": 1177,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 5"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 7",
+      "X": 4484,
+      "Y": 1176,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 6"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 8",
+      "X": 4473,
+      "Y": 1176,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 7"
+      ]
+    },
+    {
+      "Name": "Moonglow Road 9",
+      "X": 4472,
+      "Y": 1175,
+      "Z": 0,
+      "Connects": [
+        "Moonglow Road 8"
       ]
     }
   ]

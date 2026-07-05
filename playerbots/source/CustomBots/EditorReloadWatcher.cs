@@ -43,6 +43,10 @@ namespace Server.CustomBots
         private static readonly string DeathAck  = Live("death_ack.json");
         private static readonly string FactionReq = Live("faction_request.txt");
         private static readonly string FactionAck = Live("faction_ack.json");
+        private static readonly string LiveMapReq = Live("livemap_request.txt");
+        private static readonly string LiveMapAck = Live("livemap_ack.json");
+        private static readonly string PKsReq = Live("pks_request.txt");
+        private static readonly string PKsAck = Live("pks_ack.json");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -52,6 +56,8 @@ namespace Server.CustomBots
         private static long _lastParty = -1;
         private static long _lastDeath = -1;
         private static long _lastFaction = -1;
+        private static long _lastLiveMap = -1;
+        private static long _lastPKs = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -66,6 +72,8 @@ namespace Server.CustomBots
             _lastParty  = ReadToken(PartyReq) ?? 0;
             _lastDeath  = ReadToken(DeathReq) ?? 0;
             _lastFaction = ReadToken(FactionReq) ?? 0;
+            _lastLiveMap = ReadLiveMapRequest(out _) ?? 0;
+            _lastPKs = ReadToken(PKsReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -136,6 +144,96 @@ namespace Server.CustomBots
                 _lastFaction = factionTok.Value;
                 DoTestFactionFight(factionTok.Value);
             }
+
+            var liveTok = ReadLiveMapRequest(out double liveSecs);
+            if (liveTok != null && liveTok.Value != _lastLiveMap)
+            {
+                _lastLiveMap = liveTok.Value;
+                DoLiveMap(liveTok.Value, liveSecs);
+            }
+
+            var pksTok = ReadToken(PKsReq);
+            if (pksTok != null && pksTok.Value != _lastPKs)
+            {
+                _lastPKs = pksTok.Value;
+                DoGenPKs(pksTok.Value);
+            }
+        }
+
+        // pks_request.txt: place the default road-PK spawner set (born-red
+        // hunters) — the headless [GeneratePKs. Clears any existing PK
+        // spawners first so it never stacks.
+        private static void DoGenPKs(long token)
+        {
+            int placed = 0, pks = 0;
+            try
+            {
+                GeneratePKsCommand.ClearPKSpawners();
+                (placed, pks) = GeneratePKsCommand.PlaceDefault();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] genpks: {ex.Message}");
+            }
+
+            Console.WriteLine(
+                $"[EditorReload] PK spawners placed: {placed} for ~{pks} red hunters (token {token}).");
+            WriteAck(PKsAck,
+                $"{{\"token\":{token},\"spawners\":{placed},\"pks\":{pks}}}");
+        }
+
+        // livemap_request.txt: "token seconds" — seconds >= 1 starts the
+        // [LiveMap snapshot timer at that cadence, seconds <= 0 stops it.
+        // Lets the map editor's Live checkbox drive snapshots directly, no
+        // client needed.
+        private static long? ReadLiveMapRequest(out double seconds)
+        {
+            seconds = 0;
+            try
+            {
+                if (!File.Exists(LiveMapReq)) return null;
+                var parts = File.ReadAllText(LiveMapReq).Split(
+                    new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 1 || !long.TryParse(parts[0], out var t)) return null;
+                if (parts.Length > 1)
+                {
+                    double.TryParse(parts[1], out seconds);
+                }
+                return t;
+            }
+            catch
+            {
+                return null; // mid-write; retry next tick
+            }
+        }
+
+        private static void DoLiveMap(long token, double seconds)
+        {
+            bool on = seconds >= 1;
+            int n = 0;
+            try
+            {
+                if (on)
+                {
+                    LiveMapSnapshot.StartFromEditor(seconds);
+                    n = LiveMapSnapshot.WriteSnapshot();
+                }
+                else
+                {
+                    LiveMapSnapshot.StopFromEditor();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] livemap: {ex.Message}");
+            }
+
+            Console.WriteLine(on
+                ? $"[EditorReload] LiveMap ON every {seconds:0}s ({n} entities, token {token})."
+                : $"[EditorReload] LiveMap OFF (token {token}).");
+            WriteAck(LiveMapAck,
+                $"{{\"token\":{token},\"on\":{(on ? "true" : "false")}," +
+                $"\"seconds\":{seconds:0.#},\"entities\":{n}}}");
         }
 
         // death_request.txt: kill a random eligible surface bot so headless
@@ -249,13 +347,16 @@ namespace Server.CustomBots
 
             var map = Map.Felucca;
             var bytes = new byte[w * h];
+            var zbytes = new byte[w * h]; // resolved standing Z + 128 (0 = unwalkable)
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    bytes[y * w + x] = Walkable.TryFindSeedZ(map, x0 + x, y0 + y, 0, out _)
-                        ? (byte)255
-                        : (byte)0;
+                    if (Walkable.TryFindSeedZ(map, x0 + x, y0 + y, 0, out int z))
+                    {
+                        bytes[y * w + x] = 255;
+                        zbytes[y * w + x] = (byte)Math.Clamp(z + 128, 1, 255);
+                    }
                 }
             }
 
@@ -265,6 +366,14 @@ namespace Server.CustomBots
                 var header = System.Text.Encoding.ASCII.GetBytes($"P5\n{w} {h}\n255\n");
                 fs.Write(header, 0, header.Length);
                 fs.Write(bytes, 0, bytes.Length);
+
+                // Z sidecar: offline trail A* needs per-tile heights to apply
+                // the climb/drop step rules — a flat mask over-connects
+                // adjacent tiles split by a cliff seam.
+                using var fz = new FileStream(
+                    Live("walkmap_z.pgm"), FileMode.Create, FileAccess.Write);
+                fz.Write(header, 0, header.Length);
+                fz.Write(zbytes, 0, zbytes.Length);
             }
             catch (Exception ex)
             {

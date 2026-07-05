@@ -75,6 +75,20 @@ namespace Server.CustomBots
         private static readonly TimeSpan FleeDuration = TimeSpan.FromSeconds(12);
         private static readonly TimeSpan TauntCooldown = TimeSpan.FromSeconds(8);
 
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            var gang = GangId != 0 ? $" (gang {GangId})" : "";
+            return _phase switch
+            {
+                Phase.Hunt when _victim != null && !_victim.Deleted =>
+                    $"PK — hunting {_victim.Name}{gang}",
+                Phase.Hunt => $"PK — hunting{gang}",
+                Phase.Flee => $"PK — fleeing{gang}",
+                Phase.Loot => $"PK — looting a kill{gang}",
+                _          => $"PK — prowling for prey{gang}",
+            };
+        }
+
         public PKBehavior()
         {
             ChatCategories  = new[] { "pk_taunt" };
@@ -86,6 +100,14 @@ namespace Server.CustomBots
         public override void OnAttached(PlayerBot bot)
         {
             base.OnAttached(bot);
+            // A spawned PK is a career murderer, not a first-timer: enough
+            // murder counts to be RED from the start (red = Kills >= 5), so
+            // the roads carry visible red hunters immediately instead of
+            // greys that only redden after their first few murders.
+            if (bot.Kills < 5)
+            {
+                bot.Kills = Utility.RandomMinMax(5, 20);
+            }
             // Patrol via an internal Traveler — reuse all the road
             // navigation, waypoint following, and fluid movement.
             _patrol = new TravelerBehavior();

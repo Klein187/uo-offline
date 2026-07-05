@@ -112,6 +112,21 @@ namespace Server.CustomBots
             _timer = null;
         }
 
+        // Editor bridge (EditorReloadWatcher's livemap_request.txt): the map
+        // editor's Live checkbox starts/stops snapshotting without a client.
+        public static bool Running => _timer != null;
+
+        public static void StartFromEditor(double seconds)
+        {
+            if (seconds >= 1)
+            {
+                _interval = TimeSpan.FromSeconds(seconds);
+            }
+            Start();
+        }
+
+        public static void StopFromEditor() => Stop();
+
         // ---- snapshot ----
 
         private sealed class Ent
@@ -124,6 +139,9 @@ namespace Server.CustomBots
             public bool? fx { get; set; }     // bot fixed-role (lifecycle exempt)
             public string t { get; set; }     // creature type name
             public string n { get; set; }     // name (bots only, keeps file small)
+            public string s { get; set; }     // bot status line ("what am I doing")
+            public int? hp { get; set; }       // bot HP percent (0-100)
+            public bool? red { get; set; }     // bot is a murderer (Kills >= 5)
             public List<int> r { get; set; }   // traveling bot route, flat [x0,y0,x1,y1,...]
             public int? li { get; set; }        // current leg index into r (in node units)
         }
@@ -193,8 +211,22 @@ namespace Server.CustomBots
                     b = bot.Behavior?.SerializableName ?? "Idle",
                     c = bot.Class.ToString(),
                     fx = bot.LifecycleExempt,
-                    n = bot.Name
+                    n = bot.Name,
+                    hp = bot.HitsMax > 0 ? (int)(bot.Hits * 100L / bot.HitsMax) : null,
+                    red = bot.Kills >= 5 ? true : null
                 };
+
+                // "What am I doing" one-liner for the map's bot inspector.
+                // Defensive: a status line must never be able to kill the
+                // whole snapshot.
+                try
+                {
+                    ent.s = bot.Behavior?.GetStatusLine(bot);
+                }
+                catch
+                {
+                    // leave ent.s null
+                }
 
                 // Travelers carry a planned route — resolve its node names to
                 // coords so the live view can draw it when the bot is selected.

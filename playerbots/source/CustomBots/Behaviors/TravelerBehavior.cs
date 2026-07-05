@@ -97,6 +97,20 @@ namespace Server.CustomBots
         }
         public ArrivalStyle Arrival { get; set; } = ArrivalStyle.Linger;
 
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            if (string.IsNullOrEmpty(DestinationName))
+            {
+                return "picking a destination";
+            }
+
+            var verb = bot.HaulPending ? "hauling goods → " : "→ ";
+            var leg = CurrentLegWaypoint;
+            return leg == null
+                ? $"{verb}{DestinationName} · arriving"
+                : $"{verb}{DestinationName} · leg {LegProgress} via {leg}";
+        }
+
         // Planned path through the graph (sequence of node names). Index
         // _legIndex is the current leg target.
         private List<string> _plannedPath = new();
@@ -1601,6 +1615,8 @@ namespace Server.CustomBots
             return type == DestinationType.Graveyard
                 || type == DestinationType.Dungeon
                 || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
+                || type == DestinationType.MiningSpot
+                || type == DestinationType.LumberSpot
                 || type == DestinationType.VendorSmith
                 || type == DestinationType.VendorMage
                 || type == DestinationType.VendorTailor
@@ -1762,8 +1778,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
 
             // A gatherer arriving at a wilderness work site clocks in.
+            // (Typed sites only ever attract their own class — the weight
+            // table zeroes the cross-class roll.)
             if (BotClassHelper.IsGatherer(bot.Class) &&
-                _destType == DestinationType.GatherSpot)
+                _destType is DestinationType.GatherSpot or DestinationType.MiningSpot
+                          or DestinationType.LumberSpot)
             {
                 targetBehavior  = "Gatherer";
                 chance          = 0.95;

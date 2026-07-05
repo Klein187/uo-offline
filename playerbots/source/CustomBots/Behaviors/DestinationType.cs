@@ -45,6 +45,11 @@ namespace Server.CustomBots
         // from waypoint nodes far from any city). Lumberjacks and Miners
         // travel out, work the spot, and haul the load back to town.
         GatherSpot,
+        // Authored, TYPED work sites (placed in the map editor like any
+        // destination). Only the matching gatherer class rolls them:
+        // Miners work MiningSpots, Lumberjacks work LumberSpots.
+        MiningSpot,
+        LumberSpot,
 
         // ---- Dungeon points (see DungeonCrawlerBehavior / DungeonRegistry) ----
         // A surface teleporter into a dungeon. ROLLABLE like Dungeon: combat
@@ -329,6 +334,11 @@ namespace Server.CustomBots
             {
                 return type switch
                 {
+                    // Authored typed sites dominate — and STRICTLY by class:
+                    // a miner never works a grove, a lumberjack never a mine.
+                    DestinationType.MiningSpot when cls == BotClass.Miner      => 10.0,
+                    DestinationType.LumberSpot when cls == BotClass.Lumberjack => 10.0,
+                    DestinationType.MiningSpot or DestinationType.LumberSpot   => 0.0,
                     DestinationType.GatherSpot => 8.0,
                     DestinationType.Bank       => 0.3,
                     DestinationType.Tavern     => 0.2,  // a drink after a haul
@@ -338,7 +348,8 @@ namespace Server.CustomBots
             }
 
             // Nobody else has business at a wilderness work site.
-            if (type == DestinationType.GatherSpot)
+            if (type is DestinationType.GatherSpot or DestinationType.MiningSpot
+                     or DestinationType.LumberSpot)
             {
                 return cls == BotClass.Ranger ? 0.15 : 0.02;
             }

@@ -4966,6 +4966,170 @@
       "ArrivalX": 3349,
       "ArrivalY": 283,
       "ArrivalZ": 0
+    },
+    {
+      "Name": "Minoc Mine",
+      "X": 2526,
+      "Y": 501,
+      "Z": 15,
+      "Type": "MiningSpot",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 1223",
+      "Polygon": [
+        [
+          2518,
+          493
+        ],
+        [
+          2534,
+          493
+        ],
+        [
+          2534,
+          509
+        ],
+        [
+          2518,
+          509
+        ]
+      ]
+    },
+    {
+      "Name": "Yew Grove",
+      "X": 570,
+      "Y": 921,
+      "Z": 0,
+      "Type": "LumberSpot",
+      "City": "Yew",
+      "NearestWaypoint": "WP 378",
+      "Polygon": [
+        [
+          562,
+          913
+        ],
+        [
+          578,
+          913
+        ],
+        [
+          578,
+          929
+        ],
+        [
+          562,
+          929
+        ]
+      ]
+    },
+    {
+      "Name": "Justice Shrine",
+      "X": 1300,
+      "Y": 634,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Britain",
+      "NearestWaypoint": "Justice Trail 41",
+      "ArrivalX": 1300,
+      "ArrivalY": 634,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Honor Shrine",
+      "X": 1724,
+      "Y": 3528,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Trinsic",
+      "NearestWaypoint": "Honor Trail 57",
+      "ArrivalX": 1724,
+      "ArrivalY": 3528,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Moongate 150",
+      "X": 4467,
+      "Y": 1283,
+      "Z": 0,
+      "Type": "Moongate",
+      "City": "Moonglow",
+      "NearestWaypoint": "Moonglow Road 1",
+      "Polygon": [
+        [
+          4463,
+          1279
+        ],
+        [
+          4471,
+          1279
+        ],
+        [
+          4471,
+          1287
+        ],
+        [
+          4463,
+          1287
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 4467,
+          "Y": 1275,
+          "Z": 0,
+          "Waypoints": [
+            "Moonglow Road 1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Moonglow Bank",
+      "X": 4471,
+      "Y": 1156,
+      "Z": 0,
+      "Type": "Bank",
+      "City": "Moonglow",
+      "NearestWaypoint": "Moonglow Road 9",
+      "ArrivalX": 4472,
+      "ArrivalY": 1176,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Moongate 151",
+      "X": 2711,
+      "Y": 2234,
+      "Z": 0,
+      "Type": "Moongate",
+      "City": "Buccaneer's Den",
+      "NearestWaypoint": "WP 1014",
+      "Polygon": [
+        [
+          2707,
+          2230
+        ],
+        [
+          2715,
+          2230
+        ],
+        [
+          2715,
+          2238
+        ],
+        [
+          2707,
+          2238
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2714,
+          "Y": 2235,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1014"
+          ]
+        }
+      ]
     }
   ]
 }

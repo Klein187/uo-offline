@@ -63,9 +63,14 @@ namespace Server.CustomBots
         // daily population curve shapes the way UP: after the 5am trough,
         // spawners are allowed to backfill only as the curve target
         // climbs through the morning.
+        //
+        // PK spawners are EXEMPT: PKs are a separate outlaw population
+        // (see GeneratePKsCommand), not part of the town login fiction —
+        // gating them meant a world sitting at its curve target silently
+        // spawned zero PKs.
         public override void Spawn()
         {
-            if (!BotSessionManager.AllowSpawn())
+            if (_behaviorName != "PK" && !BotSessionManager.AllowSpawn())
             {
                 return;
             }

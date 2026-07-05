@@ -29,6 +29,8 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Crafter";
 
+        public override string GetStatusLine(PlayerBot bot) => "working the shop";
+
         // Shoved-off-tile tolerance, same as BankSitter.
         public int HomeRadius { get; set; } = 1;
 

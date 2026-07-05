@@ -34,6 +34,9 @@ namespace Server.CustomBots
         private DateTime _startedAt;
         private Point3D _corpseLoc;
 
+        public override string GetStatusLine(PlayerBot bot) =>
+            $"corpse run → ({_corpseLoc.X},{_corpseLoc.Y})";
+
         public override void OnAttached(PlayerBot bot)
         {
             base.OnAttached(bot);

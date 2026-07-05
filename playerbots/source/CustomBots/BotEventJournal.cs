@@ -34,6 +34,8 @@ namespace Server.CustomBots
         public string   Actor { get; init; }  // the bot the event happened to / who did it
         public string   Other { get; init; }  // counterparty (foe, killer, dungeon...) or ""
         public string   Place { get; init; }  // friendly place name
+        public int      X     { get; init; }  // where it happened (map editor's
+        public int      Y     { get; init; }  // event ticker jumps here)
     }
 
     public static class BotEventJournal
@@ -124,6 +126,8 @@ namespace Server.CustomBots
                 Actor = actor ?? "",
                 Other = other ?? "",
                 Place = PlaceName(loc, map),
+                X     = loc.X,
+                Y     = loc.Y,
             };
 
             _ring.Add(ev);
@@ -186,6 +190,8 @@ namespace Server.CustomBots
                     actor = ev.Actor,
                     other = ev.Other,
                     place = ev.Place,
+                    x     = ev.X,
+                    y     = ev.Y,
                 });
                 File.AppendAllText(JournalPath, line + Environment.NewLine);
             }

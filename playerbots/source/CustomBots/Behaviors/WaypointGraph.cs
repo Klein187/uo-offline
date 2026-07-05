@@ -309,20 +309,36 @@ namespace Server.CustomBots
 
         // ---- Nearest-node lookup ----
 
+        // Distance for nearest-node picks: 2D distance plus a cross-floor
+        // penalty. Terrain undulation (|dz| <= 10) is free; beyond that the
+        // node is likely a different floor/rooftop (e.g. Trinsic wall spur
+        // WP 212 at Z=30) and a ground bot can't step to it, so it must not
+        // win over a same-level node a few tiles farther. Cold path.
+        private static double EffDist(WaypointNode n, Point3D loc)
+        {
+            int dx = n.Location.X - loc.X;
+            int dy = n.Location.Y - loc.Y;
+            int dz = Math.Abs(n.Location.Z - loc.Z);
+            double d = Math.Sqrt((double)dx * dx + (double)dy * dy);
+            if (dz > 10)
+            {
+                d += (dz - 10) * 3;
+            }
+            return d;
+        }
+
         // Find the waypoint closest to a world location. Used to plug the
         // bot into the graph wherever they happen to be standing.
         public WaypointNode FindNearestNode(Point3D loc)
         {
             WaypointNode best = null;
-            int bestDistSq = int.MaxValue;
+            double bestDist = double.MaxValue;
             foreach (var n in _nodes.Values)
             {
-                int dx = n.Location.X - loc.X;
-                int dy = n.Location.Y - loc.Y;
-                int distSq = dx * dx + dy * dy;
-                if (distSq < bestDistSq)
+                double d = EffDist(n, loc);
+                if (d < bestDist)
                 {
-                    bestDistSq = distSq;
+                    bestDist = d;
                     best = n;
                 }
             }
@@ -339,17 +355,12 @@ namespace Server.CustomBots
 
             foreach (var n in _nodes.Values)
             {
-                int dx = n.Location.X - loc.X;
-                int dy = n.Location.Y - loc.Y;
-                int distSq = dx * dx + dy * dy;
+                double d = EffDist(n, loc);
 
                 int at = results.Count;
                 while (at > 0)
                 {
-                    var p = results[at - 1].Location;
-                    int pdx = p.X - loc.X;
-                    int pdy = p.Y - loc.Y;
-                    if (pdx * pdx + pdy * pdy <= distSq)
+                    if (EffDist(results[at - 1], loc) <= d)
                     {
                         break;
                     }

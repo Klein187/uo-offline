@@ -73,35 +73,58 @@ namespace Server.CustomBots
                 pos[(string)n["Name"]] = ((int)n["X"], (int)n["Y"],
                                           n["Z"] != null ? (int)n["Z"] : 0);
 
+            // Engine-true probe: floods step with Movement.CheckMovement using
+            // this mobile's flags (land walker, no swim). Hidden/blessed and
+            // deleted before we return; never gets an AI tick.
+            var probe = new Server.Mobiles.Rat { Blessed = true, Hidden = true, Frozen = true, Controlled = true };
+
             var checkedPairs = new HashSet<string>();
-            foreach (var n in arr)
+            try
             {
-                string an = (string)n["Name"];
-                var (ax, ay, az) = pos[an];
-                DistanceField field = null;
-
-                foreach (var cNode in (n["Connects"] as JsonArray) ?? new JsonArray())
+                foreach (var n in arr)
                 {
-                    string bn = (string)cNode;
-                    if (!pos.TryGetValue(bn, out var b)) continue;
-                    string pair = string.CompareOrdinal(an, bn) < 0 ? an + "|" + bn : bn + "|" + an;
-                    if (!checkedPairs.Add(pair)) continue;
+                    string an = (string)n["Name"];
+                    var (ax, ay, az) = pos[an];
+                    DistanceField field = null;
+                    DistanceField doorField = null;
 
-                    int dist = Math.Max(Math.Abs(ax - b.x), Math.Abs(ay - b.y));
-                    if (dist > LegLimit)
+                    foreach (var cNode in (n["Connects"] as JsonArray) ?? new JsonArray())
                     {
-                        lines.Add($"FAR ({dist}t): {an} <-> {bn}");
-                        continue;
-                    }
+                        string bn = (string)cNode;
+                        if (!pos.TryGetValue(bn, out var b)) continue;
+                        string pair = string.CompareOrdinal(an, bn) < 0 ? an + "|" + bn : bn + "|" + an;
+                        if (!checkedPairs.Add(pair)) continue;
 
-                    field ??= DistanceField.Build(Map.Felucca,
-                        new Point3D(ax, ay, az), LegLimit + 6);
-                    int cost = field?.CostAt(b.x, b.y) ?? -1;
-                    if (cost < 0)
-                        lines.Add($"BLOCKED: {an} <-> {bn}");
-                    else if (cost > LegLimit * 14)
-                        lines.Add($"WALKCOST ({cost}): {an} <-> {bn}");
+                        int dist = Math.Max(Math.Abs(ax - b.x), Math.Abs(ay - b.y));
+                        if (dist > LegLimit)
+                        {
+                            lines.Add($"FAR ({dist}t): {an} <-> {bn}");
+                            continue;
+                        }
+
+                        field ??= DistanceField.Build(Map.Felucca,
+                            new Point3D(ax, ay, az), LegLimit + 6, probe: probe);
+                        int cost = field?.CostAt(b.x, b.y) ?? -1;
+                        if (cost < 0)
+                        {
+                            // Re-flood with closed unlocked doors passable: bots
+                            // open those on contact, so a door-only block is fine
+                            // in practice — classify, don't alarm.
+                            doorField ??= DistanceField.Build(Map.Felucca,
+                                new Point3D(ax, ay, az), LegLimit + 6, passDoors: true, probe: probe);
+                            if (doorField?.CostAt(b.x, b.y) >= 0)
+                                lines.Add($"DOOR (bot opens): {an} <-> {bn}");
+                            else
+                                lines.Add($"BLOCKED: {an} <-> {bn}");
+                        }
+                        else if (cost > LegLimit * 14)
+                            lines.Add($"WALKCOST ({cost}): {an} <-> {bn}");
+                    }
                 }
+            }
+            finally
+            {
+                probe.Delete();
             }
             return lines;
         }
@@ -127,39 +150,62 @@ namespace Server.CustomBots
 
             from.SendMessage($"Auditing edges across {arr.Count} waypoints (flooding each)...");
             var blocked  = new List<(string a, string b)>();
+            var doorOk   = new List<(string a, string b)>();
             var walkcost = new List<(string a, string b, int c)>();
             var far      = new List<(string a, string b, int d)>();
             var checkedPairs = new HashSet<string>();
+            var probe = new Server.Mobiles.Rat { Blessed = true, Hidden = true, Frozen = true, Controlled = true };
 
-            foreach (var n in arr)
+            try
             {
-                string an = (string)n["Name"];
-                var (ax, ay, az) = pos[an];
-                DistanceField field = null;
-
-                foreach (var cNode in (n["Connects"] as JsonArray) ?? new JsonArray())
+                foreach (var n in arr)
                 {
-                    string bn = (string)cNode;
-                    if (!pos.TryGetValue(bn, out var b)) continue;
-                    string pair = string.CompareOrdinal(an, bn) < 0 ? an + "|" + bn : bn + "|" + an;
-                    if (!checkedPairs.Add(pair)) continue;
+                    string an = (string)n["Name"];
+                    var (ax, ay, az) = pos[an];
+                    DistanceField field = null;
+                    DistanceField doorField = null;
 
-                    int dist = Math.Max(Math.Abs(ax - b.x), Math.Abs(ay - b.y));
-                    if (dist > LegLimit) { far.Add((an, bn, dist)); continue; }
+                    foreach (var cNode in (n["Connects"] as JsonArray) ?? new JsonArray())
+                    {
+                        string bn = (string)cNode;
+                        if (!pos.TryGetValue(bn, out var b)) continue;
+                        string pair = string.CompareOrdinal(an, bn) < 0 ? an + "|" + bn : bn + "|" + an;
+                        if (!checkedPairs.Add(pair)) continue;
 
-                    field ??= DistanceField.Build(Map.Felucca,
-                        new Point3D(ax, ay, az), LegLimit + 6);
-                    int cost = field?.CostAt(b.x, b.y) ?? -1;
-                    if (cost < 0)
-                        blocked.Add((an, bn));
-                    else if (cost > LegLimit * 14)   // cost is weighted (~10/step, 14 diagonal), not tiles
-                        walkcost.Add((an, bn, cost));
+                        int dist = Math.Max(Math.Abs(ax - b.x), Math.Abs(ay - b.y));
+                        if (dist > LegLimit) { far.Add((an, bn, dist)); continue; }
+
+                        field ??= DistanceField.Build(Map.Felucca,
+                            new Point3D(ax, ay, az), LegLimit + 6, probe: probe);
+                        int cost = field?.CostAt(b.x, b.y) ?? -1;
+                        if (cost < 0)
+                        {
+                            doorField ??= DistanceField.Build(Map.Felucca,
+                                new Point3D(ax, ay, az), LegLimit + 6, passDoors: true, probe: probe);
+                            if (doorField?.CostAt(b.x, b.y) >= 0)
+                                doorOk.Add((an, bn));
+                            else
+                                blocked.Add((an, bn));
+                        }
+                        else if (cost > LegLimit * 14)   // cost is weighted (~10/step, 14 diagonal), not tiles
+                            walkcost.Add((an, bn, cost));
+                    }
                 }
+            }
+            finally
+            {
+                probe.Delete();
             }
 
             from.SendMessage(0x35, $"Edges checked: {checkedPairs.Count}.  " +
-                                   $"BLOCKED: {blocked.Count}   WALKCOST(>{LegLimit}): {walkcost.Count}   " +
+                                   $"BLOCKED: {blocked.Count}   DOOR: {doorOk.Count}   " +
+                                   $"WALKCOST(>{LegLimit}): {walkcost.Count}   " +
                                    $"FAR(>{LegLimit}t): {far.Count}");
+            foreach (var (a, b) in doorOk)
+            {
+                from.SendMessage(0x3B2, $"  DOOR (bot opens): {a} <-> {b}");
+                Console.WriteLine($"[auditedges] DOOR: {a} <-> {b}");
+            }
             foreach (var (a, b, c) in walkcost)
             {
                 from.SendMessage(0x22, $"  WALKCOST ({c} steps): {a} <-> {b}");

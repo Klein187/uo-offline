@@ -21,6 +21,8 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "BankSitter";
 
+        public override string GetStatusLine(PlayerBot bot) => "loitering at the bank";
+
         // How far the bot is allowed to drift from home before walking
         // back. 1 tile = "I got shoved" tolerance.
         public int HomeRadius { get; set; } = 1;

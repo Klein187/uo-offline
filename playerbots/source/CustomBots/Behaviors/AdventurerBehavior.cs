@@ -127,6 +127,27 @@ namespace Server.CustomBots
         // somewhere brand new. Null = let the new Traveler pick fresh.
         public string ResumeDestination { get; set; }
 
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            if (bot.Combatant is Mobile foe && !foe.Deleted && foe.Alive)
+            {
+                return DefenderMode
+                    ? $"defending itself vs {foe.Name}"
+                    : $"fighting {foe.Name}";
+            }
+            if (Core.Now < _restingUntil)
+            {
+                return "resting after a fight";
+            }
+            if (DefenderMode)
+            {
+                return string.IsNullOrEmpty(ResumeDestination)
+                    ? "fight over — returning to the road"
+                    : $"fight over — resuming trip to {ResumeDestination}";
+            }
+            return "hunting for trouble";
+        }
+
         public Point3D Home { get; private set; }
         public Map     HomeMap { get; private set; }
 

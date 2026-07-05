@@ -23,6 +23,8 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Shopper";
 
+        public override string GetStatusLine(PlayerBot bot) => "browsing the shops";
+
         // Speech range UO vendors respond within; informational only here.
         public int VendorSpeakRange { get; set; } = 3;
 

@@ -12,10 +12,10 @@ namespace Server.CustomBots
     public static class BotPopulation
     {
         // The world's target live bot count. [GenerateBots distributes this
-        // many bots across all city spawners. Default 1000.
+        // many bots across all city spawners.
         //
         // Runtime-adjustable via [SetBotPopulation <n>.
-        public static int TargetCount { get; set; } = 400;
+        public static int TargetCount { get; set; } = 800;
 
         // Safety ceiling for the startup respawn. Sits ABOVE TargetCount so
         // it never caps a legitimate population — it only catches a genuine

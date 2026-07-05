@@ -16,6 +16,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using Server;
 
 namespace Server.CustomBots
@@ -46,6 +48,7 @@ namespace Server.CustomBots
             if (_generated != null)
             {
                 DestinationCatalog.RegisterSynthetic(_generated);
+                WriteExport();
                 return;
             }
 
@@ -125,7 +128,37 @@ namespace Server.CustomBots
             }
 
             DestinationCatalog.RegisterSynthetic(_generated);
+            WriteExport();
             Console.WriteLine($"[GatherSpots] registered {_generated.Count} wilderness work site(s).");
+        }
+
+        // The spots only exist in memory (derived from the waypoint graph at
+        // boot), so export them for the map editor's Gather-spots layer.
+        // Cold path — runs once per boot / catalog reload.
+        private static void WriteExport()
+        {
+            try
+            {
+                var path = Path.Combine(Core.BaseDirectory, "Data", "Live", "gather_spots.json");
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                var list = new List<object>(_generated.Count);
+                foreach (var d in _generated)
+                {
+                    list.Add(new
+                    {
+                        n = d.Name,
+                        x = d.Location.X,
+                        y = d.Location.Y,
+                        z = d.Location.Z,
+                        wp = d.NearestWaypoint,
+                    });
+                }
+                File.WriteAllText(path, JsonSerializer.Serialize(new { spots = list }));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GatherSpots] export failed: {ex.Message}");
+            }
         }
 
         // The catalog wipes on reload ([ReloadDestinations / editor token);

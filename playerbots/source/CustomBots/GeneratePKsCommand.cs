@@ -73,6 +73,22 @@ namespace Server.CustomBots
                 return;
             }
 
+            var (placed, totalPKs) = PlaceDefault();
+
+            from.SendMessage(0x35,
+                $"Placed {placed} PK spawner(s) for ~{totalPKs} player-killers.");
+            from.SendMessage(0x3B2,
+                "The roads are dangerous now. [GeneratePKs clear removes them.");
+            Console.WriteLine(
+                $"[GeneratePKs] {from.Name}: {placed} spawners, ~{totalPKs} PKs.");
+        }
+
+        // Place the default PK spawner set. Shared by the [GeneratePKs
+        // command and the editor bridge (pks_request.txt) so headless
+        // sessions can arm the roads too. Does NOT clear first — callers
+        // decide (both current callers clear before placing).
+        public static (int placed, int totalPKs) PlaceDefault()
+        {
             int placed = 0, totalPKs = 0;
             foreach (var s in Spots)
             {
@@ -95,16 +111,10 @@ namespace Server.CustomBots
                 placed++;
                 totalPKs += s.Amount;
             }
-
-            from.SendMessage(0x35,
-                $"Placed {placed} PK spawner(s) for ~{totalPKs} player-killers.");
-            from.SendMessage(0x3B2,
-                "The roads are dangerous now. [GeneratePKs clear removes them.");
-            Console.WriteLine(
-                $"[GeneratePKs] {from.Name}: {placed} spawners, ~{totalPKs} PKs.");
+            return (placed, totalPKs);
         }
 
-        private static int ClearPKSpawners()
+        public static int ClearPKSpawners()
         {
             // A PK spawner is a PlayerBotSpawner whose behavior is "PK".
             var spawners = new List<PlayerBotSpawner>();

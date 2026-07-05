@@ -160,6 +160,27 @@ namespace Server.CustomBots
             bool hauling = bot != null && bot.HaulPending &&
                            BotClassHelper.IsGatherer(bot.Class);
 
+            // Authored typed sites SUPERSEDE the synthetic wilderness spots
+            // for their class: once any MiningSpot is authored, miners work
+            // mines — the 40 generic GatherSpots drop out of their roll
+            // entirely (same for lumberjacks and LumberSpots). Delete the
+            // authored sites and the synthetic spread takes over again.
+            bool suppressGeneric = false;
+            if (!hauling && BotClassHelper.IsGatherer(cls))
+            {
+                var wanted = cls == BotClass.Miner
+                    ? DestinationType.MiningSpot
+                    : DestinationType.LumberSpot;
+                foreach (var d in snapshot)
+                {
+                    if (d.Type == wanted)
+                    {
+                        suppressGeneric = true;
+                        break;
+                    }
+                }
+            }
+
             double total = 0;
             var weights = new double[snapshot.Length];
             for (int i = 0; i < snapshot.Length; i++)
@@ -185,6 +206,10 @@ namespace Server.CustomBots
                 else
                 {
                     w = DestinationWeights.GetWeight(d.Type, cls);
+                    if (suppressGeneric && d.Type == DestinationType.GatherSpot)
+                    {
+                        w = 0;
+                    }
                 }
 
                 if (w > 0 && bot != null)

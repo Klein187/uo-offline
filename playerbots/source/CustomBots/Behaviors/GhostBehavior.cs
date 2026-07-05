@@ -24,6 +24,8 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Ghost";
 
+        public override string GetStatusLine(PlayerBot bot) => "dead — a ghost seeking resurrection";
+
         private const int HauntMinSeconds = 45;
         private const int HauntMaxSeconds = 120;
 

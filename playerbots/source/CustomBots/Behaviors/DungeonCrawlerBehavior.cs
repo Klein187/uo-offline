@@ -76,6 +76,24 @@ namespace Server.CustomBots
         public int RunMinMinutes { get; set; } = 20;
         public int RunMaxMinutes { get; set; } = 45;
 
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            var where = string.IsNullOrEmpty(DungeonName)
+                ? "a dungeon"
+                : $"{DungeonName} L{Level}";
+            if (bot.Combatant is Mobile foe && !foe.Deleted && foe.Alive)
+            {
+                return $"fighting {foe.Name} in {where}";
+            }
+            if (ExitMode)
+            {
+                return $"climbing out of {where}";
+            }
+            return Camper
+                ? $"camping a room in {where}"
+                : $"crawling {where}";
+        }
+
         private DateTime _runExpiresAt = DateTime.MinValue;
 
         // Exit-mode progress watchdog. If a whole ExitRescueAfter window

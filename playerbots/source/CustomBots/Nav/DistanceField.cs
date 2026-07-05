@@ -84,7 +84,29 @@ namespace Server.CustomBots
         internal int CostAt(int x, int y) =>
             _cost.TryGetValue(Key(x, y), out var c) ? c : -1;
 
-        public static DistanceField Build(Map map, Point3D goal, int radius)
+        // Direction toward an adjacent tile offset (dx,dy in -1..1, not 0,0).
+        private static Direction DirFor(int dx, int dy) => (dx, dy) switch
+        {
+            (0, -1)  => Direction.North,
+            (1, -1)  => Direction.Right,
+            (1, 0)   => Direction.East,
+            (1, 1)   => Direction.Down,
+            (0, 1)   => Direction.South,
+            (-1, 1)  => Direction.Left,
+            (-1, 0)  => Direction.West,
+            _        => Direction.Up
+        };
+
+        // passDoors: treat closed unlocked doors as walkable (audit-only —
+        // classifies door false-positives; never used for live movement).
+        // probe: when set, steps use the REAL movement engine
+        // (Movement.CheckMovement) with this mobile's flags instead of the
+        // approximate Walkable.CanStep — the approximation rejects legs the
+        // game allows (Vesper canal bridges, dock ramps, low arches), which
+        // made the audit cry BLOCKED on edges bots walk every day.
+        public static DistanceField Build(Map map, Point3D goal, int radius,
+                                          bool passDoors = false,
+                                          Mobile probe = null)
         {
             var field = new DistanceField(goal, radius);
             if (map == null || map == Map.Internal) return field;
@@ -127,7 +149,23 @@ namespace Server.CustomBots
                     if (Math.Abs(nx - sx) > radius || Math.Abs(ny - sy) > radius)
                         continue;
 
-                    if (!Walkable.CanStep(map, cx, cy, cz, nx, ny, out int nz))
+                    int nz;
+                    bool ok;
+                    if (probe != null)
+                    {
+                        ok = Server.Movement.Movement.CheckMovement(
+                            probe, map, new Point3D(cx, cy, cz), DirFor(dx, dy), out nz);
+                        if (!ok && passDoors && Walkable.ClosedDoorAt(map, nx, ny, cz))
+                        {
+                            ok = true;
+                            nz = cz;
+                        }
+                    }
+                    else if (passDoors)
+                        ok = Walkable.CanStepThroughDoors(map, cx, cy, cz, nx, ny, out nz);
+                    else
+                        ok = Walkable.CanStep(map, cx, cy, cz, nx, ny, out nz);
+                    if (!ok)
                         continue;
 
                     int step = (dx != 0 && dy != 0) ? 14 : 10;
