@@ -1,0 +1,6 @@
+# tame.txt — gossip about a fresh taming. Tokens: {actor} {other} {place} {when}
+# {other} is the creature name WITH article — never write "a {other}".
+{actor} tamed {other} out in the wilds {when}
+saw {actor} walk {other} right down the high street
+{actor} sweet-talked {other} into following. took a few tries
+heard {actor} got bit twice before {other} gave in

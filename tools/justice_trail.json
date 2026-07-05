@@ -1,0 +1,371 @@
+[
+  {
+    "Name": "Justice Trail 1",
+    "X": 1408,
+    "Y": 792,
+    "Z": 0,
+    "Connects": [
+      "WP 648"
+    ]
+  },
+  {
+    "Name": "Justice Trail 2",
+    "X": 1381,
+    "Y": 793,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 1"
+    ]
+  },
+  {
+    "Name": "Justice Trail 3",
+    "X": 1359,
+    "Y": 810,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 2"
+    ]
+  },
+  {
+    "Name": "Justice Trail 4",
+    "X": 1340,
+    "Y": 829,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 3"
+    ]
+  },
+  {
+    "Name": "Justice Trail 5",
+    "X": 1328,
+    "Y": 841,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 4"
+    ]
+  },
+  {
+    "Name": "Justice Trail 6",
+    "X": 1306,
+    "Y": 857,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 5"
+    ]
+  },
+  {
+    "Name": "Justice Trail 7",
+    "X": 1287,
+    "Y": 876,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 6"
+    ]
+  },
+  {
+    "Name": "Justice Trail 8",
+    "X": 1278,
+    "Y": 885,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 7"
+    ]
+  },
+  {
+    "Name": "Justice Trail 9",
+    "X": 1262,
+    "Y": 903,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 8"
+    ]
+  },
+  {
+    "Name": "Justice Trail 10",
+    "X": 1244,
+    "Y": 923,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 9"
+    ]
+  },
+  {
+    "Name": "Justice Trail 11",
+    "X": 1233,
+    "Y": 935,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 10"
+    ]
+  },
+  {
+    "Name": "Justice Trail 12",
+    "X": 1205,
+    "Y": 935,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 11"
+    ]
+  },
+  {
+    "Name": "Justice Trail 13",
+    "X": 1177,
+    "Y": 935,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 12"
+    ]
+  },
+  {
+    "Name": "Justice Trail 14",
+    "X": 1152,
+    "Y": 946,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 13"
+    ]
+  },
+  {
+    "Name": "Justice Trail 15",
+    "X": 1145,
+    "Y": 953,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 14"
+    ]
+  },
+  {
+    "Name": "Justice Trail 16",
+    "X": 1142,
+    "Y": 954,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 15"
+    ]
+  },
+  {
+    "Name": "Justice Trail 17",
+    "X": 1127,
+    "Y": 954,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 16"
+    ]
+  },
+  {
+    "Name": "Justice Trail 18",
+    "X": 1121,
+    "Y": 948,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 17"
+    ]
+  },
+  {
+    "Name": "Justice Trail 19",
+    "X": 1120,
+    "Y": 943,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 18"
+    ]
+  },
+  {
+    "Name": "Justice Trail 20",
+    "X": 1119,
+    "Y": 916,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 19"
+    ]
+  },
+  {
+    "Name": "Justice Trail 21",
+    "X": 1118,
+    "Y": 889,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 20"
+    ]
+  },
+  {
+    "Name": "Justice Trail 22",
+    "X": 1116,
+    "Y": 879,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 21"
+    ]
+  },
+  {
+    "Name": "Justice Trail 23",
+    "X": 1113,
+    "Y": 876,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 22"
+    ]
+  },
+  {
+    "Name": "Justice Trail 24",
+    "X": 1113,
+    "Y": 848,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 23"
+    ]
+  },
+  {
+    "Name": "Justice Trail 25",
+    "X": 1115,
+    "Y": 822,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 24"
+    ]
+  },
+  {
+    "Name": "Justice Trail 26",
+    "X": 1132,
+    "Y": 804,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 25"
+    ]
+  },
+  {
+    "Name": "Justice Trail 27",
+    "X": 1151,
+    "Y": 784,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 26"
+    ]
+  },
+  {
+    "Name": "Justice Trail 28",
+    "X": 1161,
+    "Y": 774,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 27"
+    ]
+  },
+  {
+    "Name": "Justice Trail 29",
+    "X": 1180,
+    "Y": 754,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 28"
+    ]
+  },
+  {
+    "Name": "Justice Trail 30",
+    "X": 1199,
+    "Y": 734,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 29"
+    ]
+  },
+  {
+    "Name": "Justice Trail 31",
+    "X": 1200,
+    "Y": 707,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 30"
+    ]
+  },
+  {
+    "Name": "Justice Trail 32",
+    "X": 1200,
+    "Y": 680,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 31"
+    ]
+  },
+  {
+    "Name": "Justice Trail 33",
+    "X": 1203,
+    "Y": 676,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 32"
+    ]
+  },
+  {
+    "Name": "Justice Trail 34",
+    "X": 1222,
+    "Y": 657,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 33"
+    ]
+  },
+  {
+    "Name": "Justice Trail 35",
+    "X": 1236,
+    "Y": 642,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 34"
+    ]
+  },
+  {
+    "Name": "Justice Trail 36",
+    "X": 1241,
+    "Y": 641,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 35"
+    ]
+  },
+  {
+    "Name": "Justice Trail 37",
+    "X": 1269,
+    "Y": 641,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 36"
+    ]
+  },
+  {
+    "Name": "Justice Trail 38",
+    "X": 1296,
+    "Y": 638,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 37"
+    ]
+  },
+  {
+    "Name": "Justice Trail 39",
+    "X": 1299,
+    "Y": 638,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 38"
+    ]
+  },
+  {
+    "Name": "Justice Trail 40",
+    "X": 1300,
+    "Y": 637,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 39"
+    ]
+  },
+  {
+    "Name": "Justice Trail 41",
+    "X": 1300,
+    "Y": 634,
+    "Z": 0,
+    "Connects": [
+      "Justice Trail 40"
+    ]
+  }
+]

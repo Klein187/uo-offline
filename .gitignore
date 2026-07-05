@@ -10,3 +10,4 @@ playerbots/data/Navigation/fields_cache.bin
 patch_readme_dual.py
 uoico.ico
 __pycache__/
+tools/map/walk_atlas.pgm

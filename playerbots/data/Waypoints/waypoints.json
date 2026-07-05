@@ -15315,6 +15315,146 @@
       "Connects": [
         "Moonglow Road 8"
       ]
+    },
+    {
+      "Name": "Valor Trail 1",
+      "X": 2392,
+      "Y": 3899,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "Valor Trail 2",
+      "X": 2402,
+      "Y": 3902,
+      "Z": 0,
+      "Connects": [
+        "Valor Trail 1"
+      ]
+    },
+    {
+      "Name": "Valor Trail 3",
+      "X": 2430,
+      "Y": 3902,
+      "Z": 0,
+      "Connects": [
+        "Valor Trail 2"
+      ]
+    },
+    {
+      "Name": "Valor Trail 4",
+      "X": 2458,
+      "Y": 3902,
+      "Z": 0,
+      "Connects": [
+        "Valor Trail 3"
+      ]
+    },
+    {
+      "Name": "Valor Trail 5",
+      "X": 2480,
+      "Y": 3919,
+      "Z": 0,
+      "Connects": [
+        "Valor Trail 4"
+      ]
+    },
+    {
+      "Name": "Valor Trail 6",
+      "X": 2492,
+      "Y": 3931,
+      "Z": 0,
+      "Connects": [
+        "Valor Trail 5"
+      ]
+    },
+    {
+      "Name": "Humility Trail 1",
+      "X": 4132,
+      "Y": 3692,
+      "Z": 0,
+      "Connects": []
+    },
+    {
+      "Name": "Humility Trail 2",
+      "X": 4160,
+      "Y": 3692,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 1"
+      ]
+    },
+    {
+      "Name": "Humility Trail 3",
+      "X": 4188,
+      "Y": 3692,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 2"
+      ]
+    },
+    {
+      "Name": "Humility Trail 4",
+      "X": 4215,
+      "Y": 3693,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 3"
+      ]
+    },
+    {
+      "Name": "Humility Trail 5",
+      "X": 4242,
+      "Y": 3694,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 4"
+      ]
+    },
+    {
+      "Name": "Humility Trail 6",
+      "X": 4251,
+      "Y": 3694,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 5"
+      ]
+    },
+    {
+      "Name": "Humility Trail 7",
+      "X": 4254,
+      "Y": 3696,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 6"
+      ]
+    },
+    {
+      "Name": "Humility Trail 8",
+      "X": 4265,
+      "Y": 3699,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 7"
+      ]
+    },
+    {
+      "Name": "Humility Trail 9",
+      "X": 4272,
+      "Y": 3699,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 8"
+      ]
+    },
+    {
+      "Name": "Humility Trail 10",
+      "X": 4274,
+      "Y": 3697,
+      "Z": 0,
+      "Connects": [
+        "Humility Trail 9"
+      ]
     }
   ]
 }

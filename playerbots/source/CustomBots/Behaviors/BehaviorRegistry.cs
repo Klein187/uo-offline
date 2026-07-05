@@ -47,6 +47,11 @@ namespace Server.CustomBots
             Register("Beggar",   () => new BeggarBehavior());
             Register("Newbie",   () => new NewbieBehavior());
             Register("Duelist",  () => new DuelistBehavior());
+            // A TreasureHunter loaded from a save has no dig scene — its
+            // OnAttached restarts the dig where it stands, which is fine.
+            Register("TreasureHunter", () => new TreasureHunterBehavior());
+            // A working Tamer self-heals to Traveler when its quarry is gone.
+            Register("Tamer", () => new TamerBehavior());
         }
 
         public static void Register(string name, Func<PlayerBotBehavior> factory)

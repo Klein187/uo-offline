@@ -1,0 +1,6 @@
+# tame_success.txt — the animal submits. {pet} = creature name.
+it likes me!! IT LIKES ME
+gotcha. come along now
+thats it, good beast
+tamed! wait til they see this at the bank
+*pats {pet} on the head*

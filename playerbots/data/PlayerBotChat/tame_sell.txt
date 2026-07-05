@@ -1,0 +1,6 @@
+# tame_sell.txt — hawking the pet in town. {pet} = creature name.
+selling {pet}, 2k firm
+who wants {pet}? fresh tamed, good temper
+{pet} for sale! carries packs, doesnt bite. much
+tamed this beauty myself, make me an offer
+pet for sale, going cheap, wife says it cant stay

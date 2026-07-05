@@ -1,0 +1,7 @@
+# tame_fail.txt — a taming attempt fails; {pet} shies away.
+*{pet} shies away*
+it wont listen!!
+almost had it...
+stay STILL will you
+*{pet} snaps at his hand*
+patience... patience...

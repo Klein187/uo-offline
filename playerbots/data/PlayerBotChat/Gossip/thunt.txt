@@ -1,0 +1,7 @@
+# thunt.txt — gossip about a completed treasure hunt.
+# Tokens: {actor} {place} {when}
+{actor} dug up a real treasure chest {when}
+heard {actor} found buried gold, guardians and all
+{actor} came back from a dig with a full pack {when}
+they say {actor}s map was real. REAL
+{actor} fought off a pack of undead over a chest

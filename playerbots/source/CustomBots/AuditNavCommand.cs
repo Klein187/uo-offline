@@ -117,10 +117,17 @@ namespace Server.CustomBots
             var pads = LoadTeleporterPads(warnings);
 
             // Component id → does any moongate's route node live there?
+            // Ferry terminals count too: a Dock with a valid FerryTo pair
+            // is a portal into its component exactly like a gate (the
+            // island-reroute in TravelerBehavior routes through it), so a
+            // ferry-served island is NOT a gateless island.
             var gatedComponents = new HashSet<int>();
             foreach (var d in DestinationCatalog.All)
             {
-                if (d.Type != DestinationType.Moongate)
+                bool isPortal = d.Type == DestinationType.Moongate ||
+                    (d.Type == DestinationType.Dock &&
+                     FerryTravel.PartnerOf(d) != null);
+                if (!isPortal)
                 {
                     continue;
                 }

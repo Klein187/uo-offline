@@ -1,0 +1,6 @@
+# sos.txt — gossip about a fished-up bottle.
+# Tokens: {actor} {place} {when}
+{actor} fished up a message in a bottle {when}
+{actor} pulled a sealed bottle out of the sea, map inside
+heard {actor} sold a treasure map right off the pier
+a bottle with a chart in it — {actor} swears its genuine

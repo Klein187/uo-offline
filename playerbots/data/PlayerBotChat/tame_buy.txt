@@ -1,0 +1,6 @@
+# tame_buy.txt — a bystander buys the pet. {pet} = creature name.
+deal. come along then
+2k?? fine. FINE. take my gold
+always wanted one of these
+sold! ill call it fluffy
+my very own {pet}. what a day

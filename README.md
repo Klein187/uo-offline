@@ -90,6 +90,16 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **Duels outside the bank.** Two fighters emote a challenge, bow, walk ten tiles clear of the crowd, and fight to low health — never to the death — then bow again while the loser demands a rematch. Era-perfect theater, legal in town.
 
+**Ferries to the outer isles.** Docks pair up into ferry routes (Trinsic ↔ Valor Isle, Magincia ↔ Humility Isle): a bot whose trip crosses open sea walks to the pier, waits for the boat ("*pays the ferryman*"), and steps off at the far dock — "land ho". With the ferry network live, **all eight virtue shrines are walkable**, and pilgrims actually show up on the shrine islands.
+
+**Treasure hunts.** A bot announces it "got a map off a dead brigand", walks out to one of 24 wilderness dig sites, digs with shovel swings and sounds — and the guardians erupt from the ground mid-dig. Fight them down, pry open the unearthed chest ("GOLD! actual gold!!"), pocket the coin, and carry the story back to the bank where the gossip mill spreads it.
+
+**The fishing SOS.** A fisherman working a pier occasionally reels in a corked bottle with a map inside, and hawks it on the spot ("i fish, i dont dig. map for sale"). If an adventurer is standing around the docks, the map changes hands and a real treasure hunt sets out; if not, the tale still makes the rounds.
+
+**Visible taming.** Tamer bots stalk wild animals and work them with the classic client spam ("I've always wanted an animal like you", "Will you be my friend?") — sometimes the beast shies away, sometimes it submits. Tamed pets follow their master through town, get hawked at the bank ("selling {pet}, 2k firm"), and either sell to a bystander bot or get released with a shrug. No permanent pet ever accumulates.
+
+**Bot homesteads.** Small era houses (stone cottages, log cabins, thatched-roof cottages) scattered along the wilderness roads, placed with the REAL house placement rules, each with a locked door and a named sign ("Aldric's cottage") — ownerless, ageless, and fully removable (`[BotHouses scatter/clear`).
+
 **Gear progression.** Dungeon runs pay: survive three and the next bank visit is shopping day — a visible tier promotion with better skills and kit ("finally saved up for new gear"). Regulars get better gear over weeks.
 
 **Street characters.** Banks grow their own street life: the beggar ("gold plz") and the lost newbie ("how do i get to minoc??") — both of whom will latch onto a real player and follow them across the plaza.
@@ -112,6 +122,8 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 - **Adventurer** — full combat: melee, archery, and real magic (spell ladders up to Flamestrike, kiting, target switching, threat assessment); retreats scale with experience.
 - **DungeonCrawler** — enters dungeons through the real entrance teleporters, sweeps rooms floor by floor (skill-weighted descent — novices stay shallow), camps respawns, and climbs back out when the run timer expires.
 - **PartyMember / Duelist / Ghost / CorpseReclaim / Beggar / Newbie** — the hunting-party follower, the bank duelist, the death story, and the street characters.
+- **TreasureHunter** — the dig-site scene: dig, fight the risen guardians, open the chest, walk home rich.
+- **Tamer** — stalks a wild animal, tames it with the era spam, parades it to town, and sells it.
 - **PK** — hostile player-killer behavior (and the reason civilians scream RED).
 
 **Destinations, waypoints, and zones.** Travelers go to actual *places*, not random spots. The world is described by three layers:

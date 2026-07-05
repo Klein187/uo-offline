@@ -1,0 +1,6 @@
+# tame_release.txt — nobody bought it; set it loose. {pet} = creature name.
+cant feed ye. off you go
+no takers. go on, git
+*shoos {pet} away*
+freedoms yours again, beast
+go on then. GO ON

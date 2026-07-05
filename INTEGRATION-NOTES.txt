@@ -98,3 +98,22 @@ What's in playerbots/
   data/Waypoints/waypoints.json       7-node starter graph
 
   deploy.sh                           Standalone deploy script
+
+Stock-file patch required by the housing system (2026-07-05)
+------------------------------------------------------------
+CustomBots/BotHousing.cs places ownerless, ageless scenery houses
+(RestrictDecay = true). Stock ModernUO deletes any owner-less house
+10 seconds after world load, which silently reaped the whole land
+rush on every boot. One-line patch in:
+
+  Projects/UOContent/Multis/Houses/BaseHouse.cs  (~line 3255)
+
+  - if (m_Owner == null && Friends.Count == 0 && CoOwners.Count == 0)
+  + if (m_Owner == null && Friends.Count == 0 && CoOwners.Count == 0 &&
+  +     !RestrictDecay)
+    {
+        Timer.StartTimer(TimeSpan.FromSeconds(10.0), Delete);
+    }
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or
+bot houses will vanish on the first restart.

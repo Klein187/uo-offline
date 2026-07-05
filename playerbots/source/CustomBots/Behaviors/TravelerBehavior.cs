@@ -628,7 +628,11 @@ namespace Server.CustomBots
                 {
                     DefenderMode = true,
                     DefenderRetreatHpFraction = 0.40,
-                    ResumeDestination = DestinationName,
+                    // Resume the REAL trip, not the portal we were routed
+                    // through: after an island reroute DestinationName is
+                    // the gate/ferry dock, and resuming at the portal
+                    // "arrives" there with the through-trip forgotten.
+                    ResumeDestination = _gateResumeDestination ?? DestinationName,
                 };
                 bot.Combatant = threat;
                 // Swapping Behavior detaches this Traveler. Return at once.
@@ -937,7 +941,70 @@ namespace Server.CustomBots
                     if (d < bestDist)
                     { bestDist = d; bestGate = mg.NearestWaypoint; bestGateName = mg.Name; }
                 }
-                if (bestGate != null)
+
+                // Ferry terminals are portals too — a Dock with FerryTo set
+                // carries the bot to a FIXED partner dock (moongates fan out
+                // to the whole gate network; a ferry goes one place). For
+                // the shrine islands the ferry is often the ONLY way in.
+                BotDestination bestFerry = null;
+                int bestFerryExit = int.MaxValue;
+                if (_finalCoord.HasValue)
+                {
+                    foreach (var dk in DestinationCatalog.All)
+                    {
+                        if (dk.Type != DestinationType.Dock) continue;
+                        if (string.Equals(dk.Name, DestinationName,
+                                StringComparison.OrdinalIgnoreCase)) continue;
+                        var pair = FerryTravel.PartnerOf(dk);
+                        if (pair == null) continue;
+                        if (string.IsNullOrEmpty(dk.NearestWaypoint)) continue;
+                        var dockPath = graph.FindPath(nearest.Name, dk.NearestWaypoint);
+                        if (dockPath == null || dockPath.Count == 0) continue;
+                        // Score by where the boat DROPS the bot relative to
+                        // where the trip is headed.
+                        int exit = Math.Max(
+                            Math.Abs(pair.Location.X - _finalCoord.Value.X),
+                            Math.Abs(pair.Location.Y - _finalCoord.Value.Y));
+                        if (exit < bestFerryExit)
+                        { bestFerryExit = exit; bestFerry = dk; }
+                    }
+                }
+
+                // When both a gate and a ferry are walkable, take whichever
+                // EXIT lands closer to the destination. The gate network's
+                // exit is the gate nearest the destination (MoongateTravel
+                // picks it), so score gates by that; the ferry's exit is its
+                // fixed partner pier.
+                if (bestGate != null && bestFerry != null && _finalCoord.HasValue)
+                {
+                    int gateExit = int.MaxValue;
+                    foreach (var mg in DestinationCatalog.All)
+                    {
+                        if (mg.Type != DestinationType.Moongate) continue;
+                        int d = Math.Max(
+                            Math.Abs(mg.Location.X - _finalCoord.Value.X),
+                            Math.Abs(mg.Location.Y - _finalCoord.Value.Y));
+                        if (d < gateExit) { gateExit = d; }
+                    }
+                    if (gateExit <= bestFerryExit)
+                    {
+                        bestFerry = null;   // gate wins — keep today's path
+                    }
+                }
+
+                if (bestFerry != null)
+                {
+                    Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
+                             $"(across water) — routing to ferry dock '{bestFerry.Name}' " +
+                             $"to sail toward it");
+                    _gateResumeDestination = DestinationName;
+                    DestinationName = bestFerry.Name;
+                    _destType = DestinationType.Dock;
+                    routeTargetWaypoint = bestFerry.NearestWaypoint;
+                    _finalCoord = bestFerry.ArrivalPoint ?? bestFerry.Location;
+                    _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
+                }
+                else if (bestGate != null)
                 {
                     Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
                              $"(across water) — routing to moongate '{bestGateName}' " +
@@ -1617,6 +1684,7 @@ namespace Server.CustomBots
                 || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
                 || type == DestinationType.MiningSpot
                 || type == DestinationType.LumberSpot
+                || type == DestinationType.TreasureSite // dig site — dig or leave
                 || type == DestinationType.VendorSmith
                 || type == DestinationType.VendorMage
                 || type == DestinationType.VendorTailor
@@ -1747,6 +1815,49 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 return false;
             }
 
+            // Ferry terminal: a dock whose FerryTo names a partner pier.
+            // A bot ROUTED here mid-trip always boards — the boat is the
+            // whole reason it came. A bot that wandered to the pier on its
+            // own occasionally takes the ferry just to see the other side.
+            // Fishermen exempt: they came to WORK the pier, and the artisan
+            // handoff below turns them into dock crafters.
+            if (_destType == DestinationType.Dock)
+            {
+                var dock = DestinationCatalog.GetByName(DestinationName);
+                if (FerryTravel.PartnerOf(dock) != null)
+                {
+                    double boardChance =
+                        _gateResumeDestination != null ? 1.0 :
+                        bot.Class == BotClass.Fisherman ? 0.0 : 0.20;
+                    if (Utility.RandomDouble() < boardChance &&
+                        FerryTravel.BeginTrip(bot, DestinationName,
+                            _gateResumeDestination))
+                    {
+                        Log(bot, $"Boarding the ferry at '{DestinationName}'" +
+                                 (_gateResumeDestination != null
+                                     ? $" toward '{_gateResumeDestination}'"
+                                     : ""));
+                        // Same freeze as a gate trip: BeginTrip teleports +
+                        // swaps behavior after the crossing delay.
+                        _moongateTripPending = true;
+                        return true;
+                    }
+
+                    // Boat couldn't sail (stale pair) but the bot was routed
+                    // here to continue a trip — don't camp a dead pier.
+                    if (_gateResumeDestination != null)
+                    {
+                        Log(bot, $"Ferry at '{DestinationName}' isn't running — " +
+                                 $"abandoning trip to '{_gateResumeDestination}'");
+                        _gateResumeDestination = null;
+                        PickNewDestination(bot);
+                        return true;
+                    }
+                    // Otherwise fall through to ordinary dock arrival
+                    // (fisherman station handoff, lingering, etc.).
+                }
+            }
+
             // Dungeon entrances are no longer handled here. A dungeon entrance
             // is an ordinary destination whose arrival tile sits on a real
             // teleporter; the bot walks onto it, the game teleports it inside,
@@ -1777,10 +1888,20 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 BotEconomy.DeliverMaterials(bot, _destType);
             }
 
+            // A dig site is only ever a destination because the treasure-
+            // hunt manager sent this bot here (weight 0 in the roll) —
+            // start digging.
+            if (_destType == DestinationType.TreasureSite)
+            {
+                targetBehavior  = "TreasureHunter";
+                chance          = 1.0;
+                visitMinMinutes = 10;
+                visitMaxMinutes = 12; // the behavior restamps its own window
+            }
             // A gatherer arriving at a wilderness work site clocks in.
             // (Typed sites only ever attract their own class — the weight
             // table zeroes the cross-class roll.)
-            if (BotClassHelper.IsGatherer(bot.Class) &&
+            else if (BotClassHelper.IsGatherer(bot.Class) &&
                 _destType is DestinationType.GatherSpot or DestinationType.MiningSpot
                           or DestinationType.LumberSpot)
             {

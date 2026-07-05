@@ -10,12 +10,31 @@
  label{display:block;margin:2px 0;cursor:pointer}
  #search{width:100%;box-sizing:border-box;margin-top:6px;padding:4px;background:#222;
    color:#eee;border:1px solid #444;border-radius:4px}
+ #searchResults{display:none;max-height:240px;overflow-y:auto;background:#1a1a22;
+   border:1px solid #444;border-radius:4px;margin-top:2px;font-size:12px}
+ .srow{padding:3px 6px;cursor:pointer;border-bottom:1px solid #2a2a30}
+ .srow:hover{background:#2a2a3a}
+ .crow{padding:2px 5px;cursor:pointer;border-bottom:1px solid #2a2a30}
+ .crow:hover{background:#2a2a3a}
+ .crow.con{background:#243a52}
+ #followBanner{position:fixed;top:10px;left:50%;transform:translateX(-50%);
+   background:rgba(15,50,20,.92);border:1px solid #3cff5a;color:#c8ffd4;
+   padding:4px 14px;border-radius:6px;display:none;font-size:13px}
+ #ticker{position:fixed;left:10px;bottom:10px;width:340px;max-height:264px;
+   overflow:hidden;background:rgba(20,20,25,.88);border:1px solid #444;
+   border-radius:8px;padding:5px 8px;font-size:11px;display:none}
+ #ticker h4{margin:0 0 3px;font-size:11px;color:#ffd76e}
+ .trow{padding:1px 2px;cursor:pointer;border-bottom:1px solid #26262c;
+   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .trow:hover{background:#2a2a3a}
  .hint{color:#888;font-size:11px;margin-top:6px}
  button{background:#333;color:#eee;border:1px solid #555;border-radius:4px;margin-right:4px;cursor:pointer;padding:3px 8px}
  #refresh{background:#2d5a2d}
  #stamp{color:#7a7;font-size:11px;margin-top:4px}
 </style></head><body>
 <canvas id="c"></canvas>
+<div id="followBanner"></div>
+<div id="ticker"></div>
 <div id="panel">
  <h3>UO Bot World</h3>
  <label><input type="checkbox" id="lEdges" checked> Graph edges</label>
@@ -32,7 +51,8 @@
    <option>VendorTailor</option><option>VendorCarpenter</option><option>VendorBowyer</option>
    <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
    <option>Dock</option><option>Library</option><option>Graveyard</option>
-   <option>Moongate</option><option>CityCenter</option><option>Dungeon</option></select>
+   <option>Moongate</option><option>CityCenter</option><option>Dungeon</option>
+   <option>MiningSpot</option><option>LumberSpot</option></select>
  </div>
  <label><input type="checkbox" id="lSpawns" checked> Spawns</label>
  <div id="spawnFilters" style="font-size:11px;margin:1px 0 3px 16px;color:#bbb">
@@ -42,7 +62,8 @@
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="PlayerBotFixed" checked> <span style="color:#3498db">BotF</span></label>
   <label style="display:inline"><input type="checkbox" class="spF" data-k="PlayerBotLifecycle" checked> <span style="color:#9b59b6">BotL</span></label>
  </div>
- <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
+ <label style="color:#7dc383"><input type="checkbox" id="lGather" checked> Gather spots</label>
+<label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
  <label style="color:#9fffd0"><input type="checkbox" id="lLive"> Live entities <span id="liveStamp" style="color:#888;font-size:11px"></span></label>
  <div id="liveFilters" style="display:none;font-size:11px;margin:1px 0 3px 16px;color:#bbb">
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Bot" checked> <span style="color:#3cff5a">Bot</span></label>
@@ -51,6 +72,10 @@
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Vendor" checked> <span style="color:#2ecc71">Ven</span></label>
   <label style="display:inline"><input type="checkbox" class="lvF" data-k="Pet" checked> <span style="color:#1abc9c">Pet</span></label>
   <label style="display:block;margin-top:2px"><input type="checkbox" id="lHeat"> density heatmap</label>
+ <label style="display:block;margin-top:2px"><input type="checkbox" id="lStuck" checked>
+  <span style="color:#ff5050">stuck bots</span> <span id="stuckCount" style="cursor:pointer;color:#666"></span></label>
+ <button id="censusBtn" style="width:100%;margin-top:3px;background:#2d3a5a">📊 bot census</button>
+ <div id="censusList" style="display:none;margin-top:2px"></div>
  </div>
  <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
  <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
@@ -83,7 +108,8 @@
   <div style="margin-top:3px">target lvl <input id="dgTargetLevel" type="number" value="1" min="0" style="width:42px">
    <button id="dgSetTarget" style="margin-left:4px;background:#4a3a2d">Set target&hellip;</button></div>
  </div>
- <input id="search" placeholder="search & Enter (e.g. Trinsic Bank)">
+ <input id="search" placeholder="search bots &amp; places (bot:/wp:/dest:/spawn:)">
+<div id="searchResults"></div>
  <div style="margin-top:6px">
   <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
   <button onclick="goHome()">Britain</button>
@@ -92,7 +118,9 @@
  <button id="reloadGame" style="width:100%;margin-top:6px;padding:5px;background:#3a2d5a"
    title="Hot-reload waypoints, destinations/arrivals and zones in the running game">
    &#8635; Reload in game</button>
- <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
+ <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33">
+  ☠ Spawn road PKs</button>
+<button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
    &#9851; Regenerate bots in game</button>
  <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
@@ -109,7 +137,7 @@
   <span style="color:#ff5050">BROKEN (&gt;38t)</span></div>
 </div>
 <script>
-let DESTS=[], WPS=[], EDGES=[], ZONES=[], wpByName={};
+let DESTS=[], WPS=[], EDGES=[], ZONES=[], GATHER=[], wpByName={};
 let drawPts=[], selZone=-1, dotDrag=null, wpDrag=null, wpSel=null, destSel=null, arrDrag=null, arrSel=null;
 const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085",
  Stables:"#795548",VendorSmith:"#34495e",VendorWeaponer:"#788ca0",VendorMage:"#2980b9",
@@ -117,6 +145,7 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  VendorAlchemist:"#9b59b6",VendorProvisioner:"#95a5a6",Forge:"#e74c3c",Dock:"#3498db",
  Library:"#f1c40f",Graveyard:"#7f8c8d",Moongate:"#00e5ff",CityCenter:"#fff",
  Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600",
+ MiningSpot:"#b8a58c",LumberSpot:"#3e8e41",
  DungeonEntrance:"#ffa500",DungeonRoom:"#c8924a",
  DungeonDescend:"#ff4040",DungeonAscend:"#40c0ff"};
 const SPAWN_COLORS={Monster:"#e74c3c",NPC:"#f1c40f",Vendor:"#2ecc71",
@@ -145,6 +174,7 @@ function loadData(){
   return r.json();
  }).then(d=>{
   DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[]; SPAWNS=d.spawns||[];
+  GATHER=d.gather||[];
   wpByName={}; WPS.forEach(w=>wpByName[w.n]=w);
   COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
@@ -264,6 +294,17 @@ function draw(){
   ctx.stroke();
   if(lLabels.checked&&scale>=6){ctx.fillStyle="#ffd";ctx.font="10px sans-serif";
    ctx.fillText(d.n,x+r+2,y+3);}}
+ // gather spots: green diamonds — synthetic wilderness work sites the
+ // game exports at boot (lumberjack/miner shift destinations)
+ if(lGather.checked)for(const g of GATHER){const[x,y]=T(g.x,g.y);
+  if(x<-12||y<-12||x>cv.width+12||y>cv.height+12)continue;
+  const s2=Math.max(3.5,scale*.9);
+  ctx.fillStyle="#3e8e41";
+  ctx.beginPath();ctx.moveTo(x,y-s2);ctx.lineTo(x+s2,y);
+  ctx.lineTo(x,y+s2);ctx.lineTo(x-s2,y);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#aef3b4";ctx.lineWidth=1.5;ctx.stroke();
+  if(scale>=5){ctx.fillStyle="#aef3b4";ctx.font="10px sans-serif";
+   ctx.fillText(g.n,x+s2+2,y+3);}}
  if(lSpawns.checked){const sf=spawnFilterSet();
   for(const s of SPAWNS){if(!sf.has(s.Kind))continue;
    const[x,y]=T(s.X,s.Y);
@@ -293,14 +334,42 @@ function draw(){
   }else{
    for(const e of LIVE.entities){if(!lf.has(e.k))continue;
     const[x,y]=T(e.x,e.y);
-    if(x<-6||y<-6||x>cv.width+6||y>cv.height+6)continue;
-    const col=e.k==="Bot"?(BEHAVIOR_COLORS[e.b]||"#3cff5a"):(LIVE_KIND_COLORS[e.k]||"#fff");
-    const r=Math.max(1.5,scale*.45);
-    ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=col;ctx.fill();}
+    if(x<-8||y<-8||x>cv.width+8||y>cv.height+8)continue;
+    if(e.k==="Bot"){
+     // bots read bigger + outlined; census row selection dims the rest
+     const dim=censusSel.size&&!censusSel.has(e.b);
+     const col=BEHAVIOR_COLORS[e.b]||"#3cff5a";
+     const r=Math.max(2.5,scale*(dim?0.45:0.8));
+     ctx.globalAlpha=dim?0.25:1;
+     ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=col;ctx.fill();
+     ctx.lineWidth=1;ctx.strokeStyle="#000";ctx.stroke();
+     ctx.globalAlpha=1;
+    }else{
+     const col=LIVE_KIND_COLORS[e.k]||"#fff";
+     const r=Math.max(1.5,scale*.45);
+     ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=col;ctx.fill();}}
   }
-  // selected bot's planned route (traveled = grey, remaining = green)
+  // stuck bots: pulsing red ring + ⚠ (should-be-moving bots frozen >45s)
+  if(lStuck.checked&&stuckNames.size){
+   for(const e of LIVE.entities){
+    if(e.k!=="Bot"||!stuckNames.has(e.n))continue;
+    const[x,y]=T(e.x,e.y);
+    if(x<-24||y<-24||x>cv.width+24||y>cv.height+24)continue;
+    const r=Math.max(5,scale*(stuckBlink?1.7:1.1));
+    ctx.strokeStyle=stuckBlink?"rgba(255,40,40,.95)":"rgba(255,40,40,.45)";
+    ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.stroke();
+    if(scale>=2.5){ctx.fillStyle="#ff5050";ctx.font="bold 11px sans-serif";
+     ctx.fillText("⚠",x+r+3,y+4);}}
+  }
+  // selected bot's planned route (traveled = grey, remaining = magenta)
   if(liveSelName){
    const sel=LIVE.entities.find(e=>e.k==="Bot"&&e.n===liveSelName);
+   // highlight ring even when the bot has no route (fighting, shopping...)
+   if(sel){const[hx,hy]=T(sel.x,sel.y);
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(hx,hy,Math.max(4,scale*.9),0,7);ctx.stroke();
+    if(followName===sel.n){ctx.strokeStyle="#3cff5a";ctx.lineWidth=1.5;
+     ctx.beginPath();ctx.arc(hx,hy,Math.max(7,scale*1.5),0,7);ctx.stroke();}}
    if(sel&&sel.r&&sel.r.length>=4){const li=sel.li||0;
     const lw=Math.max(2,scale*.4);
     for(let i=0;i+3<sel.r.length;i+=2){
@@ -314,12 +383,10 @@ function draw(){
      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}
     for(let i=0;i+1<sel.r.length;i+=2){const[px,py]=T(sel.r[i],sel.r[i+1]);
      ctx.fillStyle="#ff3df0";ctx.strokeStyle="#000";ctx.lineWidth=1;
-     ctx.fillRect(px-3,py-3,6,6);ctx.strokeRect(px-3,py-3,6,6);}
-    const[hx,hy]=T(sel.x,sel.y);ctx.strokeStyle="#fff";ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(hx,hy,Math.max(4,scale*.9),0,7);ctx.stroke();}}
+     ctx.fillRect(px-3,py-3,6,6);ctx.strokeRect(px-3,py-3,6,6);}}}
  }
 }
-["lEdges","lWps","lDests","lLabels","lSpawns"].forEach(id=>document.getElementById(id).onchange=draw);
+["lEdges","lWps","lDests","lLabels","lSpawns","lGather"].forEach(id=>document.getElementById(id).onchange=draw);
 document.querySelectorAll(".spF").forEach(c=>c.onchange=draw);
 let drag=null,moved=0;
 cv.onmousedown=e=>{
@@ -510,18 +577,22 @@ function inspect(px,py){
  if(!best)for(const d of DESTS){if(d.poly&&d.poly.length>=3&&
   pointInZone(tx,ty,{Points:d.poly})){best={k:"D",o:d};break;}}
  for(const w of WPS){const dd=dist(tx,ty,w.x,w.y);if(dd<bd){bd=dd;best={k:"W",o:w};}}
+ if(lGather.checked)for(const g of GATHER){const dd=dist(tx,ty,g.x,g.y);
+  // <= so a spot sitting ON its source waypoint wins the tie
+  if(dd<=bd){bd=dd;best={k:"G",o:g};}}
  const el=document.getElementById("info");
  if(lLive.checked&&LIVE.entities.length){
   let le=null,led=tol;
   for(const e of LIVE.entities){const dd=dist(tx,ty,e.x,e.y);if(dd<led){led=dd;le=e;}}
   if(le&&(!best||led<bd)){
-   if(le.k==="Bot")liveSelName=le.n;
-   el.textContent="◆ live "+le.k+(le.k==="Bot"
-    ?"\n"+(le.n||"")+" — "+(le.b||"?")+" ("+(le.c||"?")+")"+(le.fx?" [fixed]":"")
-     +(le.r?"\nroute: "+(le.r.length/2)+" legs (Esc clears)":"")
-    :"\n"+(le.t||""))+"\nat ("+le.x+", "+le.y+")";
+   if(le.k==="Bot"){showBotCard(le);draw();return;}
+   el.textContent="◆ live "+le.k+"\n"+(le.t||"")+"\nat ("+le.x+", "+le.y+")";
    draw();return;}}
  if(!best){el.textContent=`(${Math.round(tx)}, ${Math.round(ty)})  — nothing here`;return;}
+ if(best.k==="G"){const g=best.o;
+  el.textContent=`◈ ${g.n}\nwilderness work site (lumberjacks & miners)\n`+
+   `At: (${g.x}, ${g.y}, ${g.z})\nWaypoint: ${g.wp||"—"}\n`+
+   `(generated at boot from the waypoint graph — not editable)`;return;}
  if(best.k==="D"){const d=best.o;
   let nw=null,nd=1e9;for(const w of WPS){const x=dist(d.x,d.y,w.x,w.y);if(x<nd){nd=x;nw=w;}}
   el.textContent=`\u2605 ${d.n}\nType: ${d.t}   City: ${d.c}\nAt: (${d.x}, ${d.y}, ${d.z})\n`+
@@ -532,12 +603,136 @@ function inspect(px,py){
   el.textContent=`\u25a0 ${w.n}\nAt: (${w.x}, ${w.y})\nArrivalRange: ${w.ar||"default"}\n`+
    `Connects (${w.co.length}): ${w.co.join(", ")}`;}
 }
-document.getElementById("search").addEventListener("keydown",e=>{
- if(e.key!=="Enter")return;const q=e.target.value.toLowerCase();
- const hit=DESTS.find(d=>d.n.toLowerCase().includes(q))||WPS.find(w=>w.n.toLowerCase().includes(q));
- if(hit){ox=hit.x-cv.width/2/Math.max(scale,4);oy=hit.y-cv.height/2/Math.max(scale,4);
-  scale=Math.max(scale,4);draw();
-  inspect((hit.x-ox)*scale,(hit.y-oy)*scale);}});
+// ---- unified search: live bots + dests + wps + spawns --------------------
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,
+ c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function centerOn(x,y,minScale){scale=Math.min(24,Math.max(scale,minScale||scale));
+ ox=x-cv.width/2/scale;oy=y-cv.height/2/scale;draw();}
+const searchBox=document.getElementById("search"),
+      searchRes=document.getElementById("searchResults");
+let lastMatches=[];
+function searchMatches(raw){
+ let q=raw.toLowerCase().trim(),only=null;
+ const pm=q.match(/^(bot|wp|dest|spawn):\s*(.*)$/);if(pm){only=pm[1];q=pm[2];}
+ const out=[];if(!q)return out;
+ const want=k=>!only||only===k,CAP=14;
+ if(want("bot")){
+  if(lLive.checked){
+   for(const e of LIVE.entities){if(out.length>=CAP)break;
+    if(e.k==="Bot"&&e.n&&e.n.toLowerCase().includes(q))
+     out.push({icon:"◆",color:BEHAVIOR_COLORS[e.b]||"#3cff5a",label:e.n,
+      sub:(e.b||"")+(e.s?" — "+e.s:""),bot:e.n});}
+  }else if(only==="bot"){
+   out.push({hint:"turn on 'Live entities' (+ [LiveMap on in game) to search bots"});
+  }}
+ if(want("dest"))for(const d of DESTS){if(out.length>=CAP)break;
+  if(d.n&&d.n.toLowerCase().includes(q))
+   out.push({icon:"★",color:TYPE_COLORS[d.t]||"#fff",label:d.n,
+    sub:(d.t||"")+(d.c?" · "+d.c:""),x:d.x,y:d.y});}
+ if(want("dest"))for(const g of GATHER){if(out.length>=CAP)break;
+  if(g.n&&g.n.toLowerCase().includes(q))
+   out.push({icon:"◈",color:"#7dc383",label:g.n,sub:"gather spot · "+(g.wp||""),
+    x:g.x,y:g.y});}
+ if(want("wp"))for(const w of WPS){if(out.length>=CAP)break;
+  if(w.n&&w.n.toLowerCase().includes(q))
+   out.push({icon:"■",color:"#00e5ff",label:w.n,sub:"waypoint",x:w.x,y:w.y});}
+ if(want("spawn"))for(const s of SPAWNS){if(out.length>=CAP)break;
+  const what=(s.What||[]).join(", ");
+  if(what.toLowerCase().includes(q))
+   out.push({icon:"●",color:SPAWN_COLORS[s.Kind]||"#fff",label:what||s.Kind,
+    sub:"spawn #"+s.Id+" x"+s.Count,x:s.X,y:s.Y});}
+ return out;
+}
+function renderSearchResults(){
+ const q=searchBox.value;
+ lastMatches=searchMatches(q);
+ if(!q.trim()){searchRes.style.display="none";searchRes.innerHTML="";return;}
+ searchRes.style.display="block";
+ searchRes.innerHTML=lastMatches.length?lastMatches.map((m,i)=>
+  m.hint?`<div class="srow" style="color:#888">${esc(m.hint)}</div>`
+   :`<div class="srow" data-i="${i}"><span style="color:${m.color}">${m.icon}</span> `+
+    `<b>${esc(m.label)}</b><br><span style="color:#888;font-size:10px">${esc(m.sub||"")}</span></div>`
+ ).join(""):`<div class="srow" style="color:#888">no matches`+
+  `${lLive.checked?"":" (Live is off — bots not searchable)"}</div>`;
+}
+function activateMatch(m){
+ if(!m||m.hint)return;
+ searchRes.style.display="none";
+ if(m.bot)gotoBot(m.bot);
+ else{centerOn(m.x,m.y,Math.max(scale,4));inspect((m.x-ox)*scale,(m.y-oy)*scale);}
+}
+function gotoBot(name){
+ const b=LIVE.entities.find(x=>x.k==="Bot"&&x.n===name);
+ if(!b){document.getElementById("info").textContent=
+  `'${name}' is not in the live snapshot right now (died / logged out / respawned?)`;return;}
+ centerOn(b.x,b.y,Math.max(scale,6));
+ showBotCard(b);draw();
+}
+searchBox.addEventListener("input",renderSearchResults);
+searchBox.addEventListener("keydown",e=>{
+ if(e.key==="Enter"){const m=lastMatches.find(x=>!x.hint);if(m)activateMatch(m);}
+ else if(e.key==="Escape"){e.stopPropagation();searchRes.style.display="none";searchBox.blur();}});
+searchRes.addEventListener("click",e=>{
+ const row=e.target.closest(".srow");if(!row||row.dataset.i==null)return;
+ activateMatch(lastMatches[+row.dataset.i]);});
+// ---- bot inspector card + follow mode -------------------------------------
+let followName=null,journalCache={name:null,html:"",at:0};
+function showBotCard(e){
+ liveSelName=e.n;
+ const col=BEHAVIOR_COLORS[e.b]||"#3cff5a";
+ const hp=e.hp==null?null:Math.max(0,Math.min(100,e.hp));
+ const following=followName===e.n;
+ document.getElementById("info").innerHTML=
+  `<div><b style="color:${col}">◆ ${esc(e.n)}</b> <span style="color:#999">${esc(e.c||"?")}${e.fx?" · fixed":""}</span></div>`+
+  `<div style="color:${col};font-size:12px">${esc(e.b||"?")}${e.red?' <b style="color:#ff2020">☠ RED</b>':""}</div>`+
+  (e.s?`<div style="margin:3px 0;color:#ffe9a8">${esc(e.s)}</div>`:"")+
+  (stuckNames.has(e.n)?`<div style="color:#ff5050">⚠ hasn't moved in `+
+   `${Math.round((Date.now()-(lastPos[e.n]?lastPos[e.n].since:Date.now()))/1000)}s</div>`:"")+
+  (hp!=null?`<div title="HP ${hp}%" style="background:#333;border:1px solid #555;height:8px;border-radius:4px;margin:3px 0">`+
+   `<div style="width:${hp}%;height:100%;border-radius:4px;background:${hp>60?"#3cff5a":hp>30?"#ffc832":"#ff5050"}"></div></div>`:"")+
+  `<div style="color:#999;font-size:11px">at (${e.x}, ${e.y})${e.r?" · route "+(e.r.length/2)+" legs, on leg "+((e.li||0)+1):""}</div>`+
+  `<button id="followBtn" style="margin-top:4px;background:${following?"#5a2d2d":"#2d5a2d"}">${following?"✕ Unfollow":"📌 Follow"}</button>`+
+  `<div id="botJournal" style="margin-top:5px;border-top:1px solid #333;padding-top:4px;font-size:11px;color:#aaa">journal…</div>`;
+ document.getElementById("followBtn").onclick=()=>toggleFollow(e.n);
+ renderJournal(e.n);
+}
+function renderJournal(name){
+ const el=()=>document.getElementById("botJournal");
+ if(journalCache.name===name&&Date.now()-journalCache.at<15000){
+  if(el())el().innerHTML=journalCache.html;return;}
+ fetch("/journal?bot="+encodeURIComponent(name)+"&n=8&ts="+Date.now())
+  .then(r=>r.json()).then(d=>{
+   const evs=d.events||[];
+   const html=evs.length?evs.map(ev=>{
+    const t=(ev.at||"").split(" ")[1]||ev.at||"";
+    return `<div><span style="color:#666">${esc(t)}</span> ${esc(ev.type)}`+
+     (ev.other?` <span style="color:#ccc">${esc(ev.other)}</span>`:"")+
+     (ev.place?` <span style="color:#7a9">@ ${esc(ev.place)}</span>`:"")+`</div>`;
+   }).join(""):"<i>no recent journal entries</i>";
+   journalCache={name:name,html:html,at:Date.now()};
+   if(liveSelName===name&&el())el().innerHTML=html;
+  }).catch(()=>{if(el())el().innerHTML="<i>journal unavailable</i>";});
+}
+function toggleFollow(name){
+ if(followName===name){followName=null;}
+ else{
+  followName=name;liveSelName=name;
+  const l=document.getElementById("lLive");
+  if(!l.checked){l.checked=true;l.onchange();}
+  const b=LIVE.entities.find(x=>x.k==="Bot"&&x.n===name);
+  if(b)centerOn(b.x,b.y,Math.max(scale,6));
+ }
+ updateFollowBanner();
+ const sel=LIVE.entities.find(x=>x.k==="Bot"&&x.n===liveSelName);
+ if(sel)showBotCard(sel);
+ draw();
+}
+function updateFollowBanner(){
+ const fb=document.getElementById("followBanner");
+ if(followName){fb.style.display="block";
+  fb.textContent="📌 following "+followName+" — Esc to stop";}
+ else fb.style.display="none";
+}
 function updateActBtn(){
  const b=document.getElementById("actBtn");
  if(destSel){
@@ -894,29 +1089,171 @@ addEventListener("keydown",e=>{
 // ---- live view helpers ----
 function liveFilterSet(){const s=new Set();
  document.querySelectorAll(".lvF").forEach(c=>{if(c.checked)s.add(c.dataset.k);});return s;}
+// ---- stuck-bot detector ----------------------------------------------------
+// Track each bot's position across polls; a bot whose behavior SHOULD be
+// moving that hasn't changed tile in STUCK_SECS gets a pulsing red ring.
+// Catches wedged travelers/corpse-runners the in-game watchdogs gave up on.
+const STUCK_SECS=45;
+let lastPos={},stuckNames=new Set(),stuckBlink=false,stuckTimer=null,stuckCycle=0;
+function shouldBeMoving(e){
+ if(e.b==="Traveler"||e.b==="CorpseReclaim")return true;
+ // crawlers legitimately loiter (rooms, camping) — only exit-mode must progress
+ if(e.b==="DungeonCrawler"&&e.s&&e.s.startsWith("climbing out"))return true;
+ return false;
+}
+function updateStuck(){
+ const now=Date.now(),seen=new Set();
+ stuckNames=new Set();
+ for(const e of LIVE.entities){
+  if(e.k!=="Bot"||!e.n)continue;
+  seen.add(e.n);
+  const p=lastPos[e.n];
+  if(!p||p.x!==e.x||p.y!==e.y)lastPos[e.n]={x:e.x,y:e.y,since:now};
+  else if(shouldBeMoving(e)&&now-p.since>STUCK_SECS*1000)stuckNames.add(e.n);
+ }
+ for(const n in lastPos)if(!seen.has(n))delete lastPos[n]; // died/logged out
+ const el=document.getElementById("stuckCount");
+ el.textContent=stuckNames.size?`⚠ ${stuckNames.size} — click to cycle`:"· none";
+ el.style.color=stuckNames.size?"#ff5050":"#666";
+ // blink timer runs only while there's something to blink
+ if(stuckNames.size&&lStuck.checked&&!stuckTimer)
+  stuckTimer=setInterval(()=>{stuckBlink=!stuckBlink;
+   if(document.getElementById("lLive").checked)draw();},600);
+ if((!stuckNames.size||!lStuck.checked)&&stuckTimer){
+  clearInterval(stuckTimer);stuckTimer=null;}
+}
+function resetStuck(){
+ lastPos={};stuckNames=new Set();stuckCycle=0;
+ if(stuckTimer){clearInterval(stuckTimer);stuckTimer=null;}
+ const el=document.getElementById("stuckCount");
+ el.textContent="";el.style.color="#666";
+}
+document.getElementById("stuckCount").onclick=function(){
+ if(!stuckNames.size)return;
+ const arr=[...stuckNames];
+ gotoBot(arr[stuckCycle++%arr.length]);};
+document.getElementById("lStuck").onchange=function(){updateStuck();draw();};
+// ---- bot census ------------------------------------------------------------
+// Live head-count per behavior. Click a row to spotlight just that behavior
+// on the map (others dim); click again or 'all bots' to clear.
+let censusSel=new Set();
+function updateCensus(){
+ const nb=LIVE.entities.reduce((a,e)=>a+(e.k==="Bot"?1:0),0);
+ document.getElementById("censusBtn").textContent=`📊 bot census (${nb})`;
+ const el=document.getElementById("censusList");
+ if(el.style.display!=="block")return;
+ const counts={};
+ for(const e of LIVE.entities)if(e.k==="Bot")counts[e.b]=(counts[e.b]||0)+1;
+ const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+ el.innerHTML=
+  `<div class="crow${censusSel.size?"":" con"}" data-b="">all bots<b style="float:right">${nb}</b></div>`+
+  rows.map(([b,n])=>
+   `<div class="crow${censusSel.has(b)?" con":""}" data-b="${esc(b)}">`+
+   `<span style="color:${BEHAVIOR_COLORS[b]||"#3cff5a"}">●</span> ${esc(b)}`+
+   `<b style="float:right">${n}</b></div>`).join("");
+}
+document.getElementById("censusBtn").onclick=function(){
+ const el=document.getElementById("censusList");
+ const open=el.style.display!=="block";
+ el.style.display=open?"block":"none";
+ if(open)updateCensus();
+ else{censusSel.clear();draw();}
+};
+document.getElementById("censusList").onclick=function(e){
+ const row=e.target.closest(".crow");if(!row)return;
+ const b=row.dataset.b;
+ if(!b)censusSel.clear();
+ else if(censusSel.has(b))censusSel.delete(b);
+ else censusSel.add(b);
+ updateCensus();draw();
+};
+// ---- live event ticker -----------------------------------------------------
+// Scrolls the shard's journal (deaths, PK murders, duels, parties, logins)
+// bottom-left while Live is on. Click an event to jump to where it happened
+// (new events carry coords; older ones fall back to the bot / place name).
+const TICKER_COLORS={pk:"#ff4040",death:"#ff7070",faction:"#ff9040",
+ duel:"#ffc832",kill:"#9fdf7f",party:"#7fbfff",red:"#ff8080",
+ login:"#8a8a8a",logout:"#8a8a8a",trade:"#2ecc71"};
+let tickerTimer=null,tickerEvents=[];
+function pollTicker(){
+ fetch("/journal?n=18&ts="+Date.now()).then(r=>r.json()).then(d=>{
+  tickerEvents=(d.events||[]).slice().reverse(); // newest first
+  const el=document.getElementById("ticker");
+  if(!tickerEvents.length){
+   el.innerHTML="<h4>shard events</h4><i style='color:#777'>quiet so far…</i>";return;}
+  el.innerHTML="<h4>shard events</h4>"+tickerEvents.map((ev,i)=>{
+   const t=(ev.at||"").split(" ")[1]||"";
+   const c=TICKER_COLORS[ev.type]||"#ccc";
+   return `<div class="trow" data-i="${i}"><span style="color:#666">${esc(t)}</span> `+
+    `<b style="color:${c}">${esc(ev.type)}</b> ${esc(ev.actor)}`+
+    (ev.other?` <span style="color:#999">→</span> ${esc(ev.other)}`:"")+
+    (ev.place?` <span style="color:#7a9">@ ${esc(ev.place)}</span>`:"")+`</div>`;
+  }).join("");
+ }).catch(()=>{});
+}
+document.getElementById("ticker").onclick=function(e){
+ const row=e.target.closest(".trow");if(!row)return;
+ const ev=tickerEvents[+row.dataset.i];if(!ev)return;
+ if(ev.x!=null&&ev.y!=null){
+  centerOn(ev.x,ev.y,Math.max(scale,5));
+  document.getElementById("info").textContent=
+   `[event] ${ev.at}\n${ev.type}: ${ev.actor}${ev.other?" → "+ev.other:""}`+
+   `\n@ ${ev.place||"?"} (${ev.x}, ${ev.y})`;
+  return;}
+ // pre-coordinate events: jump to the live bot, else the named place
+ if(LIVE.entities.some(x=>x.k==="Bot"&&x.n===ev.actor)){gotoBot(ev.actor);return;}
+ const d=DESTS.find(d=>d.n&&ev.place&&d.n.toLowerCase()===ev.place.toLowerCase());
+ if(d)centerOn(d.x,d.y,Math.max(scale,4));
+};
+function startTicker(){
+ document.getElementById("ticker").style.display="block";
+ pollTicker();
+ if(!tickerTimer)tickerTimer=setInterval(pollTicker,5000);}
+function stopTicker(){
+ if(tickerTimer){clearInterval(tickerTimer);tickerTimer=null;}
+ document.getElementById("ticker").style.display="none";}
 function pollLive(){
  fetch("live.json?ts="+Date.now()).then(r=>r.ok?r.json():null).then(d=>{
   if(!d)return;LIVE=d;
   document.getElementById("liveStamp").textContent=
    "· "+(d.count||0)+" @ "+new Date().toLocaleTimeString();
+  updateStuck();updateCensus();
+  // follow mode: keep the camera pinned on the followed bot each poll,
+  // and refresh its card (status line / HP / leg move between polls).
+  if(followName){
+   const b=LIVE.entities.find(x=>x.k==="Bot"&&x.n===followName);
+   if(b){ox=b.x-cv.width/2/scale;oy=b.y-cv.height/2/scale;
+    if(liveSelName===followName)showBotCard(b);}
+  }
   if(document.getElementById("lLive").checked)draw();
  }).catch(()=>{});}
-function startLive(){pollLive();if(!liveTimer)liveTimer=setInterval(pollLive,3000);}
+function startLive(){pollLive();if(!liveTimer)liveTimer=setInterval(pollLive,3000);
+ startTicker();}
 function stopLive(){if(liveTimer){clearInterval(liveTimer);liveTimer=null;}
  LIVE={entities:[],count:0,map:null};
+ resetStuck(); // position history is meaningless across a live-view gap
+ stopTicker();
+ censusSel.clear();
+ document.getElementById("censusList").style.display="none";
+ document.getElementById("censusBtn").textContent="📊 bot census";
  document.getElementById("liveStamp").textContent="";draw();}
 document.getElementById("lLive").onchange=function(){
  document.getElementById("liveFilters").style.display=this.checked?"block":"none";
+ // ask the game to start/stop its snapshot timer (livemap_request bridge);
+ // harmless if the shard is down — live.json just stays stale/empty.
+ fetch("/livemap",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({on:this.checked,seconds:3})}).catch(()=>{});
  if(this.checked){startLive();
   document.getElementById("info").textContent=
-   "Live view ON. If empty, run [LiveMap on in-game. Bots are colored by "+
-   "behavior; toggle kinds + heatmap at left.";}
+   "Live view ON — snapshots requested from the game (auto; no [LiveMap "+
+   "needed). Bots are colored by behavior; search a bot's name above.";}
  else{stopLive();}};
 document.querySelectorAll(".lvF").forEach(c=>c.onchange=draw);
 document.getElementById("lHeat").onchange=draw;
-// Esc clears a selected bot's route
+// Esc clears bot selection + follow mode
 addEventListener("keydown",e=>{
- if(e.key==="Escape"&&liveSelName){liveSelName=null;draw();}});
+ if(e.key==="Escape"&&(liveSelName||followName)){
+  liveSelName=null;followName=null;updateFollowBanner();draw();}});
 // ---- waypoint coverage heatmap (distance-to-nearest-waypoint) ----
 function computeCoverage(){
  COV=null;
@@ -964,6 +1301,11 @@ document.getElementById("reloadGame").onclick=()=>triggerInGame(
  "/reload","/reload_status","reloading in game...",
  a=>"reloaded in game: "+a.waypoints+" waypoints, "+a.destinations+
     " destinations, "+a.zones+" zones",10);
+document.getElementById("genPKs").onclick=function(){
+ if(!confirm("Place the road-PK spawner set? (~17 born-red hunters on the "+
+   "travel routes; replaces any existing PK spawners)"))return;
+ triggerInGame("/genpks","/genpks_status","placing PK spawners in game...",
+  a=>"PKs armed: "+a.spawners+" spawner(s), ~"+a.pks+" red hunters on the roads",20);};
 document.getElementById("genBots").onclick=function(){
  if(!confirm("Regenerate the whole bot population? This clears all bots and "+
    "spawners and re-lays them (bank/shop crowds move to current arrival points)."))return;

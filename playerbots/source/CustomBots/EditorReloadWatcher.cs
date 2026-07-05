@@ -47,6 +47,16 @@ namespace Server.CustomBots
         private static readonly string LiveMapAck = Live("livemap_ack.json");
         private static readonly string PKsReq = Live("pks_request.txt");
         private static readonly string PKsAck = Live("pks_ack.json");
+        private static readonly string ThuntReq = Live("thunt_request.txt");
+        private static readonly string ThuntAck = Live("thunt_ack.json");
+        private static readonly string SosReq = Live("sos_request.txt");
+        private static readonly string SosAck = Live("sos_ack.json");
+        private static readonly string TameReq = Live("tame_request.txt");
+        private static readonly string TameAck = Live("tame_ack.json");
+        private static readonly string HousesReq = Live("houses_request.txt");
+        private static readonly string HousesAck = Live("houses_ack.json");
+        private static readonly string GotoReq = Live("goto_request.txt");
+        private static readonly string GotoAck = Live("goto_ack.json");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -58,6 +68,11 @@ namespace Server.CustomBots
         private static long _lastFaction = -1;
         private static long _lastLiveMap = -1;
         private static long _lastPKs = -1;
+        private static long _lastThunt = -1;
+        private static long _lastSos = -1;
+        private static long _lastTame = -1;
+        private static long _lastHouses = -1;
+        private static long _lastGoto = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads â€” registries and
@@ -74,6 +89,11 @@ namespace Server.CustomBots
             _lastFaction = ReadToken(FactionReq) ?? 0;
             _lastLiveMap = ReadLiveMapRequest(out _) ?? 0;
             _lastPKs = ReadToken(PKsReq) ?? 0;
+            _lastThunt = ReadToken(ThuntReq) ?? 0;
+            _lastSos = ReadToken(SosReq) ?? 0;
+            _lastTame = ReadToken(TameReq) ?? 0;
+            _lastHouses = ReadHousesRequest(out _, out _) ?? 0;
+            _lastGoto = ReadGotoRequest(out _) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -158,6 +178,194 @@ namespace Server.CustomBots
                 _lastPKs = pksTok.Value;
                 DoGenPKs(pksTok.Value);
             }
+
+            var thuntTok = ReadToken(ThuntReq);
+            if (thuntTok != null && thuntTok.Value != _lastThunt)
+            {
+                _lastThunt = thuntTok.Value;
+                DoTestThunt(thuntTok.Value);
+            }
+
+            var sosTok = ReadToken(SosReq);
+            if (sosTok != null && sosTok.Value != _lastSos)
+            {
+                _lastSos = sosTok.Value;
+                DoTestSos(sosTok.Value);
+            }
+
+            var tameTok = ReadToken(TameReq);
+            if (tameTok != null && tameTok.Value != _lastTame)
+            {
+                _lastTame = tameTok.Value;
+                DoTestTame(tameTok.Value);
+            }
+
+            var housesTok = ReadHousesRequest(out string housesOp, out int housesCount);
+            if (housesTok != null && housesTok.Value != _lastHouses)
+            {
+                _lastHouses = housesTok.Value;
+                DoHouses(housesTok.Value, housesOp, housesCount);
+            }
+
+            var gotoTok = ReadGotoRequest(out string gotoDest);
+            if (gotoTok != null && gotoTok.Value != _lastGoto)
+            {
+                _lastGoto = gotoTok.Value;
+                DoGoto(gotoTok.Value, gotoDest);
+            }
+        }
+
+        // goto_request.txt: "<token> <destination name>" — send a random
+        // eligible bot traveling to the named destination. Headless way to
+        // exercise a specific route (island ferries, new trails) on demand.
+        private static long? ReadGotoRequest(out string dest)
+        {
+            dest = null;
+            try
+            {
+                if (!File.Exists(GotoReq))
+                {
+                    return null;
+                }
+                var text = File.ReadAllText(GotoReq).Trim();
+                int sp = text.IndexOf(' ');
+                if (sp <= 0 || !long.TryParse(text[..sp], out var t))
+                {
+                    return null;
+                }
+                dest = text[(sp + 1)..].Trim();
+                return t;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void DoGoto(long token, string destName)
+        {
+            var dest = destName != null ? DestinationCatalog.GetByName(destName) : null;
+            if (dest == null)
+            {
+                Console.WriteLine($"[EditorReload] goto: unknown destination '{destName}'");
+                WriteAck(GotoAck, $"{{\"token\":{token},\"sent\":false}}");
+                return;
+            }
+
+            PlayerBot pick = null;
+            foreach (var m in World.Mobiles.Values)
+            {
+                if (m is PlayerBot bot && !bot.Deleted && bot.Alive &&
+                    !bot.LifecycleExempt && !bot.LoggingOut &&
+                    !bot.CorpseRunPending && bot.Combatant == null &&
+                    !BotPartyManager.IsInParty(bot) &&
+                    !DungeonRegistry.IsInDungeon(bot) &&
+                    (bot.Behavior is TravelerBehavior or BankSitterBehavior
+                                  or IdleBehavior or WanderBehavior))
+                {
+                    pick = bot;
+                    break;
+                }
+            }
+
+            if (pick == null)
+            {
+                WriteAck(GotoAck, $"{{\"token\":{token},\"sent\":false}}");
+                return;
+            }
+
+            pick.Behavior = new TravelerBehavior { DestinationName = dest.Name };
+            Console.WriteLine($"[goto] {pick.Name} sent to '{dest.Name}'");
+            WriteAck(GotoAck,
+                $"{{\"token\":{token},\"sent\":true," +
+                $"\"name\":\"{pick.Name.Replace("\"", "\\\"")}\"}}");
+        }
+
+        // houses_request.txt: "<token> scatter <n>" or "<token> clear" —
+        // headless [BotHouses for the housing spike.
+        private static long? ReadHousesRequest(out string op, out int count)
+        {
+            op = "scatter";
+            count = 50;
+            try
+            {
+                if (!File.Exists(HousesReq))
+                {
+                    return null;
+                }
+                var parts = File.ReadAllText(HousesReq).Trim().Split(' ',
+                    StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0 || !long.TryParse(parts[0], out var t))
+                {
+                    return null;
+                }
+                if (parts.Length > 1)
+                {
+                    op = parts[1].ToLowerInvariant();
+                }
+                if (parts.Length > 2 && int.TryParse(parts[2], out var n))
+                {
+                    count = n;
+                }
+                return t;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void DoHouses(long token, string op, int count)
+        {
+            try
+            {
+                if (op == "clear")
+                {
+                    int removed = BotHousing.Clear();
+                    WriteAck(HousesAck,
+                        $"{{\"token\":{token},\"op\":\"clear\",\"removed\":{removed}}}");
+                    return;
+                }
+                int placed = BotHousing.Scatter(Map.Felucca, count, out var ms, out var tried);
+                WriteAck(HousesAck,
+                    $"{{\"token\":{token},\"op\":\"scatter\",\"placed\":{placed}," +
+                    $"\"tried\":{tried},\"ms\":{ms}}}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] houses: {ex.Message}");
+                WriteAck(HousesAck, $"{{\"token\":{token},\"error\":true}}");
+            }
+        }
+
+        // thunt_request.txt: force-start a treasure hunt — headless
+        // equivalent of [BotThunt force.
+        private static void DoTestThunt(long token)
+        {
+            bool started = false;
+            try { started = BotTreasureHunts.TryStartHunt(force: true); }
+            catch (Exception ex) { Console.WriteLine($"[EditorReload] thunt: {ex.Message}"); }
+            WriteAck(ThuntAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
+        }
+
+        // sos_request.txt: force a fisherman to reel in an SOS bottle —
+        // headless equivalent of [BotSos force.
+        private static void DoTestSos(long token)
+        {
+            bool started = false;
+            try { started = BotSeaEvents.TryFishUpBottle(); }
+            catch (Exception ex) { Console.WriteLine($"[EditorReload] sos: {ex.Message}"); }
+            WriteAck(SosAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
+        }
+
+        // tame_request.txt: force a tamer to start working a quarry —
+        // headless equivalent of [BotTame force.
+        private static void DoTestTame(long token)
+        {
+            bool started = false;
+            try { started = BotTaming.TryStartTaming(force: true); }
+            catch (Exception ex) { Console.WriteLine($"[EditorReload] tame: {ex.Message}"); }
+            WriteAck(TameAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
         }
 
         // pks_request.txt: place the default road-PK spawner set (born-red

@@ -50,6 +50,11 @@ namespace Server.CustomBots
         // Miners work MiningSpots, Lumberjacks work LumberSpots.
         MiningSpot,
         LumberSpot,
+        // A synthetic wilderness dig site (BotTreasureHunts generates a
+        // few dozen from rural waypoint nodes). NEVER rolled organically
+        // (weight 0) — the treasure-hunt manager hands a bot the site as
+        // an explicit Traveler destination when a hunt starts.
+        TreasureSite,
 
         // ---- Dungeon points (see DungeonCrawlerBehavior / DungeonRegistry) ----
         // A surface teleporter into a dungeon. ROLLABLE like Dungeon: combat
@@ -352,6 +357,13 @@ namespace Server.CustomBots
                      or DestinationType.LumberSpot)
             {
                 return cls == BotClass.Ranger ? 0.15 : 0.02;
+            }
+
+            // Dig sites are never destinations in their own right — the
+            // treasure-hunt manager assigns them explicitly.
+            if (type == DestinationType.TreasureSite)
+            {
+                return 0.0;
             }
 
             // Hard exclusion: trader classes never travel to dangerous

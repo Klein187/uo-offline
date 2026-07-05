@@ -54,6 +54,12 @@ namespace Server.CustomBots
         public IReadOnlyList<ArrivalSpot> Arrivals { get; init; } =
             System.Array.Empty<ArrivalSpot>();
 
+        // Ferry pairing (see FerryTravel). A Dock with FerryTo set is a
+        // ferry terminal: bots arriving here may "board the boat" and be
+        // carried to the named partner dock. Pairs are authored in both
+        // directions in destinations.json. Empty = an ordinary dock.
+        public string FerryTo           { get; init; } = "";
+
         // ---- Dungeon scoping (see DungeonCrawlerBehavior / DungeonRegistry) ----
         // Dungeon tag. Empty for ordinary world destinations. A crawler only
         // sees/rolls points whose Dungeon matches its own — this is the
@@ -364,6 +370,9 @@ namespace Server.CustomBots
 
                     // Dungeon scoping fields (all optional; absent on ordinary
                     // world destinations).
+                    string ferryTo = el.TryGetProperty("FerryTo", out var fv)
+                        ? (fv.GetString() ?? "") : "";
+
                     string dungeon = el.TryGetProperty("Dungeon", out var dv)
                         ? (dv.GetString() ?? "") : "";
                     int level = el.TryGetProperty("Level", out var lv) ? lv.GetInt32() : 0;
@@ -387,6 +396,7 @@ namespace Server.CustomBots
                         NearestWaypoint  = wpName ?? "",
                         ArrivalPoint     = arrival,
                         Arrivals         = arrivals,
+                        FerryTo          = ferryTo,
                         Dungeon          = dungeon,
                         Level            = level,
                         Target           = target,
@@ -423,6 +433,7 @@ namespace Server.CustomBots
             // A reload wiped any synthetic entries — let the generators
             // put theirs back.
             GatherSpots.OnCatalogReloaded();
+            TreasureSites.OnCatalogReloaded();
 
             return loaded.Count;
         }

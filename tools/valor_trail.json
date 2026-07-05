@@ -1,0 +1,54 @@
+[
+  {
+    "Name": "Valor Trail 1",
+    "X": 2392,
+    "Y": 3899,
+    "Z": 0,
+    "Connects": []
+  },
+  {
+    "Name": "Valor Trail 2",
+    "X": 2402,
+    "Y": 3902,
+    "Z": 0,
+    "Connects": [
+      "Valor Trail 1"
+    ]
+  },
+  {
+    "Name": "Valor Trail 3",
+    "X": 2430,
+    "Y": 3902,
+    "Z": 0,
+    "Connects": [
+      "Valor Trail 2"
+    ]
+  },
+  {
+    "Name": "Valor Trail 4",
+    "X": 2458,
+    "Y": 3902,
+    "Z": 0,
+    "Connects": [
+      "Valor Trail 3"
+    ]
+  },
+  {
+    "Name": "Valor Trail 5",
+    "X": 2480,
+    "Y": 3919,
+    "Z": 0,
+    "Connects": [
+      "Valor Trail 4"
+    ]
+  },
+  {
+    "Name": "Valor Trail 6",
+    "X": 2492,
+    "Y": 3931,
+    "Z": 0,
+    "Connects": [
+      "Valor Trail 5"
+    ]
+  }
+]

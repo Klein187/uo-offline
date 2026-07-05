@@ -1278,7 +1278,8 @@
             "WP 990"
           ]
         }
-      ]
+      ],
+      "FerryTo": "Valor Landing"
     },
     {
       "Name": "Trinsic Provisioner 9",
@@ -3897,7 +3898,8 @@
             "magdock"
           ]
         }
-      ]
+      ],
+      "FerryTo": "Humility Landing"
     },
     {
       "Name": "Dock 118",
@@ -4770,63 +4772,6 @@
       ]
     },
     {
-      "Name": "Moongate 142",
-      "X": 4467,
-      "Y": 1283,
-      "Z": 5,
-      "Type": "Moongate",
-      "City": "Moonglow",
-      "NearestWaypoint": "WP 1127",
-      "Polygon": [
-        [
-          4465,
-          1279
-        ],
-        [
-          4470,
-          1280
-        ],
-        [
-          4471,
-          1287
-        ],
-        [
-          4465,
-          1288
-        ],
-        [
-          4464,
-          1283
-        ]
-      ],
-      "Arrivals": [
-        {
-          "X": 4469,
-          "Y": 1283,
-          "Z": 5,
-          "Waypoints": [
-            "WP 1356"
-          ]
-        },
-        {
-          "X": 4465,
-          "Y": 1284,
-          "Z": 0,
-          "Waypoints": [
-            "WP 1359"
-          ]
-        },
-        {
-          "X": 4468,
-          "Y": 1285,
-          "Z": 5,
-          "Waypoints": [
-            "WP 1362"
-          ]
-        }
-      ]
-    },
-    {
       "Name": "Despise lvl1 giantsspider L1 Room",
       "X": 5406,
       "Y": 725,
@@ -5079,6 +5024,30 @@
           "Waypoints": [
             "Moonglow Road 1"
           ]
+        },
+        {
+          "X": 4469,
+          "Y": 1283,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1356"
+          ]
+        },
+        {
+          "X": 4465,
+          "Y": 1284,
+          "Z": 0,
+          "Waypoints": [
+            "WP 1359"
+          ]
+        },
+        {
+          "X": 4468,
+          "Y": 1285,
+          "Z": 5,
+          "Waypoints": [
+            "WP 1362"
+          ]
         }
       ]
     },
@@ -5130,6 +5099,70 @@
           ]
         }
       ]
+    },
+    {
+      "Name": "Valor Landing",
+      "X": 2392,
+      "Y": 3899,
+      "Z": 0,
+      "Type": "Dock",
+      "City": "Valor Isle",
+      "NearestWaypoint": "Valor Trail 1",
+      "FerryTo": "Dock 48",
+      "Arrivals": [
+        {
+          "X": 2392,
+          "Y": 3899,
+          "Z": 0,
+          "Waypoints": [
+            "Valor Trail 1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Humility Landing",
+      "X": 4132,
+      "Y": 3692,
+      "Z": 0,
+      "Type": "Dock",
+      "City": "Humility Isle",
+      "NearestWaypoint": "Humility Trail 1",
+      "FerryTo": "Dock 117",
+      "Arrivals": [
+        {
+          "X": 4132,
+          "Y": 3692,
+          "Z": 0,
+          "Waypoints": [
+            "Humility Trail 1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Valor Shrine",
+      "X": 2492,
+      "Y": 3931,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Valor Isle",
+      "NearestWaypoint": "Valor Trail 6",
+      "ArrivalX": 2492,
+      "ArrivalY": 3931,
+      "ArrivalZ": 0
+    },
+    {
+      "Name": "Humility Shrine",
+      "X": 4274,
+      "Y": 3697,
+      "Z": 0,
+      "Type": "Shrine",
+      "City": "Humility Isle",
+      "NearestWaypoint": "Humility Trail 10",
+      "ArrivalX": 4274,
+      "ArrivalY": 3697,
+      "ArrivalZ": 0
     }
   ]
 }

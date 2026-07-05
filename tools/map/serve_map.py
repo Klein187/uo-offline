@@ -35,6 +35,24 @@ GENBOTS_REQ = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_request.txt")
 GENBOTS_ACK = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_ack.json")
+# Living-shard event journal (logins, deaths, duels, trades...). The bot
+# inspector's "recent history" feed greps this by actor name.
+JOURNAL_JSONL = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/event-journal.jsonl")
+# LiveMap on/off bridge: the editor's Live checkbox starts/stops the game's
+# snapshot timer directly (file content: "token seconds"; seconds<=0 = off).
+LIVEMAP_REQ = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/livemap_request.txt")
+LIVEMAP_ACK = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/livemap_ack.json")
+# Synthetic wilderness work sites, exported by the game at boot (GatherSpots).
+GATHER_JSON = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/gather_spots.json")
+# "Spawn road PKs" bridge (= [GeneratePKs): place the born-red hunter set.
+PKS_REQ = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_request.txt")
+PKS_ACK = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_ack.json")
 
 # Valid Kind values for a spawn record (drives generator type + filter layer).
 SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
@@ -229,8 +247,12 @@ def build_data():
         for c in w["co"]:
             if c in names and (c, w["n"]) not in done:
                 edges.append([w["n"], c]); done.add((w["n"], c))
+    gather = []
+    if os.path.exists(GATHER_JSON):
+        try: gather = jload(GATHER_JSON).get("spots", [])
+        except Exception: gather = []
     return {"dests": dests, "wps": wps, "edges": edges,
-            "zones": load_zones(), "spawns": load_spawns()}
+            "zones": load_zones(), "spawns": load_spawns(), "gather": gather}
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -240,6 +262,12 @@ class Handler(SimpleHTTPRequestHandler):
         # (windowless launch). That write happens inside send_response BEFORE any
         # bytes go out, so it crashes every request with an empty reply. Swallow it.
         pass
+    def end_headers(self):
+        # HTML must revalidate on every load — a browser-cached map.html
+        # silently hides new features while the JSON endpoints keep working.
+        if self.path.split("?")[0].endswith((".html", "/")):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
     def _json(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
@@ -270,9 +298,44 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as ex:
                 self.send_error(500, str(ex))
             return
-        if self.path.split("?")[0] in ("/reload_status", "/genbots_status"):
+        if self.path.split("?")[0] == "/journal":
+            # Recent journal events for one bot: /journal?bot=Name&n=12
+            # Tails the last chunk of event-journal.jsonl and keeps lines
+            # where the bot is the actor or the other party.
+            try:
+                from urllib.parse import urlparse, parse_qs
+                q = parse_qs(urlparse(self.path).query)
+                bot = (q.get("bot", [""])[0] or "").strip().lower()
+                n = max(1, min(50, int(q.get("n", ["12"])[0])))
+                events = []
+                if os.path.exists(JOURNAL_JSONL):
+                    with open(JOURNAL_JSONL, "rb") as f:
+                        f.seek(0, 2)
+                        size = f.tell()
+                        f.seek(max(0, size - 512 * 1024))
+                        chunk = f.read().decode("utf-8", "replace")
+                    for line in chunk.splitlines():
+                        try:
+                            ev = json.loads(line)
+                        except Exception:
+                            continue
+                        # no bot filter -> the ticker's "everything" feed
+                        if (not bot or ev.get("actor", "").lower() == bot or
+                                ev.get("other", "").lower() == bot):
+                            events.append(ev)
+                    events = events[-n:]
+                self._json(200, {"ok": True, "events": events})
+            except Exception as ex:
+                self._json(500, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] in ("/reload_status", "/genbots_status",
+                                       "/livemap_status", "/genpks_status"):
             # The game's EditorReloadWatcher writes these acks.
-            ack = RELOAD_ACK if self.path.split("?")[0] == "/reload_status" else GENBOTS_ACK
+            which = self.path.split("?")[0]
+            ack = (RELOAD_ACK if which == "/reload_status"
+                   else GENBOTS_ACK if which == "/genbots_status"
+                   else PKS_ACK if which == "/genpks_status"
+                   else LIVEMAP_ACK)
             try:
                 body = open(ack, "rb").read() if os.path.exists(ack) else b"{}"
                 self.send_response(200)
@@ -713,11 +776,15 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return
-        if self.path.split("?")[0] in ("/reload", "/genbots"):
+        if self.path.split("?")[0] in ("/reload", "/genbots", "/genpks"):
             # Bump a token; EditorReloadWatcher in-game acts on the change.
             #   /reload  -> reload waypoints + destinations(+arrivals) + zones
             #   /genbots -> re-lay the whole bot population ([GenerateBots)
-            req = RELOAD_REQ if self.path.split("?")[0] == "/reload" else GENBOTS_REQ
+            #   /genpks  -> place the road-PK spawner set ([GeneratePKs)
+            which = self.path.split("?")[0]
+            req = (RELOAD_REQ if which == "/reload"
+                   else PKS_REQ if which == "/genpks"
+                   else GENBOTS_REQ)
             try:
                 os.makedirs(os.path.dirname(req), exist_ok=True)
                 tok = 0
@@ -727,6 +794,27 @@ class Handler(SimpleHTTPRequestHandler):
                 tok += 1
                 open(req, "w").write(str(tok))
                 self._json(200, {"ok": True, "token": tok})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/livemap":
+            # {"on": true, "seconds": 3} -> bump livemap_request.txt.
+            # EditorReloadWatcher starts/stops the snapshot timer in-game.
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n)) if n else {}
+                on = bool(p.get("on", True))
+                secs = float(p.get("seconds", 3)) if on else 0
+                os.makedirs(os.path.dirname(LIVEMAP_REQ), exist_ok=True)
+                tok = 0
+                if os.path.exists(LIVEMAP_REQ):
+                    try:
+                        tok = int(open(LIVEMAP_REQ).read().split()[0])
+                    except Exception:
+                        tok = 0
+                tok += 1
+                open(LIVEMAP_REQ, "w").write(f"{tok} {secs:g}")
+                self._json(200, {"ok": True, "token": tok, "on": on, "seconds": secs})
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return

@@ -1,0 +1,90 @@
+[
+  {
+    "Name": "Moonglow Road 1",
+    "X": 4467,
+    "Y": 1275,
+    "Z": 0,
+    "Connects": []
+  },
+  {
+    "Name": "Moonglow Road 2",
+    "X": 4467,
+    "Y": 1247,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 1"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 3",
+    "X": 4467,
+    "Y": 1219,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 2"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 4",
+    "X": 4473,
+    "Y": 1195,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 3"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 5",
+    "X": 4485,
+    "Y": 1183,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 4"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 6",
+    "X": 4485,
+    "Y": 1177,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 5"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 7",
+    "X": 4484,
+    "Y": 1176,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 6"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 8",
+    "X": 4473,
+    "Y": 1176,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 7"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 9",
+    "X": 4472,
+    "Y": 1175,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 8"
+    ]
+  },
+  {
+    "Name": "Moonglow Road 10",
+    "X": 4471,
+    "Y": 1160,
+    "Z": 0,
+    "Connects": [
+      "Moonglow Road 9"
+    ]
+  }
+]
