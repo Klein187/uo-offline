@@ -540,6 +540,68 @@ namespace Server.CustomBots
             // Traveler; this one just has to not wander off the spot.
             if (_magicTravelPending) return;
 
+            // -- Trip progress watchdog --
+            // The stuck-recovery ladder can starve forever: a hard-blocked
+            // bot repaths, instantly "reaches" hop-0 (the node it's already
+            // standing at), the cycle counter resets, and it paces at 'cycle
+            // 1/3' for the rest of its session — 12k such events in one
+            // soak. Plans lie; DISTANCE doesn't: if the bot hasn't gotten
+            // meaningfully closer to its destination in TripStallLimit, the
+            // trip is dead — give it up. Three dead trips without progress
+            // from the same spot → rescue-teleport to the nearest moongate
+            // (same precedent as the MAROONED rescue).
+            if (!_hasArrived && !_moongateTripPending && bot.Alive &&
+                !bot.CorpseRunPending && _finalCoord.HasValue)
+            {
+                int dNow = Math.Max(Math.Abs(bot.X - _finalCoord.Value.X),
+                                    Math.Abs(bot.Y - _finalCoord.Value.Y));
+                if (_tripBestDist == int.MaxValue)
+                {
+                    // Baseline for a fresh trip. Deliberately does NOT
+                    // clear the stall streak � every new trip records a
+                    // "best" on its first tick, and clearing here made the
+                    // streak permanently unreachable (the same reset-
+                    // starvation bug this watchdog exists to fix).
+                    _tripStartDist = dNow;
+                    _tripBestDist = dNow;
+                    _tripBestAt = Core.Now;
+                }
+                else if (dNow + TripProgressTiles <= _tripBestDist)
+                {
+                    _tripBestDist = dNow;
+                    _tripBestAt = Core.Now;
+                    if (_tripStartDist - dNow >= 30)
+                    {
+                        _tripStalls = 0; // genuine travel � not a jam streak
+                    }
+                }
+                else if (_tripBestAt != DateTime.MinValue &&
+                         Core.Now - _tripBestAt > TripStallLimit)
+                {
+                    _tripStalls++;
+                    if (_tripStalls >= 2)
+                    {
+                        var rescueGate = NearestMoongate(bot);
+                        if (rescueGate != null)
+                        {
+                            Log(bot, $"STALLED {_tripStalls} trips running — " +
+                                     $"rescue-teleporting to '{rescueGate.Name}'");
+                            bot.MoveToWorld(
+                                rescueGate.ArrivalPoint ?? rescueGate.Location, bot.Map);
+                        }
+                        _tripStalls = 0;
+                    }
+                    else
+                    {
+                        Log(bot, $"No progress toward '{DestinationName}' in " +
+                                 $"{(int)TripStallLimit.TotalMinutes} min " +
+                                 $"(stall {_tripStalls}/3) — giving up the trip");
+                    }
+                    PickNewDestination(bot);
+                    return;
+                }
+            }
+
             // Dungeon entry: if the bot just stepped onto the entrance
             // teleporter, the game whisked it inside — convert it to a crawler
             // before doing anything else.
@@ -2128,6 +2190,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             _handoffRolled = false;
             _moongateTripPending = false;
             _magicTravelPending = false;
+            // Fresh trip, fresh progress watchdog (the stall STREAK counter
+            // deliberately survives — three dead trips in a row from the
+            // same wedge is what triggers the gate rescue).
+            _tripBestDist = int.MaxValue;
+            _tripBestAt = Core.Now;
             _gateResumeDestination = null;
             _dungeonEntry = false;
             _dungeonEntryArmed = false;
@@ -2180,6 +2247,16 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         // Consecutive NudgeAway calls where not one of the 8 directions
         // produced a step — the physically-wedged detector.
         private int _hopelessNudges;
+
+        // Trip progress watchdog (see Tick): closest the bot has been to
+        // _finalCoord this trip, when that record was set, and how many
+        // trips in a row died without progress.
+        private static readonly TimeSpan TripStallLimit = TimeSpan.FromMinutes(5);
+        private const int TripProgressTiles = 5;
+        private int _tripBestDist = int.MaxValue;
+        private int _tripStartDist = int.MaxValue;
+        private DateTime _tripBestAt = DateTime.MinValue;
+        private int _tripStalls;
 
         // Teleport a fully wedged bot to the nearest tile the engine will
         // accept a mobile on. Spiral outward so the extraction stays local
