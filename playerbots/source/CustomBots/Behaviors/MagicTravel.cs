@@ -221,14 +221,16 @@ namespace Server.CustomBots
                 var origin = bot.Location;
 
                 // A REAL gate pair — anyone nearby can use them while they
-                // stand. Both dissolve after the linger window.
-                Moongate here = null;
-                Moongate there = null;
+                // stand. Both dissolve after the linger window, and the
+                // BotTravelGate class self-cleans at world load so a
+                // restart mid-linger can't orphan permanent gates.
+                BotTravelGate here = null;
+                BotTravelGate there = null;
                 try
                 {
-                    here = new Moongate(landing, map);
+                    here = new BotTravelGate(landing, map);
                     here.MoveToWorld(origin, map);
-                    there = new Moongate(origin, map);
+                    there = new BotTravelGate(origin, map);
                     there.MoveToWorld(landing, map);
 
                     Effects.PlaySound(origin, map, GateSound);
