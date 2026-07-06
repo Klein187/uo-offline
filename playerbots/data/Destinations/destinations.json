@@ -687,25 +687,6 @@
       ]
     },
     {
-      "Name": "Britain Provisioner 4",
-      "X": 1624,
-      "Y": 1585,
-      "Z": 0,
-      "Type": "VendorProvisioner",
-      "City": "Britain",
-      "NearestWaypoint": "WP 16",
-      "Arrivals": [
-        {
-          "X": 1614,
-          "Y": 1585,
-          "Z": 0,
-          "Waypoints": [
-            "estbritprov4"
-          ]
-        }
-      ]
-    },
-    {
       "Name": "Britain Stables",
       "X": 1393,
       "Y": 1645,
