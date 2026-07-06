@@ -440,6 +440,16 @@ namespace Server.CustomBots
         public override bool ShouldCheckStatTimers => false;
 
         // -------------------------------------------------------------------
+        // Bots phase through crowds. The engine's CheckShove requires FULL
+        // stamina to step onto an occupied tile — so every road-weary bot
+        // bounced off the permanent bank-plaza crowds forever (the Britain
+        // stuck cluster: 500+ pacing events per soak at the bank streets).
+        // Bots ignore bodies when THEY move; a real player shoving a bot
+        // still pays the normal rules.
+        // -------------------------------------------------------------------
+        public override bool CheckShove(Mobile shoved) => true;
+
+        // -------------------------------------------------------------------
         // Order vs Chaos is LEGAL combat (IDEAS 2.1 phase 3): harming an
         // opposing faction bot is not a criminal act, so no gray flag and —
         // crucially — no guard whack. This is what lets shield wars rage in

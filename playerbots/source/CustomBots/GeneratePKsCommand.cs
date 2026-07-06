@@ -27,18 +27,36 @@ namespace Server.CustomBots
         private sealed record PKSpot(
             string MapName, int X, int Y, int Z, int Amount);
 
+        // Reds ambush where the guards are far and the marks are alone.
+        // The Brit->Trinsic corridor is the BUSIEST road on the shard —
+        // packing PKs there got them mobbed by groups of blues within
+        // minutes. One light presence stays there for the era feel; the
+        // rest hunt the lonely roads and the dungeon halls (rooms from the
+        // generated interior meshes — crawlers make perfect marks).
         private static readonly PKSpot[] Spots =
         {
-            // Britain -> Trinsic road — the main hunting ground.
-            new("Felucca", 1416, 2104, 15, 3),  // brit-trin crossroads
-            new("Felucca", 1492, 2225,  5, 3),  // mid Trinsic road
+            // One era-mandatory road ambush, kept light.
             new("Felucca", 1601, 2415,  5, 2),  // lower Trinsic road
-            new("Felucca", 1691, 2741, 10, 3),  // Trinsic approach
-            // Dungeon approaches.
-            new("Felucca", 1384, 1495, 10, 2),  // near Britain graveyard
-            // Wilderness chokepoints.
-            new("Felucca", 1367, 1756, 10, 2),  // Britain west road
-            new("Felucca", 1995, 2100,  0, 2),  // open country
+
+            // Lonely roads and trails.
+            new("Felucca",  327, 1480,  0, 3),  // Shame approach, far west of Yew
+            new("Felucca",  885, 1285,  0, 2),  // Orc Cave woods
+            new("Felucca", 1911,  440,  0, 2),  // Wrong approach, north mountains
+            new("Felucca", 2649,  470, -5, 2),  // Minoc north pass
+            new("Felucca", 1639, 3048,  0, 3),  // Honor jungle trail, S of Trinsic
+            new("Felucca", 4172,  588,  0, 2),  // Dagger Isle trail (Deceit pilgrims)
+            new("Felucca", 4559, 3742,  0, 2),  // Humility isle road to Hythloth
+
+            // Dungeon halls.
+            new("Felucca", 5407,  857,  0, 2),  // Despise L1
+            new("Felucca", 5136,  648,  0, 2),  // Deceit L2
+            new("Felucca", 5394,  126,  0, 2),  // Shame L1
+            new("Felucca", 5388, 2026,  0, 2),  // Covetous L1
+            new("Felucca", 5129,  907,  0, 2),  // Destard L1
+            new("Felucca", 5689,  568,  0, 2),  // Wrong L2
+            new("Felucca", 5681, 1436,  0, 2),  // Fire L1
+            new("Felucca", 5904,   16,  0, 2),  // Hythloth L1
+            new("Felucca", 5704,  145,  0, 2),  // Ice L1
         };
 
         // PK spawners respawn slower than town spawners — a road shouldn't

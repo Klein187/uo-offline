@@ -108,6 +108,9 @@ namespace Server.CustomBots
             {
                 bot.Kills = Utility.RandomMinMax(5, 20);
             }
+            // The camp anchor: dungeon-spawned reds hold their hall.
+            _camp = bot.Location;
+
             // Patrol via an internal Traveler — reuse all the road
             // navigation, waypoint following, and fluid movement.
             _patrol = new TravelerBehavior();
@@ -135,9 +138,35 @@ namespace Server.CustomBots
             }
         }
 
+        // Pack cohesion + dungeon camping state.
+        private Point3D _camp;
+        private DateTime _nextPackMove;
+        private DateTime _nextCampShuffle;
+
         // ---- PATROL ------------------------------------------------------
         private void TickPatrol(PlayerBot bot)
         {
+            // Dungeon reds CAMP their hall instead of road-patrolling: the
+            // patrol Traveler's surface destination rolls would churn
+            // (everything is unreachable from a dungeon component) and its
+            // maroon-rescue would teleport the red OUT of the dungeon.
+            // Camping the spawn room and jumping whoever walks in is
+            // exactly what dungeon PKs did anyway.
+            if (DungeonRegistry.IsInDungeon(bot))
+            {
+                TickDungeonCamp(bot);
+                if (Core.Now >= _nextScan)
+                {
+                    _nextScan = Core.Now + ScanInterval;
+                    var mark = FindVictim(bot);
+                    if (mark != null)
+                    {
+                        BeginHunt(bot, mark);
+                    }
+                }
+                return;
+            }
+
             // Guard-aware patrol: if the PK has wandered into a guarded
             // region (the town-spanning waypoint graph can route it
             // through Britain etc.), abandon the current route and head
@@ -147,6 +176,24 @@ namespace Server.CustomBots
             {
                 RetreatFromTown(bot);
                 return;
+            }
+
+            // Pack cohesion: reds roam in gangs. When a fellow red is
+            // nearby but drifting away, close ranks instead of walking the
+            // route this tick — packs stay packs, and a gang of three is a
+            // lot harder for a group of blues to mob than a lone red.
+            if (Core.Now >= _nextPackMove)
+            {
+                _nextPackMove = Core.Now + TimeSpan.FromSeconds(8);
+                var mate = NearestPackmate(bot);
+                if (mate != null && !bot.InRange(mate.Location, 12))
+                {
+                    var dir = bot.GetDirectionTo(mate.Location);
+                    bot.Direction = dir;
+                    bot.Move(dir);
+                    bot.Move(dir);
+                    return;
+                }
             }
 
             // Drive the underlying Traveler so the PK keeps moving.
@@ -161,6 +208,71 @@ namespace Server.CustomBots
             {
                 BeginHunt(bot, victim);
             }
+        }
+
+        // Dungeon camp: shuffle around the spawn room like a bored sentry.
+        // No Traveler, no destination rolls — the red owns this hall until
+        // something walks in.
+        private void TickDungeonCamp(PlayerBot bot)
+        {
+            // The halls bite: fight the room's spawn back. A red that
+            // ignores the monsters gets ground down and journals
+            // embarrassing self-attributed deaths. With Combatant set the
+            // bot's normal auto-combat does the rest.
+            if (bot.Combatant is not Mobile cur || !cur.Alive || cur.Deleted)
+            {
+                foreach (var m in bot.GetMobilesInRange(8))
+                {
+                    if (m is BaseCreature bc && bc.Alive && !bc.Deleted &&
+                        bc.Combatant == bot)
+                    {
+                        bot.Combatant = bc;
+                        break;
+                    }
+                }
+            }
+
+            if (Core.Now < _nextCampShuffle)
+            {
+                return;
+            }
+            _nextCampShuffle = Core.Now +
+                TimeSpan.FromSeconds(Utility.RandomMinMax(4, 10));
+
+            if (bot.InRange(_camp, 8))
+            {
+                var dir = (Direction)Utility.Random(8);
+                bot.Direction = dir;
+                bot.Move(dir);
+            }
+            else
+            {
+                var back = bot.GetDirectionTo(_camp);
+                bot.Direction = back;
+                bot.Move(back);
+                bot.Move(back);
+            }
+        }
+
+        // The nearest fellow red in sight — the gang to close ranks with.
+        private static PlayerBot NearestPackmate(PlayerBot bot)
+        {
+            PlayerBot best = null;
+            int bestD = int.MaxValue;
+            foreach (var m in bot.GetMobilesInRange(30))
+            {
+                if (m is PlayerBot other && other != bot && !other.Deleted &&
+                    other.Alive && other.Behavior is PKBehavior)
+                {
+                    int d = (int)bot.GetDistanceToSqrt(other.Location);
+                    if (d < bestD)
+                    {
+                        bestD = d;
+                        best = other;
+                    }
+                }
+            }
+            return best;
         }
 
         // PK is in a guarded region — walk straight out. Step toward the
