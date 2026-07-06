@@ -58,6 +58,21 @@ namespace Server.CustomBots
         // How far a gang-mate will be pulled in to converge on a victim.
         private const int GangConvergeRange = 20;
 
+        // ---- Pack + crowd rules ------------------------------------------
+        // A red is a coward alone: it only HUNTS with at least one fellow
+        // red nearby (a pack of 2+), and it breaks off when blues gather —
+        // a mob of blues is how lone reds die on a busy road.
+        private const int PackRange = 26;         // fellow reds this close = pack
+        private const int CrowdRange = 12;        // blues this close = the crowd
+        private const int CrowdRetreatCount = 3;  // this many blues (or more
+                                                  // than the pack) = back off
+
+        // The editor-drawn leash. When set, the PK prowls ONLY inside this
+        // area and never walks toward a town.
+        private PKSpawnDef _hunt;
+        private DateTime _nextRoamPick;
+        private Point3D _roamTarget;
+
         // ---- State -------------------------------------------------------
         private enum Phase { Patrol, Hunt, Flee, Loot }
         private Phase _phase = Phase.Patrol;
@@ -111,6 +126,10 @@ namespace Server.CustomBots
             // The camp anchor: dungeon-spawned reds hold their hall.
             _camp = bot.Location;
 
+            // Pick up the editor-drawn hunt leash for this spawn point, if
+            // any — a leashed PK never uses the road patrol at all.
+            _hunt = PKSpawnData.HuntAreaFor(bot.Location);
+
             // Patrol via an internal Traveler — reuse all the road
             // navigation, waypoint following, and fluid movement.
             _patrol = new TravelerBehavior { AvoidTowns = true };
@@ -158,11 +177,21 @@ namespace Server.CustomBots
                 if (Core.Now >= _nextScan)
                 {
                     _nextScan = Core.Now + ScanInterval;
-                    var mark = FindVictim(bot);
-                    if (mark != null)
-                    {
-                        BeginHunt(bot, mark);
-                    }
+                    TryBeginPackHunt(bot);
+                }
+                return;
+            }
+
+            // Leashed to an editor-drawn hunt area: prowl inside the
+            // polygon, never toward a town. Replaces the road patrol
+            // entirely for these reds.
+            if (_hunt != null)
+            {
+                TickHuntAreaRoam(bot);
+                if (Core.Now >= _nextScan)
+                {
+                    _nextScan = Core.Now + ScanInterval;
+                    TryBeginPackHunt(bot);
                 }
                 return;
             }
@@ -203,11 +232,138 @@ namespace Server.CustomBots
             if (Core.Now < _nextScan) return;
             _nextScan = Core.Now + ScanInterval;
 
+            TryBeginPackHunt(bot);
+        }
+
+        // Prowl the editor-drawn hunt polygon: pick a random interior point
+        // and walk to it, staying inside the leash. Reds bunch up (pack
+        // cohesion) so a drawn area holds a gang, not scattered singles.
+        private void TickHuntAreaRoam(PlayerBot bot)
+        {
+            // Outside the leash (spawn scatter, a knockback) — walk back in.
+            if (!_hunt.Contains(bot.X, bot.Y))
+            {
+                var home = bot.GetDirectionTo(_hunt.Centroid());
+                bot.Direction = home;
+                bot.Move(home);
+                bot.Move(home);
+                return;
+            }
+
+            // Close ranks with a nearby packmate first.
+            if (Core.Now >= _nextPackMove)
+            {
+                _nextPackMove = Core.Now + TimeSpan.FromSeconds(8);
+                var mate = NearestPackmate(bot);
+                if (mate != null && _hunt.Contains(mate.X, mate.Y) &&
+                    !bot.InRange(mate.Location, 6))
+                {
+                    var dir = bot.GetDirectionTo(mate.Location);
+                    bot.Direction = dir;
+                    bot.Move(dir);
+                    bot.Move(dir);
+                    return;
+                }
+            }
+
+            if (Core.Now >= _nextRoamPick || _roamTarget == Point3D.Zero ||
+                bot.InRange(_roamTarget, 3))
+            {
+                _roamTarget = RandomPointInHunt(bot);
+                _nextRoamPick = Core.Now +
+                    TimeSpan.FromSeconds(Utility.RandomMinMax(6, 14));
+            }
+            if (_roamTarget != Point3D.Zero && !bot.InRange(_roamTarget, 2))
+            {
+                var dir = bot.GetDirectionTo(_roamTarget);
+                bot.Direction = dir;
+                bot.Move(dir);
+            }
+        }
+
+        private Point3D RandomPointInHunt(PlayerBot bot)
+        {
+            if (_hunt.Hunt == null || _hunt.Hunt.Length < 3)
+            {
+                return _hunt.Location;
+            }
+            int minX = int.MaxValue, minY = int.MaxValue;
+            int maxX = int.MinValue, maxY = int.MinValue;
+            foreach (var p in _hunt.Hunt)
+            {
+                minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
+                minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
+            }
+            for (int i = 0; i < 12; i++)
+            {
+                int x = Utility.RandomMinMax(minX, maxX);
+                int y = Utility.RandomMinMax(minY, maxY);
+                if (_hunt.Contains(x, y))
+                {
+                    return new Point3D(x, y, bot.Z);
+                }
+            }
+            return _hunt.Centroid();
+        }
+
+        // A red only commits to a hunt with a pack (2+ reds) and only when
+        // it isn't swamped by blues. This is the "roam in groups, don't
+        // suicide into a crowd" rule.
+        private void TryBeginPackHunt(PlayerBot bot)
+        {
+            if (PackSize(bot) < 2)
+            {
+                return; // lone red — prowls, but won't start a fight
+            }
+            if (BlueCrowd(bot) >= Math.Max(CrowdRetreatCount, PackSize(bot) + 1))
+            {
+                return; // too many blues about — bide
+            }
             var victim = FindVictim(bot);
             if (victim != null)
             {
                 BeginHunt(bot, victim);
             }
+        }
+
+        // Fellow reds within pack range, counting this bot.
+        private static int PackSize(PlayerBot bot)
+        {
+            int n = 1;
+            foreach (var m in bot.GetMobilesInRange(PackRange))
+            {
+                if (m != bot && m is PlayerBot other && !other.Deleted &&
+                    other.Alive && other.Behavior is PKBehavior)
+                {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        // Blues (players + non-red bots) close enough to gang up.
+        private static int BlueCrowd(PlayerBot bot)
+        {
+            int n = 0;
+            foreach (var m in bot.GetMobilesInRange(CrowdRange))
+            {
+                if (m == bot || m.Deleted || !m.Alive)
+                {
+                    continue;
+                }
+                if (m is PlayerBot pb)
+                {
+                    if (pb.Behavior is not PKBehavior)
+                    {
+                        n++;
+                    }
+                }
+                else if (m.Player && m is PlayerMobile)
+                {
+                    n++;
+                }
+            }
+            return n;
         }
 
         // Dungeon camp: shuffle around the spawn room like a bored sentry.
@@ -590,8 +746,18 @@ namespace Server.CustomBots
         // ---- HELPERS -----------------------------------------------------
         private bool ShouldFlee(PlayerBot bot)
         {
-            if (bot.HitsMax <= 0) return false;
-            return (double)bot.Hits / bot.HitsMax < FleeHealthPct;
+            if (bot.HitsMax > 0 &&
+                (double)bot.Hits / bot.HitsMax < FleeHealthPct)
+            {
+                return true;
+            }
+            // Blues gathered mid-fight — a mob is death for a red. Break off
+            // if the crowd swelled past the pack.
+            if (BlueCrowd(bot) >= Math.Max(CrowdRetreatCount, PackSize(bot) + 1))
+            {
+                return true;
+            }
+            return false;
         }
 
         private void Taunt(PlayerBot bot)

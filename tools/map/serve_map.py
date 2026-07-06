@@ -53,6 +53,9 @@ PKS_REQ = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_request.txt")
 PKS_ACK = os.path.expanduser(
     "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_ack.json")
+# Editor-authored PK spawns + hunt-area polygons (read by PKSpawnData).
+PK_SPAWNS_JSON = os.path.expanduser(
+    "~/uo-modernuo/ModernUO/Distribution/Data/CustomSpawns/pk_spawns.json")
 
 # Valid Kind values for a spawn record (drives generator type + filter layer).
 SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
@@ -251,8 +254,13 @@ def build_data():
     if os.path.exists(GATHER_JSON):
         try: gather = jload(GATHER_JSON).get("spots", [])
         except Exception: gather = []
+    pkspawns = []
+    if os.path.exists(PK_SPAWNS_JSON):
+        try: pkspawns = jload(PK_SPAWNS_JSON).get("Spawns", [])
+        except Exception: pkspawns = []
     return {"dests": dests, "wps": wps, "edges": edges,
-            "zones": load_zones(), "spawns": load_spawns(), "gather": gather}
+            "zones": load_zones(), "spawns": load_spawns(), "gather": gather,
+            "pkspawns": pkspawns}
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -349,6 +357,61 @@ class Handler(SimpleHTTPRequestHandler):
             return
         super().do_GET()
     def do_POST(self):
+        if self.path.split("?")[0] == "/pk_save":
+            # Body: {name, x, y, z, amount, hunt:[[x,y],...]}. Appends a PK
+            # spawn (with optional hunt polygon) to pk_spawns.json.
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                rec = {
+                    "name": p.get("name") or f"PK {int(p['x'])},{int(p['y'])}",
+                    "x": int(p["x"]), "y": int(p["y"]), "z": int(p.get("z", 0)),
+                    "amount": max(1, int(p.get("amount", 3))),
+                }
+                hunt = p.get("hunt") or []
+                if len(hunt) >= 3:
+                    rec["hunt"] = [[int(a), int(b)] for a, b in hunt]
+                data = {"Spawns": []}
+                if os.path.exists(PK_SPAWNS_JSON):
+                    try: data = jload(PK_SPAWNS_JSON)
+                    except Exception: data = {"Spawns": []}
+                data.setdefault("Spawns", [])
+                data["Spawns"] = [e for e in data["Spawns"]
+                                  if (e.get("name") or "").lower() != rec["name"].lower()]
+                data["Spawns"].append(rec)
+                os.makedirs(os.path.dirname(PK_SPAWNS_JSON), exist_ok=True)
+                if os.path.exists(PK_SPAWNS_JSON):
+                    import shutil; shutil.copy(PK_SPAWNS_JSON, PK_SPAWNS_JSON + ".bak")
+                open(PK_SPAWNS_JSON, "w", encoding="utf-8").write(
+                    json.dumps(data, indent=2))
+                self._json(200, {"ok": True, "name": rec["name"],
+                                 "count": len(data["Spawns"])})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/pk_del":
+            # Body: {name}. Removes a PK spawn from pk_spawns.json.
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                name = (p.get("name") or "").lower()
+                data = {"Spawns": []}
+                if os.path.exists(PK_SPAWNS_JSON):
+                    try: data = jload(PK_SPAWNS_JSON)
+                    except Exception: data = {"Spawns": []}
+                before = len(data.get("Spawns", []))
+                data["Spawns"] = [e for e in data.get("Spawns", [])
+                                  if (e.get("name") or "").lower() != name]
+                import shutil
+                if os.path.exists(PK_SPAWNS_JSON):
+                    shutil.copy(PK_SPAWNS_JSON, PK_SPAWNS_JSON + ".bak")
+                open(PK_SPAWNS_JSON, "w", encoding="utf-8").write(
+                    json.dumps(data, indent=2))
+                self._json(200, {"ok": True,
+                                 "removed": before - len(data["Spawns"])})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
         if self.path.split("?")[0] == "/zone_dest":
             try:
                 n = int(self.headers.get("Content-Length", 0))

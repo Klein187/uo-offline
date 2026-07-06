@@ -62,7 +62,12 @@
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="PlayerBotFixed" checked> <span style="color:#3498db">BotF</span></label>
   <label style="display:inline"><input type="checkbox" class="spF" data-k="PlayerBotLifecycle" checked> <span style="color:#9b59b6">BotL</span></label>
  </div>
- <label style="color:#7dc383"><input type="checkbox" id="lGather" checked> Gather spots</label>
+ <label style="color:#e8a0a0"><input type="checkbox" id="lPK" checked> PK spawns</label>
+ <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
+ <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
+  click = add hunt-area corner &middot; Enter = save (asks name + count)<br>Esc = cancel
+ </div>
+ <label style="color:#e07a5f"><input type="checkbox" id="lDigs"> Dig sites</label>
 <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
  <label style="color:#9fffd0"><input type="checkbox" id="lLive"> Live entities <span id="liveStamp" style="color:#888;font-size:11px"></span></label>
  <div id="liveFilters" style="display:none;font-size:11px;margin:1px 0 3px 16px;color:#bbb">
@@ -118,8 +123,8 @@
  <button id="reloadGame" style="width:100%;margin-top:6px;padding:5px;background:#3a2d5a"
    title="Hot-reload waypoints, destinations/arrivals and zones in the running game">
    &#8635; Reload in game</button>
- <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33">
-  ☠ Spawn road PKs</button>
+ <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33" title="Place the PK spawns drawn in the editor (pk_spawns.json)">
+  ☠ Place PK spawns in game</button>
 <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
    &#9851; Regenerate bots in game</button>
@@ -138,6 +143,7 @@
 </div>
 <script>
 let DESTS=[], WPS=[], EDGES=[], ZONES=[], GATHER=[], wpByName={};
+let PKSPAWNS=[], pkSel=null;
 let drawPts=[], selZone=-1, dotDrag=null, wpDrag=null, wpSel=null, destSel=null, arrDrag=null, arrSel=null;
 const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085",
  Stables:"#795548",VendorSmith:"#34495e",VendorWeaponer:"#788ca0",VendorMage:"#2980b9",
@@ -175,6 +181,7 @@ function loadData(){
  }).then(d=>{
   DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[]; SPAWNS=d.spawns||[];
   GATHER=d.gather||[];
+  PKSPAWNS=d.pkspawns||[];
   wpByName={}; WPS.forEach(w=>wpByName[w.n]=w);
   COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
@@ -305,6 +312,37 @@ function draw(){
   ctx.strokeStyle="#aef3b4";ctx.lineWidth=1.5;ctx.stroke();
   if(scale>=5){ctx.fillStyle="#aef3b4";ctx.font="10px sans-serif";
    ctx.fillText(g.n,x+s2+2,y+3);}}
+ // dig sites: TreasureSite destinations, highlighted on their own toggle
+ if(document.getElementById("lDigs").checked)for(const d of DESTS){
+  if(d.t!=="TreasureSite")continue;const[x,y]=T(d.x,d.y);
+  if(x<-12||y<-12||x>cv.width+12||y>cv.height+12)continue;
+  const s3=Math.max(4,scale*1.1);ctx.fillStyle="#e07a5f";
+  ctx.beginPath();ctx.moveTo(x,y-s3);ctx.lineTo(x+s3,y);
+  ctx.lineTo(x,y+s3);ctx.lineTo(x-s3,y);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#ffd9c8";ctx.lineWidth=1.5;ctx.stroke();
+  if(scale>=5){ctx.fillStyle="#ffd9c8";ctx.font="10px sans-serif";
+   ctx.fillText(d.n,x+s3+2,y+3);}}
+ // PK spawns: red star markers + their hunt-area polygons
+ if(document.getElementById("lPK").checked)for(const s of PKSPAWNS){
+  if(s.hunt&&s.hunt.length>=3){ctx.beginPath();
+   for(let j=0;j<s.hunt.length;j++){const[hx,hy]=T(s.hunt[j][0],s.hunt[j][1]);
+    j?ctx.lineTo(hx,hy):ctx.moveTo(hx,hy);}
+   ctx.closePath();ctx.fillStyle="#b0303055";ctx.fill();
+   ctx.strokeStyle="#ff5555";ctx.lineWidth=1.5;ctx.stroke();}
+  const[x,y]=T(s.x,s.y);
+  if(x<-30||y<-30||x>cv.width+30||y>cv.height+30)continue;
+  ctx.fillStyle="#ff3030";ctx.font="bold "+Math.max(12,scale*1.6)+"px sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("☠",x,y);
+  ctx.textAlign="left";ctx.textBaseline="alphabetic";
+  if(scale>=4){ctx.fillStyle="#ffb0b0";ctx.font="10px sans-serif";
+   ctx.fillText(s.name+" ("+(s.amount||3)+")",x+8,y+3);}}
+ // in-progress PK hunt-area sketch
+ if(document.getElementById("editPK").checked&&drawPts.length){ctx.beginPath();
+  for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
+   j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.strokeStyle="#ff8080";ctx.lineWidth=2;ctx.stroke();
+  for(const p of drawPts){const[x,y]=T(p[0],p[1]);
+   ctx.fillStyle="#ff8080";ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();}}
  if(lSpawns.checked){const sf=spawnFilterSet();
   for(const s of SPAWNS){if(!sf.has(s.Kind))continue;
    const[x,y]=T(s.X,s.Y);
@@ -386,7 +424,7 @@ function draw(){
      ctx.fillRect(px-3,py-3,6,6);ctx.strokeRect(px-3,py-3,6,6);}}}
  }
 }
-["lEdges","lWps","lDests","lLabels","lSpawns","lGather"].forEach(id=>document.getElementById(id).onchange=draw);
+["lEdges","lWps","lDests","lLabels","lSpawns","lPK","lDigs"].forEach(id=>document.getElementById(id).onchange=draw);
 document.querySelectorAll(".spF").forEach(c=>c.onchange=draw);
 let drag=null,moved=0;
 cv.onmousedown=e=>{
@@ -537,6 +575,7 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
  if(drag&&moved<5){
   if(editSpawns.checked)spawnClick(e.clientX,e.clientY);
   else if(editZones.checked)editClick(e.clientX,e.clientY);
+  else if(document.getElementById("editPK").checked)pkClick(e.clientX,e.clientY);
   else if(document.getElementById("editDungeon").checked)dungeonClick(e.clientX,e.clientY);
   else inspect(e.clientX,e.clientY);
  }
@@ -855,6 +894,17 @@ function saveZones(){
   loadData();})
  .catch(e=>{document.getElementById("info").textContent="save failed: "+e;});}
 addEventListener("keydown",e=>{
+ if(document.getElementById("editPK").checked){
+  if(e.key==="Enter"&&drawPts.length>=3){savePK();}
+  else if(e.key==="Escape"){drawPts=[];pkSel=null;draw();}
+  else if((e.key==="Delete"||e.key==="Backspace")&&pkSel){
+   if(confirm(`Delete PK spawn '${pkSel.name}'?`)){
+    fetch("/pk_del",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({name:pkSel.name})})
+    .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+     r.ok?`removed PK spawn (${r.removed})`:"delete failed: "+r.error;
+     pkSel=null;loadData();});}}
+  return;}
  if(!editZones.checked)return;
  if(e.key==="Enter"&&drawPts.length>=3){
   const kind=document.getElementById("zKind").value;
@@ -912,6 +962,47 @@ addEventListener("keydown",e=>{
  }else if(e.key==="Delete"&&selZone>=0){
   if(confirm(`Delete zone '${ZONES[selZone].Name}'?`)){
    ZONES.splice(selZone,1);selZone=-1;saveZones();}}});
+// ---- PK spawn / hunt-area editor ----
+function pkClick(px,py){
+ const r=cv.getBoundingClientRect();
+ const tx=Math.round((px-r.left)/scale+viewX), ty=Math.round((py-r.top)/scale+viewY);
+ // click on an existing PK marker (no sketch in progress) = select to delete
+ if(drawPts.length===0){
+  for(const s of PKSPAWNS){if(dist(tx,ty,s.x,s.y)<Math.max(8,12/scale)){
+   pkSel=s;document.getElementById("info").textContent=
+    `[PK spawn] ${s.name} (${s.x},${s.y}) count ${s.amount||3}`+
+    (s.hunt?` · ${s.hunt.length}-corner hunt area`:" · no hunt area")+
+    `
+Delete = remove`;
+   draw();return;}}
+ }
+ pkSel=null;drawPts.push([tx,ty]);
+ document.getElementById("info").textContent=
+  `PK hunt area: ${drawPts.length} corner(s)
+Enter = save (name + count), Esc = cancel`;
+ draw();}
+function savePK(){
+ const cx=Math.round(drawPts.reduce((a,p)=>a+p[0],0)/drawPts.length);
+ const cy=Math.round(drawPts.reduce((a,p)=>a+p[1],0)/drawPts.length);
+ const name=prompt("PK spawn name:","PK "+(PKSPAWNS.length+1));
+ if(!name){return;}
+ const amt=parseInt(prompt("How many PKs at this spawn?","3")||"3",10)||3;
+ fetch("/pk_save",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name:name,x:cx,y:cy,z:0,amount:amt,hunt:drawPts})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?`saved PK spawn '${r.name}' — ${r.count} total
+Use the ☠ button to (re)place them in game.`
+   :"save failed: "+r.error;
+  drawPts=[];loadData();});}
+document.getElementById("editPK").onchange=function(){
+ drawPts=[];pkSel=null;
+ if(this.checked){
+  for(const id of ["editZones","editSpawns","editDungeon"]){
+   const o=document.getElementById(id);if(o&&o.checked){o.checked=false;o.onchange&&o.onchange();}}
+  document.getElementById("lPK").checked=true;draw();}
+ document.getElementById("pkCtl").style.display=this.checked?"block":"none";
+ draw();};
 document.getElementById("editZones").onchange=function(){
  drawPts=[];selZone=-1;
  if(this.checked){const es=document.getElementById("editSpawns");

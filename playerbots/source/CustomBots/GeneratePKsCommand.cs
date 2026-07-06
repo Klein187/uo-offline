@@ -27,37 +27,9 @@ namespace Server.CustomBots
         private sealed record PKSpot(
             string MapName, int X, int Y, int Z, int Amount);
 
-        // Reds ambush where the guards are far and the marks are alone.
-        // The Brit->Trinsic corridor is the BUSIEST road on the shard —
-        // packing PKs there got them mobbed by groups of blues within
-        // minutes. One light presence stays there for the era feel; the
-        // rest hunt the lonely roads and the dungeon halls (rooms from the
-        // generated interior meshes — crawlers make perfect marks).
-        private static readonly PKSpot[] Spots =
-        {
-            // One era-mandatory road ambush, kept light.
-            new("Felucca", 1601, 2415,  5, 2),  // lower Trinsic road
-
-            // Lonely roads and trails.
-            new("Felucca",  327, 1480,  0, 3),  // Shame approach, far west of Yew
-            new("Felucca",  885, 1285,  0, 2),  // Orc Cave woods
-            new("Felucca", 1911,  440,  0, 2),  // Wrong approach, north mountains
-            new("Felucca", 2768,  500, 15, 2),  // Minoc-Vesper high pass (125 tiles from town)
-            new("Felucca", 1639, 3048,  0, 3),  // Honor jungle trail, S of Trinsic
-            new("Felucca", 4172,  588,  0, 2),  // Dagger Isle trail (Deceit pilgrims)
-            new("Felucca", 4559, 3742,  0, 2),  // Humility isle road to Hythloth
-
-            // Dungeon halls.
-            new("Felucca", 5407,  857,  0, 2),  // Despise L1
-            new("Felucca", 5136,  648,  0, 2),  // Deceit L2
-            new("Felucca", 5394,  126,  0, 2),  // Shame L1
-            new("Felucca", 5388, 2026,  0, 2),  // Covetous L1
-            new("Felucca", 5129,  907,  0, 2),  // Destard L1
-            new("Felucca", 5689,  568,  0, 2),  // Wrong L2
-            new("Felucca", 5681, 1436,  0, 2),  // Fire L1
-            new("Felucca", 5904,   16,  0, 2),  // Hythloth L1
-            new("Felucca", 5704,  145,  0, 2),  // Ice L1
-        };
+        // PK spawns are DATA now — drawn in the map editor and stored in
+        // Data/CustomSpawns/pk_spawns.json (see PKSpawnData). No hardcoded
+        // set: an empty file means no reds until you place some.
 
         // PK spawners respawn slower than town spawners — a road shouldn't
         // instantly refill with killers after you clear it.
@@ -107,23 +79,42 @@ namespace Server.CustomBots
         // decide (both current callers clear before placing).
         public static (int placed, int totalPKs) PlaceDefault()
         {
+            var defs = PKSpawnData.Load();
+            var map = Map.Felucca;
             int placed = 0, totalPKs = 0;
-            foreach (var s in Spots)
-            {
-                var map = Map.Parse(s.MapName);
-                if (map == null || map == Map.Internal) continue;
 
-                var loc = new Point3D(s.X, s.Y, s.Z);
+            foreach (var s in defs)
+            {
+                // Bounds hug the hunt polygon so bots spawn inside their
+                // leash; a poly-less spawn falls back to a small box.
+                Rectangle3D bounds;
+                if (s.Hunt != null && s.Hunt.Length >= 3)
+                {
+                    int minX = int.MaxValue, minY = int.MaxValue;
+                    int maxX = int.MinValue, maxY = int.MinValue;
+                    foreach (var p in s.Hunt)
+                    {
+                        minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
+                        minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
+                    }
+                    bounds = new Rectangle3D(
+                        new Point3D(minX, minY, s.Location.Z - 20),
+                        new Point3D(maxX, maxY, s.Location.Z + 40));
+                }
+                else
+                {
+                    int r = BoundsRadius;
+                    bounds = new Rectangle3D(
+                        new Point3D(s.Location.X - r, s.Location.Y - r, s.Location.Z - 5),
+                        new Point3D(s.Location.X + r, s.Location.Y + r, s.Location.Z + 20));
+                }
+
                 var spawner = new PlayerBotSpawner("PK", s.Amount, MinDelay, MaxDelay)
                 {
-                    Name = "PK Spawner",
+                    Name = $"PK Spawner ({s.Name})",
                 };
-                int r = BoundsRadius;
-                spawner.SpawnBounds = new Rectangle3D(
-                    new Point3D(s.X - r, s.Y - r, s.Z - 5),
-                    new Point3D(s.X + r, s.Y + r, s.Z + 20));
-
-                spawner.MoveToWorld(loc, map);
+                spawner.SpawnBounds = bounds;
+                spawner.MoveToWorld(s.Location, map);
                 spawner.Respawn();
 
                 placed++;
