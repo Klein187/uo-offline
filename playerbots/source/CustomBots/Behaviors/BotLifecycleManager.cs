@@ -227,7 +227,6 @@ namespace Server.CustomBots
                 ("BankSitter", p.BankerTendency),
                 ("Adventurer", p.AdventurerTendency),
                 ("Traveler",   p.TravelerTendency),
-                ("Wander",     p.WanderTendency),
                 ("Idle",       p.IdleTendency),
             };
 

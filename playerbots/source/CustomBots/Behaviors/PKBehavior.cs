@@ -113,7 +113,7 @@ namespace Server.CustomBots
 
             // Patrol via an internal Traveler — reuse all the road
             // navigation, waypoint following, and fluid movement.
-            _patrol = new TravelerBehavior();
+            _patrol = new TravelerBehavior { AvoidTowns = true };
             _patrol.OnAttached(bot);
             _phase = Phase.Patrol;
         }

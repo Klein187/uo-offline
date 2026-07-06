@@ -407,7 +407,14 @@ namespace Server.CustomBots
         // also lets older save data continue to work — TravelerBehavior
         // can still route to a bare waypoint if no destinations exist.
         // -------------------------------------------------------------------
-        private static string PickNewDestinationName(PlayerBot bot)
+        // Set by outlaw brains (PKBehavior's patrol): never pick a town
+        // destination, never cross water for one (the ferry piers and
+        // moongates that carry cross-water trips sit in guard zones), and
+        // rescue to wilderness instead of a moongate. A red that walks
+        // into Britain is a dead red.
+        public bool AvoidTowns { get; set; }
+
+        private string PickNewDestinationName(PlayerBot bot)
         {
             var botNode = NearestReachableNode(bot);
 
@@ -417,12 +424,16 @@ namespace Server.CustomBots
             // chasing a trip that can't complete. A bot ALREADY on such an
             // island may still pick local spots.
             string lastPick = null;
-            for (int attempt = 0; attempt < 8; attempt++)
+            for (int attempt = 0; attempt < (AvoidTowns ? 16 : 8); attempt++)
             {
                 var dest = DestinationCatalog.PickWeighted(bot);
                 if (dest == null)
                 {
                     break;
+                }
+                if (AvoidTowns && !IsWildernessPick(dest, botNode))
+                {
+                    continue;
                 }
                 lastPick = dest.Name;
                 if (botNode == null || !IsStrandedIsland(dest, botNode.Name))
@@ -434,7 +445,81 @@ namespace Server.CustomBots
             {
                 return lastPick;
             }
+            if (AvoidTowns)
+            {
+                var wild = PickWildRescueSpot(bot);
+                if (wild != null)
+                {
+                    return wild.Name;
+                }
+            }
             return WaypointRegistry.Graph.PickRandomName();
+        }
+
+        // A destination an outlaw can visit: no city tag, a wilderness
+        // type, and on the SAME landmass (a cross-water pick routes the
+        // bot through a guarded ferry pier or moongate).
+        private static bool IsWildernessPick(BotDestination dest, WaypointNode botNode)
+        {
+            if (!string.IsNullOrEmpty(dest.City))
+            {
+                return false;
+            }
+            switch (dest.Type)
+            {
+                case DestinationType.GatherSpot:
+                case DestinationType.MiningSpot:
+                case DestinationType.LumberSpot:
+                case DestinationType.TreasureSite:
+                case DestinationType.Shrine:
+                case DestinationType.Graveyard:
+                case DestinationType.Crossroads:
+                case DestinationType.Bridge:
+                case DestinationType.Dungeon:
+                case DestinationType.DungeonEntrance:
+                    break;
+                default:
+                    return false;
+            }
+            if (botNode == null || string.IsNullOrEmpty(dest.NearestWaypoint))
+            {
+                return true;
+            }
+            var graph = WaypointRegistry.Graph;
+            return graph.ComponentOf(botNode.Name) ==
+                   graph.ComponentOf(dest.NearestWaypoint);
+        }
+
+        // Somewhere wild on the bot's own landmass � the outlaw's rescue
+        // target and last-resort destination (gather spots and dig sites
+        // are always rural by construction).
+        private BotDestination PickWildRescueSpot(PlayerBot bot)
+        {
+            var graph = WaypointRegistry.Graph;
+            var botNode = NearestReachableNode(bot);
+            int myComp = botNode != null ? graph.ComponentOf(botNode.Name) : -1;
+
+            BotDestination fallback = null;
+            var pool = new List<BotDestination>();
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (d.Type != DestinationType.GatherSpot &&
+                    d.Type != DestinationType.TreasureSite)
+                {
+                    continue;
+                }
+                fallback ??= d;
+                if (myComp >= 0 && !string.IsNullOrEmpty(d.NearestWaypoint) &&
+                    graph.ComponentOf(d.NearestWaypoint) == myComp)
+                {
+                    pool.Add(d);
+                }
+            }
+            if (pool.Count > 0)
+            {
+                return pool[Utility.Random(pool.Count)];
+            }
+            return fallback;
         }
 
         // -------------------------------------------------------------------
@@ -581,7 +666,22 @@ namespace Server.CustomBots
                     _tripStalls++;
                     if (_tripStalls >= 2)
                     {
-                        var rescueGate = NearestMoongate(bot);
+                        // Outlaws rescue to the wilds (gates sit in guard
+                        // zones and a teleported-in red dies there); others
+                        // go to a RANDOM gate, since the nearest gate re-jams
+                        // a bot that is stuck AT a gate.
+                        BotDestination rescueGate;
+                        if (AvoidTowns)
+                        {
+                            rescueGate = PickWildRescueSpot(bot);
+                        }
+                        else
+                        {
+                            var gates = MoongateTravel.AllMoongates();
+                            rescueGate = gates.Count > 0
+                                ? gates[Utility.Random(gates.Count)]
+                                : null;
+                        }
                         if (rescueGate != null)
                         {
                             Log(bot, $"STALLED {_tripStalls} trips running — " +
@@ -1113,7 +1213,9 @@ namespace Server.CustomBots
                     // Rescue-teleport to the nearest moongate and let the
                     // gate network carry the trip on; matches the existing
                     // LOST-rescue precedent above.
-                    var rescueGate = NearestMoongate(bot);
+                    var rescueGate = AvoidTowns
+                        ? PickWildRescueSpot(bot)
+                        : NearestMoongate(bot);
                     if (rescueGate != null)
                     {
                         Log(bot, $"MAROONED — no reachable destination or gate from here; " +
@@ -2046,8 +2148,21 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     visitMaxMinutes = 3;
                     break;
 
-                // Taverns, inns, healers, etc: no dedicated behavior yet —
-                // fall through to light arrival activity.
+                case DestinationType.Healer:
+                case DestinationType.Inn:
+                case DestinationType.Stables:
+                case DestinationType.Shrine:
+                case DestinationType.Tavern:
+                    // Non-vendor stops used to fall through with nothing to
+                    // do � bots stood at healers/stables looking broken.
+                    // Now they VISIT: themed lines/actions for a short
+                    // window (shrines chant their virtue mantra), then on.
+                    targetBehavior  = "Visitor";
+                    chance          = 0.85;
+                    visitMinMinutes = 1;
+                    visitMaxMinutes = 3;
+                    break;
+
                 default:
                     return false;
                 }
@@ -2059,6 +2174,10 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // Build the visit behavior and stamp its expiry.
             var visit = BehaviorRegistry.Create(targetBehavior);
             if (visit == null) return false;
+            if (visit is VisitorBehavior vb)
+            {
+                vb.ConfigureFor(_destType, DestinationName);
+            }
             visit.VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(
                 Utility.RandomMinMax(visitMinMinutes, visitMaxMinutes));
 

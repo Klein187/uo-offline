@@ -42,7 +42,7 @@ namespace Server.CustomBots
             new("Felucca",  327, 1480,  0, 3),  // Shame approach, far west of Yew
             new("Felucca",  885, 1285,  0, 2),  // Orc Cave woods
             new("Felucca", 1911,  440,  0, 2),  // Wrong approach, north mountains
-            new("Felucca", 2649,  470, -5, 2),  // Minoc north pass
+            new("Felucca", 2768,  500, 15, 2),  // Minoc-Vesper high pass (125 tiles from town)
             new("Felucca", 1639, 3048,  0, 3),  // Honor jungle trail, S of Trinsic
             new("Felucca", 4172,  588,  0, 2),  // Dagger Isle trail (Deceit pilgrims)
             new("Felucca", 4559, 3742,  0, 2),  // Humility isle road to Hythloth

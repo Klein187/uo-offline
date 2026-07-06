@@ -23,7 +23,9 @@ namespace Server.CustomBots
             // their own Configure() method, OR register from this list if
             // we'd rather keep registration centralized.
             Register("Idle",       () => new IdleBehavior());
-            Register("Wander",     () => new WanderBehavior());
+            // Wander is retired — pointless milling. Saves that carry it
+            // wake up as Travelers and get on with their lives.
+            Register("Wander",     () => new TravelerBehavior());
             Register("BankSitter", () => new BankSitterBehavior());
             Register("Adventurer", () => new AdventurerBehavior());
             Register("DungeonCrawler", () => new DungeonCrawlerBehavior());
@@ -52,6 +54,8 @@ namespace Server.CustomBots
             Register("TreasureHunter", () => new TreasureHunterBehavior());
             // A working Tamer self-heals to Traveler when its quarry is gone.
             Register("Tamer", () => new TamerBehavior());
+            // Short themed stops at healers/inns/stables/shrines/taverns.
+            Register("Visitor", () => new VisitorBehavior());
         }
 
         public static void Register(string name, Func<PlayerBotBehavior> factory)

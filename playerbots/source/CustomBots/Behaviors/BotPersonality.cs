@@ -52,7 +52,7 @@ namespace Server.CustomBots
                 BankerTendency     = RollWeight(),
                 AdventurerTendency = RollWeight(),
                 TravelerTendency   = RollWeight(),
-                WanderTendency     = RollWeight() * 0.15, // rare — aimless milling reads as broken
+                WanderTendency     = 0, // Wander is retired
                 IdleTendency       = RollWeight() * 0.3, // rarest
                 AveragePhaseDuration = TimeSpan.FromMinutes(Utility.RandomMinMax(30, 180)),
                 Traits = PersonalityTrait.None,
