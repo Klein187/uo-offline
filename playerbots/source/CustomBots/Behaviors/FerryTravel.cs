@@ -110,10 +110,24 @@ namespace Server.CustomBots
                 // small spread so multiple riders don't stack.
                 var spot = pair.PickArrival();
                 var basePoint = spot?.Point ?? pair.ArrivalPoint ?? pair.Location;
-                int tx = basePoint.X + Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
-                int ty = basePoint.Y + Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
+                // Validated spread — a blind offset on a pier apron can drop
+                // the rider onto plank-edge tiles it can't step off.
+                var landing = basePoint;
+                for (int i = 0; i < 8; i++)
+                {
+                    int tx = basePoint.X +
+                             Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
+                    int ty = basePoint.Y +
+                             Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
+                    int tz = bot.Map.GetAverageZ(tx, ty);
+                    if (bot.Map.CanSpawnMobile(tx, ty, tz))
+                    {
+                        landing = new Point3D(tx, ty, tz);
+                        break;
+                    }
+                }
 
-                bot.MoveToWorld(new Point3D(tx, ty, basePoint.Z), bot.Map);
+                bot.MoveToWorld(landing, bot.Map);
 
                 var arriveLine = ChatLibrary.PickRandom("ferry_arrive");
                 if (!string.IsNullOrEmpty(arriveLine))

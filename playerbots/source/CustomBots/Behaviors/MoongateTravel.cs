@@ -201,14 +201,26 @@ namespace Server.CustomBots
                 if (bot == null || bot.Deleted || !bot.Alive) return;
 
                 // Place the bot at the destination gate with a small spread
-                // so multiple arrivals don't perfectly overlap.
-                int ox = Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
-                int oy = Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
-                int tx = target.Location.X + ox;
-                int ty = target.Location.Y + oy;
-                int tz = target.Location.Z;
+                // so multiple arrivals don't perfectly overlap — VALIDATED:
+                // a blind offset at a raised gate platform drops arrivals
+                // onto off-Z edge tiles where they jam (Moonglow Road 1
+                // was the worst stuck spot on the shard).
+                var landing = target.Location;
+                for (int i = 0; i < 8; i++)
+                {
+                    int tx = target.Location.X +
+                             Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
+                    int ty = target.Location.Y +
+                             Utility.RandomMinMax(-PlacementSpread, PlacementSpread);
+                    int tz = bot.Map.GetAverageZ(tx, ty);
+                    if (bot.Map.CanSpawnMobile(tx, ty, tz))
+                    {
+                        landing = new Point3D(tx, ty, tz);
+                        break;
+                    }
+                }
 
-                bot.MoveToWorld(new Point3D(tx, ty, tz), bot.Map);
+                bot.MoveToWorld(landing, bot.Map);
 
                 // Arrival visuals at the new gate.
                 SafeGateEffect(bot);

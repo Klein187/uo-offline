@@ -136,9 +136,20 @@ namespace Server.CustomBots
                 // Skip if cap reached.
                 if (transitions >= MaxTransitionsPerTick) continue;
 
-                // Has the current phase duration elapsed?
+                // Has the current phase duration elapsed? Wander/Idle are
+                // texture between real phases, not careers — cap them short
+                // so aimless milling never lasts long enough to look broken.
+                var phaseLen = bot.Personality.AveragePhaseDuration;
+                if (bot.Behavior is WanderBehavior or IdleBehavior)
+                {
+                    var cap = TimeSpan.FromMinutes(8);
+                    if (phaseLen > cap)
+                    {
+                        phaseLen = cap;
+                    }
+                }
                 var elapsed = Core.Now - bot.PhaseStartedAt;
-                if (elapsed < bot.Personality.AveragePhaseDuration)
+                if (elapsed < phaseLen)
                     continue;
 
                 // Time to transition.

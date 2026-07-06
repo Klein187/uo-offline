@@ -52,7 +52,7 @@ namespace Server.CustomBots
                 BankerTendency     = RollWeight(),
                 AdventurerTendency = RollWeight(),
                 TravelerTendency   = RollWeight(),
-                WanderTendency     = RollWeight() * 0.5, // less common
+                WanderTendency     = RollWeight() * 0.15, // rare — aimless milling reads as broken
                 IdleTendency       = RollWeight() * 0.3, // rarest
                 AveragePhaseDuration = TimeSpan.FromMinutes(Utility.RandomMinMax(30, 180)),
                 Traits = PersonalityTrait.None,
@@ -115,7 +115,7 @@ namespace Server.CustomBots
                 BankerTendency       = reader.ReadDouble(),
                 AdventurerTendency   = reader.ReadDouble(),
                 TravelerTendency     = reader.ReadDouble(),
-                WanderTendency       = reader.ReadDouble(),
+                WanderTendency       = Math.Min(reader.ReadDouble(), 0.15), // clamp legacy saves
                 IdleTendency         = reader.ReadDouble(),
                 Traits               = (PersonalityTrait)reader.ReadInt(),
                 AveragePhaseDuration = reader.ReadTimeSpan(),

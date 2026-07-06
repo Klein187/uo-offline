@@ -1285,8 +1285,6 @@
       "Y": 1595,
       "Z": 4,
       "Connects": [
-        "estbritin22",
-        "estbritinn2",
         "Rec 4.2"
       ]
     },
@@ -9617,7 +9615,7 @@
       "Y": 470,
       "Z": 15,
       "Connects": [
-        "WP 894"
+        "WP 893"
       ]
     },
     {
@@ -12080,7 +12078,8 @@
       "Y": 880,
       "Z": 20,
       "Connects": [
-        "WP 1161"
+        "WP 1161",
+        "Verity Dock Trail 20"
       ]
     },
     {
@@ -12797,9 +12796,7 @@
       "X": 3673,
       "Y": 2278,
       "Z": -5,
-      "Connects": [
-        "WP 1228"
-      ]
+      "Connects": []
     },
     {
       "Name": "WP 1241",
@@ -46531,6 +46528,16 @@
       "Z": 1,
       "Connects": [
         "Fire Isle Trail 24"
+      ]
+    },
+    {
+      "Name": "Magincia Stairs",
+      "X": 3674,
+      "Y": 2280,
+      "Z": 0,
+      "Connects": [
+        "WP 1240",
+        "WP 1228"
       ]
     }
   ]

@@ -2251,7 +2251,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         // Trip progress watchdog (see Tick): closest the bot has been to
         // _finalCoord this trip, when that record was set, and how many
         // trips in a row died without progress.
-        private static readonly TimeSpan TripStallLimit = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan TripStallLimit = TimeSpan.FromMinutes(3);
         private const int TripProgressTiles = 5;
         private int _tripBestDist = int.MaxValue;
         private int _tripStartDist = int.MaxValue;
