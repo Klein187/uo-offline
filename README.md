@@ -233,7 +233,15 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 
 The island cities need boat-arrival illusion + their own waypoint pockets (no moongate lands on Buc's Den, so it needs special handling). Four virtue shrines are live as pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice — the last with a 29-node server-verified desert trail); Justice, Honesty, Honor, Humility, and Valor await their trails.
 
-**Dungeons — Despise is live, the rest are next.** Despise Level 1 is fully authored and soak-verified: bots walk in through the real entrance teleporter, sweep and camp its rooms, descend, and climb back out on their own. Level 2 is partially authored (bots land and hunt locally; full room/waypoint coverage in progress). **Deceit is next** — its skeleton is already generated (`tools/skeleton-deceit.json`), then Shame, Wrong, and Covetous, each following the same pipeline: generate skeleton → author rooms/waypoints per floor → headless audit → soak.
+**Dungeons — all twelve are wired up; now they need testing and cleanup.** Every Felucca dungeon has interiors generated end to end: flood-filled floor meshes, roughly 2,950 waypoints, and teleporter records for the entrances, descends, ascends, and the cross-dungeon passages. The approach routes are in too — six overland trails, the Dagger Isle and Fire Isle ferries, and the island crossing to Hythloth — and the automated checks pass: the edge-walk audit reports zero blocked links, and a pad audit walked a probe onto all 94 teleporter pads and confirmed every one fires.
+
+**What's left is proving it in play.** Only Despise has been genuinely soak-tested with live bots. The rest have never had crawlers run through them for any length of time, so the waypoint graphs are expected to need pruning: nodes that lead nowhere, landings that drop a bot into rock, and rooms where the generated mesh doesn't match the real dungeon geometry. That pass — run, watch, clean up — is the current dungeon work.
+
+**Known issues being fixed.** Three problems are actively being worked on:
+
+- **Bots stuck at login** — bots that don't resume their routine after coming back into the world.
+- **Player houses** — bot behavior in and around player-owned housing.
+- **Recall** — fixing how bots use recall to travel.
 
 ---
 

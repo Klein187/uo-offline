@@ -168,6 +168,11 @@ namespace Server.CustomBots
         private TimeSpan DriftStuckTimeout => TimeSpan.FromSeconds(3);
         private const int DriftArriveRange = 2;
 
+        // How far outside a painted work site a gatherer may clock in and
+        // walk the rest of the way itself (GathererBehavior.TickWalkIn).
+        // Beyond this it was never really routed to that site.
+        private const int GatherWalkInRange = 45;
+
         // Stuck detection at the leg level.
         private Point3D _lastLoc;
         private DateTime _lastProgressAt;
@@ -490,7 +495,7 @@ namespace Server.CustomBots
                    graph.ComponentOf(dest.NearestWaypoint);
         }
 
-        // Somewhere wild on the bot's own landmass � the outlaw's rescue
+        // Somewhere wild on the bot's own landmass � the outlaw's rescue
         // target and last-resort destination (gather spots and dig sites
         // are always rural by construction).
         private BotDestination PickWildRescueSpot(PlayerBot bot)
@@ -620,6 +625,16 @@ namespace Server.CustomBots
                 return;
             }
 
+            // -- Frozen-position watchdog (catch-all) --
+            // MUST run before the pending-flag early returns below: a
+            // Recall/gate/ferry whose delayed sequence died leaves its
+            // flag set forever, and this is the only path that can still
+            // reach such a bot.
+            if (CheckFrozenWatchdog(bot))
+            {
+                return;
+            }
+
             // Mid-Recall/Gate — hold still, the words are spoken. The
             // DelayCall sequence moves the bot and swaps in a fresh
             // Traveler; this one just has to not wander off the spot.
@@ -643,7 +658,7 @@ namespace Server.CustomBots
                 if (_tripBestDist == int.MaxValue)
                 {
                     // Baseline for a fresh trip. Deliberately does NOT
-                    // clear the stall streak � every new trip records a
+                    // clear the stall streak � every new trip records a
                     // "best" on its first tick, and clearing here made the
                     // streak permanently unreachable (the same reset-
                     // starvation bug this watchdog exists to fix).
@@ -657,7 +672,7 @@ namespace Server.CustomBots
                     _tripBestAt = Core.Now;
                     if (_tripStartDist - dNow >= 30)
                     {
-                        _tripStalls = 0; // genuine travel � not a jam streak
+                        _tripStalls = 0; // genuine travel � not a jam streak
                     }
                 }
                 else if (_tripBestAt != DateTime.MinValue &&
@@ -1754,7 +1769,7 @@ namespace Server.CustomBots
         //
         // Arrival styles still apply for the no-handoff path:
         //   Linger — light activity 60-120s, then new destination.
-        //   Wait   — light activity indefinitely (until lifecycle moves it).
+        //   Wait   — light activity 3-6 min, then new destination.
         //   Wander — leave again immediately.
         // -------------------------------------------------------------------
         private void HandleArrival(PlayerBot bot)
@@ -1824,7 +1839,19 @@ namespace Server.CustomBots
                     break;
 
                 case ArrivalStyle.Wait:
-                    DoArrivalActivity(bot);
+                    // "Indefinitely until the lifecycle moves it" in
+                    // practice parked 40% of arrivals at '· arriving' for
+                    // entire sessions — the status page read as a stuck-bot
+                    // epidemic. Wait is now just a LONG linger.
+                    var wait = TimeSpan.FromSeconds(Utility.RandomMinMax(180, 360));
+                    if (Core.Now - _arrivedAt > wait)
+                    {
+                        PickNewDestination(bot);
+                    }
+                    else
+                    {
+                        DoArrivalActivity(bot);
+                    }
                     break;
 
                 case ArrivalStyle.Wander:
@@ -2065,10 +2092,25 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // A gatherer arriving at a wilderness work site clocks in.
             // (Typed sites only ever attract their own class — the weight
             // table zeroes the cross-class roll.)
+            //
+            // The last-leg drift is short and a wilderness waypoint sits on
+            // the road, so this handoff routinely fires OUTSIDE the painted
+            // site. That's fine — GathererBehavior walks itself in and swings
+            // nothing until it's inside — but a bot that stopped half a map
+            // away was never really routed here, so it doesn't clock in.
             else if (BotClassHelper.IsGatherer(bot.Class) &&
                 _destType is DestinationType.GatherSpot or DestinationType.MiningSpot
                           or DestinationType.LumberSpot)
             {
+                var site = ZoneRegistry.AreaForDestination(
+                    DestinationName, _finalCoord ?? bot.Location);
+                if (site != null && !site.Contains(bot.X, bot.Y) &&
+                    !bot.InRange(new Point3D(site.CenterX, site.CenterY, bot.Z), GatherWalkInRange))
+                {
+                    Log(bot, $"No Gatherer handoff at '{DestinationName}' — stopped " +
+                             $"outside the site and too far to walk in");
+                    return false;
+                }
                 targetBehavior  = "Gatherer";
                 chance          = 0.95;
                 visitMinMinutes = 4;
@@ -2154,7 +2196,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 case DestinationType.Shrine:
                 case DestinationType.Tavern:
                     // Non-vendor stops used to fall through with nothing to
-                    // do � bots stood at healers/stables looking broken.
+                    // do � bots stood at healers/stables looking broken.
                     // Now they VISIT: themed lines/actions for a short
                     // window (shrines chant their virtue mantra), then on.
                     targetBehavior  = "Visitor";
@@ -2177,6 +2219,12 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             if (visit is VisitorBehavior vb)
             {
                 vb.ConfigureFor(_destType, DestinationName);
+            }
+            // The gatherer needs to know WHICH site it was sent to: the
+            // painted polygon is the mine, and it only works inside it.
+            if (visit is GathererBehavior gb)
+            {
+                gb.SiteName = DestinationName;
             }
             visit.VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(
                 Utility.RandomMinMax(visitMinMinutes, visitMaxMinutes));
@@ -2376,6 +2424,94 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         private int _tripStartDist = int.MaxValue;
         private DateTime _tripBestAt = DateTime.MinValue;
         private int _tripStalls;
+
+        // Frozen-position watchdog (see Tick): the catch-all beneath every
+        // other rescue in this file. Trip/leg watchdogs all watch TRIP
+        // state, and each has holes — a Recall/gate/ferry whose DelayCall
+        // sequence dies leaves its pending flag set forever, and a
+        // bare-waypoint trip has no _finalCoord so the trip watchdog never
+        // arms. Position can't lie: a live bot that hasn't moved more than
+        // FrozenMoveTiles from its anchor in FrozenLimit gets every hold
+        // flag cleared and a fresh destination; still rooted a full window
+        // later → teleport rescue.
+        private static readonly TimeSpan FrozenLimit = TimeSpan.FromSeconds(60);
+        private const int FrozenMoveTiles = 2;
+        private Point3D _frozenAnchor;
+        private DateTime _frozenAnchorAt = DateTime.MinValue;
+        private bool _frozenRepicked;
+
+        // Returns true if it acted (repicked or teleported) and Tick must
+        // return immediately.
+        private bool CheckFrozenWatchdog(PlayerBot bot)
+        {
+            int moved = Math.Max(Math.Abs(bot.X - _frozenAnchor.X),
+                                 Math.Abs(bot.Y - _frozenAnchor.Y));
+            if (_frozenAnchorAt == DateTime.MinValue || moved > FrozenMoveTiles)
+            {
+                _frozenAnchor = bot.Location;
+                _frozenAnchorAt = Core.Now;
+                _frozenRepicked = false;
+                return false;
+            }
+
+            // Standing still is legitimate while dead (ghost rescue owns
+            // that), on a corpse run (death manager owns that), or in the
+            // post-arrival linger/wait activity (HandleArrival bounds it).
+            // Keep the timer parked so a legit stand doesn't count toward
+            // the frozen window.
+            if (!bot.Alive || bot.CorpseRunPending ||
+                (_hasArrived && !_moongateTripPending && !_magicTravelPending &&
+                 !_dungeonEntry && !_isApproaching && !_isDrifting))
+            {
+                _frozenAnchorAt = Core.Now;
+                return false;
+            }
+
+            if (Core.Now - _frozenAnchorAt <= FrozenLimit)
+            {
+                return false;
+            }
+
+            if (!_frozenRepicked)
+            {
+                _frozenRepicked = true;
+                _frozenAnchorAt = Core.Now; // fresh window for stage 2
+                Log(bot, $"FROZEN {(int)FrozenLimit.TotalSeconds}s at {bot.Location} " +
+                         $"(dest '{DestinationName}', arrived={_hasArrived}, " +
+                         $"magic={_magicTravelPending}, gate={_moongateTripPending}, " +
+                         $"entry={_dungeonEntry}) — clearing holds, picking a new destination");
+                StopStepTimer();
+                _isApproaching = false;
+                _isDrifting = false;
+                // PickNewDestination clears _magicTravelPending,
+                // _moongateTripPending, _dungeonEntry and plans fresh.
+                PickNewDestination(bot);
+                return true;
+            }
+
+            // A full second window without a single step even after the
+            // forced repick — the spot itself is the problem. Teleport out
+            // (wilds for outlaws, random gate for everyone else — same
+            // precedent as the trip-stall rescue).
+            var rescue = AvoidTowns ? PickWildRescueSpot(bot) : null;
+            if (rescue == null && !AvoidTowns)
+            {
+                var gates = MoongateTravel.AllMoongates();
+                rescue = gates.Count > 0 ? gates[Utility.Random(gates.Count)] : null;
+            }
+            if (rescue != null)
+            {
+                Log(bot, $"STILL frozen after forced repick — " +
+                         $"rescue-teleporting to '{rescue.Name}'");
+                bot.MoveToWorld(rescue.ArrivalPoint ?? rescue.Location, bot.Map);
+            }
+            _frozenAnchor = bot.Location;
+            _frozenAnchorAt = Core.Now;
+            _frozenRepicked = false;
+            StopStepTimer();
+            PickNewDestination(bot);
+            return true;
+        }
 
         // Teleport a fully wedged bot to the nearest tile the engine will
         // accept a mobile on. Spiral outward so the extraction stays local

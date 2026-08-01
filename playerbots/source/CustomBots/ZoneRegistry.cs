@@ -41,6 +41,112 @@ namespace Server.CustomBots
             }
             return inside;
         }
+
+        public bool Contains(Point3D p) => Contains(p.X, p.Y);
+
+        // A painted work site: the shape IS the mine / the grove. Gatherers
+        // may only work while standing inside one of these.
+        public bool IsGatherSite =>
+            string.Equals(Kind, "Area", StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(Type, "MiningSpot", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(Type, "LumberSpot", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(Type, "GatherSpot", StringComparison.OrdinalIgnoreCase));
+
+        // Cached walk-in goal (the polygon never moves; a reload builds
+        // fresh PaintedZone objects, so the cache dies with the old shape).
+        private Point3D? _interior;
+
+        // The tile a bot should walk toward to get INSIDE this area.
+        // Preference order: the authored destination point (the mapper put
+        // it where they want bots standing), the polygon center, then the
+        // most-central standable tile found by scanning the interior. The
+        // caller only needs to CROSS the boundary — this is a heading, not
+        // a place it must reach — so a rough answer is fine and a bad shape
+        // is caught by the caller's walk-in timeout.
+        public Point3D InteriorGoal(Map map, int fallbackZ)
+        {
+            if (_interior.HasValue)
+            {
+                return _interior.Value;
+            }
+
+            if (!string.IsNullOrEmpty(LinkedDest))
+            {
+                var dest = DestinationCatalog.GetByName(LinkedDest);
+                if (dest != null)
+                {
+                    var p = dest.ArrivalPoint ?? dest.Location;
+                    if (Contains(p.X, p.Y))
+                    {
+                        _interior = p;
+                        return p;
+                    }
+                }
+            }
+
+            // Vertex average — inside for any convex-ish painted blob, but
+            // a crescent (a mountain face traced around its curve) can put
+            // it outside the shape entirely, hence the scan below.
+            if (map != null && Contains(CenterX, CenterY))
+            {
+                int cz = map.GetAverageZ(CenterX, CenterY);
+                if (map.CanFit(CenterX, CenterY, cz, 16, false, false))
+                {
+                    var c = new Point3D(CenterX, CenterY, cz);
+                    _interior = c;
+                    return c;
+                }
+            }
+
+            if (map != null)
+            {
+                int minX = int.MaxValue, maxX = int.MinValue;
+                int minY = int.MaxValue, maxY = int.MinValue;
+                foreach (var (px, py) in Points)
+                {
+                    if (px < minX) { minX = px; }
+                    if (px > maxX) { maxX = px; }
+                    if (py < minY) { minY = py; }
+                    if (py > maxY) { maxY = py; }
+                }
+
+                Point3D best = default;
+                int bestScore = int.MaxValue;
+                for (int x = minX; x <= maxX; x++)
+                {
+                    for (int y = minY; y <= maxY; y++)
+                    {
+                        if (!Contains(x, y))
+                        {
+                            continue;
+                        }
+                        int score = Math.Max(Math.Abs(x - CenterX), Math.Abs(y - CenterY));
+                        if (score >= bestScore)
+                        {
+                            continue;
+                        }
+                        int z = map.GetAverageZ(x, y);
+                        if (!map.CanFit(x, y, z, 16, false, false))
+                        {
+                            continue;
+                        }
+                        best = new Point3D(x, y, z);
+                        bestScore = score;
+                    }
+                }
+
+                if (bestScore != int.MaxValue)
+                {
+                    _interior = best;
+                    return best;
+                }
+            }
+
+            // Nothing standable found (or no map yet) — head for the middle
+            // and let the walk-in timeout decide. Not cached: a later call
+            // with a real map can still do better.
+            return new Point3D(CenterX, CenterY, fallbackZ);
+        }
     }
 
     public static class ZoneRegistry
@@ -174,6 +280,39 @@ namespace Server.CustomBots
                     return z;
             }
             return null;
+        }
+
+        // The painted work site this tile is INSIDE, if any. Used by the
+        // gatherer to answer "am I in the mine?" without needing to know
+        // which destination sent it here (behaviors only persist by name,
+        // so a bot reloaded mid-shift has forgotten its site).
+        public static PaintedZone GatherAreaAt(int x, int y)
+        {
+            foreach (var z in _zones)
+            {
+                if (z.IsGatherSite && z.Contains(x, y))
+                {
+                    return z;
+                }
+            }
+            return null;
+        }
+
+        // The nearest painted work site by center distance — the site a bot
+        // standing just outside one was almost certainly sent to.
+        public static PaintedZone NearestGatherArea(Point3D p, int maxDist)
+        {
+            PaintedZone best = null; int bd = maxDist + 1;
+            foreach (var z in _zones)
+            {
+                if (!z.IsGatherSite)
+                {
+                    continue;
+                }
+                int d = Math.Max(Math.Abs(z.CenterX - p.X), Math.Abs(z.CenterY - p.Y));
+                if (d < bd) { bd = d; best = z; }
+            }
+            return best;
         }
 
         private static void Reload_OnCommand(CommandEventArgs e)

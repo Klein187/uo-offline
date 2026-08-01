@@ -129,6 +129,26 @@ namespace Server.CustomBots
         // Pad-walk step cadence — a walking pace, like the entrance approach.
         private static readonly TimeSpan PadStepInterval = TimeSpan.FromMilliseconds(400);
 
+        // Floor-transition history for the revolving-door breaker. A stair
+        // landing usually sits within a step of the pad going the other
+        // way, so a bot can ping-pong A→B→A→B forever — and because every
+        // transition used to reset the exit watchdog, the 6-minute rescue
+        // never fired for exactly the bots that needed it most. Landing on
+        // the floor we were on two transitions ago counts as a bounce;
+        // bounces never refresh the exit window, and two in a row in exit
+        // mode go straight to the surface rescue.
+        private string _floorPrev;     // floor before the latest transition
+        private string _floorPrev2;    // floor before that
+        private int _floorBounces;
+
+        // Detects a teleporter that fired while we were NOT deliberately
+        // walking onto a pad (fights and room lingers stray onto stair
+        // tiles all the time). One Move is a single tile; anything bigger
+        // in one decision tick is a teleport, so re-resolve the landing.
+        private Point3D _lastTickLoc;
+        private Map _lastTickMap;
+        private const int AccidentalJump = 20;
+
         // The dungeon point currently being roamed to — remembered so
         // OnPatrolGoalReached knows whether the reached goal was a teleporter.
         private BotDestination _targetPoint;
@@ -214,6 +234,24 @@ namespace Server.CustomBots
             if (_transitionPending)
             {
                 PadCheck(bot);
+                return;
+            }
+
+            // Accidental teleport: a big jump since last tick with no pad
+            // walk in flight means the bot strayed onto a stair tile mid-
+            // fight or mid-linger. Resolve the landing like a deliberate
+            // transition so the scope (dungeon/level) follows the bot.
+            var prevLoc = _lastTickLoc;
+            var prevMap = _lastTickMap;
+            _lastTickLoc = bot.Location;
+            _lastTickMap = bot.Map;
+            if (prevMap == bot.Map && prevMap != null &&
+                Dist(prevLoc, bot.Location) > AccidentalJump)
+            {
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: strayed onto a teleporter " +
+                    $"({prevLoc} -> {bot.Location}) — resolving landing");
+                ResolveLanding(bot);
                 return;
             }
 
@@ -585,10 +623,32 @@ namespace Server.CustomBots
 
             if (p != null)
             {
+                string from = $"{DungeonName}|{Level}";
+                string to = $"{p.Dungeon}|{p.Level}";
+
+                // Revolving door: back on the floor we left one transition
+                // ago (A→B→A). Bounces don't count as climb progress, and
+                // two straight in exit mode mean the stairs are a trap —
+                // walk out "off-screen" instead of spinning forever.
+                bool bounce = string.Equals(to, _floorPrev2, StringComparison.OrdinalIgnoreCase);
+                _floorBounces = bounce ? _floorBounces + 1 : 0;
+                _floorPrev2 = from;
+                _floorPrev = to;
+
                 DungeonName = p.Dungeon;
-                ResumeAfterTransition(p.Level);
+                ResumeAfterTransition(p.Level, refreshExitWindow: !bounce);
                 Console.WriteLine(
-                    $"[DungeonCrawler] {bot.Name}: now on L{Level} of {DungeonName}");
+                    $"[DungeonCrawler] {bot.Name}: now on L{Level} of {DungeonName}" +
+                    (bounce ? $" (bounce {_floorBounces})" : ""));
+
+                if (ExitMode && _floorBounces >= 2)
+                {
+                    Console.WriteLine(
+                        $"[DungeonCrawler] {bot.Name}: revolving door on the way out of " +
+                        $"{DungeonName} — rescuing to the surface");
+                    _floorBounces = 0;
+                    RescueToSurface(bot);
+                }
             }
             else if (DungeonRegistry.IsInDungeon(bot))
             {
@@ -616,8 +676,10 @@ namespace Server.CustomBots
         }
 
         // Re-scope the same crawler instance to the floor it landed on —
-        // run timer + exit mode preserved.
-        private void ResumeAfterTransition(int newLevel)
+        // run timer + exit mode preserved. Only a NON-bounce transition
+        // refreshes the exit watchdog; a ping-pong pair of stairs used to
+        // reset it every trip and starve the rescue.
+        private void ResumeAfterTransition(int newLevel, bool refreshExitWindow = true)
         {
             Level = newLevel;
             _targetPoint = null;
@@ -626,7 +688,7 @@ namespace Server.CustomBots
             _visited.Clear();       // new floor, fresh sweep
             _warnedNoExit = false;
             _transitionPending = false;
-            if (ExitMode)
+            if (ExitMode && refreshExitWindow)
             {
                 _exitModeSince = Core.Now; // made floor progress — fresh window
             }
@@ -654,7 +716,24 @@ namespace Server.CustomBots
                 }
             }
 
-            if (entrance == null) return false;
+            if (entrance == null)
+            {
+                // No entrance authored for this dungeon (Khaldun, Terathan
+                // Keep — reached via passages, no surface record). Take the
+                // long way home instead of wandering forever: a random
+                // moongate, same precedent as the Traveler's MAROONED rescue.
+                var gates = MoongateTravel.AllMoongates();
+                if (gates.Count == 0) return false;
+                var gate = gates[Utility.Random(gates.Count)];
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
+                    $"L{Level} and no entrance authored — emerging at moongate " +
+                    $"'{gate.Name}'");
+                HaltMovement();
+                bot.MoveToWorld(gate.ArrivalPoint ?? gate.Location, bot.Map);
+                bot.Behavior = new TravelerBehavior();
+                return true;
+            }
 
             Console.WriteLine(
                 $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +

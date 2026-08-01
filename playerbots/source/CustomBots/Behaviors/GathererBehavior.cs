@@ -11,6 +11,16 @@
 // TravelerBehavior's delivery hook plays the handoff scene at a crafter
 // or the bank.
 //
+// THE SITE IS THE PAINTED POLYGON. A site drawn in the map editor is the
+// mine / the grove, and the shift only happens INSIDE it — arriving
+// "near" the shape is not arriving. A bot that clocks in outside (the
+// last-leg drift is short and wilderness waypoints sit on the road, so it
+// often stops short) walks itself in first and swings nothing on the way;
+// if it can't get inside, it gives up and travels on rather than mining
+// the roadside. Working the face keeps it inside too: the shuffle only
+// takes steps that stay within the polygon. Unpainted sites keep the old
+// stand-where-you-landed behavior.
+//
 // If something attacks mid-shift, the tool is a real axe: swap to a
 // defender and fight (the classic UO lumberjack). The shift is lost;
 // the defender revert sends them traveling and the destination roll
@@ -31,12 +41,43 @@ namespace Server.CustomBots
         private static readonly TimeSpan HarvestInterval = TimeSpan.FromSeconds(35);
         private const int MaxCarried = 60; // stop stuffing the pack past this
 
+        // Walking in from wherever the traveler stopped. Own step timer +
+        // PathFollower, same pattern as the corpse run.
+        private static readonly TimeSpan StepInterval  = TimeSpan.FromMilliseconds(400);
+        private static readonly TimeSpan WalkInTimeout = TimeSpan.FromSeconds(75);
+
+        // How far off a site a bot may be handed off and still be counted
+        // as "sent here" when it has forgotten its site name (post-save).
+        private const int SiteRecoveryRange = 40;
+
         private DateTime _nextSwing;
         private DateTime _nextHarvest;
         private Point3D _anchor;
 
-        public override string GetStatusLine(PlayerBot bot) =>
-            bot.Class == BotClass.Miner ? "mining a rock face" : "chopping wood";
+        // The painted work site, and the walk-in state for reaching it.
+        private PaintedZone _site;
+        private Point3D _walkInGoal;
+        private DateTime _walkInStartedAt;
+        private bool _clockedIn;
+        private bool _shiftStamped;
+        private PathFollower _follower;
+        private Timer _stepTimer;
+
+        // The destination that sent this bot here. Set by the Traveler
+        // handoff; null on a behavior restored from a save (the site is
+        // then recovered from the bot's position instead).
+        public string SiteName { get; set; }
+
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            if (_site != null && !_clockedIn)
+            {
+                return bot.Class == BotClass.Miner
+                    ? "walking in to the dig site"
+                    : "walking in to the tree line";
+            }
+            return bot.Class == BotClass.Miner ? "mining a rock face" : "chopping wood";
+        }
 
         public GathererBehavior()
         {
@@ -53,15 +94,57 @@ namespace Server.CustomBots
             _nextSwing = Core.Now;
             _nextHarvest = Core.Now + HarvestInterval;
 
+            _site = ResolveSite(bot);
+            _clockedIn = _site == null || _site.Contains(bot.X, bot.Y);
+            // Already standing in the site: the handoff's window IS the
+            // shift, so a later re-entry must not restamp it.
+            _shiftStamped = _clockedIn;
+            if (_site != null && !_clockedIn)
+            {
+                _walkInGoal = _site.InteriorGoal(bot.Map, bot.Z);
+                _walkInStartedAt = Core.Now;
+            }
+
             // Organic arrivals get a visit window from the handoff; a
             // directly-attached gatherer (admin, load) stamps its own.
             VisitExpiresAt ??= Core.Now + TimeSpan.FromMinutes(Utility.RandomMinMax(4, 8));
+        }
+
+        public override void OnDetached(PlayerBot bot)
+        {
+            StopStepping();
+            base.OnDetached(bot);
+        }
+
+        // Which painted site is this? By name when the handoff told us, else
+        // by where the bot is standing (a shift restored from a save), else
+        // the nearest site — a bot handed off just outside the shape.
+        private PaintedZone ResolveSite(PlayerBot bot)
+        {
+            if (!string.IsNullOrEmpty(SiteName))
+            {
+                var byName = ZoneRegistry.AreaForDestination(SiteName, bot.Location);
+                if (byName != null && byName.IsGatherSite)
+                {
+                    return byName;
+                }
+                // Named a site with no polygon painted for it — that site
+                // has no shape to stay inside, so work where we landed.
+                if (byName == null && DestinationCatalog.GetByName(SiteName) != null)
+                {
+                    return null;
+                }
+            }
+
+            return ZoneRegistry.GatherAreaAt(bot.X, bot.Y)
+                ?? ZoneRegistry.NearestGatherArea(bot.Location, SiteRecoveryRange);
         }
 
         public override void Tick(PlayerBot bot)
         {
             if (bot.Map == null || bot.Map == Map.Internal || bot.Deleted || !bot.Alive)
             {
+                StopStepping();
                 return;
             }
 
@@ -69,6 +152,7 @@ namespace Server.CustomBots
             // defender's revert-to-Traveler resumes ordinary life.
             if (bot.Combatant is Mobile threat && threat.Alive && !threat.Deleted)
             {
+                StopStepping();
                 bot.Behavior = new AdventurerBehavior
                 {
                     DefenderMode = true,
@@ -82,6 +166,7 @@ namespace Server.CustomBots
             // the crafter who buys this material.
             if (VisitExpiresAt != null && Core.Now >= VisitExpiresAt.Value)
             {
+                StopStepping();
                 bot.HaulPending = true;
                 var line = ChatLibrary.PickRandom("gather_haul");
                 if (!string.IsNullOrEmpty(line))
@@ -90,6 +175,28 @@ namespace Server.CustomBots
                 }
                 bot.Behavior = BehaviorRegistry.Create("Traveler");
                 return;
+            }
+
+            // Outside the painted site: no ore comes out of the roadside.
+            // Walk in (or give up) — nothing else happens this tick.
+            if (_site != null && !_site.Contains(bot.X, bot.Y))
+            {
+                if (_clockedIn)
+                {
+                    // Shoved out mid-shift (knockback, a fight that moved
+                    // us). Stop working, walk back in on a fresh clock.
+                    _clockedIn = false;
+                    _walkInGoal = _site.InteriorGoal(bot.Map, bot.Z);
+                    _walkInStartedAt = Core.Now;
+                    StopStepping();
+                }
+                TickWalkIn(bot);
+                return;
+            }
+
+            if (!_clockedIn)
+            {
+                ClockIn(bot);
             }
 
             TrySpeak(bot);
@@ -102,19 +209,7 @@ namespace Server.CustomBots
 
                 if (Utility.RandomDouble() < 0.15)
                 {
-                    // Shuffle a tile — working along the treeline.
-                    var dir = (Direction)Utility.Random(8);
-                    if (bot.InRange(_anchor, 4))
-                    {
-                        bot.Direction = dir;
-                        bot.Move(dir);
-                    }
-                    else
-                    {
-                        var back = bot.GetDirectionTo(_anchor);
-                        bot.Direction = back;
-                        bot.Move(back);
-                    }
+                    StepAlongTheFace(bot);
                 }
 
                 // Swing animation (one-hand chop) + the trade sound.
@@ -129,6 +224,132 @@ namespace Server.CustomBots
                     TimeSpan.FromSeconds(Utility.Random(20));
                 AddYield(bot);
             }
+        }
+
+        // The bot just crossed into the site — the shift starts HERE, so the
+        // walk-in doesn't eat the working window. Only the FIRST clock-in
+        // stamps the shift; walking back in after being shoved out doesn't
+        // buy another one.
+        private void ClockIn(PlayerBot bot)
+        {
+            StopStepping();
+            _clockedIn = true;
+            _anchor = bot.Location;
+            _nextSwing = Core.Now;
+            _nextHarvest = Core.Now + HarvestInterval;
+            if (!_shiftStamped)
+            {
+                _shiftStamped = true;
+                VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(Utility.RandomMinMax(4, 8));
+            }
+        }
+
+        // Walking in from wherever the traveler's last-leg drift ran out.
+        private void TickWalkIn(PlayerBot bot)
+        {
+            if (Core.Now - _walkInStartedAt > WalkInTimeout)
+            {
+                // Can't reach the face — wedged behind the mountain, or the
+                // polygon is painted over unwalkable ground. Don't stand in
+                // the wilderness pretending to mine; go somewhere else.
+                StopStepping();
+                Console.WriteLine($"[gather] {bot.Name} couldn't get inside " +
+                                  $"'{_site.Name}' — leaving instead of working outside it");
+                bot.Behavior = BehaviorRegistry.Create("Traveler");
+                return;
+            }
+
+            EnsureStepping(bot);
+        }
+
+        // Work the face: a step in a random direction, but only ever onto a
+        // tile that's still inside the site. Blocked ones just don't happen;
+        // if we've somehow ended up on the rim, step back toward the middle.
+        private void StepAlongTheFace(PlayerBot bot)
+        {
+            if (_site == null)
+            {
+                // Unpainted site — the old anchor leash.
+                var d = (Direction)Utility.Random(8);
+                if (bot.InRange(_anchor, 4))
+                {
+                    bot.Direction = d;
+                    bot.Move(d);
+                }
+                else
+                {
+                    var home = bot.GetDirectionTo(_anchor);
+                    bot.Direction = home;
+                    bot.Move(home);
+                }
+                return;
+            }
+
+            var dir = (Direction)Utility.Random(8);
+            int nx = bot.X, ny = bot.Y;
+            Offset(dir, ref nx, ref ny);
+            if (_site.Contains(nx, ny))
+            {
+                bot.Direction = dir;
+                bot.Move(dir);
+                return;
+            }
+
+            // That step would leave the site — drift back in instead.
+            var inward = bot.GetDirectionTo(_site.InteriorGoal(bot.Map, bot.Z));
+            int ix = bot.X, iy = bot.Y;
+            Offset(inward, ref ix, ref iy);
+            bot.Direction = inward;
+            if (_site.Contains(ix, iy))
+            {
+                bot.Move(inward);
+            }
+        }
+
+        private static void Offset(Direction d, ref int x, ref int y)
+        {
+            switch (d & Direction.Mask)
+            {
+                case Direction.North: --y; break;
+                case Direction.Right: ++x; --y; break;
+                case Direction.East:  ++x; break;
+                case Direction.Down:  ++x; ++y; break;
+                case Direction.South: ++y; break;
+                case Direction.Left:  --x; ++y; break;
+                case Direction.West:  --x; break;
+                case Direction.Up:    --x; --y; break;
+            }
+        }
+
+        private void EnsureStepping(PlayerBot bot)
+        {
+            if (_stepTimer?.Running == true)
+            {
+                return;
+            }
+            _stepTimer = Timer.DelayCall(TimeSpan.Zero, StepInterval, 0, () =>
+            {
+                if (bot.Deleted || bot.Behavior != this || !bot.Alive)
+                {
+                    StopStepping();
+                    return;
+                }
+                if (_site != null && _site.Contains(bot.X, bot.Y))
+                {
+                    // Crossed the boundary — the Tick clocks us in.
+                    StopStepping();
+                    return;
+                }
+                _follower ??= new PathFollower(bot, _walkInGoal);
+                _follower.Follow(run: false, range: 1);
+            });
+        }
+
+        private void StopStepping()
+        {
+            _stepTimer?.Stop();
+            _stepTimer = null;
+            _follower = null;
         }
 
         private static void AddYield(PlayerBot bot)
