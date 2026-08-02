@@ -1,0 +1,8 @@
+# Gossip/warband.txt — a faction patrol marched out.
+# {actor} = the leader, {other} = where they're headed, {place}, {when}.
+
+{actor} led a war band out toward {other} {when}
+saw shields marching for {other} {when}. stay clear
+a war band left for {other} {when}
+{actor}'s squad went hunting the enemy near {other}
+patrols out toward {other} {when}. keep your head down

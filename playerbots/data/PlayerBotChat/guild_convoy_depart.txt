@@ -1,0 +1,10 @@
+# guild_convoy_depart.txt — the convoy leader setting out.
+# {dest} = destination name (lowercase).
+
+all here? {dest} it is — move out
+lets go, {dest} awaits
+on the road to {dest}, stay close
+off we go — {dest}
+guild on the march, {dest} bound
+keep together, its a walk to {dest}
+right — {dest}, follow me

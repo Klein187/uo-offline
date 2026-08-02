@@ -42,12 +42,21 @@
 using System;
 using System.Collections.Generic;
 using Server;
+using Server.Items;
+using Server.Mobiles;
 
 namespace Server.CustomBots
 {
     public class DungeonCrawlerBehavior : AdventurerBehavior
     {
         public override string SerializableName => "DungeonCrawler";
+
+        // On the way out you defend yourself — you don't clear rooms.
+        // (See AdventurerBehavior.WantsFreshFights; foes already on us or
+        // on a friend still register.) This is what makes the climb-out
+        // read as LEAVING instead of a second crawl, and it's why exit
+        // mode stopped killing bots on the last flight of stairs.
+        protected override bool WantsFreshFights => !ExitMode;
 
         // Idle chatter down here is nervier — whispers in the dark, loot
         // squabbles — not bank-plaza LFG spam.
@@ -182,6 +191,35 @@ namespace Server.CustomBots
         // Log only once when a level has no exit authored, to avoid spamming.
         private bool _warnedNoExit;
 
+        // One-shot note when exit mode has to try a Descend-labeled pad
+        // (no ascend authored — mislabeled stairs). Reset per floor.
+        private bool _notedWrongWayPad;
+
+        // ---- Corpse looting ----
+        // Clearing a room means TAKING ITS STUFF — that's why anyone
+        // crawls a dungeon. During the room linger the crawler steers to
+        // each monster corpse it hasn't picked over and pockets the gold
+        // (bow animation, occasional emote). The gold rides home in the
+        // pack and feeds the economy loop.
+        private readonly HashSet<Serial> _looted = new();
+        private DateTime _nextLootAt = DateTime.MinValue;
+        private const int LootSteerRange = 8;
+        private const int LootReachRange = 2;
+
+        // Coarse position watchdog — the crawler's own last resort. The
+        // inherited patrol stuck-check re-picks goals and can sidestep/
+        // extract a rooted bot, but a crawler whose every goal is
+        // unreachable (fell off its waypoint component, pit, unauthored
+        // pocket) paces a few tiles forever — for up to the whole run
+        // timer (20-90 min) before exit mode's rescue finally moves it.
+        // No ground gained in HardStuckAfter → surface rescue now.
+        // Fighting, lingering (campers linger the whole run) and pad
+        // transitions legitimately hold one spot, so they park the clock.
+        private Point3D _hardStuckAnchor;
+        private DateTime _hardStuckAnchorAt = DateTime.MinValue;
+        private static readonly TimeSpan HardStuckAfter = TimeSpan.FromMinutes(5);
+        private const int HardStuckMoveTiles = 6;
+
         // -------------------------------------------------------------------
         public override void OnAttached(PlayerBot bot)
         {
@@ -210,6 +248,14 @@ namespace Server.CustomBots
                         Utility.RandomMinMax(RunMinMinutes, RunMaxMinutes));
                 }
             }
+
+            // Dungeons are dark — a crawler with a free off-hand lights a
+            // torch from its pack (the odds-and-ends kit carries them).
+            // Shield users, archers and two-hander fighters keep their
+            // hands; mages lose theirs to the first cast's clear-hands.
+            // The subset that CAN carries fire, which is exactly how a
+            // real group walked in.
+            LightTorch(bot);
         }
 
         // -------------------------------------------------------------------
@@ -221,7 +267,114 @@ namespace Server.CustomBots
         {
             StopPadTimer();
             _padFollower = null;
+            DouseTorch(bot);
             base.OnDetached(bot);
+        }
+
+        // ---- Torch kit ----
+        private static void LightTorch(PlayerBot bot)
+        {
+            if (bot == null || bot.Deleted || bot.Backpack == null)
+            {
+                return;
+            }
+            if (bot.FindItemOnLayer(Layer.TwoHanded) != null)
+            {
+                return; // shield / bow / two-hander — hands are full
+            }
+            if (bot.Backpack.FindItemByType(typeof(Torch)) is Torch torch &&
+                bot.EquipItem(torch))
+            {
+                torch.Ignite();
+            }
+        }
+
+        private static void DouseTorch(PlayerBot bot)
+        {
+            if (bot == null || bot.Deleted)
+            {
+                return;
+            }
+            if (bot.FindItemOnLayer(Layer.TwoHanded) is Torch torch)
+            {
+                torch.Douse();
+                bot.Backpack?.DropItem(torch);
+            }
+        }
+
+        // ---- Corpse looting ----
+
+        // Nearest monster corpse within range that this crawler hasn't
+        // picked over yet. Monster corpses only — bot/player corpses
+        // belong to the death system (and looting them is PK business).
+        private Corpse FindLootableCorpse(PlayerBot bot, int range)
+        {
+            Corpse best = null;
+            int bestDist = range + 1;
+            foreach (var c in bot.Map.GetItemsInRange<Corpse>(bot.Location, range))
+            {
+                if (c.Deleted || _looted.Contains(c.Serial))
+                {
+                    continue;
+                }
+                if (c.Owner is not BaseCreature)
+                {
+                    continue;
+                }
+                int d = Dist(bot.Location, c.Location);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = c;
+                }
+            }
+            return best;
+        }
+
+        // Adjacent to an unlooted corpse and not fighting — pocket the
+        // gold. One corpse per beat so a pile of kills reads as the bot
+        // working through them, not hoovering the room in a tick.
+        private void TryLootNearby(PlayerBot bot)
+        {
+            if (Core.Now < _nextLootAt)
+            {
+                return;
+            }
+            var corpse = FindLootableCorpse(bot, LootReachRange);
+            if (corpse == null)
+            {
+                return;
+            }
+
+            _looted.Add(corpse.Serial);
+            if (_looted.Count > 96)
+            {
+                _looted.Clear(); // stale serials — corpses decay anyway
+            }
+            _nextLootAt = Core.Now + TimeSpan.FromSeconds(2.5);
+
+            int gold = 0;
+            var items = corpse.Items;
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                if (items[i] is Gold g)
+                {
+                    gold += g.Amount;
+                    bot.Backpack?.DropItem(g);
+                }
+            }
+
+            bot.Animate(32, 5, 1, true, false, 0); // bend over the body
+            if (gold > 0 && Utility.RandomDouble() < 0.30)
+            {
+                BotScene.Deliver(bot, "*loots the corpse*");
+            }
+            if (CombatDebug && gold > 0)
+            {
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: looted {gold}gp in " +
+                    $"{DungeonName} L{Level}");
+            }
         }
 
         public override void Tick(PlayerBot bot)
@@ -326,11 +479,57 @@ namespace Server.CustomBots
             // "off-screen" rather than wander this floor forever.
             if (ExitMode && Core.Now - _exitModeSince > ExitRescueAfter)
             {
-                if (RescueToSurface(bot)) return;
+                if (RescueToSurface(bot, "exit watchdog")) return;
                 _exitModeSince = Core.Now; // no entrance known — retry later
             }
 
+            if (CheckHardStuck(bot)) return;
+
+            // Between fights, pick over anything lying at our feet.
+            if (bot.Alive && bot.Combatant == null)
+            {
+                TryLootNearby(bot);
+            }
+
             base.Tick(bot);
+        }
+
+        // -------------------------------------------------------------------
+        // Coarse position watchdog (see the field comment). Returns true
+        // when it rescued the bot (behavior swapped — caller must return).
+        // -------------------------------------------------------------------
+        private bool CheckHardStuck(PlayerBot bot)
+        {
+            if (!bot.Alive || bot.Combatant != null || _lingering || _transitionPending)
+            {
+                _hardStuckAnchor = bot.Location;
+                _hardStuckAnchorAt = Core.Now;
+                return false;
+            }
+
+            if (_hardStuckAnchorAt == DateTime.MinValue ||
+                Dist(bot.Location, _hardStuckAnchor) > HardStuckMoveTiles)
+            {
+                _hardStuckAnchor = bot.Location;
+                _hardStuckAnchorAt = Core.Now;
+                return false;
+            }
+
+            if (Core.Now - _hardStuckAnchorAt <= HardStuckAfter)
+            {
+                return false;
+            }
+
+            Console.WriteLine(
+                $"[DungeonCrawler] {bot.Name}: hard-stuck at {bot.Location} in " +
+                $"{DungeonName} L{Level} ({(int)HardStuckAfter.TotalMinutes} min " +
+                $"without ground gained) — rescuing to the surface");
+            if (RescueToSurface(bot, "hard-stuck"))
+            {
+                return true;
+            }
+            _hardStuckAnchorAt = Core.Now; // nothing to rescue to — re-arm
+            return false;
         }
 
         // -------------------------------------------------------------------
@@ -356,6 +555,13 @@ namespace Server.CustomBots
             {
                 if (Camper || Core.Now < _lingerUntil)
                 {
+                    // Bodies first: steer the shuffle at the nearest corpse
+                    // we haven't picked over (Tick loots it once adjacent).
+                    var corpse = FindLootableCorpse(bot, LootSteerRange);
+                    if (corpse != null)
+                    {
+                        return corpse.Location;
+                    }
                     return new Point3D(
                         _lingerAnchor.X + Utility.RandomMinMax(-LingerShuffleRadius, LingerShuffleRadius),
                         _lingerAnchor.Y + Utility.RandomMinMax(-LingerShuffleRadius, LingerShuffleRadius),
@@ -403,6 +609,18 @@ namespace Server.CustomBots
                         $"{DungeonName} L{Level} — wandering until one is reachable");
                 }
                 return null;
+            }
+
+            // Exit mode fell back to a Descend-labeled pad (no ascend on
+            // this floor — mislabeled stairs). Note it once; the landing
+            // decides what the pad really was.
+            if (ExitMode && p.Type == DestinationType.DungeonDescend &&
+                !_notedWrongWayPad)
+            {
+                _notedWrongWayPad = true;
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: no ascend on {DungeonName} " +
+                    $"L{Level} — trying pad '{p.Name}' (mislabeled up-stair?)");
             }
 
             if (PlanRoute(bot, p))
@@ -586,6 +804,8 @@ namespace Server.CustomBots
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: teleporter at {_padTile} " +
                     $"({DungeonName} L{Level}) never fired — resuming crawl");
+                StuckTelemetry.Record(bot, "pad_timeout",
+                    $"{DungeonName} L{Level} pad {_padTile}");
                 AbortTransition();
                 return true;
             }
@@ -647,7 +867,7 @@ namespace Server.CustomBots
                         $"[DungeonCrawler] {bot.Name}: revolving door on the way out of " +
                         $"{DungeonName} — rescuing to the surface");
                     _floorBounces = 0;
-                    RescueToSurface(bot);
+                    RescueToSurface(bot, "revolving door");
                 }
             }
             else if (DungeonRegistry.IsInDungeon(bot))
@@ -666,6 +886,7 @@ namespace Server.CustomBots
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: landed on an unauthored floor — " +
                     $"hunting locally in {DungeonName}");
+                StuckTelemetry.Record(bot, "unauthored_floor", DungeonName);
             }
             else
             {
@@ -686,7 +907,9 @@ namespace Server.CustomBots
             _route = null;
             _lingering = false;
             _visited.Clear();       // new floor, fresh sweep
+            _looted.Clear();        // last floor's corpses are behind us
             _warnedNoExit = false;
+            _notedWrongWayPad = false;
             _transitionPending = false;
             if (ExitMode && refreshExitWindow)
             {
@@ -696,13 +919,14 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Exit-mode dead end: no way up was found for a whole watchdog
-        // window. Move the bot to its dungeon's surface entrance (matched
-        // by Dungeon tag prefix — "Despise lvl1" finds the "Despise"
-        // entrance) and hand it back to a Traveler. Mirrors Traveler's own
-        // LOST rescue. Returns false when no entrance matches.
+        // Dead end: no way out was found (exit watchdog, revolving door,
+        // hard-stuck — `why` says which). Move the bot to its dungeon's
+        // surface entrance (matched by Dungeon tag prefix — "Despise lvl1"
+        // finds the "Despise" entrance) and hand it back to a Traveler.
+        // Mirrors Traveler's own LOST rescue. Returns false when there is
+        // nowhere at all to rescue to.
         // -------------------------------------------------------------------
-        private bool RescueToSurface(PlayerBot bot)
+        private bool RescueToSurface(PlayerBot bot, string why)
         {
             BotDestination entrance = null;
             foreach (var d in DestinationCatalog.All)
@@ -729,6 +953,8 @@ namespace Server.CustomBots
                     $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
                     $"L{Level} and no entrance authored — emerging at moongate " +
                     $"'{gate.Name}'");
+                StuckTelemetry.Record(bot, "exit_gate_rescue",
+                    $"{why} — {DungeonName} L{Level} → {gate.Name}");
                 HaltMovement();
                 bot.MoveToWorld(gate.ArrivalPoint ?? gate.Location, bot.Map);
                 bot.Behavior = new TravelerBehavior();
@@ -738,6 +964,8 @@ namespace Server.CustomBots
             Console.WriteLine(
                 $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
                 $"L{Level} — emerging at {entrance.Name}");
+            StuckTelemetry.Record(bot, "exit_rescue",
+                $"{why} — {DungeonName} L{Level} → {entrance.Name}");
             HaltMovement();
             bot.MoveToWorld(entrance.Location, bot.Map);
             bot.Behavior = new TravelerBehavior();

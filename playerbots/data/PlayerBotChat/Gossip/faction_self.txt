@@ -1,0 +1,7 @@
+# Gossip/faction_self.txt — a bot recounting ITS OWN fall in the shield
+# war (post-res). {other} = who slew it, {place}, {when}.
+
+{other} took me down in the war at {place} {when}
+i fell to {other} at {place}. the war goes on
+{other} got me {when}. next time the shield holds
+lost to {other} at {place}. rematch soon

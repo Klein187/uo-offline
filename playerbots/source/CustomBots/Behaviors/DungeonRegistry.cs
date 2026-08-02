@@ -201,7 +201,29 @@ namespace Server.CustomBots
                         best = p;
                     }
                 }
-                return best; // null if this level has no ascend point authored
+                if (best != null)
+                {
+                    return best;
+                }
+
+                // No ascend authored on this floor. Some dungeons' up-stairs
+                // are mislabeled as Descend records (Covetous / Hythloth /
+                // Deceit's scrambled level numbering) — trying ANY transition
+                // pad beats wandering until the exit watchdog teleports the
+                // bot out: take the nearest pad and let the landing decide
+                // what it was. A pad that truly goes DOWN is caught by the
+                // revolving-door breaker and the exit watchdog.
+                foreach (var p in pts)
+                {
+                    if (p.Type != DestinationType.DungeonDescend) continue;
+                    int dist = ChebyshevDist(from, p.Location);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        best = p;
+                    }
+                }
+                return best; // null when the floor has no transition pads at all
             }
 
             // Normal mode: rooms + descend points, weighted. Ascend points are

@@ -143,6 +143,11 @@ namespace Server.CustomBots
             return x < y ? ((ulong)x << 32) | y : ((ulong)y << 32) | x;
         }
 
+        // Party note: HUNT parties are off-limits (don't break up a dungeon
+        // dive over shield politics), but convoy/warband members are fair
+        // game — meeting the enemy is a war band's whole purpose, and a
+        // guild convoy of faction guildmates that crosses the other side
+        // fights like anyone else. Their party dissolves into the battle.
         private static bool IsEligible(PlayerBot bot) =>
             bot != null && !bot.Deleted && bot.Alive &&
             !bot.LifecycleExempt && !bot.LoggingOut &&
@@ -151,9 +156,23 @@ namespace Server.CustomBots
             bot.Behavior is not PKBehavior
                         and not GhostBehavior
                         and not CorpseReclaimBehavior &&
-            !BotPartyManager.IsInParty(bot) &&
+            BotPartyManager.PartyOf(bot) is not { Kind: BotPartyKind.Hunt } &&
             !DungeonRegistry.IsInDungeon(bot) &&
             !OnFightCooldown(bot);
+
+        // Ally-draft eligibility: same as above minus the fight cooldown —
+        // a bot standing next to a faction brawl is in it, rested or not.
+        private static bool IsDraftable(PlayerBot bot, BotFaction faction) =>
+            bot != null && !bot.Deleted && bot.Alive &&
+            FactionOf(bot) == faction &&
+            !bot.LifecycleExempt && !bot.LoggingOut &&
+            !bot.CorpseRunPending &&
+            bot.Combatant == null &&
+            bot.Behavior is not PKBehavior
+                        and not GhostBehavior
+                        and not CorpseReclaimBehavior &&
+            BotPartyManager.PartyOf(bot) is not { Kind: BotPartyKind.Hunt } &&
+            !DungeonRegistry.IsInDungeon(bot);
 
         // -------------------------------------------------------------------
         // TryStartFight — find one opposing pair in sight of each other and
@@ -224,11 +243,22 @@ namespace Server.CustomBots
             }
         }
 
+        // How far around each principal we look for faction-mates to pull
+        // into the fight, and the biggest side a brawl can grow to.
+        private const int AllyDraftRange = 10;
+        private const int MaxSideSize = 4;
+
         private static void BeginFight(PlayerBot a, PlayerBot b)
         {
+            // GROUP FIGHT: everyone's faction-mates standing nearby pile in
+            // — a lone enemy walking into a war band gets ganged exactly
+            // like 1999, and two bands meeting becomes a street battle.
+            var sideA = new List<PlayerBot> { a };
+            var sideB = new List<PlayerBot> { b };
+            CollectAllies(a, sideA, sideB);
+            CollectAllies(b, sideB, sideA);
+
             _fights.Add((a, b, Core.Now));
-            _botCooldowns[a.Serial] = Core.Now + BotCooldown;
-            _botCooldowns[b.Serial] = Core.Now + BotCooldown;
             _pairCooldowns[PairKey(a, b)] = Core.Now + PairCooldown;
 
             // Runaway brake on the cooldown dicts (bots churn with sessions).
@@ -242,33 +272,100 @@ namespace Server.CustomBots
             }
 
             Console.WriteLine(
-                $"[faction] {FactionOf(a)} {a.Name} vs {FactionOf(b)} {b.Name} " +
-                $"at ({a.X},{a.Y})!");
+                $"[faction] {FactionOf(a)} vs {FactionOf(b)} — " +
+                $"{sideA.Count}v{sideB.Count} at ({a.X},{a.Y})! " +
+                $"({a.Name} / {b.Name})");
+            if (sideA.Count + sideB.Count > 2)
+            {
+                BotEventJournal.Record("warclash", a, $"{sideA.Count}v{sideB.Count}");
+            }
 
-            BattleCry(a);
-            BattleCry(b);
+            // Convert every participant to a fight-ready defender FIRST,
+            // then dissolve any convoy/warband they marched in — Disband
+            // only reattaches bots still running PartyMemberBehavior, so
+            // drafted fighters keep their defender brains and only
+            // undrafted stragglers go back to ordinary life.
+            int cry = 0;
+            foreach (var bot in sideA)
+            {
+                Draft(bot, cry++);
+            }
+            foreach (var bot in sideB)
+            {
+                Draft(bot, cry++);
+            }
+            foreach (var bot in sideA)
+            {
+                BotPartyManager.DisbandInvolving(bot);
+            }
+            foreach (var bot in sideB)
+            {
+                BotPartyManager.DisbandInvolving(bot);
+            }
 
-            // Defender-mode brains prosecute the fight with the full combat
-            // kit and hand each bot back to its trip when it's over. Stash
-            // the current trip so the winner resumes where it was headed.
-            var destA = (a.Behavior as TravelerBehavior)?.DestinationName;
-            var destB = (b.Behavior as TravelerBehavior)?.DestinationName;
+            // Pair everyone off cyclically so each fighter opens on an
+            // enemy (uneven sides double up on the outnumbered).
+            int n = Math.Max(sideA.Count, sideB.Count);
+            for (int i = 0; i < n; i++)
+            {
+                var xa = sideA[i % sideA.Count];
+                var xb = sideB[i % sideB.Count];
+                xa.Combatant = xb;
+                xb.Combatant = xa;
+            }
+        }
 
-            a.Behavior = new AdventurerBehavior
+        // Pull nearby same-faction bots into `side` (center is already in).
+        private static void CollectAllies(
+            PlayerBot center, List<PlayerBot> side, List<PlayerBot> otherSide)
+        {
+            var faction = FactionOf(center);
+            foreach (var m in center.Map.GetMobilesInRange(center.Location, AllyDraftRange))
+            {
+                if (side.Count >= MaxSideSize)
+                {
+                    break;
+                }
+                if (m is not PlayerBot bot || bot == center ||
+                    side.Contains(bot) || otherSide.Contains(bot) ||
+                    !IsDraftable(bot, faction))
+                {
+                    continue;
+                }
+                side.Add(bot);
+            }
+        }
+
+        // Swap one participant to a fight-ready defender: cooldown stamp,
+        // staggered battle cry, and a defender brain that resumes the
+        // bot's trip when the fight ends.
+        private static void Draft(PlayerBot bot, int cryStagger)
+        {
+            _botCooldowns[bot.Serial] = Core.Now + BotCooldown;
+
+            if (cryStagger <= 1)
+            {
+                BattleCry(bot);
+            }
+            else
+            {
+                var crier = bot;
+                Timer.DelayCall(TimeSpan.FromSeconds(0.4 * cryStagger), () =>
+                {
+                    if (!crier.Deleted && crier.Alive)
+                    {
+                        BattleCry(crier);
+                    }
+                });
+            }
+
+            var dest = (bot.Behavior as TravelerBehavior)?.DestinationName;
+            bot.Behavior = new AdventurerBehavior
             {
                 DefenderMode = true,
                 DefenderRetreatHpFraction = 0.30, // shield pride: fight longer
-                ResumeDestination = destA,
+                ResumeDestination = dest,
             };
-            b.Behavior = new AdventurerBehavior
-            {
-                DefenderMode = true,
-                DefenderRetreatHpFraction = 0.30,
-                ResumeDestination = destB,
-            };
-
-            a.Combatant = b;
-            b.Combatant = a;
         }
 
         private static void BattleCry(PlayerBot bot)

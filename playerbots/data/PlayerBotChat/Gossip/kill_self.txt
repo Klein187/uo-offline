@@ -1,0 +1,10 @@
+# Gossip/kill_self.txt — a bot bragging about ITS OWN notable kill.
+# {other} = the monster (article included: "an ettin"), {place}, {when}.
+
+i slew {other} at {place} {when}
+took down {other} at {place} myself
+you shouldve seen it, me against {other} at {place}
+i dropped {other} at {place}. no big deal
+{other} tried me at {place}. tried
+just me and {other} at {place} — im here, it isnt
+got {other} at {place} {when}, good fight

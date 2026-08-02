@@ -1,0 +1,7 @@
+# Gossip/party_self.txt — a bot back from leading ITS OWN hunt.
+# {other} = the dungeon, {place}, {when}.
+
+just led a crew through {other}. good haul
+took a party to {other} {when}. we all made it back. mostly
+back from {other} with the group. worth it
+{other} run {when} with a full party. shouldve been there

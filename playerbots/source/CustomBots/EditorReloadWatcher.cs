@@ -57,6 +57,8 @@ namespace Server.CustomBots
         private static readonly string HousesAck = Live("houses_ack.json");
         private static readonly string GotoReq = Live("goto_request.txt");
         private static readonly string GotoAck = Live("goto_ack.json");
+        private static readonly string GossipReq = Live("gossip_request.txt");
+        private static readonly string GossipAck = Live("gossip_ack.json");
         private static readonly string PadReq = Live("padaudit_request.txt");
         private static readonly string PadAck = Live("padaudit_report.json");
 
@@ -75,6 +77,7 @@ namespace Server.CustomBots
         private static long _lastTame = -1;
         private static long _lastHouses = -1;
         private static long _lastGoto = -1;
+        private static long _lastGossip = -1;
         private static long _lastPad = -1;
         private static Timer _timer;
 
@@ -97,6 +100,7 @@ namespace Server.CustomBots
             _lastTame = ReadToken(TameReq) ?? 0;
             _lastHouses = ReadHousesRequest(out _, out _) ?? 0;
             _lastGoto = ReadGotoRequest(out _) ?? 0;
+            _lastGossip = ReadToken(GossipReq) ?? 0;
             _lastPad = ReadToken(PadReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
@@ -169,6 +173,13 @@ namespace Server.CustomBots
                 DoTestFactionFight(factionTok.Value);
             }
 
+            var gossipTok = ReadToken(GossipReq);
+            if (gossipTok != null && gossipTok.Value != _lastGossip)
+            {
+                _lastGossip = gossipTok.Value;
+                DoTestGossip(gossipTok.Value);
+            }
+
             var liveTok = ReadLiveMapRequest(out double liveSecs);
             if (liveTok != null && liveTok.Value != _lastLiveMap)
             {
@@ -226,7 +237,7 @@ namespace Server.CustomBots
             }
         }
 
-        // padaudit_request.txt: functional teleporter-pad audit — walks a
+        // padaudit_request.txt: functional teleporter-pad audit ï¿½ walks a
         // probe onto every dungeon entrance/descend/ascend pad.
         private static void DoPadAudit(long token)
         {
@@ -250,7 +261,7 @@ namespace Server.CustomBots
                 $"{{\"token\":{token},\"findings\":[{string.Join(",", items)}]}}");
         }
 
-        // goto_request.txt: "<token> <destination name>" — send a random
+        // goto_request.txt: "<token> <destination name>" ï¿½ send a random
         // eligible bot traveling to the named destination. Headless way to
         // exercise a specific route (island ferries, new trails) on demand.
         private static long? ReadGotoRequest(out string dest)
@@ -287,7 +298,7 @@ namespace Server.CustomBots
                 return;
             }
 
-            // Nearest eligible bot to the destination — exercises the
+            // Nearest eligible bot to the destination ï¿½ exercises the
             // interesting LAST leg of a route instead of a cross-map trek.
             PlayerBot pick = null;
             int best = int.MaxValue;
@@ -324,7 +335,7 @@ namespace Server.CustomBots
                 $"\"name\":\"{pick.Name.Replace("\"", "\\\"")}\"}}");
         }
 
-        // houses_request.txt: "<token> scatter <n>" or "<token> clear" —
+        // houses_request.txt: "<token> scatter <n>" or "<token> clear" ï¿½
         // headless [BotHouses for the housing spike.
         private static long? ReadHousesRequest(out string op, out int count)
         {
@@ -381,7 +392,7 @@ namespace Server.CustomBots
             }
         }
 
-        // thunt_request.txt: force-start a treasure hunt — headless
+        // thunt_request.txt: force-start a treasure hunt ï¿½ headless
         // equivalent of [BotThunt force.
         private static void DoTestThunt(long token)
         {
@@ -391,7 +402,7 @@ namespace Server.CustomBots
             WriteAck(ThuntAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
         }
 
-        // sos_request.txt: force a fisherman to reel in an SOS bottle —
+        // sos_request.txt: force a fisherman to reel in an SOS bottle ï¿½
         // headless equivalent of [BotSos force.
         private static void DoTestSos(long token)
         {
@@ -401,7 +412,7 @@ namespace Server.CustomBots
             WriteAck(SosAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
         }
 
-        // tame_request.txt: force a tamer to start working a quarry —
+        // tame_request.txt: force a tamer to start working a quarry ï¿½
         // headless equivalent of [BotTame force.
         private static void DoTestTame(long token)
         {
@@ -534,6 +545,60 @@ namespace Server.CustomBots
                 Console.WriteLine($"[EditorReload] faction fight: {ex.Message}");
             }
             WriteAck(FactionAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
+        }
+
+        // gossip_request.txt: compose a batch of gossip lines headlessly.
+        // Gossip normally only speaks with a real player in earshot, so a
+        // soak can't observe it â€” this token runs ComposeGossip for a mix
+        // of speakers (recent event ACTORS to exercise the first-person
+        // "_self" templates, plus a stranger for the third-person paths)
+        // and writes whatever came out to gossip_ack.json.
+        private static void DoTestGossip(long token)
+        {
+            var lines = new List<string>();
+            try
+            {
+                var speakers = new List<string> { "A Passerby" };
+                foreach (var ev in BotEventJournal.Recent(30))
+                {
+                    if (!string.IsNullOrEmpty(ev.Actor) && !speakers.Contains(ev.Actor))
+                    {
+                        speakers.Add(ev.Actor);
+                    }
+                    if (speakers.Count >= 8)
+                    {
+                        break;
+                    }
+                }
+
+                for (int round = 0; round < 3; round++)
+                {
+                    foreach (var speaker in speakers)
+                    {
+                        var line = BotEventJournal.ComposeGossip(speaker);
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            lines.Add($"{speaker}: {line}");
+                        }
+                        if (lines.Count >= 12)
+                        {
+                            break;
+                        }
+                    }
+                    if (lines.Count >= 12)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] gossip test: {ex.Message}");
+            }
+
+            WriteAck(GossipAck, System.Text.Json.JsonSerializer.Serialize(
+                new { token, count = lines.Count, lines }));
+            Console.WriteLine($"[EditorReload] gossip test: composed {lines.Count} line(s).");
         }
 
         // party_request.txt: force-form a hunting party (= [BotParties form

@@ -246,23 +246,28 @@ namespace Server.CustomBots
         {
             gatherer.HaulPending = false;
 
-            // Count and remove the haul.
+            // Count and remove the haul — the bot's own pack AND the pack
+            // beast's (that's where a shift with a beast put the yield).
             int hauled = 0;
-            if (gatherer.Backpack != null)
+            hauled += TakeYield(gatherer.Backpack);
+            var beast = gatherer.PackAnimal;
+            if (beast is { Deleted: false })
             {
-                var goods = new List<Item>();
-                foreach (var item in gatherer.Backpack.Items)
+                hauled += TakeYield(beast.Backpack);
+            }
+
+            // The beast has done its job — it stands through the unload
+            // scene, then gets led off to the stables.
+            gatherer.PackAnimal = null;
+            if (beast is { Deleted: false })
+            {
+                Timer.DelayCall(TimeSpan.FromSeconds(8), () =>
                 {
-                    if (item is Server.Items.Log or Server.Items.IronOre)
+                    if (!beast.Deleted)
                     {
-                        goods.Add(item);
+                        beast.Delete();
                     }
-                }
-                foreach (var item in goods)
-                {
-                    hauled += item.Amount;
-                    item.Delete();
-                }
+                });
             }
 
             // Payment proportional to the haul, straight into the purse.
@@ -301,7 +306,32 @@ namespace Server.CustomBots
 
             Console.WriteLine(
                 $"[economy] {gatherer.Name} delivered {hauled} materials at {at}" +
-                (crafter != null ? $" to {crafter.Name}" : " (banked)"));
+                (crafter != null ? $" to {crafter.Name}" : " (banked)") +
+                (beast != null ? " (pack beast unloaded)" : ""));
+        }
+
+        // Remove all raw materials from a container; returns the amount.
+        private static int TakeYield(Server.Items.Container pack)
+        {
+            if (pack == null)
+            {
+                return 0;
+            }
+            int taken = 0;
+            var goods = new List<Item>();
+            foreach (var item in pack.Items)
+            {
+                if (item is Server.Items.Log or Server.Items.IronOre)
+                {
+                    goods.Add(item);
+                }
+            }
+            foreach (var item in goods)
+            {
+                taken += item.Amount;
+                item.Delete();
+            }
+            return taken;
         }
 
         [Usage("BotTrade")]

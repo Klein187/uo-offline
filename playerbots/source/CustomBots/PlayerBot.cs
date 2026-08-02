@@ -198,6 +198,13 @@ namespace Server.CustomBots
         // plays and clears it.
         public bool HaulPending;
 
+        // The pack llama/horse a gatherer's shift spawned — the yield
+        // rides in ITS pack. Runtime-only (not serialized): restarts sweep
+        // stray beasts at load and the next shift spawns a fresh one.
+        // Cleared by delivery (BotEconomy), OnAfterDelete, and the beast's
+        // own ownerless reaper. See BotPackAnimal.cs.
+        public Server.Mobiles.BaseCreature PackAnimal;
+
         // ---- Gear progression (IDEAS 4.3) ----
         //
         // Dungeon runs survived since the last upgrade. At the bank, three
@@ -645,12 +652,20 @@ namespace Server.CustomBots
         public override void OnDeath(Container c)
         {
             var killer = LastKiller;
-            string type = killer is PlayerBot pk
+
+            // A reflected spell (Magic Reflection bounces the bot's own
+            // cast back) or a backfire can make a bot its own killer —
+            // "Wulfgar was killed by Wulfgar" reads like a bug in the feed
+            // and in gossip. A self-kill is an unattributed death.
+            bool selfKill = killer == this;
+
+            string type = !selfKill && killer is PlayerBot pk
                 ? pk.Behavior is PKBehavior ? "pk"
                 : BotFactionWar.AreEnemies(this, pk) ? "faction"
                 : "pk"
                 : "death";
-            BotEventJournal.Record(type, this, killer?.Name ?? "");
+            BotEventJournal.Record(type, this,
+                selfKill ? "" : killer?.Name ?? "");
 
             base.OnDeath(c);
 
@@ -667,6 +682,7 @@ namespace Server.CustomBots
         public override void OnAfterDelete()
         {
             BotMountHelper.DismountAndDelete(this);
+            BotPackAnimals.Release(this);
             NamePool.Release(Name);
             base.OnAfterDelete();
         }

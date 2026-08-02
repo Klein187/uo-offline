@@ -1,0 +1,7 @@
+# Gossip/convoy.txt — a guild crew walked somewhere together.
+# {actor} = the leader, {other} = the destination, {place}, {when}.
+
+{actor} took a guild crew to {other} {when}
+saw {actor}'s guild walking to {other} together
+whole guild on the road to {other} {when}
+{actor} and the guildmates headed for {other}

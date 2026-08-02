@@ -1,0 +1,11 @@
+# Gossip/warclash.txt — retelling a war band battle (order vs chaos
+# groups met). {actor} = one fighter present, {other} = the size ("3v2"),
+# {place}, {when}.
+
+war bands clashed at {place} {when}
+order and chaos went at it at {place} {when}
+proper shield battle at {place} {when}. bodies everywhere
+the war came to {place} {when}
+heard there was a {other} brawl at {place} {when}
+{actor} was in that shield fight at {place} {when}
+steel and spellfire at {place} {when}. the war is real

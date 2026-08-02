@@ -22,6 +22,7 @@
 
 using System;
 using Server;
+using Server.Items;
 using Server.Mobiles;
 using MoveDelays = Server.Movement.Movement;
 
@@ -161,9 +162,13 @@ namespace Server.CustomBots
 
         private DateTime _pauseUntil = DateTime.MinValue;
 
-        // Stuck detection.
+        // Stuck detection. The streak counts consecutive windows without a
+        // single step — goal repicks fix a bad goal, but a bot that stays
+        // rooted through repeated repicks is blocked in PLACE and needs
+        // the physical escalation (sidestep, then wedge extraction).
         private Point3D _lastLoc;
         private DateTime _lastProgressAt;
+        private int _patrolStuckStreak;
         private static readonly TimeSpan StuckTimeout = TimeSpan.FromSeconds(10);
 
         private Timer _stepTimer;
@@ -264,6 +269,23 @@ namespace Server.CustomBots
         // Target-switch hysteresis — don't re-pick mid-fight more than once
         // per window, or two attackers make the bot ping-pong between them.
         private DateTime _nextSwitchAllowed = DateTime.MinValue;
+
+        // GANG PRESSURE — how many hostiles were actively targeting the bot
+        // at the last decision tick. Every attacker past the first raises
+        // the retreat threshold (see CheckRetreat): a player holds a 1v1 at
+        // 60% health, but the same player with three monsters on them
+        // leaves — incoming damage scales with attackers while outgoing
+        // doesn't. Pile-ons are how bots actually die.
+        private int _packAttackers;
+
+        // Supply upkeep gate (see EnsureCombatSupplies). Once a minute max.
+        private DateTime _nextSupplyCheck = DateTime.MinValue;
+
+        // A self-bandage in flight finishes ~9-13s out (pre-AOS timing,
+        // dex-scaled). BandageContext.BeginHeal CANCELS a running context,
+        // so restarting on the old 2s cadence reset the timer forever and
+        // never landed a single heal. No bandage touches while this is up.
+        private DateTime _bandageBusyUntil = DateTime.MinValue;
 
         private static readonly string[] AmbientChat = { "small_talk", "lfg" };
         private static readonly string[] CombatChat  = { "combat_actions" };
@@ -366,6 +388,10 @@ namespace Server.CustomBots
                 StandoffMin = 6;
                 StandoffMax = 10;
             }
+
+            // A defender is often attached mid-attack — make sure the
+            // ammo/reagent/bandage situation is fight-ready right away.
+            EnsureCombatSupplies(bot);
         }
 
         public override void OnDetached(PlayerBot bot)
@@ -445,6 +471,7 @@ namespace Server.CustomBots
                     _chaseFoe = null;
                     _rangedFoe = null;
                     _progressFoe = null;
+                    _packAttackers = 0;
                     ClearCast();
                     StopStepTimer();
 
@@ -474,6 +501,11 @@ namespace Server.CustomBots
                 }
                 else
                 {
+                    // Refresh the gang-pressure count while fighting — the
+                    // fast loop's CheckRetreat reads it every ~300ms but a
+                    // 2s-stale count is fine (monsters don't teleport in).
+                    _packAttackers = CountAttackers(bot);
+
                     // Foe is alive and in range. The fast loop's CheckRetreat
                     // normally triggers the flee before we get here, but as
                     // a backstop the decision tick checks too — if HP is
@@ -519,6 +551,7 @@ namespace Server.CustomBots
                     $"[Bot {bot.Name}] {(assisting ? "assisting against" : "engaging")} " +
                     $"'{target.Name}'");
 
+                EnsureCombatSupplies(bot);
                 bot.Combatant = target;
                 // Route by combat style. A ranged bot (mage/archer) must
                 // NOT melee-walk to the foe's tile — hand it straight to
@@ -576,13 +609,34 @@ namespace Server.CustomBots
             {
                 _lastLoc = bot.Location;
                 _lastProgressAt = Core.Now;
+                _patrolStuckStreak = 0;
             }
             else if (Core.Now - _lastProgressAt > StuckTimeout)
             {
-                // Try a different patrol point.
+                // Window 1: try a different patrol point (a bad goal is the
+                // common case). Window 2+: the bot hasn't taken a SINGLE
+                // step through a repick — it's blocked in place, so break
+                // it loose physically. Window 4: even sidesteps couldn't
+                // move it — wedged in rock/decor; extract it, since no
+                // goal choice can ever free a bot the engine won't move.
+                _patrolStuckStreak++;
                 _goal = null;
                 _follower = null;
                 _lastProgressAt = Core.Now;
+
+                if (_patrolStuckStreak >= 4)
+                {
+                    _patrolStuckStreak = 0;
+                    BotStuckEscape.TryExtract(bot, SerializableName);
+                }
+                else if (_patrolStuckStreak >= 2)
+                {
+                    if (_patrolStuckStreak == 2)
+                    {
+                        StuckTelemetry.Record(bot, "patrol_stuck", SerializableName);
+                    }
+                    BotStuckEscape.SidestepAny(bot);
+                }
             }
 
             // -- 4. Pause --
@@ -681,6 +735,12 @@ namespace Server.CustomBots
         // claim the arrival (the base will NOT pick a new goal this pass).
         protected virtual bool OnPatrolGoalReached(PlayerBot bot) => false;
 
+        // When false, the bot stops STARTING fights: FindNearbyEnemy only
+        // returns foes already attacking it or a friend. A DungeonCrawler
+        // in exit mode overrides this — on the way out you defend
+        // yourself, you don't clear rooms.
+        protected virtual bool WantsFreshFights => true;
+
         // Stop all movement and clear the current goal — for a subclass that
         // is about to teleport and must not keep stepping toward a stale goal.
         protected void HaltMovement()
@@ -753,25 +813,17 @@ namespace Server.CustomBots
                 return;
             }
 
-            // Already adjacent? Stand and let the combat tick swing. Keep
-            // FACING the foe so we look engaged and turn with it.
-            if (bot.InRange(foe.Location, 1))
-            {
-                _chaseFoe = null;
-                StopStepTimer();
-                _goal = null;
-                _follower = null;
-                var face = bot.GetDirectionTo(foe);
-                if (bot.Direction != face) bot.Direction = face;
-                return;
-            }
-
             int dist = TileDist(bot, foe.Location);
 
-            // CLOSE range: hand the foe to the step timer for GREEDY chase.
-            // The step timer fires every 200-400ms — fast enough to keep
-            // pace with a fleeing monster. The 2s decision tick alone is
-            // far too slow to catch a runner.
+            // CLOSE range (including adjacent): hand the foe to the step
+            // timer for GREEDY chase. The step timer fires every 200-400ms
+            // — fast enough to keep pace with a fleeing monster, and while
+            // ADJACENT it stays alive as the melee combat pulse: facing,
+            // retreat checks and bandages all need ~300ms latency exactly
+            // where the damage is coming in. (This branch used to stop the
+            // timer when adjacent, which parked retreat AND self-heal on
+            // the 2s decision tick — a toe-to-toe fighter could lose its
+            // whole retreat margin in that gap, and never bandaged at all.)
             if (dist <= 4)
             {
                 _goal = null;
@@ -869,6 +921,20 @@ namespace Server.CustomBots
             }
 
             double magery = bot.Skills[SkillName.Magery].Base;
+            int foeDist = TileDist(bot, foe.Location);
+
+            // Utility: a foe closing into the standoff band means
+            // interrupted casts and point-blank trades. The classic mage
+            // answer is Paralyze — freeze it, kite back out, resume the
+            // barrage. 5th circle (14 mana), so skilled mages only, and
+            // never wasted on a foe that's already held.
+            if (magery >= 65.0 && bot.Mana >= 14 && !foe.Paralyzed &&
+                foeDist <= StandoffMin + 2 &&
+                Utility.RandomDouble() < 0.35 &&
+                TryBeginFoeCast(bot, foe, "Server.Spells.Fifth.ParalyzeSpell", 2.5, pointBlank))
+            {
+                return;
+            }
 
             // Utility: an unpoisoned foe occasionally gets a Poison instead
             // of another damage spell — variety AND damage-over-time.
@@ -1009,7 +1075,15 @@ namespace Server.CustomBots
 
             try
             {
-                spell.Cast();
+                // Cast() returning false means the engine refused the
+                // launch (no mana, can't concentrate...). Tracking a cast
+                // that never started left _castInProgress pointing at
+                // nothing until the fail path noticed a tick later.
+                if (!spell.Cast())
+                {
+                    _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(1.0);
+                    return;
+                }
             }
             catch
             {
@@ -1045,30 +1119,48 @@ namespace Server.CustomBots
             if (bot.Spell != null || _castInProgress) return false;
 
             // CURE — poison ticks HP down and is worth clearing first.
+            // Mana-gated (Cure is 2nd circle, 6 mana): an OOM mage burns
+            // no cast attempt and reaches for a cure potion instead.
             if (bot.Poisoned)
             {
-                BeginSelfCast(bot, "Server.Spells.Second.CureSpell", 2.0);
-                return _castInProgress;
+                if (bot.Mana >= 6)
+                {
+                    BeginSelfCast(bot, "Server.Spells.Second.CureSpell", 2.0);
+                    if (_castInProgress) return true;
+                }
+                if (DrinkCurePotion(bot))
+                {
+                    _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(2.0);
+                    return true;
+                }
             }
 
-            // HEAL — scale the spell to the wound and the bot's skill.
+            // HEAL — scale the spell to the wound, the bot's skill, and
+            // what the mana pool can actually pay for.
             double hpFraction = bot.HitsMax > 0
                 ? (double)bot.Hits / bot.HitsMax
                 : 1.0;
             double magery = bot.Skills[SkillName.Magery].Base;
 
-            if (hpFraction < 0.40 && magery >= 65.0)
+            if (hpFraction < 0.40 && magery >= 65.0 && bot.Mana >= 11)
             {
-                // Badly hurt and skilled enough — Greater Heal.
+                // Badly hurt and skilled enough — Greater Heal (4th, 11 mana).
                 BeginSelfCast(bot, "Server.Spells.Fourth.GreaterHealSpell", 2.5);
                 return _castInProgress;
             }
-            if (hpFraction < 0.65)
+            if (hpFraction < 0.65 && bot.Mana >= 4)
             {
-                // Hurt — a basic Heal. If Greater Heal was wanted but the
-                // bot lacks the skill, this is the fallback.
+                // Hurt — a basic Heal (1st, 4 mana). Also the fallback when
+                // Greater Heal was wanted but skill or mana fell short.
                 BeginSelfCast(bot, "Server.Spells.First.HealSpell", 2.0);
                 return _castInProgress;
+            }
+
+            // Badly hurt with an empty pool — potions don't need mana.
+            if (hpFraction < 0.45 && DrinkHealPotion(bot))
+            {
+                _nextCastAllowed = Core.Now + TimeSpan.FromSeconds(2.0);
+                return true;
             }
 
             return false;
@@ -1085,8 +1177,14 @@ namespace Server.CustomBots
         // (no heal) rather than breaking the build.
         //
         // Priority when hurt:
+        //   Poisoned  -> drink a Cure Potion (poison keeps ticking, and a
+        //                pre-AOS bandage on a poisoned patient slips into
+        //                a cure attempt instead of healing)
         //   HP < 45%  -> drink a Heal Potion (instant) AND start a bandage
-        //   HP < 70%  -> start a bandage (bandages are the steady heal)
+        //   HP < 70%  -> start a bandage (bandages are the steady heal) —
+        //                but never while one is already running: BeginHeal
+        //                cancels a running context, and the old restart-
+        //                every-2s loop reset the ~10s timer forever
         // -------------------------------------------------------------------
         private void TryMeleeSelfHeal(PlayerBot bot)
         {
@@ -1097,9 +1195,13 @@ namespace Server.CustomBots
             double hpFraction = bot.HitsMax > 0
                 ? (double)bot.Hits / bot.HitsMax
                 : 1.0;
-            if (hpFraction >= 0.70) return;              // not hurt enough
+            bool poisoned = bot.Poisoned;
+            if (hpFraction >= 0.70 && !poisoned) return; // not hurt enough
 
             bool didSomething = false;
+
+            // Poison first — it ticks HP down until cleared.
+            if (poisoned && DrinkCurePotion(bot)) didSomething = true;
 
             // Badly hurt — drink a health potion for an instant top-up.
             if (hpFraction < 0.45)
@@ -1108,7 +1210,17 @@ namespace Server.CustomBots
             }
 
             // Start a bandage — the bread-and-butter heal-over-time.
-            if (StartBandageSelf(bot)) didSomething = true;
+            if (hpFraction < 0.70 && Core.Now >= _bandageBusyUntil &&
+                StartBandageSelf(bot))
+            {
+                // Mirror the engine's pre-AOS self-heal timing (9.4s +
+                // 0.6s per 10 dex under 120) with a half-second margin, so
+                // the window covers slow low-dex bandagers and doesn't
+                // idle fast ones.
+                _bandageBusyUntil = Core.Now +
+                    TimeSpan.FromSeconds(9.9 + 0.06 * (120 - bot.Dex));
+                didSomething = true;
+            }
 
             if (didSomething)
             {
@@ -1117,16 +1229,33 @@ namespace Server.CustomBots
             }
         }
 
-        // Find a HealPotion (or GreaterHealPotion) in the pack and drink
-        // it. Returns true if one was drunk. Reflection-based: calls the
-        // potion's Drink(Mobile) method without a hard compile dependency.
-        private static bool DrinkHealPotion(PlayerBot bot)
+        private static readonly string[] HealPotionTypes =
         {
-            string[] potionTypes =
-            {
-                "Server.Items.GreaterHealPotion",
-                "Server.Items.HealPotion",
-            };
+            "Server.Items.GreaterHealPotion",
+            "Server.Items.HealPotion",
+            "Server.Items.LesserHealPotion",
+        };
+
+        private static readonly string[] CurePotionTypes =
+        {
+            "Server.Items.GreaterCurePotion",
+            "Server.Items.CurePotion",
+            "Server.Items.LesserCurePotion",
+        };
+
+        private static bool DrinkHealPotion(PlayerBot bot) =>
+            DrinkPotion(bot, HealPotionTypes);
+
+        private static bool DrinkCurePotion(PlayerBot bot) =>
+            DrinkPotion(bot, CurePotionTypes);
+
+        // Find the first potion of the given types in the pack and drink
+        // it (strongest listed first). Returns true if one was drunk.
+        // Reflection-based: calls the potion's Drink(Mobile) method without
+        // a hard compile dependency.
+        private static bool DrinkPotion(PlayerBot bot, string[] potionTypes)
+        {
+            if (bot.Backpack == null) return false;
             foreach (var typeName in potionTypes)
             {
                 var t = FindType(typeName);
@@ -1252,11 +1381,28 @@ namespace Server.CustomBots
                 int tx = foe.X + dx[i];
                 int ty = foe.Y + dy[i];
 
+                // A slot inside a wall/decor sends the bot A*-ing at a tile
+                // it can never stand on — the stuck ladder then grinds and
+                // repicks. Only offer tiles the engine would accept. Probe
+                // at the FOE's Z first (adjacent tiles share its floor —
+                // this is what works on statics dungeon floors, where the
+                // land Z underneath is solid rock); land-average Z second
+                // for sloped surface terrain.
+                int tz = foe.Z;
+                if (!foe.Map.CanSpawnMobile(tx, ty, tz))
+                {
+                    tz = foe.Map.GetAverageZ(tx, ty);
+                    if (!foe.Map.CanSpawnMobile(tx, ty, tz))
+                    {
+                        continue;
+                    }
+                }
+
                 // Is this tile occupied by another mobile? If so, skip —
                 // unless it's us (we might already be standing in a slot).
                 bool occupied = false;
                 foreach (var m in foe.Map.GetMobilesInRange(
-                             new Point3D(tx, ty, foe.Z), 0))
+                             new Point3D(tx, ty, tz), 0))
                 {
                     if (m != bot && !m.Deleted && m.Alive)
                     {
@@ -1272,7 +1418,7 @@ namespace Server.CustomBots
                 if (distSq < bestDistSq)
                 {
                     bestDistSq = distSq;
-                    best = new Point3D(tx, ty, foe.Z);
+                    best = new Point3D(tx, ty, tz);
                     found = true;
                 }
             }
@@ -1371,6 +1517,13 @@ namespace Server.CustomBots
                 // Beyond the bot's own sight a monster only registers when
                 // it's in a fight with the bot or a friendly bot.
                 if (dist > SightRange && !attackingMe && !attackingFriend)
+                {
+                    continue;
+                }
+
+                // Not looking for trouble (exit-mode crawler): only foes
+                // already in a fight with us or a friend register.
+                if (!WantsFreshFights && !attackingMe && !attackingFriend)
                 {
                     continue;
                 }
@@ -1615,12 +1768,13 @@ namespace Server.CustomBots
                 if (CheckRetreat(bot, f)) return;
                 // Hurt but not yet fleeing — use bandages / potions.
                 TryMeleeSelfHeal(bot);
-                // Adjacent? Stop stepping, let the combat tick swing.
+                // Adjacent? Hold position and let the engine swing — but
+                // KEEP the pulse running so retreat/heal/facing stay on
+                // the fast clock while blows are being traded.
                 if (bot.InRange(f.Location, 1))
                 {
                     var fd = bot.GetDirectionTo(f);
                     if (bot.Direction != fd) bot.Direction = fd;
-                    StopStepTimer();
                     return;
                 }
                 // Step toward the foe; flow around blockers.
@@ -1675,9 +1829,12 @@ namespace Server.CustomBots
                     // DANGER: foe is right on top of us — abandon the cast
                     // and kite. EXCEPT when this cast must COMMIT: a
                     // deliberate point-blank attack (cornered, chose to
-                    // cast) or a self-heal/cure (abandoning it leaves the
-                    // mage hurt or poisoned — worse than taking one hit).
-                    if (rdist < 2 && !_castPointBlank && !_castSelfTarget)
+                    // cast), a self-heal/cure (abandoning it leaves the
+                    // mage hurt or poisoned — worse than taking one hit),
+                    // or a foe that's PARALYZED (it can't swing — finishing
+                    // the cast is free).
+                    if (rdist < 2 && !_castPointBlank && !_castSelfTarget &&
+                        !rf.Paralyzed)
                     {
                         if (stillCasting)
                         {
@@ -1888,12 +2045,110 @@ namespace Server.CustomBots
             double retreatAt = DefenderMode
                 ? DefenderRetreatHpFraction
                 : RetreatHpFraction;
+
+            // Gang pressure: surviving a swarm means leaving EARLIER —
+            // incoming damage scales with attackers, the escape run
+            // doesn't. Each attacker past the first raises the bail
+            // threshold a notch (capped so a mob doesn't make bots
+            // flee at a scratch).
+            int extra = _packAttackers - 1;
+            if (extra > 0)
+            {
+                retreatAt = Math.Min(0.90, retreatAt + 0.08 * Math.Min(3, extra));
+            }
+
             if (bot.HitsMax > 0 && bot.Hits < bot.HitsMax * retreatAt)
             {
                 StartFlee(bot, threat);
                 return true;
             }
             return false;
+        }
+
+        // Hostiles actively targeting the bot right now (the current foe
+        // included). Feeds the gang-pressure retreat scaling above.
+        private static int CountAttackers(PlayerBot bot)
+        {
+            int n = 0;
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, 6))
+            {
+                if (m is BaseCreature bc && !bc.Deleted && bc.Alive &&
+                    bc.Combatant == bot)
+                {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        // -------------------------------------------------------------------
+        // Combat supply upkeep.
+        //
+        // Bots are Player=true mobiles: bows consume arrows, casts consume
+        // reagents, bandages get used up — and nothing ever restocked them.
+        // A long-lived archer eventually dry-fired forever (OnFired finds
+        // no ammo → no shot, no message) and a mage stood in band failing
+        // every cast ("More reagents are needed") — both looked like bots
+        // idling in front of a monster. Real players restock in town
+        // between hunts; bots do it invisibly when a fight starts.
+        // Gated to once a minute so back-to-back fights don't rescan.
+        // -------------------------------------------------------------------
+        private static readonly string[] ReagentTypes =
+        {
+            "Server.Items.BlackPearl",   "Server.Items.Bloodmoss",
+            "Server.Items.Garlic",       "Server.Items.Ginseng",
+            "Server.Items.MandrakeRoot", "Server.Items.Nightshade",
+            "Server.Items.SpidersSilk",  "Server.Items.SulfurousAsh",
+        };
+
+        private void EnsureCombatSupplies(PlayerBot bot)
+        {
+            if (Core.Now < _nextSupplyCheck) return;
+            _nextSupplyCheck = Core.Now + TimeSpan.FromMinutes(1);
+
+            var pack = bot.Backpack;
+            if (pack == null) return;
+
+            if (SpellcasterMode)
+            {
+                foreach (var reagent in ReagentTypes)
+                {
+                    TopUp(pack, FindType(reagent), low: 10, refill: 40);
+                }
+            }
+
+            if (RangedCombat && !SpellcasterMode &&
+                bot.Weapon is BaseRanged bow && bow.AmmoType != null)
+            {
+                TopUp(pack, bow.AmmoType, low: 15,
+                    refill: Utility.RandomMinMax(40, 60));
+            }
+
+            if (!SpellcasterMode)
+            {
+                TopUp(pack, FindType("Server.Items.Bandage"), low: 5, refill: 20);
+            }
+        }
+
+        // Refill a stackable consumable when the pack runs low.
+        private static void TopUp(Container pack, Type t, int low, int refill)
+        {
+            if (t == null || pack.GetAmount(t) >= low)
+            {
+                return;
+            }
+            try
+            {
+                if (Activator.CreateInstance(t) is Item item)
+                {
+                    if (item.Stackable)
+                    {
+                        item.Amount = refill;
+                    }
+                    pack.DropItem(item);
+                }
+            }
+            catch { }
         }
 
         // -------------------------------------------------------------------

@@ -78,7 +78,9 @@ namespace Server.CustomBots
             sb.Append($"<p><b class='grn'>{bots.Count}</b> online — curve target " +
                       $"{BotSessionManager.TargetNow} ({BotSessionManager.CurveNow:P0} " +
                       $"of {BotPopulation.TargetCount} at {DateTime.Now.Hour:00}:00). " +
-                      $"Hunting parties: {BotPartyManager.Parties.Count}.</p>");
+                      $"Hunting parties: {BotPartyManager.CountKind(BotPartyKind.Hunt)}, " +
+                      $"guild convoys: {BotPartyManager.CountKind(BotPartyKind.Convoy)}, " +
+                      $"war bands: {BotPartyManager.CountKind(BotPartyKind.Warband)}.</p>");
 
             // ---- Recent events ----
             sb.Append("<h2>Latest News</h2><table>");
@@ -94,6 +96,9 @@ namespace Server.CustomBots
                     "duel"    => $"{H(ev.Actor)} won a duel against {H(ev.Other)}",
                     "kill"    => $"{H(ev.Actor)} slew {H(ev.Other)}",
                     "party"   => $"{H(ev.Actor)} led a hunt to {H(ev.Other)}",
+                    "convoy"  => $"{H(ev.Actor)} set out with guildmates for {H(ev.Other)}",
+                    "warband" => $"<span class='red'>{H(ev.Actor)} led a war band toward {H(ev.Other)}</span>",
+                    "warclash" => $"<span class='red'>war bands clashed at {H(ev.Actor)}'s position ({H(ev.Other)})</span>",
                     "login"   => $"<span class='dim'>{H(ev.Actor)} logged in</span>",
                     "logout"  => $"<span class='dim'>{H(ev.Actor)} logged out</span>",
                     _         => $"{H(ev.Actor)} {H(ev.Type)}",
@@ -102,6 +107,9 @@ namespace Server.CustomBots
                           $"<td class='dim'>{H(ev.Place)}</td></tr>");
             }
             sb.Append("</table>");
+
+            // ---- Stuck & rescue telemetry ----
+            StuckTelemetry.AppendHtml(sb);
 
             // ---- Who's online ----
             sb.Append($"<h2>Who's Online ({bots.Count})</h2><table>");

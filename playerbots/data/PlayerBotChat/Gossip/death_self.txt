@@ -1,0 +1,11 @@
+# Gossip/death_self.txt — a bot recounting ITS OWN death (it's back now).
+# {other} = what killed it (may be EMPTY — otherless lines required!),
+# {place}, {when}.
+
+i died at {place} {when}. dont ask
+lost my kit at {place} {when}, corpse run from hell
+just got back from dying at {place}
+i got killed at {place}. embarrassing
+{other} killed me at {place} {when}. im fine. im fine
+died to {other} at {place}. it wont happen twice
+never going back to {place}. ask me why. actually dont

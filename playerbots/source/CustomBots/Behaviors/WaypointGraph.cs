@@ -96,6 +96,13 @@ namespace Server.CustomBots
 
         // ---- Shortest path search ----
 
+        // Optional edge-cost scaler (installed by NavEdgeHealth): edges
+        // that keep defeating bots take a temporary cost penalty so plans
+        // route around them where a detour exists. Multiplier only — a
+        // penalized edge still connects, so no path ever disappears.
+        // Null (or returning 1.0) = classic behavior.
+        public static Func<string, string, double> EdgePenalty;
+
         // Standard Dijkstra over the graph. Returns the sequence of node
         // names from `fromName` to `toName`, inclusive. Empty if no path.
         public List<string> FindPath(string fromName, string toName)
@@ -143,6 +150,12 @@ namespace Server.CustomBots
                     int dx = currentNode.Location.X - neighbor.Location.X;
                     int dy = currentNode.Location.Y - neighbor.Location.Y;
                     double edgeCost = Math.Sqrt(dx * dx + dy * dy);
+
+                    var penalty = EdgePenalty;
+                    if (penalty != null)
+                    {
+                        edgeCost *= penalty(current, neighborName);
+                    }
 
                     double alt = currentDist + edgeCost;
                     if (alt < dist[neighborName])

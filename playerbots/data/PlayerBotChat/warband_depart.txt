@@ -1,0 +1,9 @@
+# warband_depart.txt — the war band setting out on patrol.
+# {dest} = patrol target name (lowercase).
+
+move out — {dest}, eyes open
+we sweep to {dest}, watch for shields
+patrol begins, {dest} first
+march — {dest}, stay tight
+to {dest}, and woe to any we meet
+onward — the enemy wont find us idle

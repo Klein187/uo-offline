@@ -4659,7 +4659,8 @@
           "Y": 673,
           "Z": 32,
           "Waypoints": [
-            "despise1"
+            "despise1",
+            "WP 1310"
           ]
         }
       ]
@@ -4825,7 +4826,7 @@
       "Type": "DungeonDescend",
       "City": "Moonglow",
       "NearestWaypoint": "WP 1348",
-      "Dungeon": "Despise lvl2 entrance",
+      "Dungeon": "Despise lvl1",
       "Level": 1,
       "Arrivals": [
         {
@@ -4836,7 +4837,11 @@
             "WP 1348"
           ]
         }
-      ]
+      ],
+      "TargetX": 5408,
+      "TargetY": 859,
+      "TargetZ": 47,
+      "TargetLevel": 1
     },
     {
       "Name": "Chaos Shrine",
@@ -4883,41 +4888,21 @@
     },
     {
       "Name": "Sacrifice Shrine",
-      "X": 3352,
-      "Y": 287,
+      "X": 3355,
+      "Y": 290,
       "Z": 0,
       "Type": "Shrine",
       "City": "Minoc",
       "NearestWaypoint": "Sacrifice Trail 29",
-      "ArrivalX": 3349,
-      "ArrivalY": 283,
-      "ArrivalZ": 0
-    },
-    {
-      "Name": "Minoc Mine",
-      "X": 2526,
-      "Y": 501,
-      "Z": 15,
-      "Type": "MiningSpot",
-      "City": "Minoc",
-      "NearestWaypoint": "WP 1223",
-      "Polygon": [
-        [
-          2518,
-          493
-        ],
-        [
-          2534,
-          493
-        ],
-        [
-          2534,
-          509
-        ],
-        [
-          2518,
-          509
-        ]
+      "Arrivals": [
+        {
+          "X": 3355,
+          "Y": 295,
+          "Z": 4,
+          "Waypoints": [
+            "Sacrifice Trail 29"
+          ]
+        }
       ]
     },
     {
@@ -5202,8 +5187,8 @@
     },
     {
       "Name": "Orc Cave lvl1 Room 1",
-      "X": 5133,
-      "Y": 1945,
+      "X": 5132,
+      "Y": 1949,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5224,7 +5209,7 @@
     },
     {
       "Name": "Destard lvl1 Room 1 B",
-      "X": 5133,
+      "X": 5136,
       "Y": 984,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -5247,7 +5232,7 @@
     {
       "Name": "Deceit lvl2 Room 1",
       "X": 5136,
-      "Y": 648,
+      "Y": 652,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5257,8 +5242,8 @@
     },
     {
       "Name": "Deceit lvl2 Room 2",
-      "X": 5218,
-      "Y": 760,
+      "X": 5217,
+      "Y": 758,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5301,8 +5286,8 @@
     },
     {
       "Name": "Terathan Keep lvl2 Room 1",
-      "X": 5139,
-      "Y": 1772,
+      "X": 5137,
+      "Y": 1770,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5312,7 +5297,7 @@
     },
     {
       "Name": "Destard lvl2 Room 1",
-      "X": 5142,
+      "X": 5139,
       "Y": 797,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -5412,7 +5397,7 @@
     {
       "Name": "Deceit lvl1 Room 1",
       "X": 5186,
-      "Y": 638,
+      "Y": 636,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5522,7 +5507,7 @@
     {
       "Name": "Deceit lvl4 Room 1",
       "X": 5264,
-      "Y": 668,
+      "Y": 666,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5566,7 +5551,7 @@
     {
       "Name": "Deceit lvl5 Room 1",
       "X": 5304,
-      "Y": 531,
+      "Y": 529,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5587,8 +5572,8 @@
     },
     {
       "Name": "Deceit lvl6 Room 1",
-      "X": 5303,
-      "Y": 675,
+      "X": 5301,
+      "Y": 673,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5608,53 +5593,9 @@
       "Level": 2
     },
     {
-      "Name": "Orc Cave lvl2 Room 2",
-      "X": 5363,
-      "Y": 1288,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 4",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Orc Cave lvl2 Room 3",
-      "X": 5288,
-      "Y": 1312,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 5",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Orc Cave lvl2 Room 4",
-      "X": 5333,
-      "Y": 1333,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 6",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Orc Cave lvl2 Room 5",
-      "X": 5325,
-      "Y": 1293,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Orc Cave L2 WP 7",
-      "Dungeon": "Orc Cave lvl2",
-      "Level": 2
-    },
-    {
       "Name": "Deceit lvl7 Room 1",
-      "X": 5345,
-      "Y": 577,
+      "X": 5343,
+      "Y": 576,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5664,8 +5605,8 @@
     },
     {
       "Name": "Terathan Keep lvl3 Room 1",
-      "X": 5355,
-      "Y": 1539,
+      "X": 5352,
+      "Y": 1538,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5676,7 +5617,7 @@
     {
       "Name": "Covetous lvl1 Room 1",
       "X": 5388,
-      "Y": 2026,
+      "Y": 2024,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5686,7 +5627,7 @@
     },
     {
       "Name": "Covetous lvl1 Room 2",
-      "X": 5614,
+      "X": 5612,
       "Y": 1996,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -5707,17 +5648,6 @@
       "Level": 1
     },
     {
-      "Name": "Covetous lvl1 Room 4",
-      "X": 5433,
-      "Y": 1957,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Covetous L1 WP 6",
-      "Dungeon": "Covetous lvl1",
-      "Level": 1
-    },
-    {
       "Name": "Covetous lvl1 Room 5",
       "X": 5557,
       "Y": 2031,
@@ -5731,7 +5661,7 @@
     {
       "Name": "Covetous lvl1 Room 1 B",
       "X": 5392,
-      "Y": 1958,
+      "Y": 1956,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -5786,22 +5716,11 @@
     {
       "Name": "Shame lvl1 Room 1",
       "X": 5394,
-      "Y": 126,
+      "Y": 124,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Shame L1 WP 1",
-      "Dungeon": "Shame lvl1",
-      "Level": 1
-    },
-    {
-      "Name": "Shame lvl1 Room 2",
-      "X": 5464,
-      "Y": 8,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Shame L1 WP 23",
       "Dungeon": "Shame lvl1",
       "Level": 1
     },
@@ -6005,8 +5924,8 @@
     },
     {
       "Name": "Covetous lvl2 Room 1",
-      "X": 5465,
-      "Y": 1804,
+      "X": 5463,
+      "Y": 1802,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6071,8 +5990,8 @@
     },
     {
       "Name": "Shame lvl4 Room 1",
-      "X": 5506,
-      "Y": 161,
+      "X": 5504,
+      "Y": 160,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6082,8 +6001,8 @@
     },
     {
       "Name": "Shame lvl4 Room 1 B",
-      "X": 5512,
-      "Y": 175,
+      "X": 5510,
+      "Y": 173,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6093,63 +6012,20 @@
     },
     {
       "Name": "Shame lvl2 Room 1",
-      "X": 5513,
-      "Y": 9,
+      "X": 5514,
+      "Y": 13,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Shame L2 WP 1",
       "Dungeon": "Shame lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Shame lvl2 Room 2",
-      "X": 5624,
-      "Y": 42,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Shame L2 WP 25",
-      "Dungeon": "Shame lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Shame lvl2 Room 3",
-      "X": 5602,
-      "Y": 118,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Shame L2 WP 20",
-      "Dungeon": "Shame lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Shame lvl2 Room 4",
-      "X": 5532,
-      "Y": 76,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Shame L2 WP 4",
-      "Dungeon": "Shame lvl2",
-      "Level": 2
-    },
-    {
-      "Name": "Shame lvl2 Room 5",
-      "X": 5562,
-      "Y": 8,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Shame L2 WP 5",
-      "Dungeon": "Shame lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": []
     },
     {
       "Name": "Shame lvl3 Room 1",
       "X": 5513,
-      "Y": 146,
+      "Y": 144,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6203,8 +6079,8 @@
     },
     {
       "Name": "Covetous lvl3 Room 1",
-      "X": 5550,
-      "Y": 1805,
+      "X": 5548,
+      "Y": 1803,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6224,20 +6100,9 @@
       "Level": 4
     },
     {
-      "Name": "Despise lvl1 Room 1 B",
-      "X": 5571,
-      "Y": 635,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "Despise L1 WP 1 B",
-      "Dungeon": "Despise lvl1",
-      "Level": 1
-    },
-    {
       "Name": "Covetous lvl1 Room 1 C",
       "X": 5578,
-      "Y": 1926,
+      "Y": 1924,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6258,8 +6123,8 @@
     },
     {
       "Name": "Fire lvl1 Room 1",
-      "X": 5681,
-      "Y": 1436,
+      "X": 5679,
+      "Y": 1434,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6324,7 +6189,7 @@
     },
     {
       "Name": "Wrong lvl2 Room 1",
-      "X": 5689,
+      "X": 5687,
       "Y": 568,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -6357,8 +6222,8 @@
     },
     {
       "Name": "Fire lvl2 Room 1",
-      "X": 5689,
-      "Y": 1351,
+      "X": 5687,
+      "Y": 1349,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6368,8 +6233,8 @@
     },
     {
       "Name": "Wrong lvl2 Room 1 B",
-      "X": 5697,
-      "Y": 661,
+      "X": 5695,
+      "Y": 659,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6434,8 +6299,8 @@
     },
     {
       "Name": "Ice lvl1 Room 1",
-      "X": 5704,
-      "Y": 145,
+      "X": 5708,
+      "Y": 144,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6445,8 +6310,8 @@
     },
     {
       "Name": "Ice lvl1 Room 2",
-      "X": 5881,
-      "Y": 241,
+      "X": 5879,
+      "Y": 239,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6522,8 +6387,8 @@
     },
     {
       "Name": "Wrong lvl2 Room 1 C",
-      "X": 5732,
-      "Y": 554,
+      "X": 5730,
+      "Y": 552,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6533,8 +6398,8 @@
     },
     {
       "Name": "Fire lvl1 Room 1 C",
-      "X": 5785,
-      "Y": 1336,
+      "X": 5784,
+      "Y": 1338,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6600,7 +6465,7 @@
     {
       "Name": "Wrong lvl1 Room 2",
       "X": 5823,
-      "Y": 630,
+      "Y": 628,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6643,7 +6508,7 @@
     },
     {
       "Name": "Ice lvl2 Room 1 B",
-      "X": 5831,
+      "X": 5828,
       "Y": 323,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -6676,8 +6541,8 @@
     },
     {
       "Name": "Shame lvl5 Room 1",
-      "X": 5874,
-      "Y": 18,
+      "X": 5872,
+      "Y": 17,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6732,7 +6597,7 @@
     {
       "Name": "Hythloth lvl1 Room 1",
       "X": 5904,
-      "Y": 16,
+      "Y": 19,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6753,8 +6618,8 @@
     },
     {
       "Name": "Hythloth lvl2 Room 1 B",
-      "X": 5925,
-      "Y": 146,
+      "X": 5923,
+      "Y": 144,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6775,7 +6640,7 @@
     },
     {
       "Name": "Hythloth lvl2 Room 3",
-      "X": 5971,
+      "X": 5969,
       "Y": 168,
       "Z": 0,
       "Type": "DungeonRoom",
@@ -6808,8 +6673,8 @@
     },
     {
       "Name": "Hythloth lvl3 Room 1",
-      "X": 6039,
-      "Y": 193,
+      "X": 6037,
+      "Y": 192,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6819,8 +6684,8 @@
     },
     {
       "Name": "Hythloth lvl4 Room 1",
-      "X": 6043,
-      "Y": 225,
+      "X": 6041,
+      "Y": 223,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6830,8 +6695,8 @@
     },
     {
       "Name": "Hythloth lvl5 Room 1",
-      "X": 6058,
-      "Y": 91,
+      "X": 6056,
+      "Y": 89,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6841,8 +6706,8 @@
     },
     {
       "Name": "Hythloth lvl6 Room 1",
-      "X": 6082,
-      "Y": 147,
+      "X": 6080,
+      "Y": 145,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -6863,8 +6728,8 @@
     },
     {
       "Name": "Hythloth lvl7 Room 1 B",
-      "X": 6114,
-      "Y": 176,
+      "X": 6112,
+      "Y": 174,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
@@ -7189,8 +7054,8 @@
       "ArrivalZ": 0,
       "Arrivals": [
         {
-          "X": 5134,
-          "Y": 1946,
+          "X": 5133,
+          "Y": 1945,
           "Z": 0,
           "Waypoints": [
             "Orc Cave L1 WP 1"
@@ -7947,7 +7812,7 @@
         {
           "X": 5490,
           "Y": 19,
-          "Z": -25,
+          "Z": -30,
           "Waypoints": [
             "Shame L1 WP 3"
           ]
@@ -8200,9 +8065,7 @@
           "X": 5538,
           "Y": 170,
           "Z": 5,
-          "Waypoints": [
-            "Shame L3 WP 22"
-          ]
+          "Waypoints": []
         }
       ],
       "TargetX": 5517,
@@ -8397,7 +8260,8 @@
           "Y": 629,
           "Z": 42,
           "Waypoints": [
-            "Despise L1 WP 7 B"
+            "Despise L1 WP 7 B",
+            "WP 1311"
           ]
         }
       ],
@@ -9462,6 +9326,442 @@
           "Z": 0,
           "Waypoints": [
             "Fire Isle Trail 1"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Orc Cave lvl2 Descend to L3",
+      "X": 5363,
+      "Y": 1289,
+      "Z": 4,
+      "Type": "DungeonDescend",
+      "City": "Moonglow",
+      "NearestWaypoint": "Orc Cave L2 WP 4",
+      "Dungeon": "Orc Cave lvl2",
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5363,
+          "Y": 1289,
+          "Z": 4,
+          "Waypoints": [
+            "Orc Cave L2 WP 4"
+          ]
+        }
+      ],
+      "ArrivalX": 5363,
+      "ArrivalY": 1289,
+      "ArrivalZ": 4,
+      "TargetX": 5272,
+      "TargetY": 2041,
+      "TargetZ": 4,
+      "TargetLevel": 3
+    },
+    {
+      "Name": "Covetous lvl1 Exit Ascend",
+      "X": 5615,
+      "Y": 1997,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Covetous L1 WP 3",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "ArrivalX": 5615,
+      "ArrivalY": 1997,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5615,
+          "Y": 1997,
+          "Z": 0,
+          "Waypoints": [
+            "Covetous L1 WP 3"
+          ]
+        }
+      ],
+      "TargetX": 2384,
+      "TargetY": 837,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Covetous lvl1 Exit Ascend (5393,1959)",
+      "X": 5393,
+      "Y": 1959,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Covetous L1 WP 1 B",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "ArrivalX": 5393,
+      "ArrivalY": 1959,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5393,
+          "Y": 1959,
+          "Z": 0,
+          "Waypoints": [
+            "Covetous L1 WP 1 B"
+          ]
+        }
+      ],
+      "TargetX": 2421,
+      "TargetY": 883,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Covetous lvl1 Exit Ascend (5388,2027)",
+      "X": 5388,
+      "Y": 2027,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Covetous L1 WP 1",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "ArrivalX": 5388,
+      "ArrivalY": 2027,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5388,
+          "Y": 2027,
+          "Z": 0,
+          "Waypoints": [
+            "Covetous L1 WP 1"
+          ]
+        }
+      ],
+      "TargetX": 2455,
+      "TargetY": 858,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Covetous lvl1 Exit Ascend (5579,1927)",
+      "X": 5579,
+      "Y": 1927,
+      "Z": 0,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Covetous L1 WP 1 C",
+      "Dungeon": "Covetous lvl1",
+      "Level": 1,
+      "ArrivalX": 5579,
+      "ArrivalY": 1927,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 5579,
+          "Y": 1927,
+          "Z": 0,
+          "Waypoints": [
+            "Covetous L1 WP 1 C"
+          ]
+        }
+      ],
+      "TargetX": 2545,
+      "TargetY": 850,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Fire lvl1 Exit Ascend (5900,1411)",
+      "X": 5900,
+      "Y": 1411,
+      "Z": 42,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Fire L1 WP 8 B",
+      "Dungeon": "Fire lvl1",
+      "Level": 1,
+      "ArrivalX": 5900,
+      "ArrivalY": 1411,
+      "ArrivalZ": 42,
+      "Arrivals": [
+        {
+          "X": 5900,
+          "Y": 1411,
+          "Z": 42,
+          "Waypoints": [
+            "Fire L1 WP 8 B"
+          ]
+        }
+      ],
+      "TargetX": 1630,
+      "TargetY": 3320,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Fire lvl2 Ascend to L1",
+      "X": 5702,
+      "Y": 1320,
+      "Z": 16,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Fire L2 WP 3",
+      "Dungeon": "Fire lvl2",
+      "Level": 2,
+      "ArrivalX": 5702,
+      "ArrivalY": 1320,
+      "ArrivalZ": 16,
+      "Arrivals": [
+        {
+          "X": 5702,
+          "Y": 1320,
+          "Z": 16,
+          "Waypoints": [
+            "Fire L2 WP 3"
+          ]
+        }
+      ],
+      "TargetX": 5787,
+      "TargetY": 1336,
+      "TargetZ": -8,
+      "TargetLevel": 1
+    },
+    {
+      "Name": "Hythloth lvl1 Exit Ascend",
+      "X": 5905,
+      "Y": 16,
+      "Z": 64,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Hythloth L1 WP 4",
+      "Dungeon": "Hythloth lvl1",
+      "Level": 1,
+      "ArrivalX": 5905,
+      "ArrivalY": 16,
+      "ArrivalZ": 64,
+      "Arrivals": [
+        {
+          "X": 5905,
+          "Y": 16,
+          "Z": 64,
+          "Waypoints": [
+            "Hythloth L1 WP 4"
+          ]
+        }
+      ],
+      "TargetX": 4722,
+      "TargetY": 3813,
+      "TargetZ": 0,
+      "TargetLevel": 0
+    },
+    {
+      "Name": "Hythloth lvl2 Descend to L6",
+      "X": 5920,
+      "Y": 168,
+      "Z": 16,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "Hythloth L2 WP 4",
+      "Dungeon": "Hythloth lvl2",
+      "Level": 2,
+      "ArrivalX": 5920,
+      "ArrivalY": 168,
+      "ArrivalZ": 16,
+      "Arrivals": [
+        {
+          "X": 5920,
+          "Y": 168,
+          "Z": 16,
+          "Waypoints": [
+            "Hythloth L2 WP 4"
+          ]
+        }
+      ],
+      "TargetX": 6083,
+      "TargetY": 144,
+      "TargetZ": -20,
+      "TargetLevel": 6
+    },
+    {
+      "Name": "Hythloth lvl3 Descend to L5",
+      "X": 6040,
+      "Y": 194,
+      "Z": 12,
+      "Type": "DungeonDescend",
+      "City": "",
+      "NearestWaypoint": "Hythloth L3 WP 1",
+      "Dungeon": "Hythloth lvl3",
+      "Level": 3,
+      "ArrivalX": 6040,
+      "ArrivalY": 194,
+      "ArrivalZ": 12,
+      "Arrivals": [
+        {
+          "X": 6040,
+          "Y": 194,
+          "Z": 12,
+          "Waypoints": [
+            "Hythloth L3 WP 1"
+          ]
+        }
+      ],
+      "TargetX": 6059,
+      "TargetY": 90,
+      "TargetZ": 24,
+      "TargetLevel": 5
+    },
+    {
+      "Name": "Orc Cave lvl2 Ascend to L1",
+      "X": 5332,
+      "Y": 1381,
+      "Z": 10,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Orc Cave L2 WP 2",
+      "Dungeon": "Orc Cave lvl2",
+      "Level": 2,
+      "ArrivalX": 5332,
+      "ArrivalY": 1381,
+      "ArrivalZ": 10,
+      "Arrivals": [
+        {
+          "X": 5332,
+          "Y": 1381,
+          "Z": 10,
+          "Waypoints": [
+            "Orc Cave L2 WP 2"
+          ]
+        }
+      ],
+      "TargetX": 5134,
+      "TargetY": 1947,
+      "TargetZ": 0,
+      "TargetLevel": 1
+    },
+    {
+      "Name": "Orc Cave lvl3 Ascend to L2",
+      "X": 5273,
+      "Y": 2043,
+      "Z": 4,
+      "Type": "DungeonAscend",
+      "City": "",
+      "NearestWaypoint": "Orc Cave L3 WP 1",
+      "Dungeon": "Orc Cave lvl3",
+      "Level": 3,
+      "ArrivalX": 5273,
+      "ArrivalY": 2043,
+      "ArrivalZ": 4,
+      "Arrivals": [
+        {
+          "X": 5273,
+          "Y": 2043,
+          "Z": 4,
+          "Waypoints": [
+            "Orc Cave L3 WP 1"
+          ]
+        }
+      ],
+      "TargetX": 5363,
+      "TargetY": 1290,
+      "TargetZ": 4,
+      "TargetLevel": 2
+    },
+    {
+      "Name": "MiningSpot 418",
+      "X": 2569,
+      "Y": 486,
+      "Z": 49,
+      "Type": "MiningSpot",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 1224",
+      "Polygon": [
+        [
+          2555,
+          499
+        ],
+        [
+          2556,
+          493
+        ],
+        [
+          2561,
+          484
+        ],
+        [
+          2566,
+          475
+        ],
+        [
+          2571,
+          473
+        ],
+        [
+          2577,
+          474
+        ],
+        [
+          2582,
+          477
+        ],
+        [
+          2582,
+          481
+        ],
+        [
+          2580,
+          485
+        ],
+        [
+          2575,
+          488
+        ],
+        [
+          2572,
+          490
+        ],
+        [
+          2566,
+          493
+        ],
+        [
+          2562,
+          500
+        ],
+        [
+          2555,
+          499
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 2566,
+          "Y": 488,
+          "Z": 70,
+          "Waypoints": [
+            "WP 1370",
+            "WP 1369"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Shame lvl 2 room a L2 Room",
+      "X": 5610,
+      "Y": 20,
+      "Z": 10,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "Shame L2 WP 75",
+      "Dungeon": "Shame lvl 2 room a",
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5605,
+          "Y": 20,
+          "Z": 10,
+          "Waypoints": [
+            "Shame L2 WP 75",
+            "Shame L2 WP 74"
           ]
         }
       ]

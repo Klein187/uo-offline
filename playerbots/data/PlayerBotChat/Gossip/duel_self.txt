@@ -1,0 +1,8 @@
+# Gossip/duel_self.txt — a bot bragging about winning ITS OWN duel.
+# {other} = the loser, {place}, {when}.
+
+beat {other} in a duel {when}
+{other} wanted a duel. i obliged
+dueled {other} {when}. wasnt close
+{other} still owes me from our duel
+ask {other} how our duel went. actually dont, be kind

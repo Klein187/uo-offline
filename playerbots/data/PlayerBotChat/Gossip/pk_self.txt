@@ -1,0 +1,9 @@
+# Gossip/pk_self.txt — a bot recounting ITS OWN murder (post-res).
+# {other} = the murderer, {place}, {when}.
+
+i got murdered by {other} at {place} {when}. watch yourself
+{other} jumped me at {place}. red scum
+stay off the road near {place} — {other} killed me there {when}
+lost everything to {other} at {place}. everything
+{other} pk'd me {when}. someone deal with them
+i owe {other} a death. {place}, {when}. i remember

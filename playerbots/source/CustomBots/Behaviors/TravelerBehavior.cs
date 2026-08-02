@@ -70,6 +70,11 @@ namespace Server.CustomBots
         // ---- State ----
         public string DestinationName { get; set; }
 
+        // A Recall/Gate DelayCall sequence is in flight — the bot is about
+        // to teleport and attach a fresh Traveler. Group formation must
+        // not build a convoy around a leader that's mid-teleport.
+        public bool MagicTravelPending => _magicTravelPending;
+
         // Read-only view of the current leg waypoint (the waypoint the
         // bot is currently walking toward). Returns null if the bot has
         // arrived or hasn't planned a path yet. Used by [BotInfo for
@@ -681,29 +686,8 @@ namespace Server.CustomBots
                     _tripStalls++;
                     if (_tripStalls >= 2)
                     {
-                        // Outlaws rescue to the wilds (gates sit in guard
-                        // zones and a teleported-in red dies there); others
-                        // go to a RANDOM gate, since the nearest gate re-jams
-                        // a bot that is stuck AT a gate.
-                        BotDestination rescueGate;
-                        if (AvoidTowns)
-                        {
-                            rescueGate = PickWildRescueSpot(bot);
-                        }
-                        else
-                        {
-                            var gates = MoongateTravel.AllMoongates();
-                            rescueGate = gates.Count > 0
-                                ? gates[Utility.Random(gates.Count)]
-                                : null;
-                        }
-                        if (rescueGate != null)
-                        {
-                            Log(bot, $"STALLED {_tripStalls} trips running — " +
-                                     $"rescue-teleporting to '{rescueGate.Name}'");
-                            bot.MoveToWorld(
-                                rescueGate.ArrivalPoint ?? rescueGate.Location, bot.Map);
-                        }
+                        TeleportJamEscape(bot,
+                            $"STALLED {_tripStalls} trips running", "trip_rescue");
                         _tripStalls = 0;
                     }
                     else
@@ -711,6 +695,8 @@ namespace Server.CustomBots
                         Log(bot, $"No progress toward '{DestinationName}' in " +
                                  $"{(int)TripStallLimit.TotalMinutes} min " +
                                  $"(stall {_tripStalls}/3) — giving up the trip");
+                        StuckTelemetry.Record(bot, "trip_stall",
+                            $"toward '{DestinationName}'");
                     }
                     PickNewDestination(bot);
                     return;
@@ -785,36 +771,41 @@ namespace Server.CustomBots
             if (threat != null && !threat.Deleted && threat.Alive)
             {
                 // Artisans are tradespeople — they have no combat training
-                // and shouldn't be fighting monsters. Instead of swapping
-                // to a defender, they BREAK off the trip and pick a new
-                // destination (one that's hopefully not in the threat's
-                // direction). It's their version of fleeing: head somewhere
-                // else and let the threat fall behind.
+                // and shouldn't be fighting monsters. Their version of
+                // fleeing is to abandon the route and RUN somewhere else.
+                // Replans are cooldown-limited: the old every-tick abandon
+                // made a glued attacker into a treadmill — the bot stood
+                // in its teeth replanning every 2s instead of moving.
                 if (BotClassHelper.IsArtisan(bot.Class) || bot.Class == BotClass.Crafter)
                 {
-                    Log(bot, $"Artisan attacked while traveling — abandoning route");
-                    bot.Combatant = null;
-                    PickNewDestination(bot);
+                    if (ArtisanThreatResponse(bot, threat))
+                    {
+                        return;
+                    }
+                    // Replan on cooldown — sprint the current plan (the
+                    // pause rolls and walk pace below are overridden while
+                    // _forceRunUntil is live) instead of standing still.
+                }
+                else
+                {
+                    Log(bot, $"Attacked while traveling — switching to defender");
+                    StopStepTimer();
+
+                    var defender = new AdventurerBehavior
+                    {
+                        DefenderMode = true,
+                        DefenderRetreatHpFraction = 0.40,
+                        // Resume the REAL trip, not the portal we were routed
+                        // through: after an island reroute DestinationName is
+                        // the gate/ferry dock, and resuming at the portal
+                        // "arrives" there with the through-trip forgotten.
+                        ResumeDestination = _gateResumeDestination ?? DestinationName,
+                    };
+                    bot.Combatant = threat;
+                    // Swapping Behavior detaches this Traveler. Return at once.
+                    bot.Behavior = defender;
                     return;
                 }
-
-                Log(bot, $"Attacked while traveling — switching to defender");
-                StopStepTimer();
-
-                var defender = new AdventurerBehavior
-                {
-                    DefenderMode = true,
-                    DefenderRetreatHpFraction = 0.40,
-                    // Resume the REAL trip, not the portal we were routed
-                    // through: after an island reroute DestinationName is
-                    // the gate/ferry dock, and resuming at the portal
-                    // "arrives" there with the through-trip forgotten.
-                    ResumeDestination = _gateResumeDestination ?? DestinationName,
-                };
-                bot.Combatant = threat;
-                // Swapping Behavior detaches this Traveler. Return at once.
-                bot.Behavior = defender;
-                return;
             }
 
             // -- 3. Arrived? --
@@ -916,6 +907,16 @@ namespace Server.CustomBots
                         string flag = stuckOnFinalLeg ? " (FINAL leg — bad destination coord?)" : "";
                         Log(bot, $"GIVING UP on '{DestinationName}' at leg {_legIndex + 1}/{_plannedPath.Count} " +
                                  $"({stuckLeg}){flag} after {_legCyclesSpent} stuck cycles — picking new destination");
+                        StuckTelemetry.Record(bot, "leg_giveup",
+                            $"'{DestinationName}' leg {_legIndex + 1}/{_plannedPath.Count} at {stuckLeg}{flag}");
+                        // The whole nudge/repath ladder failed to cross this
+                        // edge — give it a strike so the fleet detours around
+                        // it for a while (and it shows up in the report).
+                        if (_legIndex > 0 && _legIndex < _plannedPath.Count)
+                        {
+                            NavEdgeHealth.ReportFailure(
+                                _plannedPath[_legIndex - 1], _plannedPath[_legIndex]);
+                        }
                         PickNewDestination(bot);
                         return;
                     }
@@ -949,22 +950,26 @@ namespace Server.CustomBots
                 }
             }
 
-            // -- 5. Pause occasionally --
-            if (Core.Now < _pauseUntil)
+            // -- 5. Pause occasionally -- (never mid-sprint: a fleeing
+            //       artisan doesn't stop to admire the scenery)
+            if (Core.Now >= _forceRunUntil)
             {
-                StopStepTimer();
-                return;
-            }
-            if (Utility.RandomDouble() < 0.03)
-            {
-                _pauseUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(2, 4));
-                StopStepTimer();
-                return;
+                if (Core.Now < _pauseUntil)
+                {
+                    StopStepTimer();
+                    return;
+                }
+                if (Utility.RandomDouble() < 0.03)
+                {
+                    _pauseUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(2, 4));
+                    StopStepTimer();
+                    return;
+                }
             }
 
             // -- 6. Make sure we're walking/running the current leg.
             //       StartCurrentLeg auto-picks based on leg distance.
-            StartCurrentLeg(bot);
+            StartCurrentLeg(bot, forceRunning: Core.Now < _forceRunUntil);
         }
 
         // -------------------------------------------------------------------
@@ -1005,6 +1010,8 @@ namespace Server.CustomBots
             if (rDist > MaxApproachDistance)
             {
                 Log(bot, $"LOST — {rDist} tiles from nearest waypoint '{nearest.Name}'; teleporting to rescue");
+                StuckTelemetry.Record(bot, "lost_rescue",
+                    $"{rDist} tiles from '{nearest.Name}'");
                 bot.MoveToWorld(nearest.Location, bot.Map);
                 _lastLoc = bot.Location;
                 _lastProgressAt = Core.Now;
@@ -1235,6 +1242,8 @@ namespace Server.CustomBots
                     {
                         Log(bot, $"MAROONED — no reachable destination or gate from here; " +
                                  $"rescue-teleporting to moongate '{rescueGate.Name}'");
+                        StuckTelemetry.Record(bot, "marooned_rescue",
+                            $"toward '{DestinationName}' → {rescueGate.Name}");
                         _gateResumeDestination = DestinationName;
                         bot.MoveToWorld(rescueGate.ArrivalPoint ?? rescueGate.Location, bot.Map);
                         DestinationName = rescueGate.Name;
@@ -2304,6 +2313,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             {
                 Log(bot, $"Dungeon entrance '{DestinationName}' didn't teleport " +
                          $"(inactive pad?) — picking a new destination");
+                StuckTelemetry.Record(bot, "entry_timeout", DestinationName);
                 PickNewDestination(bot);
                 return true;
             }
@@ -2440,6 +2450,17 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         private DateTime _frozenAnchorAt = DateTime.MinValue;
         private bool _frozenRepicked;
 
+        // Sprint override (set by the artisan threat response): while live,
+        // pause rolls are skipped and legs run regardless of length.
+        private DateTime _forceRunUntil = DateTime.MinValue;
+
+        // Artisan threat response state — how many times in a row the route
+        // was abandoned under attack (streak forgiven after 90s of calm),
+        // and the replan cooldown that forces MOVEMENT between abandons.
+        private int _artisanAbandonStreak;
+        private DateTime _artisanCalmAt = DateTime.MinValue;
+        private DateTime _artisanNextReplan = DateTime.MinValue;
+
         // Returns true if it acted (repicked or teleported) and Tick must
         // return immediately.
         private bool CheckFrozenWatchdog(PlayerBot bot)
@@ -2480,6 +2501,9 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                          $"(dest '{DestinationName}', arrived={_hasArrived}, " +
                          $"magic={_magicTravelPending}, gate={_moongateTripPending}, " +
                          $"entry={_dungeonEntry}) — clearing holds, picking a new destination");
+                StuckTelemetry.Record(bot, "frozen_repick",
+                    $"dest '{DestinationName}' arrived={_hasArrived} " +
+                    $"magic={_magicTravelPending} gate={_moongateTripPending}");
                 StopStepTimer();
                 _isApproaching = false;
                 _isDrifting = false;
@@ -2493,18 +2517,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // forced repick — the spot itself is the problem. Teleport out
             // (wilds for outlaws, random gate for everyone else — same
             // precedent as the trip-stall rescue).
-            var rescue = AvoidTowns ? PickWildRescueSpot(bot) : null;
-            if (rescue == null && !AvoidTowns)
-            {
-                var gates = MoongateTravel.AllMoongates();
-                rescue = gates.Count > 0 ? gates[Utility.Random(gates.Count)] : null;
-            }
-            if (rescue != null)
-            {
-                Log(bot, $"STILL frozen after forced repick — " +
-                         $"rescue-teleporting to '{rescue.Name}'");
-                bot.MoveToWorld(rescue.ArrivalPoint ?? rescue.Location, bot.Map);
-            }
+            TeleportJamEscape(bot, "STILL frozen after forced repick", "frozen_rescue");
             _frozenAnchor = bot.Location;
             _frozenAnchorAt = Core.Now;
             _frozenRepicked = false;
@@ -2513,44 +2526,77 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             return true;
         }
 
-        // Teleport a fully wedged bot to the nearest tile the engine will
-        // accept a mobile on. Spiral outward so the extraction stays local
-        // (a couple of tiles for a crowd box-in; a few more for a bot
-        // embedded in a cliff by a bad teleport landing).
-        private void ExtractFromWedge(PlayerBot bot)
+        // -------------------------------------------------------------------
+        // TeleportJamEscape — the shared jam-escape teleport under the trip-
+        // stall, frozen-watchdog and artisan-pinned rescues. Outlaws go to
+        // the wilds (gates sit in guard zones and a teleported-in red dies
+        // there); everyone else to a RANDOM gate, since the nearest gate
+        // re-jams a bot that is stuck AT a gate. Returns false when nothing
+        // is authored to rescue to (caller falls back to a plain replan).
+        // -------------------------------------------------------------------
+        private bool TeleportJamEscape(PlayerBot bot, string reason, string kind)
         {
-            var map = bot.Map;
-            if (map == null || map == Map.Internal)
+            var rescue = AvoidTowns ? PickWildRescueSpot(bot) : null;
+            if (rescue == null && !AvoidTowns)
             {
-                return;
+                var gates = MoongateTravel.AllMoongates();
+                rescue = gates.Count > 0 ? gates[Utility.Random(gates.Count)] : null;
+            }
+            if (rescue == null)
+            {
+                return false;
             }
 
-            for (int r = 1; r <= 10; r++)
+            Log(bot, $"{reason} — rescue-teleporting to '{rescue.Name}'");
+            // Record BEFORE the move so the hotspot is the jam, not the exit.
+            StuckTelemetry.Record(bot, kind, $"{reason} → {rescue.Name}");
+            bot.MoveToWorld(rescue.ArrivalPoint ?? rescue.Location, bot.Map);
+            return true;
+        }
+
+        // -------------------------------------------------------------------
+        // ArtisanThreatResponse — an artisan under threat abandons the route
+        // and RUNS. Replans are cooldown-limited so a glued attacker can't
+        // turn this into a stand-still replan treadmill (between replans the
+        // bot keeps moving, at a sprint), and three abandons without a calm
+        // spell in between mean the attacker is pinned to us — teleport-
+        // escape, same precedent as the trip-stall rescue. Returns true when
+        // it consumed the tick (replanned or teleported).
+        // -------------------------------------------------------------------
+        private bool ArtisanThreatResponse(PlayerBot bot, Mobile threat)
+        {
+            bot.Combatant = null;
+            _forceRunUntil = Core.Now + TimeSpan.FromSeconds(20);
+
+            if (Core.Now > _artisanCalmAt)
             {
-                for (int dx = -r; dx <= r; dx++)
+                _artisanAbandonStreak = 0; // left alone for a while — forgiven
+            }
+            _artisanCalmAt = Core.Now + TimeSpan.FromSeconds(90);
+
+            if (Core.Now < _artisanNextReplan)
+            {
+                return false; // keep running the current plan
+            }
+            _artisanNextReplan = Core.Now + TimeSpan.FromSeconds(15);
+            _artisanAbandonStreak++;
+
+            if (_artisanAbandonStreak >= 3)
+            {
+                _artisanAbandonStreak = 0;
+                if (TeleportJamEscape(bot,
+                        $"Artisan pinned by '{threat.Name}'", "artisan_pinned"))
                 {
-                    for (int dy = -r; dy <= r; dy++)
-                    {
-                        if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r)
-                        {
-                            continue; // ring only
-                        }
-                        int x = bot.X + dx;
-                        int y = bot.Y + dy;
-                        int z = map.GetAverageZ(x, y);
-                        if (map.CanSpawnMobile(x, y, z))
-                        {
-                            Log(bot, $"WEDGED in terrain at ({bot.X},{bot.Y},{bot.Z}) — " +
-                                     $"extracted to ({x},{y},{z})");
-                            bot.MoveToWorld(new Point3D(x, y, z), map);
-                            _follower?.ForceRepath();
-                            return;
-                        }
-                    }
+                    PickNewDestination(bot);
+                    return true;
                 }
             }
-            Log(bot, $"WEDGED at ({bot.X},{bot.Y},{bot.Z}) and no valid tile " +
-                     $"within 10 — leaving for the lifecycle to recycle");
+
+            Log(bot, $"Artisan attacked by '{threat.Name}' while traveling — " +
+                     $"abandoning route and running");
+            StuckTelemetry.Record(bot, "artisan_flee", threat.Name);
+            PickNewDestination(bot);
+            return true;
         }
 
         private void NudgeAway(PlayerBot bot)
@@ -2585,7 +2631,10 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 if (++_hopelessNudges >= 2)
                 {
                     _hopelessNudges = 0;
-                    ExtractFromWedge(bot);
+                    if (BotStuckEscape.TryExtract(bot, "traveler"))
+                    {
+                        _follower?.ForceRepath();
+                    }
                 }
                 return;
             }
@@ -2685,30 +2734,6 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
         }
 
-        // Single-step sidestep — try each compass direction in random
-        // order, take the first that succeeds. Cheaper than NudgeAway
-        // (which moves multiple tiles); used by the fast-path wall-detect
-        // to break a stuck-against-wall bot loose without overshooting.
-        private static void SidestepOnce(PlayerBot bot)
-        {
-            Direction[] dirs =
-            {
-                Direction.North, Direction.East, Direction.South, Direction.West,
-                Direction.Up,    Direction.Down, Direction.Left,  Direction.Right,
-            };
-            for (int i = dirs.Length - 1; i > 0; i--)
-            {
-                int j = Utility.Random(i + 1);
-                (dirs[i], dirs[j]) = (dirs[j], dirs[i]);
-            }
-            foreach (var d in dirs)
-            {
-                if (bot.Direction != d) bot.Direction = d;
-                if (bot.Move(d)) return;
-            }
-            // All 8 blocked — wait a tick.
-        }
-
         private void StepOnce(PlayerBot bot)
         {
             if (bot.Deleted || !bot.Alive || bot.Map == null || bot.Map == Map.Internal)
@@ -2776,7 +2801,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                         // so post-visit travelers can LEAVE buildings instead
                         // of grinding the interior walls forever.
                         if (!DoorHelper.TryOpenAdjacent(bot))
-                            SidestepOnce(bot);
+                            BotStuckEscape.SidestepAny(bot);
                         _stuckStepCount = 0;
                     }
                 }

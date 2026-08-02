@@ -36,6 +36,11 @@ namespace Server.CustomBots
         public string   Place { get; init; }  // friendly place name
         public int      X     { get; init; }  // where it happened (map editor's
         public int      Y     { get; init; }  // event ticker jumps here)
+
+        // How many times gossip has retold this event. Each telling halves
+        // its future weight, so one murder doesn't dominate every bank
+        // conversation for three hours.
+        public int TellCount;
     }
 
     public static class BotEventJournal
@@ -55,13 +60,16 @@ namespace Server.CustomBots
         private static readonly Dictionary<string, double> _gossipWeight =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                ["pk"]      = 4.0,
-                ["faction"] = 3.5, // shield war street kills
-                ["death"]   = 3.0,
-                ["red"]     = 2.0, // a red was SPOTTED — warn people
-                ["duel"]    = 2.0,
-                ["kill"]    = 1.5,
-                ["party"]   = 1.5,
+                ["pk"]       = 4.0,
+                ["faction"]  = 3.5, // shield war street kills
+                ["warclash"] = 3.0, // war bands met — a street battle
+                ["death"]    = 3.0,
+                ["red"]      = 2.0, // a red was SPOTTED — warn people
+                ["duel"]     = 2.0,
+                ["kill"]     = 1.5,
+                ["party"]    = 1.5,
+                ["warband"]  = 1.2, // a patrol marched out
+                ["convoy"]   = 0.6, // guild crew on the road — mild news
             };
 
         private static string GossipDir =>
@@ -272,9 +280,14 @@ namespace Server.CustomBots
 
         // -------------------------------------------------------------------
         // Gossip — compose a line about a recent event. Null when there's
-        // nothing fresh to talk about (or no templates). The speaker never
-        // gossips about themself, and never about an event they couldn't
-        // plausibly have heard of yet (< 60s old).
+        // nothing fresh to talk about (or no templates). An event about
+        // the SPEAKER uses the "<type>_self" first-person templates ("i
+        // got murdered by X, watch yourself") — a bot never narrates its
+        // own story in the third person. Nobody gossips about an event
+        // they couldn't plausibly have heard of yet (< 60s old), retold
+        // events fade (TellCount halves the weight per telling), and a
+        // template that needs a token the event doesn't have (a self-kill
+        // has no {other}) is never picked.
         // -------------------------------------------------------------------
         public static string ComposeGossip(string speakerName)
         {
@@ -284,7 +297,7 @@ namespace Server.CustomBots
             }
 
             var now = Core.Now;
-            List<BotEvent> pool = null;
+            List<(BotEvent ev, string key, double w)> pool = null;
             double totalW = 0;
             for (int i = _ring.Count - 1; i >= 0; i--)
             {
@@ -298,21 +311,33 @@ namespace Server.CustomBots
                 {
                     continue; // news needs a moment to travel
                 }
-                if (!_gossipWeight.TryGetValue(ev.Type, out _))
+                if (!_gossipWeight.TryGetValue(ev.Type, out var baseW))
                 {
                     continue; // logins/logouts etc aren't gossip
                 }
-                if (string.Equals(ev.Actor, speakerName, StringComparison.OrdinalIgnoreCase))
+
+                // Own events go first-person; without _self templates for
+                // the type, the speaker just doesn't bring it up.
+                bool own = string.Equals(ev.Actor, speakerName,
+                    StringComparison.OrdinalIgnoreCase);
+                var key = own ? ev.Type + "_self" : ev.Type;
+                if (!_templates.ContainsKey(key))
                 {
                     continue;
                 }
-                if (!_templates.ContainsKey(ev.Type))
+
+                double w = baseW / (1.0 + ev.TellCount);
+                if (own)
                 {
-                    continue;
+                    // People lead with their own stories — a bot that just
+                    // got murdered or slew a lich talks about THAT before
+                    // retelling someone else's news. (Still decays with
+                    // TellCount, so nobody loops their war story forever.)
+                    w *= 2.5;
                 }
-                pool ??= new List<BotEvent>();
-                pool.Add(ev);
-                totalW += _gossipWeight[ev.Type];
+                pool ??= new List<(BotEvent, string, double)>();
+                pool.Add((ev, key, w));
+                totalW += w;
             }
 
             if (pool == null)
@@ -320,21 +345,41 @@ namespace Server.CustomBots
                 return null;
             }
 
-            // Weighted pick by drama.
+            // Weighted pick by drama (freshness-decayed).
             double r = Utility.RandomDouble() * totalW;
-            BotEvent picked = pool[^1];
-            foreach (var ev in pool)
+            var (picked, pickedKey, _) = pool[^1];
+            foreach (var (ev, key, w) in pool)
             {
-                r -= _gossipWeight[ev.Type];
+                r -= w;
                 if (r <= 0)
                 {
                     picked = ev;
+                    pickedKey = key;
                     break;
                 }
             }
 
-            var templates = _templates[picked.Type];
-            var line = templates[Utility.Random(templates.Count)];
+            // Only templates whose tokens this event can actually fill —
+            // an unattributed death (empty {other}) must not produce
+            // "got killed by  at the crossroads".
+            var templates = _templates[pickedKey];
+            List<string> usable = null;
+            foreach (var t in templates)
+            {
+                if (picked.Other.Length == 0 &&
+                    t.Contains("{other}", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                (usable ??= new List<string>()).Add(t);
+            }
+            if (usable == null)
+            {
+                return null;
+            }
+
+            picked.TellCount++;
+            var line = usable[Utility.Random(usable.Count)];
 
             return line
                 .Replace("{actor}", picked.Actor, StringComparison.Ordinal)

@@ -104,6 +104,18 @@ namespace Server.CustomBots
                 _walkInGoal = _site.InteriorGoal(bot.Map, bot.Z);
                 _walkInStartedAt = Core.Now;
             }
+            else
+            {
+                // Handed off (or restored) already standing in the site —
+                // the ClockIn path never runs for this shift, so kit up
+                // here: hop off the horse (nobody mines from the saddle)
+                // and bring up the pack beast that carries the yield.
+                if (bot.Mounted)
+                {
+                    BotMountHelper.DismountAndDelete(bot);
+                }
+                BotPackAnimals.SpawnFor(bot);
+            }
 
             // Organic arrivals get a visit window from the handoff; a
             // directly-attached gatherer (admin, load) stamps its own.
@@ -213,8 +225,14 @@ namespace Server.CustomBots
                 }
 
                 // Swing animation (one-hand chop) + the trade sound.
-                bot.Animate(11, 5, 1, true, false, 0);
-                bot.PlaySound(bot.Class == BotClass.Miner ? 0x125 : 0x13E);
+                // Never from the saddle — mounted bodies can't play the
+                // work animations (ClockIn dismounts; this is the backstop
+                // for any path that re-mounted mid-shift).
+                if (!bot.Mounted)
+                {
+                    bot.Animate(11, 5, 1, true, false, 0);
+                    bot.PlaySound(bot.Class == BotClass.Miner ? 0x125 : 0x13E);
+                }
             }
 
             // The yield: real stackables into the pack.
@@ -237,10 +255,25 @@ namespace Server.CustomBots
             _anchor = bot.Location;
             _nextSwing = Core.Now;
             _nextHarvest = Core.Now + HarvestInterval;
+
+            // Nobody mines from the saddle. Hop off — the horse is "tied
+            // up out back" (deleted; the haul home is a walk beside the
+            // pack beast, which is the better picture anyway).
+            if (bot.Mounted)
+            {
+                BotMountHelper.DismountAndDelete(bot);
+            }
+
             if (!_shiftStamped)
             {
                 _shiftStamped = true;
                 VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(Utility.RandomMinMax(4, 8));
+
+                // The shift's pack beast — the yield rides in ITS pack
+                // (miners favor llamas, lumberjacks horses). It follows
+                // the bot through the shift and the haul to town, where
+                // the delivery stables it.
+                BotPackAnimals.SpawnFor(bot);
             }
         }
 
@@ -352,6 +385,23 @@ namespace Server.CustomBots
             _follower = null;
         }
 
+        private static int CountYield(Server.Items.Container pack)
+        {
+            if (pack == null)
+            {
+                return 0;
+            }
+            int n = 0;
+            foreach (var item in pack.Items)
+            {
+                if (item is Server.Items.Log or Server.Items.IronOre)
+                {
+                    n += item.Amount;
+                }
+            }
+            return n;
+        }
+
         private static void AddYield(PlayerBot bot)
         {
             if (bot.Backpack == null)
@@ -359,15 +409,16 @@ namespace Server.CustomBots
                 return;
             }
 
-            int carried = 0;
-            foreach (var item in bot.Backpack.Items)
-            {
-                if (item is Server.Items.Log or Server.Items.IronOre)
-                {
-                    carried += item.Amount;
-                }
-            }
-            if (carried >= MaxCarried)
+            // The pack beast carries the load when there is one — that's
+            // what it's FOR, and it doubles the haul a shift brings home.
+            var beast = bot.PackAnimal is { Deleted: false } pa && pa.Backpack != null
+                ? pa
+                : null;
+
+            int carried = CountYield(bot.Backpack) +
+                          (beast != null ? CountYield(beast.Backpack) : 0);
+            int cap = beast != null ? MaxCarried * 2 : MaxCarried;
+            if (carried >= cap)
             {
                 return;
             }
@@ -375,6 +426,19 @@ namespace Server.CustomBots
             Item yield = bot.Class == BotClass.Miner
                 ? new Server.Items.IronOre(Utility.RandomMinMax(2, 6))
                 : new Server.Items.Log(Utility.RandomMinMax(3, 8));
+
+            if (beast != null)
+            {
+                beast.Backpack.DropItem(yield);
+                if (Utility.RandomDouble() < 0.20)
+                {
+                    BotScene.Deliver(bot, bot.Class == BotClass.Miner
+                        ? "*loads ore onto the pack beast*"
+                        : "*straps logs onto the pack beast*");
+                }
+                return;
+            }
+
             if (!bot.Backpack.TryDropItem(bot, yield, sendFullMessage: false))
             {
                 yield.Delete();
