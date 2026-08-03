@@ -804,6 +804,13 @@ namespace Server.CustomBots
                 {
                     continue;
                 }
+                // A convoy MARCHES — a leader whose trip crosses water
+                // would Recall out from under the group (or dead-end at
+                // the shore). Same-landmass trips only.
+                if (!OnSameLandmass(bot, dest))
+                {
+                    continue;
+                }
                 candidates.Add((bot, dest));
             }
             if (candidates.Count == 0)

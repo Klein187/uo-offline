@@ -67,10 +67,14 @@ namespace Server.CustomBots
         // PK spawners are EXEMPT: PKs are a separate outlaw population
         // (see GeneratePKsCommand), not part of the town login fiction —
         // gating them meant a world sitting at its curve target silently
-        // spawned zero PKs.
+        // spawned zero PKs. Fixed-role spawners are exempt too (see the
+        // override): fixtures are furniture, not sessions — the bank
+        // crowd exists at 5am like it exists at noon.
+        protected virtual bool CurveGated => true;
+
         public override void Spawn()
         {
-            if (_behaviorName != "PK" && !BotSessionManager.AllowSpawn())
+            if (CurveGated && _behaviorName != "PK" && !BotSessionManager.AllowSpawn())
             {
                 return;
             }

@@ -128,8 +128,27 @@ namespace Server.CustomBots
             // once the visit window is up.
             if (CheckVisitExpired(bot)) return;
 
-            // Speak first; chatter is the whole point of this behavior.
-            TrySpeak(bot);
+            // Speak first; chatter is the whole point of this behavior —
+            // and you talk TO someone: face the nearest person when a
+            // line lands, instead of announcing WTS to a wall.
+            if (TrySpeak(bot))
+            {
+                FaceNearestPerson(bot);
+            }
+            else if (Utility.RandomDouble() < 0.03)
+            {
+                // Idle life between lines: mostly turn to watch whoever's
+                // around; now and then check the bank box (the bend-over
+                // gesture every bank crowd made all day).
+                if (Utility.RandomDouble() < 0.35)
+                {
+                    bot.Animate(32, 5, 1, true, false, 0);
+                }
+                else
+                {
+                    FaceNearestPerson(bot);
+                }
+            }
 
             // If we got shoved off our home tile, walk back. One step
             // per tick toward home until we're there.
@@ -152,6 +171,39 @@ namespace Server.CustomBots
                 bot.Direction = d;
             }
             bot.Move(d);
+        }
+
+        // Turn toward the nearest other person (bot or player) in
+        // conversation range — the small thing that makes a standing
+        // crowd read as PEOPLE instead of statues.
+        private static void FaceNearestPerson(PlayerBot bot)
+        {
+            Mobile nearest = null;
+            int bestDist = int.MaxValue;
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, 6))
+            {
+                if (m == bot || m.Deleted || !m.Alive || !m.Player)
+                {
+                    continue;
+                }
+                int dx = Math.Abs(m.X - bot.X);
+                int dy = Math.Abs(m.Y - bot.Y);
+                int dist = dx > dy ? dx : dy;
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    nearest = m;
+                }
+            }
+
+            if (nearest != null)
+            {
+                var d = bot.GetDirectionTo(nearest);
+                if (bot.Direction != d)
+                {
+                    bot.Direction = d;
+                }
+            }
         }
     }
 }

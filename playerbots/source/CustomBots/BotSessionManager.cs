@@ -87,14 +87,27 @@ namespace Server.CustomBots
         // spawns land in a single call stack — a time-based count cache
         // would go stale there and let the whole population overshoot the
         // curve.
+        //
+        // Fixed-role FIXTURES (permanent bank crowds etc.) are subtracted:
+        // they're furniture, not sessions. Without this, thirty permanent
+        // sitters would silently eat thirty slots of the organic
+        // population that actually travels the world.
         // -------------------------------------------------------------------
+
+        // Live fixed-role bots right now. Maintained O(1) by PlayerBot:
+        // incremented when OnAfterSpawn stamps LifecycleExempt (fixture
+        // spawner), decremented in OnAfterDelete. In-memory only — bots
+        // are transient and every boot re-counts from zero as the startup
+        // respawn re-stamps the flags.
+        public static int FixedRoleCount;
+
         public static bool AllowSpawn()
         {
             if (!Enabled)
             {
                 return true;
             }
-            return NamePool.InUseCount < TargetNow;
+            return NamePool.InUseCount - FixedRoleCount < TargetNow;
         }
 
         private static int CountLive()
@@ -147,7 +160,17 @@ namespace Server.CustomBots
                 return;
             }
 
-            int live = _scratch.Count;
+            // Fixtures don't count toward the curve — they neither log out
+            // nor should their presence pressure organic bots into early
+            // logouts.
+            int live = 0;
+            foreach (var bot in _scratch)
+            {
+                if (!bot.LifecycleExempt)
+                {
+                    live++;
+                }
+            }
             int target = TargetNow;
             int surplus = live - target;
             int logouts = 0;

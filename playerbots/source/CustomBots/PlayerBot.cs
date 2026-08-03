@@ -205,6 +205,11 @@ namespace Server.CustomBots
         // own ownerless reaper. See BotPackAnimal.cs.
         public Server.Mobiles.BaseCreature PackAnimal;
 
+        // Supply-errand cooldown (see BotSupplies): a failed shopping trip
+        // or an empty purse must not loop the bot at the counter.
+        // Runtime-only — bots are transient.
+        public DateTime NextSupplyErrandAt;
+
         // ---- Gear progression (IDEAS 4.3) ----
         //
         // Dungeon runs survived since the last upgrade. At the bank, three
@@ -544,8 +549,14 @@ namespace Server.CustomBots
 
                 Behavior = BehaviorRegistry.Create(behaviorName);
                 // Fixed-role bots (placed via the spawn editor) never enter
-                // the lifecycle — they stay locked in this behavior.
+                // the lifecycle — they stay locked in this behavior. They
+                // also don't count toward the session curve (fixtures are
+                // furniture, not sessions) — keep the O(1) tally exact.
                 LifecycleExempt = Spawner is FixedRoleBotSpawner;
+                if (LifecycleExempt)
+                {
+                    BotSessionManager.FixedRoleCount++;
+                }
 
                 // Shoppers pinned at vendor spots spawn straight into the
                 // Shopper brain with no visit timer (unlike organic arrivals,
@@ -683,6 +694,10 @@ namespace Server.CustomBots
         {
             BotMountHelper.DismountAndDelete(this);
             BotPackAnimals.Release(this);
+            if (LifecycleExempt)
+            {
+                BotSessionManager.FixedRoleCount--;
+            }
             NamePool.Release(Name);
             base.OnAfterDelete();
         }

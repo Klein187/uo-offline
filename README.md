@@ -2,9 +2,26 @@
 
 A single-player, fully offline Ultima Online experience you can play on **Windows, Linux, and the Steam Deck**. One installer sets up everything and runs the whole game on your own machine — no servers, no accounts, no internet required after install.
 
-What makes it feel alive is a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, crawl dungeons, form guilds and hunting parties, wage the Order/Chaos war in the streets, duel outside the bank, gather and trade, die and run back for their corpses, gossip about things that really happened, and log off for dinner — so the world feels like a busy 1999 shard instead of an empty map.
+What makes it feel alive is a custom PlayerBots system that populates Britannia with bots that fight, travel, shop, bank, chat, ride horses, recall across the map, crawl dungeons and loot them by torchlight, form guilds, hunting parties and Order/Chaos war bands, wage the shield war in the streets, duel outside the bank, walk their ore to town by pack llama, run out of arrows and go buy more, die and run back for their corpses, gossip about things that really happened, and log off for dinner — so the world feels like a busy 1999 shard instead of an empty map.
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, runs entirely on localhost.
+
+---
+
+## What's new — August 2026
+
+A big T2A-authenticity pass plus a batch of living-world systems:
+
+- **Recall is how everyone gets around now** — the way it actually was. Most bots keep travel magery; everyone else burns real **recall scrolls** from their pack. Long trips recall (scaled by distance), GM mages still open public gates, and a wedged or stranded bot **casts its way out** ("Kal Ort Por", flash, gone) instead of silently teleporting. Ferries are **gone** — they were never a T2A thing; the outer isles are reached by magic, exactly as in 1998.
+- **Real supplies, real shopping.** No more invisible refills: arrows, reagents, bandages, and recall scrolls genuinely run out. Bots spawn with era-sized stocks (hundreds of arrows, a fat reagent stash) and when they run low they **stop what they're doing and go buy more** — archers to the bowyer, mages to the mage shop, anyone at a bank pulls from the bank box. Hunters break off hunts; dungeon crawlers cut runs short ("out of supplies — heading up"). Purchases are visible and paid in gold.
+- **Permanent bank crowds at every bank.** All eleven banks now keep a standing crowd of regulars who never leave — they lean on walls, face whoever they're talking to, check their bank box, and hold the plaza at 5am like they hold it at noon.
+- **Guild convoys and the Order/Chaos war bands.** Guildmates muster and walk road trips together; faction squads patrol to shrines and graveyards — and deliberately intercept enemy patrols. When shields meet, nearby faction-mates pile in (up to 4v4 street battles) and marching bands dissolve into the fight.
+- **Smarter fights.** Toe-to-toe fighters now bandage and drink cure potions mid-fight (and the bandage timer actually completes), retreat thresholds rise when a bot is being swarmed, and skilled mages answer a charging monster with the classic **Paralyze** — freeze it, step back, resume the barrage.
+- **Dungeon crawlers behave like people.** They **loot the gold** off monsters they kill, carry lit **torches** into the dark when a hand is free, stop picking fights on the way OUT ("leaving" now looks like leaving), and recall home when the stairs won't cooperate.
+- **Miners bring pack llamas.** Gatherers dismount to work (nobody mines from the saddle), load their ore onto a pack llama or horse, and walk the laden beast to town where it's unloaded and stabled. Double the haul, and the single best-looking commute in Britannia.
+- **Gossip got personal.** Bots now tell their **own** stories in first person ("i got murdered by Sarn at the crossroads, watch yourself"), war-band clashes and guild outings make the bank rounds, retold news fades naturally, and the "Wulfgar killed Wulfgar" reflected-spell oddity reads correctly as an unattributed death.
+- **An era-true wardrobe.** Every clothing hue now comes from the classic **dye tub range** — nothing a 1998 tub couldn't mix — with true black as the rare holiday-tub flex it was. Mana potions (which didn't exist yet) are gone from mage kits.
+- **The shard watches itself.** The status page gained a live "Stuck & Rescues" section, a `stuck_report.json` telemetry feed maps trouble hotspots, and the fleet learns to route around chokepoint road edges automatically.
 
 ---
 
@@ -90,7 +107,15 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **Duels outside the bank.** Two fighters emote a challenge, bow, walk ten tiles clear of the crowd, and fight to low health — never to the death — then bow again while the loser demands a rematch. Era-perfect theater, legal in town.
 
-**Ferries to the outer isles.** Docks pair up into ferry routes (Trinsic ↔ Valor Isle, Magincia ↔ Humility Isle): a bot whose trip crosses open sea walks to the pier, waits for the boat ("*pays the ferryman*"), and steps off at the far dock — "land ho". With the ferry network live, **all eight virtue shrines are walkable**, and pilgrims actually show up on the shrine islands.
+**Recall is the transport.** Exactly as in 1998: most bots keep enough Magery for Recall, and everyone else carries a stack of **recall scrolls** ("*reads a recall scroll*" — the scroll still speaks the words). Long trips go by magic scaled to distance, GM mages open **real public gates** anyone can hop through, and the gateless outer isles — Valor, Humility, Dagger Isle, Fire Isle — get their pilgrims by Recall, since that's the only way short of owning a boat. A stranded or hopelessly wedged bot recalls out too, the single most era-true escape there is.
+
+**Supply runs.** Consumables are real: bows eat arrows, casts eat reagents, bandages get used up — and **nothing refills invisibly**. When a bot runs low it leaves what it's doing and goes shopping: the bowyer for arrows, the provisioner for bandages, the mage shop for reagents and scrolls, or the bank box reserve. The purchase happens on arrival, visibly, for gold. Hunters break off hunts for it; crawlers cut dungeon runs short for it.
+
+**Permanent bank crowds.** Every bank keeps a standing crowd of fixtures — regulars who never change what they're doing, never log off, and never leave. They lean on walls, turn to face whoever they're talking to, and do the bend-over bank-box check every 1999 bank crowd performed all day. Individuals may die and be replaced, but the crowd is eternal.
+
+**Guild convoys and war bands.** Guildmates muster and walk road trips together ("guild trip to trinsic, who walks with me?"), fighting as a group when the road bites back and dispersing into the destination on arrival. Order/Chaos squads patrol to faction-flavored spots — and new bands deliberately set intercept courses on enemy patrols. When opposing shields sight each other, nearby faction-mates are drafted in (up to 4v4), and any band involved dissolves into the battle.
+
+**Pack animals.** A gatherer clocking in dismounts (nobody mines from the saddle) and brings up a pack llama or horse. The yield loads onto the beast — double the haul — and at shift's end the pair walk to town together, where the delivery unloads the packs and the beast is led off to the stables.
 
 **Treasure hunts.** A bot announces it "got a map off a dead brigand", walks out to one of 24 wilderness dig sites, digs with shovel swings and sounds — and the guardians erupt from the ground mid-dig. Fight them down, pry open the unearthed chest ("GOLD! actual gold!!"), pocket the coin, and carry the story back to the bank where the gossip mill spreads it.
 
@@ -106,9 +131,9 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **Chatter with texture.** Era voice throughout ("ne1", "thx m8", rare all-caps drama), late-night lines after 9pm, nervy whispers inside dungeons ("quiet... something ahead"), real emotes (*bows*, *dances*), gossip about real events, and the occasional "asdf". Ghost speech garbles for the living, exactly as it should.
 
-**Shard status page.** `Data/Live/status.html` regenerates every minute: who's online (names, guild tags, class/tier, what they're doing, where), population vs the daily curve, and a Latest News feed straight from the event journal — the classic 1999 shard status page, telling the truth about 400 bots.
+**Shard status page.** `Data/Live/status.html` regenerates every minute: who's online (names, guild tags, class/tier, what they're doing, where), population vs the daily curve, live counts of hunting parties / guild convoys / war bands, a Latest News feed straight from the event journal (war-band clashes included), and a "Stuck & Rescues" telemetry section — the classic 1999 shard status page, telling the truth about 400 bots.
 
-**Equipment variety.** Beyond class signatures (Warriors in plate, Mages in robes), every bot rolls universal accessories: hats from 18 types (floppy hat, jester hat, feathered cap, tribal mask, etc.), cloaks in any color, body sashes, beards, varied hair. Some Warriors wear chain or studded instead of plate. Some Mages wear studded leather. The visual feel matches classic UO bank gatherings.
+**Equipment variety — strictly era.** Beyond class signatures (Warriors in plate, Mages in robes), every bot rolls universal accessories: hats from the classic 1998 set (floppy hat, jester hat, feathered cap, tricorne…), cloaks and sashes dyed **only in colors the T2A dye tub could actually mix** (with true black as the rare holiday-tub flex), beards, varied hair. Metal armor is iron or genuine colored ore; magic gear uses the real era system (Ruin → Vanquishing, Exceptional maker's marks that GM crafter bots *announce* when they pull one off). Some Warriors wear chain or studded instead of plate; some Mages wear studded leather. The visual feel matches a classic UO bank gathering — and nothing on anyone's back postdates 1998.
 
 **Mounts.** 70% of bots spawn mounted on a horse, ostard, or llama. Horse coat colors vary realistically (browns, grays, palominos). Mounted bots move at proper UO mount speed. Mounts despawn cleanly with their rider on death or removal.
 
@@ -120,7 +145,7 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 - **Crafter** — settles at its station (Smith → Forge, Tailor → shop, Fisherman → dock) for long working sessions, producing real goods.
 - **Gatherer** — works a wilderness site (chop/mine animations, real logs and ore into the pack), then hauls to town to sell.
 - **Adventurer** — full combat: melee, archery, and real magic (spell ladders up to Flamestrike, kiting, target switching, threat assessment); retreats scale with experience.
-- **DungeonCrawler** — enters dungeons through the real entrance teleporters, sweeps rooms floor by floor (skill-weighted descent — novices stay shallow), camps respawns, and climbs back out when the run timer expires.
+- **DungeonCrawler** — enters dungeons through the real entrance teleporters (torch lit if a hand is free), sweeps rooms floor by floor (skill-weighted descent — novices stay shallow), **loots the gold off its kills**, camps respawns, and climbs out when the run timer expires or the supplies run dry — fighting only in self-defense on the way up, because leaving should look like leaving.
 - **PartyMember / Duelist / Ghost / CorpseReclaim / Beggar / Newbie** — the hunting-party follower, the bank duelist, the death story, and the street characters.
 - **TreasureHunter** — the dig-site scene: dig, fight the risen guardians, open the chest, walk home rich.
 - **Tamer** — stalks a wild animal, tames it with the era spam, parades it to town, and sells it.
@@ -133,11 +158,11 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **Arrival points.** The key to bots reaching places they can actually stand. A destination can carry one or more **arrival points** — specific reachable tiles (a vendor counter, a doorstep, a moongate teleporter) — each with its own preferred route waypoints. A bot picks one arrival point, routes to the nearest of its waypoints, and arrives *on a standable tile* instead of grinding a wall trying to reach an unreachable interior coordinate. This is what lets a Shopper stop at the counter and a Traveler step onto a moongate cleanly.
 
-**Moongate, Recall, and Gate travel.** Bots that reach a moongate have a high chance to step through and emerge at another city's gate — circulating the population across Britannia. Long hauls reroute through the gate network automatically. Mages with the skill and mana skip the walk entirely: Recall ("Kal Ort Por") straight to their destination, or open a **real** Gate Travel pair ("gate to despise up, hurry") that lingers for anyone — players included — to hop through.
+**Moongate, Recall, and Gate travel.** Bots that reach a moongate have a high chance to step through and emerge at another city's gate — circulating the population across Britannia. Long hauls reroute through the gate network automatically, and cross-water city trips split naturally between Recall and the moongates so the gate plazas keep their crowds. Casters Recall on mana; scroll users spend their stack thriftily (scrolls cost gold — they save them for the long hauls), and GM mages open a **real** Gate Travel pair ("gate to despise up, hurry") that lingers for anyone — players included — to hop through.
 
-**Combat.** Adventurers engage hostile creatures with class-appropriate fighting: melee with attack-slot fanning (bots surround a monster instead of stacking), archer/mage kiting, and a real spell book from Magic Arrow to Flamestrike with era-correct openers. Threat assessment scales with tier (bravery in numbers — crowds swarm bosses), targets switch mid-fight to whoever's actually biting, and after a rough win, fighters sit and *bandage wounds* while casters *meditate* their mana back before moving on. Bots respect notoriety — no attacking innocents or wildlife.
+**Combat.** Adventurers engage hostile creatures with class-appropriate fighting: melee with attack-slot fanning (bots surround a monster instead of stacking), archer/mage kiting, and a real spell book from Magic Arrow to Flamestrike with era-correct openers — including **Paralyze** against a monster closing on a skilled mage, and cure potions when the poison lands. Fighters bandage *mid-fight* on a fast combat pulse (and the bandage actually completes), retreat thresholds scale with experience **and with how many monsters are piling on** — surviving a swarm means leaving earlier — and after a rough win, fighters sit and *bandage wounds* while casters *meditate* their mana back. Bots respect notoriety — no attacking innocents or wildlife.
 
-**Stuck recovery.** When bots get pinned against terrain, automatic detection nudges them in a walkable direction, opens doors in the way, and repaths — with a give-up after repeated failure so nothing paces forever.
+**Stuck recovery.** When bots get pinned against terrain, automatic detection nudges them in a walkable direction, opens doors in the way, and repaths — escalating through sidesteps and wedge extraction to a full **recall-out** for a bot that can cast or carries a scroll (a wedged 1998 player's actual move). Every firing feeds a live telemetry ledger: the status page shows a "Stuck & Rescues" section with trouble hotspots, `Data/Live/stuck_report.json` feeds tooling, and road edges that keep defeating bots take a temporary routing penalty so **the whole fleet detours around chokepoints automatically**.
 
 **Navigation.** Short-range pathfinding via ModernUO's A*. Long-range via the waypoint graph. A distance-field final-approach system carries bots the last few tiles into areas. Bots fire dungeon/moongate teleporters naturally by stepping on the tile (via arrival points) — no fake "go inside" magic.
 
@@ -201,12 +226,12 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 **Living shard:**
 - `[BotGuilds` — guild rosters with live member counts.
 - `[BotSessions [on|off]` — session layer status (live vs curve target) or toggle.
-- `[BotParties [form]` — list live hunting parties, or force-form one near you.
+- `[BotParties [form | convoy | warband]` — list live parties of all kinds, or force-form a hunt, a guild convoy, or a faction war band.
 - `[BotFactions [fight]` — Order/Chaos counts and active fights, or force a street fight.
 - `[BotDuel` — force a bank duel near you.
 - `[BotTrade` — force a trade scene (crafter purchase or WTS deal).
 - `[BotDanger` — list places with recent murder heat.
-- Headless test tokens (for soaks, no client needed): drop a number into `Data/Live/party_request.txt`, `death_request.txt`, or `faction_request.txt` and watch the console / `*_ack.json`.
+- Headless test tokens (for soaks, no client needed): drop a number into `Data/Live/party_request.txt`, `death_request.txt`, `faction_request.txt`, or `gossip_request.txt` (composes a batch of gossip lines into `gossip_ack.json`) and watch the console / `*_ack.json`.
 
 **Admin / population:**
 - `[GmPanel` — central GM gump: world setup, spawning, teleporting, cleanup (with confirmation gumps for destructive actions).
@@ -231,17 +256,17 @@ The map background PNG is a generated artifact — regenerate it from your UO cl
 | Skara Brae | |
 | Jhelom | |
 
-The island cities need boat-arrival illusion + their own waypoint pockets (no moongate lands on Buc's Den, so it needs special handling). Four virtue shrines are live as pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice — the last with a 29-node server-verified desert trail); Justice, Honesty, Honor, Humility, and Valor await their trails.
+The remaining island cities need their own waypoint pockets and arrival handling. Six virtue shrines are live as walkable pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice, Justice, Honor — each with a server-verified overland trail); Valor and Humility sit on gateless isles and receive their pilgrims by Recall, as the era intended. Honesty's island still needs its authoring.
 
-**Dungeons — all twelve are wired up; now they need testing and cleanup.** Every Felucca dungeon has interiors generated end to end: flood-filled floor meshes, roughly 2,950 waypoints, and teleporter records for the entrances, descends, ascends, and the cross-dungeon passages. The approach routes are in too — six overland trails, the Dagger Isle and Fire Isle ferries, and the island crossing to Hythloth — and the automated checks pass: the edge-walk audit reports zero blocked links, and a pad audit walked a probe onto all 94 teleporter pads and confirmed every one fires.
+**Dungeons — all twelve are wired up; now they need testing and cleanup.** Every Felucca dungeon has interiors generated end to end: flood-filled floor meshes, roughly 2,950 waypoints, and teleporter records for the entrances, descends, ascends, and the cross-dungeon passages. The approach routes are in too — six overland trails and the island crossing to Hythloth; the isle dungeons (Ice on Dagger Isle, Fire) are reached by Recall — and the automated checks pass: the edge-walk audit reports zero blocked links, and a pad audit walked a probe onto all 94 teleporter pads and confirmed every one fires.
 
 **What's left is proving it in play.** Only Despise has been genuinely soak-tested with live bots. The rest have never had crawlers run through them for any length of time, so the waypoint graphs are expected to need pruning: nodes that lead nowhere, landings that drop a bot into rock, and rooms where the generated mesh doesn't match the real dungeon geometry. That pass — run, watch, clean up — is the current dungeon work.
 
-**Known issues being fixed.** Three problems are actively being worked on:
+**Known issues being fixed.**
 
 - **Bots stuck at login** — bots that don't resume their routine after coming back into the world.
 - **Player houses** — bot behavior in and around player-owned housing.
-- **Recall** — fixing how bots use recall to travel.
+- **Scrambled dungeon levels** — Covetous, Hythloth, and Deceit have mislabeled level numbering in their data; exits work (crawlers try the mislabeled pads, and Recall covers the rest) but the floors deserve a proper renumbering pass.
 
 ---
 

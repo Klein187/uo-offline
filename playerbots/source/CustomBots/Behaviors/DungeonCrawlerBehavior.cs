@@ -220,6 +220,10 @@ namespace Server.CustomBots
         private static readonly TimeSpan HardStuckAfter = TimeSpan.FromMinutes(5);
         private const int HardStuckMoveTiles = 6;
 
+        // How often the crawler checks whether its supplies ran dry and
+        // the run should end early (see Tick).
+        private DateTime _nextSupplyThink = DateTime.MinValue;
+
         // -------------------------------------------------------------------
         public override void OnAttached(PlayerBot bot)
         {
@@ -472,6 +476,26 @@ namespace Server.CustomBots
                 _targetPoint = null;
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: run over — exiting {DungeonName} from L{Level}");
+            }
+
+            // Out of supplies (arrows spent, reagents burned, bandage pile
+            // gone)? The run ends EARLY — "oor, heading up" is the most
+            // era-true sentence a dungeon ever heard. The surface Traveler
+            // then runs the shopping errand.
+            if (!ExitMode && Core.Now >= _nextSupplyThink)
+            {
+                _nextSupplyThink = Core.Now + TimeSpan.FromMinutes(2);
+                if (BotSupplies.FirstNeed(bot) != SupplyNeed.None)
+                {
+                    ExitMode = true;
+                    _exitModeSince = Core.Now;
+                    _lingering = false;
+                    _route = null;
+                    _targetPoint = null;
+                    Console.WriteLine(
+                        $"[DungeonCrawler] {bot.Name}: out of supplies — cutting " +
+                        $"the {DungeonName} run short");
+                }
             }
 
             // Exit-mode watchdog: a long stretch with no floor transition
@@ -949,6 +973,27 @@ namespace Server.CustomBots
                 var gates = MoongateTravel.AllMoongates();
                 if (gates.Count == 0) return false;
                 var gate = gates[Utility.Random(gates.Count)];
+
+                // Era-true first: recall out of the dungeon — the single
+                // most iconic escape in UO ("kal ort por" from three
+                // levels down). Silent teleport only for a bot with no
+                // magic and no scroll.
+                if (MagicTravel.EmergencyEscape(bot, gate))
+                {
+                    Console.WriteLine(
+                        $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
+                        $"L{Level} — recalling out");
+                    StuckTelemetry.Record(bot, "exit_gate_rescue",
+                        $"{why} — {DungeonName} L{Level} → {gate.Name} (recall)");
+                    HaltMovement();
+                    // The crawler keeps ticking through the cast beat —
+                    // re-arm both watchdogs so they can't fire a second
+                    // recall (and burn a second scroll) mid-mantra.
+                    _exitModeSince = Core.Now;
+                    _hardStuckAnchorAt = Core.Now;
+                    return true; // the recall sequence attaches the fresh Traveler
+                }
+
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
                     $"L{Level} and no entrance authored — emerging at moongate " +
@@ -958,6 +1003,19 @@ namespace Server.CustomBots
                 HaltMovement();
                 bot.MoveToWorld(gate.ArrivalPoint ?? gate.Location, bot.Map);
                 bot.Behavior = new TravelerBehavior();
+                return true;
+            }
+
+            if (MagicTravel.EmergencyEscape(bot, entrance))
+            {
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: no way up from {DungeonName} " +
+                    $"L{Level} — recalling out");
+                StuckTelemetry.Record(bot, "exit_rescue",
+                    $"{why} — {DungeonName} L{Level} → {entrance.Name} (recall)");
+                HaltMovement();
+                _exitModeSince = Core.Now;
+                _hardStuckAnchorAt = Core.Now;
                 return true;
             }
 

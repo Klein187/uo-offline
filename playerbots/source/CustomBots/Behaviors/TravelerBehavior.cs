@@ -426,6 +426,17 @@ namespace Server.CustomBots
 
         private string PickNewDestinationName(PlayerBot bot)
         {
+            // Low on arrows / reagents / bandages / recall scrolls? Real
+            // players stopped what they were doing and went SHOPPING —
+            // the errand overrides the leisure roll, and the arrival
+            // handoff does the actual buying. Outlaws excepted (vendors
+            // sit in guard zones — a red's supplies just run dry).
+            if (!AvoidTowns &&
+                BotSupplies.PickErrandDestination(bot) is string errand)
+            {
+                return errand;
+            }
+
             var botNode = NearestReachableNode(bot);
 
             // Reroll picks that land on a gateless island (e.g. Buccaneer's
@@ -446,7 +457,12 @@ namespace Server.CustomBots
                     continue;
                 }
                 lastPick = dest.Name;
-                if (botNode == null || !IsStrandedIsland(dest, botNode.Name))
+                // A gateless island is only "stranded" for a bot that
+                // can't Recall — anyone with the magery or a scroll goes
+                // anyway (PlanPath's no-road branch casts the trip). This
+                // is what keeps Valor and Humility on the pilgrimage map.
+                if (botNode == null || !IsStrandedIsland(dest, botNode.Name) ||
+                    MagicTravel.CanTravel(bot))
                 {
                     return dest.Name;
                 }
@@ -686,9 +702,12 @@ namespace Server.CustomBots
                     _tripStalls++;
                     if (_tripStalls >= 2)
                     {
-                        TeleportJamEscape(bot,
-                            $"STALLED {_tripStalls} trips running", "trip_rescue");
                         _tripStalls = 0;
+                        if (TeleportJamEscape(bot,
+                                "STALLED 2 trips running", "trip_rescue"))
+                        {
+                            return; // escape handled replan/recall itself
+                        }
                     }
                     else
                     {
@@ -1108,6 +1127,31 @@ namespace Server.CustomBots
             // destination and the far-side Traveler stays aimed at it.
             if (_plannedPath == null || _plannedPath.Count == 0)
             {
+                // Across water, and the bot can Recall (cast or scroll)?
+                // Kal Ort Por straight to the destination — that's how
+                // players crossed water. For a GATELESS island (Valor,
+                // Humility, Dagger/Fire Isle) magic is the ONLY way, so a
+                // capable bot always casts (`required`); for gated islands
+                // (Skara, Jhelom, Moonglow) the distance-scaled roll
+                // applies, and the moongate network below keeps its share
+                // of the traffic. Party members excepted — a leader
+                // recalling out from under its convoy strands the group.
+                bool destGateless = destObj != null &&
+                    IsStrandedIsland(destObj, nearest.Name);
+
+                if (_planDepth == 0 && _finalCoord.HasValue &&
+                    !BotPartyManager.IsInParty(bot) &&
+                    MagicTravel.TryBeginTrip(
+                        bot, DestinationName, _finalCoord.Value, _destType,
+                        required: destGateless))
+                {
+                    _magicTravelPending = true;
+                    StopStepTimer();
+                    _plannedPath = new List<string>();
+                    Log(bot, $"No road to '{DestinationName}' — traveling by magic");
+                    return;
+                }
+
                 string bestGate = null; string bestGateName = null;
                 int bestDist = int.MaxValue;
                 foreach (var mg in DestinationCatalog.All)
@@ -1126,69 +1170,13 @@ namespace Server.CustomBots
                     { bestDist = d; bestGate = mg.NearestWaypoint; bestGateName = mg.Name; }
                 }
 
-                // Ferry terminals are portals too — a Dock with FerryTo set
-                // carries the bot to a FIXED partner dock (moongates fan out
-                // to the whole gate network; a ferry goes one place). For
-                // the shrine islands the ferry is often the ONLY way in.
-                BotDestination bestFerry = null;
-                int bestFerryExit = int.MaxValue;
-                if (_finalCoord.HasValue)
-                {
-                    foreach (var dk in DestinationCatalog.All)
-                    {
-                        if (dk.Type != DestinationType.Dock) continue;
-                        if (string.Equals(dk.Name, DestinationName,
-                                StringComparison.OrdinalIgnoreCase)) continue;
-                        var pair = FerryTravel.PartnerOf(dk);
-                        if (pair == null) continue;
-                        if (string.IsNullOrEmpty(dk.NearestWaypoint)) continue;
-                        var dockPath = graph.FindPath(nearest.Name, dk.NearestWaypoint);
-                        if (dockPath == null || dockPath.Count == 0) continue;
-                        // Score by where the boat DROPS the bot relative to
-                        // where the trip is headed.
-                        int exit = Math.Max(
-                            Math.Abs(pair.Location.X - _finalCoord.Value.X),
-                            Math.Abs(pair.Location.Y - _finalCoord.Value.Y));
-                        if (exit < bestFerryExit)
-                        { bestFerryExit = exit; bestFerry = dk; }
-                    }
-                }
-
-                // When both a gate and a ferry are walkable, take whichever
-                // EXIT lands closer to the destination. The gate network's
-                // exit is the gate nearest the destination (MoongateTravel
-                // picks it), so score gates by that; the ferry's exit is its
-                // fixed partner pier.
-                if (bestGate != null && bestFerry != null && _finalCoord.HasValue)
-                {
-                    int gateExit = int.MaxValue;
-                    foreach (var mg in DestinationCatalog.All)
-                    {
-                        if (mg.Type != DestinationType.Moongate) continue;
-                        int d = Math.Max(
-                            Math.Abs(mg.Location.X - _finalCoord.Value.X),
-                            Math.Abs(mg.Location.Y - _finalCoord.Value.Y));
-                        if (d < gateExit) { gateExit = d; }
-                    }
-                    if (gateExit <= bestFerryExit)
-                    {
-                        bestFerry = null;   // gate wins — keep today's path
-                    }
-                }
-
-                if (bestFerry != null)
-                {
-                    Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
-                             $"(across water) — routing to ferry dock '{bestFerry.Name}' " +
-                             $"to sail toward it");
-                    _gateResumeDestination = DestinationName;
-                    DestinationName = bestFerry.Name;
-                    _destType = DestinationType.Dock;
-                    routeTargetWaypoint = bestFerry.NearestWaypoint;
-                    _finalCoord = bestFerry.ArrivalPoint ?? bestFerry.Location;
-                    _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
-                }
-                else if (bestGate != null)
+                // (Ferries removed — not a T2A thing. Cross-water trips go
+                // through the moongate network or Recall.) A GATELESS
+                // destination never takes the gate route — no exit lands
+                // on its island, so the trip would churn gate-to-gate
+                // forever; a bot that couldn't recall above falls through
+                // to the salvage instead and goes somewhere reachable.
+                if (bestGate != null && !destGateless)
                 {
                     Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
                              $"(across water) — routing to moongate '{bestGateName}' " +
@@ -1210,11 +1198,23 @@ namespace Server.CustomBots
                 }
                 else if (_planDepth == 0)
                 {
-                    // No reachable gate either. Without this, the empty
-                    // path fell through to "mark arrived" and the bot did
-                    // arrival activity on the wrong side of the ocean —
-                    // the classic stuck-on-an-island bot.
-                    //
+                    // No reachable gate either — the BOT's side is the
+                    // gateless one (a crawler that climbed out onto Dagger
+                    // Isle, say). The earlier magic attempt may have
+                    // declined by CHANCE; with no gate it's mandatory now —
+                    // a bot holding a recall scroll doesn't wade home.
+                    if (_finalCoord.HasValue && !BotPartyManager.IsInParty(bot) &&
+                        MagicTravel.TryBeginTrip(
+                            bot, DestinationName, _finalCoord.Value, _destType,
+                            required: true))
+                    {
+                        _magicTravelPending = true;
+                        StopStepTimer();
+                        _plannedPath = new List<string>();
+                        Log(bot, $"Stranded with no gate — recalling to '{DestinationName}'");
+                        return;
+                    }
+
                     // Salvage 1: pick a destination we CAN walk to and
                     // re-plan toward that instead.
                     var salvage = PickReachableDestination(bot, nearest.Name);
@@ -2015,48 +2015,8 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 return false;
             }
 
-            // Ferry terminal: a dock whose FerryTo names a partner pier.
-            // A bot ROUTED here mid-trip always boards — the boat is the
-            // whole reason it came. A bot that wandered to the pier on its
-            // own occasionally takes the ferry just to see the other side.
-            // Fishermen exempt: they came to WORK the pier, and the artisan
-            // handoff below turns them into dock crafters.
-            if (_destType == DestinationType.Dock)
-            {
-                var dock = DestinationCatalog.GetByName(DestinationName);
-                if (FerryTravel.PartnerOf(dock) != null)
-                {
-                    double boardChance =
-                        _gateResumeDestination != null ? 1.0 :
-                        bot.Class == BotClass.Fisherman ? 0.0 : 0.20;
-                    if (Utility.RandomDouble() < boardChance &&
-                        FerryTravel.BeginTrip(bot, DestinationName,
-                            _gateResumeDestination))
-                    {
-                        Log(bot, $"Boarding the ferry at '{DestinationName}'" +
-                                 (_gateResumeDestination != null
-                                     ? $" toward '{_gateResumeDestination}'"
-                                     : ""));
-                        // Same freeze as a gate trip: BeginTrip teleports +
-                        // swaps behavior after the crossing delay.
-                        _moongateTripPending = true;
-                        return true;
-                    }
-
-                    // Boat couldn't sail (stale pair) but the bot was routed
-                    // here to continue a trip — don't camp a dead pier.
-                    if (_gateResumeDestination != null)
-                    {
-                        Log(bot, $"Ferry at '{DestinationName}' isn't running — " +
-                                 $"abandoning trip to '{_gateResumeDestination}'");
-                        _gateResumeDestination = null;
-                        PickNewDestination(bot);
-                        return true;
-                    }
-                    // Otherwise fall through to ordinary dock arrival
-                    // (fisherman station handoff, lingering, etc.).
-                }
-            }
+            // (Ferry boarding removed — docks are just piers now: fisherman
+            // stations and scenery, exactly what a T2A dock was.)
 
             // Dungeon entrances are no longer handled here. A dungeon entrance
             // is an ordinary destination whose arrival tile sits on a real
@@ -2087,6 +2047,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             {
                 BotEconomy.DeliverMaterials(bot, _destType);
             }
+
+            // Arrived somewhere that sells what we're short of (an errand
+            // destination, or just passing a vendor while low) — buy it,
+            // visibly. No-op when nothing is needed.
+            BotSupplies.TryRestockAtArrival(bot, _destType);
 
             // A dig site is only ever a destination because the treasure-
             // hunt manager sent this bot here (weight 0 in the roll) —
@@ -2454,6 +2419,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         // pause rolls are skipped and legs run regardless of length.
         private DateTime _forceRunUntil = DateTime.MinValue;
 
+
         // Artisan threat response state — how many times in a row the route
         // was abandoned under attack (streak forgiven after 90s of calm),
         // and the replan cooldown that forces MOVEMENT between abandons.
@@ -2514,25 +2480,35 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
 
             // A full second window without a single step even after the
-            // forced repick — the spot itself is the problem. Teleport out
-            // (wilds for outlaws, random gate for everyone else — same
-            // precedent as the trip-stall rescue).
-            TeleportJamEscape(bot, "STILL frozen after forced repick", "frozen_rescue");
+            // forced repick — the spot itself is the problem. Recall out
+            // (or teleport, for a bot with no magic and no scroll; wilds
+            // for outlaws, random gate for everyone else).
             _frozenAnchor = bot.Location;
             _frozenAnchorAt = Core.Now;
             _frozenRepicked = false;
             StopStepTimer();
-            PickNewDestination(bot);
+            if (!TeleportJamEscape(bot, "STILL frozen after forced repick", "frozen_rescue"))
+            {
+                PickNewDestination(bot);
+            }
             return true;
         }
 
         // -------------------------------------------------------------------
-        // TeleportJamEscape — the shared jam-escape teleport under the trip-
-        // stall, frozen-watchdog and artisan-pinned rescues. Outlaws go to
-        // the wilds (gates sit in guard zones and a teleported-in red dies
+        // TeleportJamEscape — the shared jam escape under the trip-stall,
+        // frozen-watchdog and artisan-pinned rescues. Outlaws go to the
+        // wilds (gates sit in guard zones and a teleported-in red dies
         // there); everyone else to a RANDOM gate, since the nearest gate
-        // re-jams a bot that is stuck AT a gate. Returns false when nothing
-        // is authored to rescue to (caller falls back to a plain replan).
+        // re-jams a bot that is stuck AT a gate.
+        //
+        // The era-true exit comes first: a bot that can Recall (cast or
+        // scroll) casts its way out — mantra, flash, gone — which is
+        // exactly what a wedged player did. Only a bot with no magic and
+        // no scroll gets the silent teleport. FULLY SELF-CONTAINED: the
+        // recall path hands off a fresh Traveler by itself, the silent
+        // path replans here — callers must NOT PickNewDestination after a
+        // true return (a second plan would race the pending recall).
+        // Returns false only when nothing is authored to rescue to.
         // -------------------------------------------------------------------
         private bool TeleportJamEscape(PlayerBot bot, string reason, string kind)
         {
@@ -2547,10 +2523,20 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 return false;
             }
 
-            Log(bot, $"{reason} — rescue-teleporting to '{rescue.Name}'");
             // Record BEFORE the move so the hotspot is the jam, not the exit.
+            if (MagicTravel.EmergencyEscape(bot, rescue))
+            {
+                Log(bot, $"{reason} — recalling out toward '{rescue.Name}'");
+                StuckTelemetry.Record(bot, kind, $"{reason} → {rescue.Name} (recall)");
+                _magicTravelPending = true;
+                StopStepTimer();
+                return true;
+            }
+
+            Log(bot, $"{reason} — rescue-teleporting to '{rescue.Name}'");
             StuckTelemetry.Record(bot, kind, $"{reason} → {rescue.Name}");
             bot.MoveToWorld(rescue.ArrivalPoint ?? rescue.Location, bot.Map);
+            PickNewDestination(bot);
             return true;
         }
 
@@ -2587,8 +2573,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 if (TeleportJamEscape(bot,
                         $"Artisan pinned by '{threat.Name}'", "artisan_pinned"))
                 {
-                    PickNewDestination(bot);
-                    return true;
+                    return true; // escape handled replan/recall itself
                 }
             }
 

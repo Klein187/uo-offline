@@ -278,8 +278,10 @@ namespace Server.CustomBots
         // doesn't. Pile-ons are how bots actually die.
         private int _packAttackers;
 
-        // Supply upkeep gate (see EnsureCombatSupplies). Once a minute max.
-        private DateTime _nextSupplyCheck = DateTime.MinValue;
+        // How often a hunter pauses to consider whether it's out of
+        // supplies and should break off to go shopping (see the patrol
+        // section + BotSupplies).
+        private DateTime _nextSupplyThink = DateTime.MinValue;
 
         // A self-bandage in flight finishes ~9-13s out (pre-AOS timing,
         // dex-scaled). BandageContext.BeginHeal CANCELS a running context,
@@ -389,9 +391,6 @@ namespace Server.CustomBots
                 StandoffMax = 10;
             }
 
-            // A defender is often attached mid-attack — make sure the
-            // ammo/reagent/bandage situation is fight-ready right away.
-            EnsureCombatSupplies(bot);
         }
 
         public override void OnDetached(PlayerBot bot)
@@ -551,7 +550,6 @@ namespace Server.CustomBots
                     $"[Bot {bot.Name}] {(assisting ? "assisting against" : "engaging")} " +
                     $"'{target.Name}'");
 
-                EnsureCombatSupplies(bot);
                 bot.Combatant = target;
                 // Route by combat style. A ranged bot (mage/archer) must
                 // NOT melee-walk to the foe's tile — hand it straight to
@@ -602,6 +600,25 @@ namespace Server.CustomBots
             {
                 StartRest(bot, meditate: true);
                 return;
+            }
+
+            // Out of arrows / reagents / bandages? A real hunter breaks
+            // off and goes SHOPPING — there are no invisible refills.
+            // Pure hunters only: defenders resume their trip anyway (the
+            // Traveler side runs its own errand check), crawlers end
+            // their run through exit mode, and party members finish the
+            // hunt with the group.
+            if (!DefenderMode && GetType() == typeof(AdventurerBehavior) &&
+                Core.Now >= _nextSupplyThink)
+            {
+                _nextSupplyThink = Core.Now + TimeSpan.FromMinutes(2);
+                if (BotSupplies.PickErrandDestination(bot) is string errand)
+                {
+                    Console.WriteLine(
+                        $"[supplies] {bot.Name} breaks off the hunt to restock");
+                    bot.Behavior = new TravelerBehavior { DestinationName = errand };
+                    return;
+                }
             }
 
             // -- 3. Stuck check --
@@ -2081,75 +2098,9 @@ namespace Server.CustomBots
             return n;
         }
 
-        // -------------------------------------------------------------------
-        // Combat supply upkeep.
-        //
-        // Bots are Player=true mobiles: bows consume arrows, casts consume
-        // reagents, bandages get used up — and nothing ever restocked them.
-        // A long-lived archer eventually dry-fired forever (OnFired finds
-        // no ammo → no shot, no message) and a mage stood in band failing
-        // every cast ("More reagents are needed") — both looked like bots
-        // idling in front of a monster. Real players restock in town
-        // between hunts; bots do it invisibly when a fight starts.
-        // Gated to once a minute so back-to-back fights don't rescan.
-        // -------------------------------------------------------------------
-        private static readonly string[] ReagentTypes =
-        {
-            "Server.Items.BlackPearl",   "Server.Items.Bloodmoss",
-            "Server.Items.Garlic",       "Server.Items.Ginseng",
-            "Server.Items.MandrakeRoot", "Server.Items.Nightshade",
-            "Server.Items.SpidersSilk",  "Server.Items.SulfurousAsh",
-        };
-
-        private void EnsureCombatSupplies(PlayerBot bot)
-        {
-            if (Core.Now < _nextSupplyCheck) return;
-            _nextSupplyCheck = Core.Now + TimeSpan.FromMinutes(1);
-
-            var pack = bot.Backpack;
-            if (pack == null) return;
-
-            if (SpellcasterMode)
-            {
-                foreach (var reagent in ReagentTypes)
-                {
-                    TopUp(pack, FindType(reagent), low: 10, refill: 40);
-                }
-            }
-
-            if (RangedCombat && !SpellcasterMode &&
-                bot.Weapon is BaseRanged bow && bow.AmmoType != null)
-            {
-                TopUp(pack, bow.AmmoType, low: 15,
-                    refill: Utility.RandomMinMax(40, 60));
-            }
-
-            if (!SpellcasterMode)
-            {
-                TopUp(pack, FindType("Server.Items.Bandage"), low: 5, refill: 20);
-            }
-        }
-
-        // Refill a stackable consumable when the pack runs low.
-        private static void TopUp(Container pack, Type t, int low, int refill)
-        {
-            if (t == null || pack.GetAmount(t) >= low)
-            {
-                return;
-            }
-            try
-            {
-                if (Activator.CreateInstance(t) is Item item)
-                {
-                    if (item.Stackable)
-                    {
-                        item.Amount = refill;
-                    }
-                    pack.DropItem(item);
-                }
-            }
-            catch { }
-        }
+        // (The old invisible combat-supply refill is GONE — un-T2A. Kits
+        // now carry era-sized stocks, and BotSupplies turns "running low"
+        // into a real shopping errand; see the patrol-section check.)
 
         // -------------------------------------------------------------------
         // Unreachable-foe detection — see the field comments above.

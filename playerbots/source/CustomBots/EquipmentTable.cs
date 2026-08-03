@@ -73,9 +73,11 @@ namespace Server.CustomBots
                 case BotClass.Fencer:
                 case BotClass.Archer:
                 case BotClass.Ranger:
-                    // Fighters carry bandages and a few healing potions.
+                    // Fighters carry a real bandage PILE (no invisible
+                    // refills — this stock has to last until the next
+                    // provisioner run) and a few healing potions.
                     AddToPack(bot, "Server.Items.Bandage",
-                              Utility.RandomMinMax(5, 20));
+                              Utility.RandomMinMax(30, 60));
                     MaybeAddToPack(bot, "Server.Items.HealPotion", 0.5,
                                    Utility.RandomMinMax(1, 4));
                     // ...and often a backup weapon riding in the pack.
@@ -87,10 +89,12 @@ namespace Server.CustomBots
 
                 case BotClass.Mage:
                     // Mages carry potions and a spare reagent stash.
+                    // (Total refresh, NOT mana potions — mana potions
+                    // didn't exist in T2A; a winded mage meditated.)
                     MaybeAddToPack(bot, "Server.Items.HealPotion", 0.4,
                                    Utility.RandomMinMax(1, 3));
-                    MaybeAddToPack(bot, "Server.Items.GreaterManaPotion",
-                                   0.3, Utility.RandomMinMax(1, 3));
+                    MaybeAddToPack(bot, "Server.Items.TotalRefreshPotion",
+                                   0.3, Utility.RandomMinMax(1, 2));
                     AddReagentStash(bot, tier);
                     break;
 
@@ -150,6 +154,17 @@ namespace Server.CustomBots
 
             // --- Travel magic — marked recall runes ---
             AddTravelMagic(bot, cls, tier);
+
+            // --- Recall scrolls — the era's bus ticket. EVERYONE carried
+            // a stack: casters as backup for an empty mana pool, everyone
+            // else as their only way to travel like a person. No invisible
+            // refills — the mage shop sells more. Looped adds (not one
+            // stack) so it works whether or not scrolls stack.
+            int recallScrolls = Utility.RandomMinMax(5, 10);
+            for (int i = 0; i < recallScrolls; i++)
+            {
+                AddToPack(bot, "Server.Items.RecallScroll", 1);
+            }
 
             // --- Potion belt — heal/cure/refresh and the odd extra ---
             AddPotionKit(bot, cls, tier);
@@ -702,16 +717,18 @@ namespace Server.CustomBots
         // reagent supply. Each reagent gets its tier base ±30% spread.
         private static void AddReagentStash(PlayerBot bot, BotSkillTier tier)
         {
+            // Era-sized stash — combat casting genuinely consumes these
+            // and nothing refills them but a real mage-shop run.
             int regBase = tier switch
             {
-                BotSkillTier.Novice      => 8,
-                BotSkillTier.Apprentice  => 14,
-                BotSkillTier.Journeyman  => 22,
-                BotSkillTier.Adept       => 32,
-                BotSkillTier.Expert      => 45,
-                BotSkillTier.Master      => 60,
-                BotSkillTier.Grandmaster => 80,
-                _                        => 20,
+                BotSkillTier.Novice      => 25,
+                BotSkillTier.Apprentice  => 35,
+                BotSkillTier.Journeyman  => 45,
+                BotSkillTier.Adept       => 60,
+                BotSkillTier.Expert      => 75,
+                BotSkillTier.Master      => 90,
+                BotSkillTier.Grandmaster => 100,
+                _                        => 40,
             };
 
             foreach (var r in ReagentTypes)
@@ -897,10 +914,10 @@ namespace Server.CustomBots
             }
 
             // Ammunition — a ranged weapon needs ammo in the pack or it
-            // won't fire. Give a generous stack of arrows, plus some bolts
-            // in case the bot ended up with a crossbow.
-            AddToPack(bot, "Server.Items.Arrow", Utility.RandomMinMax(40, 80));
-            AddToPack(bot, "Server.Items.Bolt",  Utility.RandomMinMax(20, 40));
+            // won't fire, and there are NO invisible refills: this is the
+            // era-sized quiver stock that lasts until the bowyer run.
+            AddToPack(bot, "Server.Items.Arrow", Utility.RandomMinMax(120, 200));
+            AddToPack(bot, "Server.Items.Bolt",  Utility.RandomMinMax(50, 100));
         }
 
         private static void RollTamerLook(PlayerBot bot, BotSkillTier tier)
@@ -940,7 +957,7 @@ namespace Server.CustomBots
             // Half apron — the working man's badge.
             if (Utility.RandomDouble() < 0.40)
             {
-                var apron = TryNewItem("Server.Items.HalfApron", Utility.RandomNeutralHue());
+                var apron = TryNewItem("Server.Items.HalfApron", DrabHue());
                 if (apron != null) Add(bot, apron, 0);
             }
 
@@ -969,7 +986,7 @@ namespace Server.CustomBots
                 if (Utility.RandomDouble() < 0.30)
                 {
                     Item apron = Utility.RandomBool() ? (Item)new FullApron() : new HalfApron();
-                    Add(bot, apron, Utility.RandomNeutralHue());
+                    Add(bot, apron, DrabHue());
                 }
 
                 // Varied headgear — not everyone in the same straw hat.
@@ -978,7 +995,7 @@ namespace Server.CustomBots
                 // An occasional weathered cloak.
                 if (Utility.RandomDouble() < 0.20)
                 {
-                    var cloak = TryNewItem("Server.Items.Cloak", Utility.RandomNeutralHue());
+                    var cloak = TryNewItem("Server.Items.Cloak", DrabHue());
                     if (cloak != null) Add(bot, cloak, 0);
                 }
 
@@ -997,7 +1014,7 @@ namespace Server.CustomBots
             if (Utility.RandomDouble() < 0.7)
             {
                 Item apron = Utility.RandomBool() ? (Item)new FullApron() : new HalfApron();
-                int hue = IsHighTier(tier) ? RichHue() : Utility.RandomNeutralHue();
+                int hue = IsHighTier(tier) ? RichHue() : DrabHue();
                 Add(bot, apron, hue);
             }
 
@@ -1085,9 +1102,10 @@ namespace Server.CustomBots
                 {
                     if (bow is BaseWeapon rangerBow) MaybeEnchantWeapon(rangerBow, tier);
                     Add(bot, bow, 0);
-                    // Bow needs arrows in the pack to fire.
+                    // Bow needs arrows in the pack to fire — era-sized
+                    // stock, restocked only by a real bowyer visit.
                     AddToPack(bot, "Server.Items.Arrow",
-                              Utility.RandomMinMax(40, 80));
+                              Utility.RandomMinMax(120, 200));
                 }
                 else EquipWeapon(bot, tier, new[] { 0, 1 });
             }
@@ -1293,7 +1311,7 @@ namespace Server.CustomBots
             int robeHue;
             if (healerWhite) robeHue = 0; // pure white default
             else if (IsHighTier(tier)) robeHue = RichHue();
-            else robeHue = Utility.RandomNeutralHue();
+            else robeHue = DrabHue();
 
             Add(bot, new Robe(robeHue),    0);
             if (withHat)
@@ -1307,7 +1325,7 @@ namespace Server.CustomBots
         private static void RobeAndCasual(PlayerBot bot, BotSkillTier tier, bool bright = false)
         {
             int robeHue = bright ? BrightHue() :
-                          (IsHighTier(tier) ? RichHue() : Utility.RandomNeutralHue());
+                          (IsHighTier(tier) ? RichHue() : DrabHue());
             Add(bot, new Robe(robeHue), 0);
 
             int shoeRoll = Utility.Random(3);
@@ -1334,12 +1352,12 @@ namespace Server.CustomBots
             else if (bright)
             {
                 topHue   = BrightHue();
-                pantsHue = Utility.RandomNeutralHue();
+                pantsHue = DrabHue();
             }
             else
             {
-                topHue   = Utility.RandomNeutralHue();
-                pantsHue = Utility.RandomNeutralHue();
+                topHue   = DrabHue();
+                pantsHue = DrabHue();
             }
 
             // Shirt or doublet
@@ -1517,7 +1535,7 @@ namespace Server.CustomBots
             var hat = TryNewItem(_fisherHats[Utility.Random(_fisherHats.Length)]);
             if (hat != null)
             {
-                Add(bot, hat, Utility.RandomNeutralHue());
+                Add(bot, hat, DrabHue());
             }
         }
 
@@ -1537,68 +1555,100 @@ namespace Server.CustomBots
         }
 
         // ---- Hue helpers ----
+        //
+        // ERA RULE: in T2A the ONLY way clothing got color was the dye tub,
+        // and the tub's spread is hues 2–1001 (0x0002–0x03E9). Everything
+        // above that — the 0x0400+ "special dye" tones, the 1801–1908
+        // neutral band Utility.RandomNeutralHue() returns — arrived with
+        // later-era reward dyes and reads as a time traveler to anyone who
+        // played in 1998. Every helper below stays inside the tub range.
+        // The single exception: TRUE BLACK (0x0001), the 1998 holiday
+        // black dye tub — real in-era, rare, and prized (which is exactly
+        // why the thieves wear it).
+        //
+        // (Metal armor color comes from ORE — CraftResource, era-correct —
+        // and horses keep RandomNeutralHue: that's a natural coat, not dye.)
 
         private static bool IsHighTier(BotSkillTier t) => (int)t >= (int)BotSkillTier.Expert;
 
-        // Rich, saturated colors for high-tier gear
-        private static int RichHue() => Utility.Random(8) switch
+        private const int TrueBlack = 0x0001; // holiday black dye tub, 1998
+
+        // Muted working-clothes tones — the greys, browns and faded shades
+        // from the drab end of the dye tub. Replaces RandomNeutralHue on
+        // clothing (that helper's 1801+ band isn't tub-reachable in era).
+        private static int DrabHue() => Utility.Random(8) switch
         {
-            0 => 0x0489, // deep red
-            1 => 0x0501, // forest green
-            2 => 0x055D, // royal blue
-            3 => 0x06EE, // golden tan
-            4 => 0x08AB, // purple
-            5 => 0x044E, // crimson
-            6 => 0x0026, // ash gray
-            _ => 0x048D, // teal
+            0 => 0x0002, // undyed grey
+            1 => 0x0004, // pale grey
+            2 => 0x0007, // stone grey
+            3 => 0x0009, // charcoal
+            4 => 0x0023, // brown
+            5 => 0x0026, // ash
+            6 => 0x0029, // faded rose
+            _ => 0x0035, // dusty orange
         };
 
-        // Wider palette including pastels and unusual colors — for hats,
-        // cloaks, sashes, things people use for self-expression.
+        // Rich, saturated colors for high-tier gear — the DEEP end of the
+        // tub's color families.
+        private static int RichHue() => Utility.Random(8) switch
+        {
+            0 => 0x0022, // deep red
+            1 => 0x0248, // forest green
+            2 => 0x038A, // royal blue
+            3 => 0x008A, // golden tan
+            4 => 0x03B2, // purple
+            5 => 0x0027, // crimson
+            6 => 0x0026, // ash gray
+            _ => 0x02D8, // teal
+        };
+
+        // Wider palette including pastels — for hats, cloaks, sashes,
+        // things people use for self-expression. All tub-reachable.
         private static int PaletteHue() => Utility.Random(20) switch
         {
-            0  => 0x0489, // deep red
-            1  => 0x0501, // forest green
-            2  => 0x055D, // royal blue
-            3  => 0x06EE, // golden tan
-            4  => 0x08AB, // purple
-            5  => 0x044E, // crimson
-            6  => 0x048D, // teal
+            0  => 0x0022, // deep red
+            1  => 0x0248, // forest green
+            2  => 0x038A, // royal blue
+            3  => 0x008A, // golden tan
+            4  => 0x03B2, // purple
+            5  => 0x0027, // crimson
+            6  => 0x02D8, // teal
             7  => 0x002B, // pale yellow
             8  => 0x0021, // soft pink
-            9  => 0x0481, // ivory / pale gold
+            9  => 0x0085, // ivory / pale gold
             10 => 0x0035, // dusty orange
-            11 => 0x0840, // forest green dark
-            12 => 0x0855, // emerald
+            11 => 0x0288, // dark green
+            12 => 0x0240, // emerald
             13 => 0x023E, // bright cyan
             14 => 0x011D, // hot pink
             15 => 0x0386, // sky blue
-            16 => 0x0590, // jet black
+            16 => TrueBlack, // the 1998 black — rare flex
             17 => 0x0026, // ash
             18 => 0x0023, // brown
-            _  => 0x044F, // rust
+            _  => 0x0037, // rust
         };
 
-        // Dark colors for thieves
+        // Dark colors for thieves. True black leads — the era's most
+        // recognizable "up to no good" outfit.
         private static int DarkHue() => Utility.Random(6) switch
         {
-            0 => 0x0590, // jet black
+            0 => TrueBlack,
             1 => 0x0026, // ash
             2 => 0x0044, // dark navy
             3 => 0x0023, // brown
             4 => 0x0288, // dark green
-            _ => 0x0455, // wine red
+            _ => 0x0027, // wine red
         };
 
         // Forest greens / earth tones for rangers
         private static int ForestHue() => Utility.Random(6) switch
         {
-            0 => 0x0840, // forest green dark
-            1 => 0x0855, // emerald
-            2 => 0x0501, // forest green
+            0 => 0x0248, // forest green
+            1 => 0x0240, // emerald
+            2 => 0x0290, // mossy green
             3 => 0x0288, // dark green
             4 => 0x0023, // brown
-            _ => 0x044F, // rust
+            _ => 0x0037, // rust
         };
 
         // Bright/loud colors for bards
@@ -1609,9 +1659,9 @@ namespace Server.CustomBots
             2 => 0x0035, // dusty orange
             3 => 0x0028, // bright red
             4 => 0x0055, // turquoise
-            5 => 0x08AB, // purple
+            5 => 0x03B2, // purple
             6 => 0x002B, // pale yellow
-            _ => 0x048D, // teal
+            _ => 0x02D8, // teal
         };
 
         // ---- Footwear safety ----

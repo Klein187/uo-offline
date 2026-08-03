@@ -38,5 +38,11 @@ namespace Server.CustomBots
         {
             Name = $"FixedRole Bot Spawner ({behaviorName})";
         }
+
+        // Fixtures are furniture, not sessions: they ignore the daily
+        // population curve (a bank crowd that vanished at the 5am trough
+        // wouldn't be permanent) and they don't count toward it either
+        // (see BotSessionManager.FixedRoleCount).
+        protected override bool CurveGated => false;
     }
 }

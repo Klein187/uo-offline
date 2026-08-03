@@ -35,9 +35,13 @@ namespace Server.CustomBots
 {
     public static class MagicTravel
     {
-        // Skill and mana gates. Recall is 4th circle (11 mana) — mid-tier
-        // mages own it; Gate Travel is 7th circle (40 mana), GM territory.
-        public const double RecallMinMagery = 40.0;
+        // Skill and mana gates. Recall is 4th circle (11 mana) — and in
+        // the era EVERYONE traveled by it: most templates kept ~25-30
+        // Magery just for Recall, and everyone else burned recall
+        // SCROLLS. Bots mirror that: enough Magery casts it; no Magery
+        // reads a scroll from the pack (kits carry a few, restocked
+        // offscreen in town). Gate Travel stays 7th circle GM territory.
+        public const double RecallMinMagery = 26.0;
         public const int    RecallManaCost  = 11;
         public const double GateMinMagery   = 90.0;
         public const int    GateManaCost    = 40;
@@ -46,9 +50,15 @@ namespace Server.CustomBots
         // mana — short hops stay on foot so streets keep their traffic.
         public const int MinTripDistance = 80;
 
-        // Of eligible long trips, how many actually go by magic (mages
-        // still walk sometimes — an all-teleport world empties the roads)…
-        public const double MagicTripChance = 0.5;
+        // Of eligible long trips, how many go by magic — scaled by
+        // distance, because that's how players actually chose: nobody
+        // walked half the continent, plenty of people walked to the next
+        // town over. (Kept below 1.0 even for epic trips — an
+        // all-teleport world empties the roads.)
+        public static double MagicTripChanceFor(int dist) =>
+            dist >= 300 ? 0.85
+            : dist >= 150 ? 0.65
+            : 0.45;
         // …and of those, how many a gate-capable mage opens a gate for.
         public const double GateShare = 0.4;
 
@@ -64,26 +74,66 @@ namespace Server.CustomBots
         private static readonly TimeSpan GateLinger       = TimeSpan.FromSeconds(30.0);
 
         // -------------------------------------------------------------------
+        // Capability — can this bot travel by magic RIGHT NOW? Casting
+        // needs the magery + mana; failing that, a recall scroll in the
+        // pack does the job (that's how the non-mage half of Britannia
+        // got around).
+        // -------------------------------------------------------------------
+        public static bool CanCastRecall(PlayerBot bot) =>
+            bot != null &&
+            bot.Skills[SkillName.Magery].Base >= RecallMinMagery &&
+            bot.Mana >= RecallManaCost;
+
+        public static bool HasRecallScroll(PlayerBot bot) =>
+            bot?.Backpack?.FindItemByType(typeof(RecallScroll)) != null;
+
+        public static bool CanTravel(PlayerBot bot) =>
+            bot is { Deleted: false, Alive: true } &&
+            (CanCastRecall(bot) || HasRecallScroll(bot));
+
+        // (No offscreen scroll restock — un-T2A. Scrolls come from the
+        // mage shop like everything else: BotSupplies turns "low on
+        // scrolls" into a real errand.)
+
+        // -------------------------------------------------------------------
         // TryBeginTrip — roll and, if the dice land, run a magic trip to
         // destCoord. Returns true if a trip started: the calling Traveler
         // must freeze and stop stepping (the sequence detaches it when the
         // fresh Traveler attaches on the far side).
+        //
+        // `required` skips the distance and chance gates — used when the
+        // destination is unreachable on foot (an island): magic is the
+        // only way there, so a capable bot always takes it.
         // -------------------------------------------------------------------
         public static bool TryBeginTrip(
-            PlayerBot bot, string destName, Point3D destCoord, DestinationType destType)
+            PlayerBot bot, string destName, Point3D destCoord, DestinationType destType,
+            bool required = false)
         {
             if (bot == null || bot.Deleted || !bot.Alive) return false;
             if (bot.Map == null || bot.Map == Map.Internal) return false;
 
-            double magery = bot.Skills[SkillName.Magery].Base;
-            if (magery < RecallMinMagery || bot.Mana < RecallManaCost) return false;
+            if (!CanTravel(bot)) return false;
 
             int dist = Math.Max(Math.Abs(destCoord.X - bot.X),
                                 Math.Abs(destCoord.Y - bot.Y));
-            if (dist < MinTripDistance) return false;
+            if (!required)
+            {
+                if (dist < MinTripDistance) return false;
+                double chance = MagicTripChanceFor(dist);
+                if (!CanCastRecall(bot))
+                {
+                    // Scrolls cost gold. A caster recalls freely (mana
+                    // regenerates); a scroll user saves the stack for
+                    // genuinely long hauls — which is also what keeps a
+                    // scroll in the pack for the day it's WEDGED and
+                    // needs the emergency escape.
+                    if (dist < 200) return false;
+                    chance *= 0.6;
+                }
+                if (Utility.RandomDouble() >= chance) return false;
+            }
 
-            if (Utility.RandomDouble() >= MagicTripChance) return false;
-
+            double magery = bot.Skills[SkillName.Magery].Base;
             bool gate = magery >= GateMinMagery && bot.Mana >= GateManaCost &&
                         Utility.RandomDouble() < GateShare;
 
@@ -97,6 +147,27 @@ namespace Server.CustomBots
             {
                 BeginRecallTrip(bot, destName, landing);
             }
+            return true;
+        }
+
+        // -------------------------------------------------------------------
+        // EmergencyEscape — the era-true stuck recovery: a jammed or
+        // stranded bot RECALLS out (cast, or a scroll) instead of silently
+        // teleporting — exactly what a real player did when wedged. Lands
+        // near `dest` and attaches a fresh Traveler that picks its own next
+        // destination (handoffDest null) — never aimed back at the place it
+        // just escaped. Returns false when the bot has no way to recall;
+        // the caller falls back to its silent rescue.
+        // -------------------------------------------------------------------
+        public static bool EmergencyEscape(PlayerBot bot, BotDestination dest)
+        {
+            if (bot == null || bot.Deleted || !bot.Alive || dest == null) return false;
+            if (bot.Map == null || bot.Map == Map.Internal) return false;
+            if (!CanTravel(bot)) return false;
+
+            var landing = PickLanding(
+                bot, dest.Name, dest.ArrivalPoint ?? dest.Location, dest.Type);
+            BeginRecallTrip(bot, null, landing);
             return true;
         }
 
@@ -170,11 +241,25 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Recall — Kal Ort Por, flash, gone.
+        // Recall — Kal Ort Por, flash, gone. Pays with mana when the bot
+        // can cast it; otherwise burns a recall scroll from the pack (the
+        // scroll still speaks the words — that's how scrolls work).
         // -------------------------------------------------------------------
         private static void BeginRecallTrip(PlayerBot bot, string destName, Point3D landing)
         {
-            bot.Mana = Math.Max(0, bot.Mana - RecallManaCost);
+            if (CanCastRecall(bot))
+            {
+                bot.Mana = Math.Max(0, bot.Mana - RecallManaCost);
+            }
+            else if (bot.Backpack?.FindItemByType(typeof(RecallScroll)) is RecallScroll scroll)
+            {
+                scroll.Consume(1);
+                BotScene.Deliver(bot, "*reads a recall scroll*");
+            }
+            else
+            {
+                return; // no way to pay (callers gate on CanTravel — belt+suspenders)
+            }
             SayMantra(bot, "Kal Ort Por");
 
             Timer.DelayCall(CastBeat, () =>
@@ -276,7 +361,8 @@ namespace Server.CustomBots
                 return;
             }
 
-            Console.WriteLine($"[MagicTravel] {bot.Name}: {how} -> {destName}");
+            Console.WriteLine(
+                $"[MagicTravel] {bot.Name}: {how} -> {destName ?? "(fresh pick)"}");
         }
 
         // Words of power + a casting sweep. Visual only — must never

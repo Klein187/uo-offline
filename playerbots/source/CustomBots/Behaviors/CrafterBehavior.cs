@@ -103,8 +103,67 @@ namespace Server.CustomBots
             // each tick (see FishermanWork) rather than anchoring to a Home.
             ChatCategories = bot.Class == BotClass.Fisherman ? FisherChat : CraftChat;
 
+            // A smith works AT the anvil — face it. (Without this the
+            // hammer swings at whatever direction the walk-in happened to
+            // end on, sometimes with the anvil at the smith's back.)
+            if (bot.Class == BotClass.Smith)
+            {
+                FaceNearestAnvil(bot);
+            }
+
             ScheduleNextCraft();
             ScheduleNextSell();
+        }
+
+        // Anvils are statics 0x0FAF/0x0FB0; forges are 0x0FB1 plus the
+        // large multi-tile forge range. Face the nearest one within a few
+        // tiles of the station; keep the current facing if none is found.
+        private static void FaceNearestAnvil(PlayerBot bot)
+        {
+            var map = bot.Map;
+            if (map == null || map == Map.Internal)
+            {
+                return;
+            }
+
+            Point3D? best = null;
+            int bestDist = int.MaxValue;
+            for (int dx = -3; dx <= 3; dx++)
+            {
+                for (int dy = -3; dy <= 3; dy++)
+                {
+                    if (dx == 0 && dy == 0)
+                    {
+                        continue;
+                    }
+                    int x = bot.X + dx, y = bot.Y + dy;
+                    foreach (var st in map.Tiles.GetStaticTiles(x, y))
+                    {
+                        int id = st.ID & TileData.MaxItemValue;
+                        bool workFace = id is 0x0FAF or 0x0FB0 or 0x0FB1 ||
+                                        (id >= 0x197A && id <= 0x19A9);
+                        if (!workFace)
+                        {
+                            continue;
+                        }
+                        int dist = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            best = new Point3D(x, y, st.Z);
+                        }
+                    }
+                }
+            }
+
+            if (best != null)
+            {
+                var d = bot.GetDirectionTo(best.Value);
+                if (bot.Direction != d)
+                {
+                    bot.Direction = d;
+                }
+            }
         }
 
         public override void Tick(PlayerBot bot)
@@ -229,6 +288,27 @@ namespace Server.CustomBots
             if (made != null)
             {
                 Track(made);
+
+                // A GM's exceptional piece is worth announcing — the
+                // maker's-mark moment made visible. (Quality is only ever
+                // stamped Exceptional by the GM maker's mark, so this fires
+                // exactly on those.)
+                bool exceptional = made switch
+                {
+                    BaseWeapon w   => w.Quality == WeaponQuality.Exceptional,
+                    BaseArmor a    => a.Quality == ArmorQuality.Exceptional,
+                    BaseClothing c => c.Quality == ClothingQuality.Exceptional,
+                    _              => false,
+                };
+                if (exceptional && Utility.RandomDouble() < 0.60)
+                {
+                    var line = ChatLibrary.PickRandom("craft_masterwork");
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        bot.Say(line);
+                    }
+                    BotScene.Deliver(bot, "*holds up the finished piece*");
+                }
             }
         }
 
@@ -432,6 +512,14 @@ namespace Server.CustomBots
             {
                 Vanish(_made[0]);
                 _made.RemoveAt(0);
+            }
+
+            // The shop PAYS for the batch — the crafter's purse grows with
+            // its work (and the counter hand-off is visible now and then).
+            bot.AddToBackpack(new Gold(sell * Utility.RandomMinMax(15, 40)));
+            if (Utility.RandomDouble() < 0.20)
+            {
+                BotScene.Deliver(bot, "*wraps a parcel for the counter*");
             }
         }
 

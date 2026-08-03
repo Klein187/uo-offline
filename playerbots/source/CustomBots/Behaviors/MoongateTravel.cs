@@ -101,19 +101,15 @@ namespace Server.CustomBots
             // CONTINUE from, or random for a plain wander.
             //
             // Plain nearest-coordinate exit choice loops on island
-            // destinations: Valor Isle's nearest gates are Jhelom and
-            // Buccaneer's Den — both islands with no ferry — so a routed
-            // bot ping-ponged between them forever while the real route
-            // (any mainland gate -> walk to the Trinsic ferry) was never
-            // chosen. Rank exits by continuation quality, using waypoint
-            // components for O(1) reachability:
+            // destinations: an island's nearest gates by coordinate are
+            // often OTHER islands, so a routed bot ping-ponged between
+            // them forever. Rank exits by continuation quality, using
+            // waypoint components for O(1) reachability:
             //   tier 0 — resume walkable from the gate (same component):
             //            score = distance gate -> resume.
-            //   tier 1 — a ferry terminal walkable from the gate whose
-            //            partner lands in the resume's component:
-            //            score = gate -> dock + partner -> resume.
-            //   tier 2 — no continuation known: coordinate distance only,
-            //            heavily penalized.
+            //   tier 1 — no continuation known: coordinate distance only,
+            //            heavily penalized (an exit you can walk on from
+            //            always beats a scenic dead end).
             BotDestination target = null;
             if (resumeCoord.HasValue)
             {
@@ -150,31 +146,7 @@ namespace Server.CustomBots
                     }
                     else
                     {
-                        // tier 1: any ferry from this gate's landmass to
-                        // the destination's landmass?
-                        long bestFerry = long.MaxValue;
-                        foreach (var dk in DestinationCatalog.All)
-                        {
-                            if (dk.Type != DestinationType.Dock) continue;
-                            var pair = FerryTravel.PartnerOf(dk);
-                            if (pair == null) continue;
-                            if (string.IsNullOrEmpty(dk.NearestWaypoint) ||
-                                string.IsNullOrEmpty(pair.NearestWaypoint)) continue;
-                            if (graph.ComponentOf(dk.NearestWaypoint) != gateComp) continue;
-                            if (graph.ComponentOf(pair.NearestWaypoint) != resumeComp) continue;
-
-                            long leg1 = Math.Max(
-                                Math.Abs(g.Location.X - dk.Location.X),
-                                Math.Abs(g.Location.Y - dk.Location.Y));
-                            long leg2 = Math.Max(
-                                Math.Abs(pair.Location.X - resumeCoord.Value.X),
-                                Math.Abs(pair.Location.Y - resumeCoord.Value.Y));
-                            bestFerry = Math.Min(bestFerry, leg1 + leg2);
-                        }
-
-                        score = bestFerry < long.MaxValue
-                            ? bestFerry
-                            : dResume + 1_000_000; // tier 2: dead end
+                        score = dResume + 1_000_000; // tier 1: dead end
                     }
 
                     if (score < bestScore)
