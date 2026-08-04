@@ -10001,6 +10001,50 @@
       "NearestWaypoint": "Wrong L1 WP 6",
       "Dungeon": "Wrong lvl1",
       "Level": 1
+    },
+    {
+      "Name": "Minoc Stables",
+      "X": 2502,
+      "Y": 561,
+      "Z": 0,
+      "Type": "Stables",
+      "City": "Minoc",
+      "NearestWaypoint": "WP 868",
+      "ArrivalX": 2502,
+      "ArrivalY": 561,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2502,
+          "Y": 561,
+          "Z": 0,
+          "Waypoints": [
+            "WP 868"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Yew Stables",
+      "X": 548,
+      "Y": 876,
+      "Z": 0,
+      "Type": "Stables",
+      "City": "Yew",
+      "NearestWaypoint": "WP 398",
+      "ArrivalX": 548,
+      "ArrivalY": 876,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 548,
+          "Y": 876,
+          "Z": 0,
+          "Waypoints": [
+            "WP 398"
+          ]
+        }
+      ]
     }
   ]
 }

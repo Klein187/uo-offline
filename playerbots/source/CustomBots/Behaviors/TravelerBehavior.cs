@@ -318,6 +318,23 @@ namespace Server.CustomBots
         // toward it. Null = the current DestinationName is the real trip.
         private string _gateResumeDestination;
 
+        // Pack-animal logistics (gatherers). The stables is the beast's
+        // real anchor: a miner/lumberjack heading to a shift detours to
+        // the stables nearest the SITE first, leads the beast out, and
+        // walks on with it; after the delivery it walks the beast back
+        // and stables it. _stablePickupResume holds the site to continue
+        // to after the pickup; _stableDropoff marks the walk back.
+        private string _stablePickupResume;
+        private bool _stableDropoff;
+        private const int StablesMaxDetour = 300;
+
+        // One-shot override for the next destination pick. Mid-arrival
+        // redirects (stables pickup/drop-off) must go through the FULL
+        // PickNewDestination reset — hand-planting DestinationName +
+        // PlanPath leaves the arrival/loiter state armed, and the loiter
+        // timer re-picks over the redirect seconds later.
+        private string _forcedNextDestination;
+
         // Re-entrancy guard for PlanPath's salvage retries (unreachable
         // destination -> pick a reachable one -> re-plan). One level only.
         private int _planDepth;
@@ -431,6 +448,19 @@ namespace Server.CustomBots
 
         private string PickNewDestinationName(PlayerBot bot)
         {
+            // A mid-arrival redirect (stables pickup resume / beast
+            // drop-off walk) owns the next trip outright — before even
+            // the supply errand; the shopping can wait one leg.
+            if (_forcedNextDestination != null)
+            {
+                var forced = _forcedNextDestination;
+                _forcedNextDestination = null;
+                if (DestinationCatalog.GetByName(forced) != null)
+                {
+                    return forced;
+                }
+            }
+
             // Low on arrows / reagents / bandages / recall scrolls? Real
             // players stopped what they were doing and went SHOPPING —
             // the errand overrides the leisure roll, and the arrival
@@ -469,12 +499,12 @@ namespace Server.CustomBots
                 if (botNode == null || !IsStrandedIsland(dest, botNode.Name) ||
                     MagicTravel.CanTravel(bot))
                 {
-                    return dest.Name;
+                    return MaybeStableFirst(bot, dest.Name);
                 }
             }
             if (lastPick != null)
             {
-                return lastPick;
+                return MaybeStableFirst(bot, lastPick);
             }
             if (AvoidTowns)
             {
@@ -591,6 +621,64 @@ namespace Server.CustomBots
                 }
             }
             return candidates[0];
+        }
+
+        // -------------------------------------------------------------------
+        // A gatherer heading out to a work site without its beast detours
+        // to the stables nearest the SITE first (that's where the animal
+        // lives): the pick becomes a stables trip, and the arrival handoff
+        // leads the beast out and continues to the remembered site. Sites
+        // with no stables in reach keep the old spawn-at-clock-in fallback.
+        // -------------------------------------------------------------------
+        private string MaybeStableFirst(PlayerBot bot, string destName)
+        {
+            if (destName == null || !BotClassHelper.IsGatherer(bot.Class) ||
+                bot.PackAnimal is { Deleted: false })
+            {
+                return destName;
+            }
+
+            var dest = DestinationCatalog.GetByName(destName);
+            if (dest == null ||
+                dest.Type is not (DestinationType.GatherSpot
+                    or DestinationType.MiningSpot or DestinationType.LumberSpot))
+            {
+                return destName;
+            }
+
+            var stables = NearestStables(dest.Location, StablesMaxDetour);
+            if (stables == null)
+            {
+                return destName;
+            }
+
+            _stablePickupResume = destName;
+            Log(bot, $"Fetching the pack animal from '{stables.Name}' before " +
+                     $"the shift at '{destName}'");
+            return stables.Name;
+        }
+
+        // Nearest Stables destination to a point, or null when none is
+        // within maxDist (Chebyshev).
+        private static BotDestination NearestStables(Point3D from, int maxDist)
+        {
+            BotDestination best = null;
+            int bd = maxDist + 1;
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (d.Type != DestinationType.Stables)
+                {
+                    continue;
+                }
+                int dist = Math.Max(Math.Abs(d.Location.X - from.X),
+                                    Math.Abs(d.Location.Y - from.Y));
+                if (dist < bd)
+                {
+                    bd = dist;
+                    best = d;
+                }
+            }
+            return best;
         }
 
         // -------------------------------------------------------------------
@@ -2023,6 +2111,40 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // (Ferry boarding removed — docks are just piers now: fisherman
             // stations and scenery, exactly what a T2A dock was.)
 
+            // Stables: the pack animal's anchor. A gatherer passing
+            // through on the way to a shift leads its beast out and walks
+            // on; one returning from a delivery stables the beast here.
+            if (_destType == DestinationType.Stables)
+            {
+                if (_stableDropoff)
+                {
+                    _stableDropoff = false;
+                    if (bot.PackAnimal is { Deleted: false })
+                    {
+                        BotScene.Deliver(bot, "*stables the pack animal*");
+                        BotPackAnimals.Release(bot);
+                        Log(bot, "Pack animal stabled after the haul");
+                    }
+                    // fall through — linger at the stables like any stop
+                }
+
+                if (_stablePickupResume != null)
+                {
+                    var resume = _stablePickupResume;
+                    _stablePickupResume = null;
+                    if (DestinationCatalog.GetByName(resume) != null &&
+                        BotPackAnimals.SpawnFor(bot) != null)
+                    {
+                        BotScene.Deliver(bot, "*leads the pack animal out of the stables*");
+                        Log(bot, $"Pack animal in tow — on to '{resume}'");
+                        _forcedNextDestination = resume;
+                        PickNewDestination(bot);
+                        return true; // trip continues; no visit at the stables
+                    }
+                    // beast or site fell through — carry on as a normal stop
+                }
+            }
+
             // Dungeon entrances are no longer handled here. A dungeon entrance
             // is an ordinary destination whose arrival tile sits on a real
             // teleporter; the bot walks onto it, the game teleports it inside,
@@ -2051,6 +2173,31 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                           or DestinationType.VendorCarpenter)
             {
                 BotEconomy.DeliverMaterials(bot, _destType);
+
+                // The unloaded beast goes back where it lives: walk it to
+                // the stables and put it away. Only when no stables is in
+                // reach does it get turned loose offscreen like before.
+                if (bot.PackAnimal is { Deleted: false } beast)
+                {
+                    var stables = NearestStables(bot.Location, StablesMaxDetour);
+                    if (stables != null)
+                    {
+                        _stableDropoff = true;
+                        Log(bot, $"Leading the pack animal back to '{stables.Name}'");
+                        _forcedNextDestination = stables.Name;
+                        PickNewDestination(bot);
+                        return true; // the walk to the stables is the next trip
+                    }
+
+                    bot.PackAnimal = null;
+                    Timer.DelayCall(TimeSpan.FromSeconds(8), () =>
+                    {
+                        if (!beast.Deleted)
+                        {
+                            beast.Delete();
+                        }
+                    });
+                }
             }
 
             // Arrived somewhere that sells what we're short of (an errand

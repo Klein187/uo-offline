@@ -256,19 +256,10 @@ namespace Server.CustomBots
                 hauled += TakeYield(beast.Backpack);
             }
 
-            // The beast has done its job — it stands through the unload
-            // scene, then gets led off to the stables.
-            gatherer.PackAnimal = null;
-            if (beast is { Deleted: false })
-            {
-                Timer.DelayCall(TimeSpan.FromSeconds(8), () =>
-                {
-                    if (!beast.Deleted)
-                    {
-                        beast.Delete();
-                    }
-                });
-            }
+            // The beast stands through the unload with its packs empty.
+            // Its disposition belongs to the caller now: the Traveler
+            // walks it back to the nearest stables and puts it away (or
+            // turns it loose offscreen when no stables is in reach).
 
             // Payment proportional to the haul, straight into the purse.
             if (hauled > 0)
