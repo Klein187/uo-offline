@@ -69,6 +69,10 @@ namespace Server.CustomBots
         // nearest eligible bot to a party, walks a short route while the
         // bot follows, then vanishes (testing the leader-gone path too).
         private static readonly string PartyTestReq = Live("partytest_request.txt");
+        // t2a_request.txt: "token" — spawn one throwaway GM bot per class
+        // (plus extra Mage rolls so the tank-mage variants show), dump
+        // stats + skills to console, verify the T2A caps, delete them.
+        private static readonly string T2AReq = Live("t2a_request.txt");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -89,6 +93,7 @@ namespace Server.CustomBots
         private static long _lastPad = -1;
         private static long _lastSay = -1;
         private static long _lastPartyTest = -1;
+        private static long _lastT2A = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -114,6 +119,7 @@ namespace Server.CustomBots
             _lastPad = ReadToken(PadReq) ?? 0;
             _lastSay = ReadSayRequest(out _, out _, out _) ?? 0;
             _lastPartyTest = ReadCoordRequest(PartyTestReq, out _) ?? 0;
+            _lastT2A = ReadToken(T2AReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -261,6 +267,85 @@ namespace Server.CustomBots
                 _lastPartyTest = ptTok.Value;
                 DoPartyTest(ptLoc);
             }
+
+            var t2aTok = ReadToken(T2AReq);
+            if (t2aTok != null && t2aTok.Value != _lastT2A)
+            {
+                _lastT2A = t2aTok.Value;
+                DoT2AAudit(t2aTok.Value);
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // t2a_request.txt: headless audit of the T2A stat/skill templates.
+        // Spawns one throwaway GRANDMASTER bot per class — Mage six times
+        // so the tank-mage weapon variants show up — prints each bot's
+        // stats, template skills, and held weapon, checks the era caps
+        // (every stat <= 100, total <= 225), then deletes the bots.
+        // -------------------------------------------------------------------
+        private static void DoT2AAudit(long token)
+        {
+            Console.WriteLine($"[t2a] template audit (token {token})");
+            bool allOk = true;
+
+            var classes = new[]
+            {
+                BotClass.Warrior,
+                BotClass.Mage, BotClass.Mage, BotClass.Mage,
+                BotClass.Mage, BotClass.Mage, BotClass.Mage,
+                BotClass.Fencer, BotClass.Archer, BotClass.Tamer,
+                BotClass.Smith, BotClass.Tailor, BotClass.Fisherman,
+                BotClass.Healer, BotClass.Thief, BotClass.Bard,
+                BotClass.Ranger, BotClass.Lumberjack, BotClass.Miner,
+            };
+
+            foreach (var cls in classes)
+            {
+                PlayerBot bot = null;
+                try
+                {
+                    bot = new PlayerBot(cls, BotSkillTier.Grandmaster);
+
+                    int sum = bot.RawStr + bot.RawDex + bot.RawInt;
+                    bool ok = bot.RawStr <= 100 && bot.RawDex <= 100 &&
+                              bot.RawInt <= 100 && sum <= 225;
+                    if (!ok)
+                    {
+                        allOk = false;
+                    }
+
+                    string skills = "";
+                    for (int i = 0; i < bot.Skills.Length; i++)
+                    {
+                        var sk = bot.Skills[i];
+                        if (sk.Base > 0)
+                        {
+                            skills += $"{(skills.Length > 0 ? ", " : "")}{sk.SkillName} {sk.Base:F1}";
+                        }
+                    }
+
+                    var weap = bot.FindItemOnLayer(Layer.TwoHanded) as Items.BaseWeapon
+                            ?? bot.FindItemOnLayer(Layer.OneHanded) as Items.BaseWeapon;
+
+                    Console.WriteLine(
+                        $"[t2a] {cls,-10} {bot.RawStr}/{bot.RawDex}/{bot.RawInt} " +
+                        $"(sum {sum}{(ok ? "" : " CAP VIOLATION")}) " +
+                        $"weapon={(weap == null ? "none" : weap.GetType().Name)} | {skills}");
+                }
+                catch (Exception ex)
+                {
+                    allOk = false;
+                    Console.WriteLine($"[t2a] {cls}: FAILED — {ex.Message}");
+                }
+                finally
+                {
+                    bot?.Delete();
+                }
+            }
+
+            Console.WriteLine(allOk
+                ? "[t2a] PASS — all bots within T2A caps (stats <= 100, totals <= 225)"
+                : "[t2a] FAIL — cap violations above");
         }
 
         // "token x y" file reader shared by simple coordinate rigs.

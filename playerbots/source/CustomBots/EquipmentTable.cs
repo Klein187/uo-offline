@@ -841,10 +841,10 @@ namespace Server.CustomBots
             // 93–98: studded leather (battle-mage)
             // 99: plate (gish)
             //
-            // Mages NEVER carry a weapon — they fight with spells and kite
-            // at range, so a staff would just be dead weight (and ModernUO
-            // would try to melee-swing it). Armor look only; hands stay
-            // free for casting.
+            // The LOOK never rolls a weapon — armor/robe only, hands free
+            // for casting. Tank-mage variants get their halberd/mace/spear
+            // separately via EquipTankMageWeapon (PlayerBot calls it after
+            // the outfit roll); pure scribe-mages stay weaponless.
             if (roll < 80)       RobeAndMage(bot, tier, withHat: true);
             else if (roll < 93)  RobeAndMage(bot, tier, withHat: false);
             else if (roll < 99)  StuddedUp(bot, tier);   // battle-mage look
@@ -1411,6 +1411,35 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         // WEAPONS
         // -------------------------------------------------------------------
+
+        // T2A tank mages carry a real weapon alongside the spellbook.
+        // Called after the outfit roll for Mage-class bots (the mage look
+        // itself never rolls weapons); the weapon matches whichever combat
+        // skill the template variant rolled. Swords = the famous halberd.
+        // Casting auto-pockets it (pre-AOS ClearHands) — AdventurerBehavior
+        // re-arms it between casts.
+        public static void EquipTankMageWeapon(PlayerBot bot, BotSkillTier tier)
+        {
+            double sw = bot.Skills[SkillName.Swords].Base;
+            double mc = bot.Skills[SkillName.Macing].Base;
+            double fn = bot.Skills[SkillName.Fencing].Base;
+            double best = Math.Max(sw, Math.Max(mc, fn));
+            if (best < BotSkillTemplates.TankWeaponSkillMin)
+            {
+                return; // scribe mage (or too green to wield) — no weapon
+            }
+
+            // All two-handed on purpose: the spellbook rides on the
+            // OneHanded layer, so a one-handed weapon can't equip past it
+            // (and RearmTankWeapon would fail the same way mid-fight).
+            BaseWeapon w = best == sw ? new Halberd()        // the "Hally Mage"
+                         : best == mc ? new WarHammer()
+                         : (BaseWeapon)new Spear();
+
+            MaybeEnchantWeapon(w, tier);
+            Add(bot, w, 0);
+        }
+
         private static void EquipWeapon(PlayerBot bot, BotSkillTier tier, int[] pool)
         {
             // Pick from pool with tier-aware selection.

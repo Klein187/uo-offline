@@ -99,6 +99,16 @@ namespace Server.CustomBots
         // SpellcasterMode is set in OnAttached for Mage-class bots.
         public bool SpellcasterMode { get; set; }
 
+        // ---- T2A tank mage ----
+        // A Mage-class bot whose template rolled a real weapon skill —
+        // the classic "hally mage". Tank mages hold their ground at melee
+        // range instead of kiting: every cast pockets the weapon (the
+        // pre-AOS ClearHands rule), so the loop re-arms it between casts
+        // and the engine lands the swing while the next spell winds up —
+        // the famous e-bolt + halberd rhythm.
+        private bool      _tankMage;
+        private SkillName _tankSkill;
+
         // Cooldown gate — earliest time the next cast may START. Set only
         // when a cast RESOLVES (lands or fails), never at launch, so a
         // disturbed cast doesn't burn a full cooldown.
@@ -389,6 +399,20 @@ namespace Server.CustomBots
                 // starts kiting sooner.
                 StandoffMin = 6;
                 StandoffMax = 10;
+
+                // Tank mage detection — did this mage's template roll a
+                // weapon line? (BotSkillTemplate bakes it at creation.)
+                double sw = bot.Skills[SkillName.Swords].Base;
+                double mc = bot.Skills[SkillName.Macing].Base;
+                double fn = bot.Skills[SkillName.Fencing].Base;
+                double best = Math.Max(sw, Math.Max(mc, fn));
+                if (best >= BotSkillTemplates.TankWeaponSkillMin)
+                {
+                    _tankMage  = true;
+                    _tankSkill = best == sw ? SkillName.Swords
+                               : best == mc ? SkillName.Macing
+                               : SkillName.Fencing;
+                }
             }
 
         }
@@ -1086,6 +1110,37 @@ namespace Server.CustomBots
             _castPointBlank = pointBlank;
             _castSelfTarget = false;
             return true;
+        }
+
+        // -------------------------------------------------------------------
+        // RearmTankWeapon — put the tank mage's weapon back in hand.
+        //
+        // Every cast unequips the weapon into the backpack (pre-AOS
+        // ClearHands), exactly as it did to real T2A players — who macroed
+        // the re-equip. This is that macro. Never fires mid-cast: equipping
+        // would disturb the bot's own spell.
+        // -------------------------------------------------------------------
+        private void RearmTankWeapon(PlayerBot bot)
+        {
+            if (_castInProgress || bot.Spell != null) return;
+
+            if (bot.FindItemOnLayer(Layer.TwoHanded) is BaseWeapon ||
+                bot.FindItemOnLayer(Layer.OneHanded) is BaseWeapon)
+            {
+                return; // already armed
+            }
+
+            var pack = bot.Backpack;
+            if (pack == null) return;
+
+            foreach (var item in pack.Items)
+            {
+                if (item is BaseWeapon w && w.Skill == _tankSkill)
+                {
+                    bot.EquipItem(w);
+                    return;
+                }
+            }
         }
 
         // -------------------------------------------------------------------
@@ -1872,10 +1927,11 @@ namespace Server.CustomBots
                     // deliberate point-blank attack (cornered, chose to
                     // cast), a self-heal/cure (abandoning it leaves the
                     // mage hurt or poisoned — worse than taking one hit),
-                    // or a foe that's PARALYZED (it can't swing — finishing
-                    // the cast is free).
+                    // a foe that's PARALYZED (it can't swing — finishing
+                    // the cast is free), or a TANK MAGE (built to trade
+                    // hits at melee range; it never abandons a cast).
                     if (rdist < 2 && !_castPointBlank && !_castSelfTarget &&
-                        !rf.Paralyzed)
+                        !rf.Paralyzed && !_tankMage)
                     {
                         if (stillCasting)
                         {
@@ -1947,6 +2003,23 @@ namespace Server.CustomBots
                 if (rdist < StandoffMin)
                 {
                     if (bot.Frozen) bot.Frozen = false;
+
+                    // TANK MAGE at melee range: no kiting. Re-arm the
+                    // weapon (the last cast pocketed it) and stand in —
+                    // the engine swings it while the next spell comes off
+                    // cooldown. The T2A hally-mage rhythm.
+                    if (_tankMage && rdist <= 2)
+                    {
+                        RearmTankWeapon(bot);
+                        if (castReady && haveLOS)
+                        {
+                            if (!TrySelfCare(bot))
+                            {
+                                BeginCast(bot, rf, pointBlank: true);
+                            }
+                        }
+                        return;
+                    }
 
                     StepAway(bot, rface, rf);
                     // Adjacent / nearly so → take a second retreat step to

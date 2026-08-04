@@ -310,6 +310,16 @@ namespace Server.CustomBots
             // Roll equipment from the class+tier specific pool.
             EquipmentTable.RollOutfit(this, Class, SkillTier);
 
+            // Tank mages carry the famous weapon — a halberd for the
+            // Swords roll ("Hally Mage"), war mace / spear for the
+            // others. The mage look itself never rolls weapons, so this
+            // rides on top. Casting pockets it (pre-AOS ClearHands);
+            // AdventurerBehavior re-arms it between casts.
+            if (Class == BotClass.Mage)
+            {
+                EquipmentTable.EquipTankMageWeapon(this, SkillTier);
+            }
+
             // Faction guild members carry the era shield — the visible
             // allegiance marker (and what opposing bots fight on sight
             // over). Replaces any rolled shield; bots with two-handed
@@ -327,10 +337,11 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void ApplyClassSkills()
         {
-            var template = BotSkillTemplates.GetTemplate(Class);
+            var template = BotSkillTemplates.RollTemplate(Class);
 
             double primaryTarget   = BotSkillTemplates.PrimarySkillTarget(SkillTier);
             double secondaryTarget = BotSkillTemplates.SecondarySkillTarget(SkillTier);
+            double utilityTarget   = BotSkillTemplates.UtilitySkillTarget(SkillTier);
 
             // Primary
             double primaryVal = Math.Clamp(
@@ -343,6 +354,15 @@ namespace Server.CustomBots
             {
                 double val = Math.Clamp(
                     secondaryTarget + BotSkillTemplates.RollJitter(),
+                    0, 100);
+                this.Skills[skill].Base = val;
+            }
+
+            // Utility skills — half scale (a dexxer's recall Magery).
+            foreach (var skill in template.Utility)
+            {
+                double val = Math.Clamp(
+                    utilityTarget + BotSkillTemplates.RollJitter(),
                     0, 100);
                 this.Skills[skill].Base = val;
             }
