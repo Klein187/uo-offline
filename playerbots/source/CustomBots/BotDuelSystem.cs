@@ -225,9 +225,9 @@ namespace Server.CustomBots
 
             BotScene.Play(
                 (0.0, a, BotScene.Pick("duel_challenge")),
-                (2.0, a, "*bows*"),
                 (2.0, b, BotScene.Pick("duel_accept")),
-                (1.5, b, "*bows*"));
+                (1.5, a, "gl"),
+                (1.5, b, "gl"));
 
             // Give the scene a beat, then send them to their marks.
             Timer.DelayCall(TimeSpan.FromSeconds(6), () =>
@@ -321,10 +321,10 @@ namespace Server.CustomBots
             BotEventJournal.Record("duel", winner, loser.Name);
 
             BotScene.Play(
-                (0.5, winner, "*bows*"),
+                (0.5, winner, "gf"),
                 (2.0, winner, BotScene.Pick("duel_win")),
                 (2.0, loser,  BotScene.Pick("duel_loss")),
-                (1.5, loser,  "*bows*"));
+                (1.5, loser,  "gf"));
 
             // Revert after the bows; the pair also become friends — a good
             // duel is how half of 1999's friendships started.

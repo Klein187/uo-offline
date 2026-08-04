@@ -90,8 +90,7 @@ namespace Server.CustomBots
 
             // The catch, played as beats on the pier.
             BotScene.Play(
-                (0.0, fisher, "*reels in something heavy*"),
-                (2.5, fisher, ChatLibrary.PickRandom("sos_catch") ?? "a bottle! theres a map inside!!"),
+                (0.0, fisher, ChatLibrary.PickRandom("sos_catch") ?? "a bottle! theres a map inside!!"),
                 (6.0, fisher, ChatLibrary.PickRandom("sos_offer") ?? "who wants it? genuine treasure map, cheap"));
 
             BotEventJournal.Record("sos", fisher);
@@ -139,7 +138,7 @@ namespace Server.CustomBots
 
                 BotScene.Play(
                     (0.0, buyer, ChatLibrary.PickRandom("sos_buy") ?? "ill take that map off ye"),
-                    (2.0, fisher, "*hands over the soggy map*"));
+                    (2.0, fisher, "here ye go"));
 
                 Timer.DelayCall(TimeSpan.FromSeconds(4), () =>
                 {

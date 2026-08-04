@@ -33,7 +33,7 @@ namespace Server.CustomBots
 
         // The line said when latching onto a player, and when giving up.
         protected abstract string LatchCategory { get; }
-        protected virtual string GiveUpEmote => "*sigh*";
+        protected virtual string GiveUpEmote => "bah";
 
         public override void OnAttached(PlayerBot bot)
         {
@@ -131,7 +131,7 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Newbie";
         protected override string LatchCategory => "newbie";
-        protected override string GiveUpEmote => "*waves*";
+        protected override string GiveUpEmote => "farewell";
 
         public NewbieBehavior()
         {

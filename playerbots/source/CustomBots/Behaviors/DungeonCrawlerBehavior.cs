@@ -374,10 +374,6 @@ namespace Server.CustomBots
             }
 
             bot.Animate(32, 5, 1, true, false, 0); // bend over the body
-            if (gold > 0 && Utility.RandomDouble() < 0.30)
-            {
-                BotScene.Deliver(bot, "*loots the corpse*");
-            }
             if (CombatDebug && gold > 0)
             {
                 Console.WriteLine(

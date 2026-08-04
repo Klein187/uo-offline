@@ -275,9 +275,6 @@ namespace Server.CustomBots
                 }
             }
 
-            BotScene.Deliver(bot, at == DestinationType.Bank
-                ? "*fetches supplies from the bank box*"
-                : "*buys supplies*");
             Console.WriteLine(
                 $"[supplies] {bot.Name} restocked {string.Join(", ", bought)} " +
                 $"at {at} (-{cost}gp; arrows now {pack.GetAmount(typeof(Arrow))}, " +

@@ -307,7 +307,6 @@ namespace Server.CustomBots
                     {
                         bot.Say(line);
                     }
-                    BotScene.Deliver(bot, "*holds up the finished piece*");
                 }
             }
         }
@@ -517,10 +516,6 @@ namespace Server.CustomBots
             // The shop PAYS for the batch — the crafter's purse grows with
             // its work (and the counter hand-off is visible now and then).
             bot.AddToBackpack(new Gold(sell * Utility.RandomMinMax(15, 40)));
-            if (Utility.RandomDouble() < 0.20)
-            {
-                BotScene.Deliver(bot, "*wraps a parcel for the counter*");
-            }
         }
 
         // Sell off a fisherman's real catch so the pack never fills. Deletes

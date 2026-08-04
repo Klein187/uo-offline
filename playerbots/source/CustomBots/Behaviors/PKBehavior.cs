@@ -804,10 +804,6 @@ namespace Server.CustomBots
             {
                 try { bot.AddToBackpack(gold); } catch { }
             }
-            if (loot.Count > 0)
-            {
-                try { bot.Say("*loots the corpse*"); } catch { }
-            }
         }
 
         private static Direction Opposite(Direction d)

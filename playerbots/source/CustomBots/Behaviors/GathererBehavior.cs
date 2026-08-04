@@ -432,12 +432,6 @@ namespace Server.CustomBots
             if (beast != null)
             {
                 beast.Backpack.DropItem(yield);
-                if (Utility.RandomDouble() < 0.20)
-                {
-                    BotScene.Deliver(bot, bot.Class == BotClass.Miner
-                        ? "*loads ore onto the pack beast*"
-                        : "*straps logs onto the pack beast*");
-                }
                 return;
             }
 

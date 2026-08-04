@@ -194,7 +194,7 @@ namespace Server.CustomBots
             BotScene.Play(
                 (0.0, buyer,  BotScene.Pick("trade_ask")),
                 (2.5, seller, BotScene.Pick("trade_reply")),
-                (2.5, buyer,  "*hands over the coins*"),
+                (2.5, buyer,  "ty"),
                 (1.5, seller, BotScene.Pick("trade_close")));
         }
 
@@ -233,8 +233,7 @@ namespace Server.CustomBots
             BotScene.Play(
                 (0.0, seller, ChatLibrary.PickRandom("wts")),
                 (3.0, buyer,  BotScene.Pick("trade_accept")),
-                (2.5, seller, "*opens a trade window*"),
-                (2.0, buyer,  "*hands over the coins*"),
+                (2.5, buyer,  "ty"),
                 (1.5, seller, BotScene.Pick("trade_close")));
         }
 
@@ -283,16 +282,14 @@ namespace Server.CustomBots
             {
                 BotScene.Play(
                     (0.0, gatherer, BotScene.Pick("gather_deliver")),
-                    (2.0, gatherer, "*unloads the haul*"),
                     (2.0, crafter,  BotScene.Pick("trade_reply")),
-                    (2.0, crafter,  "*counts out the coins*"),
+                    (2.0, crafter,  "ty"),
                     (1.5, gatherer, BotScene.Pick("trade_close")));
             }
             else
             {
                 BotScene.Play(
-                    (0.0, gatherer, "*hands the banker a heavy sack*"),
-                    (2.0, gatherer, BotScene.Pick("gather_deliver")));
+                    (0.0, gatherer, BotScene.Pick("gather_deliver")));
             }
 
             Console.WriteLine(

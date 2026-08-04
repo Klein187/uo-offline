@@ -254,7 +254,6 @@ namespace Server.CustomBots
             else if (bot.Backpack?.FindItemByType(typeof(RecallScroll)) is RecallScroll scroll)
             {
                 scroll.Consume(1);
-                BotScene.Deliver(bot, "*reads a recall scroll*");
             }
             else
             {

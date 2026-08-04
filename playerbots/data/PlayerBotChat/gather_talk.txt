@@ -1,6 +1,5 @@
 # gather_talk.txt — a lumberjack/miner working a wilderness spot.
 
-*wipes brow*
 good haul today
 this vein's almost dry
 almost got a full load
@@ -12,5 +11,4 @@ one more load then town
 honest work
 you dont get rich doing this
 beats sitting at a bank all day
-*stretches*
 nearly done here

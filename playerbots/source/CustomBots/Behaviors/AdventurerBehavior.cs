@@ -326,7 +326,7 @@ namespace Server.CustomBots
             _restingUntil = Core.Now + TimeSpan.FromSeconds(
                 meditate ? Utility.RandomMinMax(15, 30)
                          : Utility.RandomMinMax(10, 20));
-            BotScene.Deliver(bot, meditate ? "*meditates*" : "*bandages wounds*");
+            // Resting is silent — the meditation hum is the era's only tell.
             if (meditate)
             {
                 bot.PlaySound(0xF9);
