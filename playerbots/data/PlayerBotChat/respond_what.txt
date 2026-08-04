@@ -1,0 +1,11 @@
+# respond_what.txt — player said something unparseable right in the
+# bot's face.
+
+what
+hm?
+?
+huh
+wat
+lol what
+u talking to me?
+speak up

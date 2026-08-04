@@ -1,0 +1,14 @@
+# respond_greet.txt — greeting back a player who said hi nearby.
+
+hey
+hi
+yo
+sup
+hail
+o/
+hey hey
+ello
+hows it going
+not much, u?
+evening
+whats up

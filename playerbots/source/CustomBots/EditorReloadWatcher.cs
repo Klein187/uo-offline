@@ -61,6 +61,10 @@ namespace Server.CustomBots
         private static readonly string GossipAck = Live("gossip_ack.json");
         private static readonly string PadReq = Live("padaudit_request.txt");
         private static readonly string PadAck = Live("padaudit_report.json");
+        // say_request.txt: "token x y text..." — spawns a throwaway REAL
+        // PlayerMobile at (x,y) that says the text, then deletes. Purely a
+        // headless test rig for player-facing reactions (speech responder).
+        private static readonly string SayReq = Live("say_request.txt");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -79,6 +83,7 @@ namespace Server.CustomBots
         private static long _lastGoto = -1;
         private static long _lastGossip = -1;
         private static long _lastPad = -1;
+        private static long _lastSay = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -102,6 +107,7 @@ namespace Server.CustomBots
             _lastGoto = ReadGotoRequest(out _) ?? 0;
             _lastGossip = ReadToken(GossipReq) ?? 0;
             _lastPad = ReadToken(PadReq) ?? 0;
+            _lastSay = ReadSayRequest(out _, out _, out _) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -234,6 +240,87 @@ namespace Server.CustomBots
             {
                 _lastPad = padTok.Value;
                 DoPadAudit(padTok.Value);
+            }
+
+            var sayTok = ReadSayRequest(out var sayLoc, out var sayText, out _);
+            if (sayTok != null && sayTok.Value != _lastSay)
+            {
+                _lastSay = sayTok.Value;
+                DoSay(sayLoc, sayText);
+            }
+        }
+
+        // say_request.txt: "token x y text..." — a throwaway real player
+        // stands at (x,y), says the text, and vanishes 6s later. Lets the
+        // speech responder be tested without a client.
+        private static long? ReadSayRequest(out Point3D loc, out string text, out bool ok)
+        {
+            loc = Point3D.Zero;
+            text = "";
+            ok = false;
+            try
+            {
+                if (!File.Exists(SayReq))
+                {
+                    return null;
+                }
+                var parts = File.ReadAllText(SayReq).Split(
+                    new[] { ' ', '\t' }, 4, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 4 || !long.TryParse(parts[0], out var t) ||
+                    !int.TryParse(parts[1], out var x) || !int.TryParse(parts[2], out var y))
+                {
+                    return null;
+                }
+                // Standable Z, not land Z — indoors the floor is a static
+                // above the terrain, and a speaker sunk into it fails every
+                // listener's CanSee/LOS check (nobody "hears" a voice from
+                // inside the foundations).
+                int z = Walkable.TryFindSeedZ(Map.Felucca, x, y, 0, out var seedZ)
+                    ? seedZ
+                    : Map.Felucca.GetAverageZ(x, y);
+                loc = new Point3D(x, y, z);
+                text = parts[3].Trim();
+                ok = true;
+                return t;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void DoSay(Point3D loc, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+            try
+            {
+                var m = new Server.Mobiles.PlayerMobile
+                {
+                    Name = "Test Player",
+                    Body = 0x190,
+                    Hue = 0x83EA,
+                    // Login normally stamps this; without it every
+                    // HandlesOnSpeech(from) gate sees an NPC and the
+                    // speech is never delivered to any listener.
+                    Player = true,
+                };
+                m.MoveToWorld(loc, Map.Felucca);
+                m.DoSpeech(text, Array.Empty<int>(), MessageType.Regular, 0x3B2);
+                Console.WriteLine($"[EditorReload] say-rig at ({loc.X},{loc.Y}): \"{text}\"");
+                Timer.DelayCall(TimeSpan.FromSeconds(6), () =>
+                {
+                    if (!m.Deleted)
+                    {
+                        m.Delete();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] say-rig failed: {ex.Message}");
             }
         }
 

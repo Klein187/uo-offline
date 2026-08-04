@@ -654,6 +654,22 @@ namespace Server.CustomBots
         // OnBeforeDeath — called just before the bot dies. Use this to
         // dismount + delete the mount so it doesn't become an orphan.
         // -------------------------------------------------------------------
+        // -------------------------------------------------------------------
+        // A real player answers when spoken to. Same per-listener pipeline
+        // vendors use; all the who/when/what rules live in the responder.
+        // HandlesOnSpeech is the gate that makes the engine deliver speech
+        // here at all (default false) — kept narrow: only real players'
+        // words are worth processing, never other bots' barks.
+        // -------------------------------------------------------------------
+        public override bool HandlesOnSpeech(Mobile from) =>
+            from != null && from != this && from.Player && from is not PlayerBot;
+
+        public override void OnSpeech(SpeechEventArgs e)
+        {
+            base.OnSpeech(e);
+            BotSpeechResponder.Handle(this, e);
+        }
+
         public override bool OnBeforeDeath()
         {
             BotMountHelper.DismountAndDelete(this);

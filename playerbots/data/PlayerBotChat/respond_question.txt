@@ -1,0 +1,13 @@
+# respond_question.txt — a player asked something nearby; bots are
+# regular players, not tour guides — mostly shrugs.
+
+dunno
+no idea m8
+dont ask me
+not sure
+beats me
+couldnt tell ya
+no clue sry
+ask around the bank
+new here myself lol
+good question
