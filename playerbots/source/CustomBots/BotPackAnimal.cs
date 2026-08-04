@@ -71,9 +71,20 @@ namespace Server.CustomBots
 
     public static class BotPackAnimals
     {
+        // Working animals get working names — a real player renamed the
+        // beast the day they bought it, and the rename is what makes the
+        // spoken pet commands ("Bessie follow me") read right.
+        private static readonly string[] BeastNames =
+        {
+            "Bessie", "Daisy", "Clyde", "Buck", "Maple", "Nutmeg",
+            "Biscuit", "Juniper", "Star", "Willow", "Chester", "Rosie",
+            "Patches", "Dusty", "Hazel", "Bramble",
+        };
+
         // Spawn (or return) the bot's pack beast, controlled and following.
         // Miners favor llamas — the mining llama is THE era image — and
-        // lumberjacks favor horses.
+        // lumberjacks favor horses. The owner gives the real follow order
+        // out loud, exactly the command a player typed.
         public static BaseCreature SpawnFor(PlayerBot bot)
         {
             if (bot == null || bot.Deleted || bot.Map == null || bot.Map == Map.Internal)
@@ -89,6 +100,7 @@ namespace Server.CustomBots
                 ? Utility.RandomDouble() < 0.60
                 : Utility.RandomDouble() < 0.30;
             BaseCreature beast = llama ? new BotPackLlama() : new BotPackHorse();
+            beast.Name = BeastNames[Utility.Random(BeastNames.Length)];
 
             beast.MoveToWorld(new Point3D(bot.X + 1, bot.Y + 1, bot.Z), bot.Map);
             if (beast.SetControlMaster(bot))
@@ -98,6 +110,7 @@ namespace Server.CustomBots
             }
 
             bot.PackAnimal = beast;
+            BotScene.Play((1.2, bot, $"{beast.Name} follow me"));
             Console.WriteLine(
                 $"[gather] {bot.Name} brought a pack " +
                 $"{(llama ? "llama" : "horse")} for the shift at ({bot.X},{bot.Y})");

@@ -2119,19 +2119,41 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 if (_stableDropoff)
                 {
                     _stableDropoff = false;
-                    if (bot.PackAnimal is { Deleted: false })
+                    if (bot.PackAnimal is { Deleted: false } dropBeast)
                     {
-                        // The era ritual: you SAY it to the stablemaster.
-                        // The beast stands through the exchange, then gets
-                        // led into the pens.
+                        // The era ritual, commands only — park the beast,
+                        // then say it to the stablemaster. It stands
+                        // through the exchange and goes into the pens.
                         BotScene.Play(
-                            (0.0, bot, "vendor stable"),
-                            (2.0, bot, "*hands the reins to the stablemaster*"));
-                        Timer.DelayCall(TimeSpan.FromSeconds(2.5),
+                            (0.0, bot, $"{dropBeast.Name} stay"),
+                            (1.8, bot, "vendor stable"));
+                        Timer.DelayCall(TimeSpan.FromSeconds(3.0),
                             () => BotPackAnimals.Release(bot));
                         Log(bot, "Pack animal stabled after the haul");
                     }
                     // fall through — linger at the stables like any stop
+                }
+
+                // Tamers live at the stables counter: one arriving mounted
+                // sometimes boards the horse ("vendor stable", hops off, the
+                // horse goes to the pens); one on foot usually claims a ride
+                // out. Same spoken ritual as everyone else, then the normal
+                // stables visit continues.
+                if (bot.Class == BotClass.Tamer && !_stableDropoff &&
+                    _stablePickupResume == null)
+                {
+                    if (bot.Mounted && Utility.RandomDouble() < 0.40)
+                    {
+                        BotScene.Play((0.0, bot, "vendor stable"));
+                        Timer.DelayCall(TimeSpan.FromSeconds(1.8),
+                            () => BotMountHelper.DismountAndDelete(bot));
+                    }
+                    else if (!bot.Mounted && Utility.RandomDouble() < 0.60)
+                    {
+                        BotScene.Play((0.0, bot, "vendor claim"));
+                        Timer.DelayCall(TimeSpan.FromSeconds(1.8),
+                            () => BotMountHelper.TryMountRandom(bot));
+                    }
                 }
 
                 if (_stablePickupResume != null)
@@ -2140,11 +2162,10 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     _stablePickupResume = null;
                     if (DestinationCatalog.GetByName(resume) != null)
                     {
-                        // Say it to the stablemaster FIRST — then the
-                        // beast comes out of the pens.
-                        BotScene.Play(
-                            (0.0, bot, "vendor claim"),
-                            (1.5, bot, "*leads the pack animal out of the stables*"));
+                        // Say it to the stablemaster FIRST — the beast
+                        // comes out of the pens and SpawnFor's follow
+                        // order ("Bessie follow me") lands right after.
+                        BotScene.Play((0.0, bot, "vendor claim"));
                         if (BotPackAnimals.SpawnFor(bot) != null)
                         {
                             Log(bot, $"Pack animal in tow — on to '{resume}'");
