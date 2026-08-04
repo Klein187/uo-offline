@@ -19,7 +19,7 @@ import time
 
 MAP_W, MAP_H = 7168, 4096
 SIDE = 512
-DEFAULT_LIVE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Live"
+DEFAULT_LIVE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Live")
 HERE = os.path.dirname(os.path.abspath(__file__))
 ATLAS = os.path.join(HERE, "map", "walk_atlas.pgm")
 STRIP_DIR = os.path.join(HERE, "map", "walk_strips")

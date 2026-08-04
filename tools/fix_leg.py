@@ -19,7 +19,7 @@ import os
 import sys
 import time
 
-LIVE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Live"
+LIVE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Live")
 MAX_SPACING = 28
 MAX_CLIMB = 4  # both directions => |dz| <= MAX_CLIMB per step
 

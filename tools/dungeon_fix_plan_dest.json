@@ -1,0 +1,90 @@
+{
+ "wp_edge_add": [],
+ "wp_edge_audit": [],
+ "wp_add": [],
+ "dest_retype": [],
+ "dest_retag": [],
+ "dest_rename": [
+  {
+   "from": "Khaldun lvl1 Descend to L1 B",
+   "to": "Khaldun lvl1 Descend to L1 B"
+  },
+  {
+   "from": "Khaldun lvl1 Descend to L1 C",
+   "to": "Khaldun lvl1 Descend to L1 C"
+  },
+  {
+   "from": "Khaldun lvl1 Descend to L1 D",
+   "to": "Khaldun lvl1 Descend to L1 D"
+  },
+  {
+   "from": "Fire lvl2 Descend to L2 B",
+   "to": "Fire lvl2 Descend to L2 B"
+  },
+  {
+   "from": "Wrong lvl2 Ascend to L1 B",
+   "to": "Wrong lvl2 Ascend to L1 B"
+  },
+  {
+   "from": "Wrong lvl1 Descend to L2 B",
+   "to": "Wrong lvl1 Descend to L2 B"
+  },
+  {
+   "from": "Hythloth lvl2 Descend to L2 B",
+   "to": "Hythloth lvl2 Descend to L2 B"
+  },
+  {
+   "from": "Hythloth lvl2 Descend to L2 C",
+   "to": "Hythloth lvl2 Descend to L2 C"
+  },
+  {
+   "from": "Hythloth lvl2 Descend to L2 D",
+   "to": "Hythloth lvl2 Descend to L2 D"
+  },
+  {
+   "from": "Hythloth lvl2 Descend to L2 E",
+   "to": "Hythloth lvl2 Descend to L2 E"
+  },
+  {
+   "from": "Fire lvl1 Exit Ascend B",
+   "to": "Fire lvl1 Exit Ascend B"
+  },
+  {
+   "from": "Wrong lvl1 Descend to L2 C",
+   "to": "Wrong lvl1 Descend to L2b"
+  }
+ ],
+ "dest_move": [],
+ "dest_add": [
+  {
+   "Name": "Wrong lvl1 Descend to L2 C",
+   "X": 5867,
+   "Y": 528,
+   "Z": 15,
+   "Type": "DungeonDescend",
+   "City": "",
+   "NearestWaypoint": "Wrong L1 WP 6",
+   "Dungeon": "Wrong lvl1",
+   "level_num": 1
+  },
+  {
+   "Name": "Orc Cave lvl2 Ascend to L1",
+   "X": 5329,
+   "Y": 1381,
+   "Z": 10,
+   "Type": "DungeonAscend",
+   "City": "",
+   "NearestWaypoint": "Orc Cave L2 WP 2",
+   "Dungeon": "Orc Cave lvl2",
+   "level_num": 2
+  }
+ ],
+ "wp_edge_drop": [],
+ "notes": [
+  "room 'Destard lvl2 Room 1' near pad but no safe tile found",
+  "room 'Shame lvl4 Room 1' near pad but no safe tile found",
+  "room 'Wrong lvl2b Room' near pad but no safe tile found",
+  "room 'Hythloth lvl7b Room' near pad but no safe tile found",
+  "room 'Hythloth lvl7 Room 1 B' near pad but no safe tile found"
+ ]
+}

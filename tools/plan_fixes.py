@@ -38,8 +38,8 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 STAGE1 = "--stage1" in sys.argv
 STAGE2 = "--stage2" in sys.argv
 
-BASE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data"
-ATLAS = r"C:/Users/logdc/uo-offline/tools/map/walk_atlas.pgm"
+BASE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data")
+ATLAS = os.path.expanduser(r"~/uo-offline/tools/map/walk_atlas.pgm")
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLAN = os.path.join(HERE, "dungeon_fix_plan_wp.json" if STAGE1 else
                     "dungeon_fix_plan_dest.json" if STAGE2 else

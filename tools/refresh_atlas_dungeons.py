@@ -13,9 +13,9 @@ import sys
 import time
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-LIVE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Live"
-ATLAS = r"C:/Users/logdc/uo-offline/tools/map/walk_atlas.pgm"
-REG = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/regions.json"
+LIVE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Live")
+ATLAS = os.path.expanduser(r"~/uo-offline/tools/map/walk_atlas.pgm")
+REG = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/regions.json")
 TARGET = ["Covetous", "Deceit", "Despise", "Destard", "Hythloth", "Shame",
           "Wrong", "Fire", "Ice", "Orc Cave", "Terathan Keep", "Khaldun"]
 

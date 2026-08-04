@@ -19,8 +19,8 @@ from collections import defaultdict, deque, Counter
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data"
-ATLAS = r"C:/Users/logdc/uo-offline/tools/map/walk_atlas.pgm"
+BASE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data")
+ATLAS = os.path.expanduser(r"~/uo-offline/tools/map/walk_atlas.pgm")
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 MAX_ANCHOR = 38

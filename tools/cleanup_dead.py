@@ -17,8 +17,8 @@ import time
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 HERE = os.path.dirname(os.path.abspath(__file__))
-LIVE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Live"
-WPS = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json"
+LIVE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Live")
+WPS = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json")
 MAX_CLIMB = 4
 MAX_EDGE = 26
 

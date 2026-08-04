@@ -19,8 +19,8 @@ import os
 import shutil
 import time
 
-LIVE = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Live"
-WP = r"C:/Users/logdc/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json"
+LIVE = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Live")
+WP = os.path.expanduser(r"~/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json")
 MARGIN = 55
 MAX_CLIMB = 4
 MAX_SPACING = 28
