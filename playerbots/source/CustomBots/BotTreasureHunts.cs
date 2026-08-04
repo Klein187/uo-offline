@@ -222,6 +222,24 @@ namespace Server.CustomBots
             }
         }
 
+        // The physical map riding in the hunter's pack, if any.
+        internal static Item FindCarriedMap(PlayerBot bot)
+        {
+            var pack = bot?.Backpack;
+            if (pack == null)
+            {
+                return null;
+            }
+            foreach (var item in pack.Items)
+            {
+                if (item is MapItem && item.Name == "a treasure map")
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
         public static void OnHuntComplete(PlayerBot bot)
         {
             for (int i = _active.Count - 1; i >= 0; i--)
@@ -268,9 +286,11 @@ namespace Server.CustomBots
             }
 
             // Treasure Hunter CLASS bots are the natural pick — maps were
-            // their whole build. When one is idle it usually gets the map;
-            // anyone else scores one now and then, as it ever was.
-            PlayerBot hunter = null;
+            // their whole build. But they don't conjure maps: they BUY
+            // one from another player standing nearby (bank crowds make
+            // sellers easy to find). A hunter with nobody around to sell
+            // gets no map this cycle. The fisherman SOS chain is their
+            // other supply line.
             if (Utility.RandomDouble() < 0.75)
             {
                 var thunters = new List<PlayerBot>();
@@ -281,14 +301,98 @@ namespace Server.CustomBots
                         thunters.Add(c);
                     }
                 }
-                if (thunters.Count > 0)
+                while (thunters.Count > 0)
                 {
-                    hunter = thunters[Utility.Random(thunters.Count)];
+                    int i = Utility.Random(thunters.Count);
+                    var th = thunters[i];
+                    thunters.RemoveAt(i);
+                    var seller = FindMapSeller(th);
+                    if (seller != null)
+                    {
+                        RunMapPurchase(th, seller, site);
+                        return true;
+                    }
                 }
             }
-            hunter ??= candidates[Utility.Random(candidates.Count)];
-            StartTrip(hunter, site, "thunt_start");
+
+            // Everyone else's map has its own story — looted off a dead
+            // brigand while adventuring (the thunt_start lines). Treasure
+            // Hunters never take this path; theirs must change hands.
+            var others = new List<PlayerBot>();
+            foreach (var c in candidates)
+            {
+                if (c.Class != BotClass.TreasureHunter)
+                {
+                    others.Add(c);
+                }
+            }
+            if (others.Count == 0)
+            {
+                return false;
+            }
+            StartTrip(others[Utility.Random(others.Count)], site, "thunt_start");
             return true;
+        }
+
+        // Any other player standing close by can be holding a map to
+        // sell. The permanent bank fixtures count too — a statue that
+        // said "afk" an hour ago can still take your gold.
+        private static PlayerBot FindMapSeller(PlayerBot hunter)
+        {
+            if (hunter.Map == null || hunter.Map == Map.Internal)
+            {
+                return null;
+            }
+            foreach (var m in hunter.GetMobilesInRange(10))
+            {
+                if (m is PlayerBot b && b != hunter && !b.Deleted && b.Alive &&
+                    b.Combatant == null && !b.LoggingOut && !b.CorpseRunPending)
+                {
+                    return b;
+                }
+            }
+            return null;
+        }
+
+        // The visible acquisition: seller hawks the map, hunter takes the
+        // deal, coin changes hands with the clink, the rolled-up map goes
+        // in the pack, and the trip sets out. Guarded at every beat —
+        // either party can die or log out mid-deal.
+        private static void RunMapPurchase(PlayerBot hunter, PlayerBot seller, BotDestination site)
+        {
+            int price = Utility.RandomMinMax(150, 400);
+
+            BotScene.Play(
+                (0.0, seller, ChatLibrary.PickRandom("thunt_map_sell") ?? "wts treasure map, found it on a brigand"),
+                (3.0, hunter, ChatLibrary.PickRandom("thunt_map_buy") ?? "ill take it"));
+
+            Timer.DelayCall(TimeSpan.FromSeconds(5.5), () =>
+            {
+                if (hunter.Deleted || !hunter.Alive)
+                {
+                    return;
+                }
+
+                // Pay what the purse covers (the illusion economy doesn't
+                // refuse a sale — the chest pays it back).
+                var pack = hunter.Backpack;
+                int gold = pack?.GetAmount(typeof(Gold)) ?? 0;
+                int paid = Math.Min(price, gold);
+                if (paid > 0 && pack != null)
+                {
+                    pack.ConsumeTotal(typeof(Gold), paid);
+                    if (!seller.Deleted && seller.Alive)
+                    {
+                        seller.AddToBackpack(new Gold(paid));
+                        seller.PlaySound(0x2E6); // coin clink
+                    }
+                }
+
+                Console.WriteLine(
+                    $"[thunt] {hunter.Name} bought a treasure map off {seller.Name} for {paid}gp");
+
+                StartTrip(hunter, site, "thunt_bought_setout");
+            });
         }
 
         // Shared with the fishing-SOS flow, which starts the same trip with
@@ -300,6 +404,15 @@ namespace Server.CustomBots
             if (!string.IsNullOrEmpty(line))
             {
                 hunter.Say(line);
+            }
+
+            // The map is a real item in the pack for the whole trip —
+            // snoopable at the bank, on the corpse if the trip goes
+            // wrong. One at a time: a failed hunt's map gets re-run
+            // rather than piling up. Consumed when the chest is looted.
+            if (FindCarriedMap(hunter) == null)
+            {
+                hunter.AddToBackpack(new MapItem { Name = "a treasure map" });
             }
 
             var traveler = new TravelerBehavior { DestinationName = site.Name };
@@ -527,6 +640,9 @@ namespace Server.CustomBots
                     gold.Delete();
                 }
             }
+
+            // The map led here — it's used up with the chest.
+            BotTreasureHunts.FindCarriedMap(bot)?.Delete();
 
             BotEventJournal.Record("thunt", bot);
             BotTreasureHunts.OnHuntComplete(bot);

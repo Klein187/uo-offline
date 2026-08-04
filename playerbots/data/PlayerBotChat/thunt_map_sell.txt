@@ -1,0 +1,8 @@
+# thunt_map_sell.txt — a bot at the bank selling a treasure map to a treasure hunter. T2A era.
+wts treasure map, found it on a brigand
+got a map here, no time to dig it up. yours for coin
+selling a treasure map, looks real to me
+treasure map for sale, cheap
+you dig right? got a map i aint using
+map off some dead pk, make me an offer
+wts map, i dont have a shovel anyway

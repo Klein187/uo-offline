@@ -105,6 +105,9 @@ namespace Server.CustomBots
                     return;
                 }
 
+                // A Treasure Hunter on the docks ALWAYS beats a random
+                // adventurer to a bottle map — this is their other supply
+                // line besides buying one at the bank.
                 PlayerBot buyer = null;
                 foreach (var m in fisher.GetMobilesInRange(BuyerRange))
                 {
@@ -120,8 +123,12 @@ namespace Server.CustomBots
                         (bot.Behavior is TravelerBehavior or IdleBehavior
                                       or WanderBehavior or BankSitterBehavior))
                     {
-                        buyer = bot;
-                        break;
+                        if (bot.Class == BotClass.TreasureHunter)
+                        {
+                            buyer = bot;
+                            break;
+                        }
+                        buyer ??= bot;
                     }
                 }
 
