@@ -1,36 +1,15 @@
 # shopping.txt — lines for a bot browsing a vendor's shop. T2A era.
 # A shopper looking over the wares, not a bank trade-spammer.
 
+vendor buy
+vendor sell
+anyone know who sells regs cheap
+8gp for a bandage?? robbery
+prices went up again
+wheres the provisioner
+this vendor is actually stocked for once
+im broke
+need to restock
+vendor prices are a scam, buy from players
 hmm
-how much for this?
-let me see what they have
-this might do
-not a bad price
-too rich for my purse
-i'll think on it
-do they have any more in back?
-just browsing, thanks
-what's this go for?
-that's a fair deal
-maybe next time
-i need to restock
-been meaning to pick one of these up
-quality work here
-the vendor's stocked well today
-i could use a few of these
-let me check my gold first
-decisions, decisions
-ah, just what i needed
-that one's seen better days
-worth every coin
-i'll take a look around
-anything new in?
-the prices have gone up
-good craftsmanship
-hmm, not quite what i wanted
-let me speak with the shopkeeper
-i'll have a word with the merchant
-who runs this place?
-i need to ask the vendor about this
-let me see what they're charging
-i'll check the wares
+out of stock. of course

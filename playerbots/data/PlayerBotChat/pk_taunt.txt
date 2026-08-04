@@ -1,23 +1,17 @@
 # pk_taunt.txt — lines for PK bots. T2A era. Fired when a PK engages or
 # is hunting. Menacing, period-accurate player-killer trash-talk.
 
-Your gold or your life!
-Should've stayed in town.
-This road belongs to me.
-Hand over your gold and maybe you live.
-You picked the wrong road, friend.
-Nowhere to run out here.
-Drop your pack and walk away.
-Easy prey.
-Another one for the count.
-You've got something I want.
-No guards to save you now.
-Stand and deliver!
-I'll be taking that.
-Pray to your virtues, traveler.
-This won't take long.
-You shouldn't have come alone.
-Hold still, this'll be quick.
-Your bag looks heavy — let me help.
-End of the road for you.
-Run if you like. I enjoy the chase.
+your gold or your life
+gold or die
+drop your loot and run
+give me the gold and u can go
+dont run, it makes it worse
+ez
+sit
+hand it over
+shouldnta come alone
+no guards out here m8
+welcome to felucca
+nothing personal, i need regs
+run and die tired
+ill be taking that

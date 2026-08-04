@@ -138,7 +138,7 @@ namespace Server.CustomBots
 
                 BotScene.Play(
                     (0.0, buyer, ChatLibrary.PickRandom("sos_buy") ?? "ill take that map off ye"),
-                    (2.0, fisher, "here ye go"));
+                    (2.0, fisher, "here"));
 
                 Timer.DelayCall(TimeSpan.FromSeconds(4), () =>
                 {

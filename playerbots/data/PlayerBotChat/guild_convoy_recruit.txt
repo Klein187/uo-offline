@@ -4,10 +4,10 @@
 guild trip to {dest}, who walks with me?
 heading to {dest} — guildmates welcome
 any of the guild coming to {dest}?
-making for {dest}, walk with me
 guild run to {dest}, form up
 who's for {dest}? guild only
-off to {dest} — company from the guild?
 road to {dest}, guildmates with me
 anyone from the guild headed toward {dest}?
 walking to {dest}, fall in
+guild going {dest}, who else
+{dest} run, guildies come

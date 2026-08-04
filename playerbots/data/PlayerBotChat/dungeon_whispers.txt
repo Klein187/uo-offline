@@ -1,12 +1,10 @@
 # dungeon_whispers.txt — crawler ambient chatter, in the dark.
 
-quiet... something ahead
 did you hear that
 stay close
 this level's cleared. mostly
 i hate this place
 whats that smell
-torch is burning low
 we shouldnt be this deep
 something's following us
 almost stepped in that
@@ -14,3 +12,5 @@ i had looting rights on that
 my regs are getting low
 which way was out again
 shhh
+something ahead
+torch is almost out

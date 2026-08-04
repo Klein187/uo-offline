@@ -2,25 +2,17 @@
 # Period-feeling: quiet dockside mutter, the catch, selling fish, sea tales.
 # Lines starting with # are comments. Blank lines ignored.
 
-the fish are biting today
 not a nibble all morning
-fresh fish, caught this hour
 WTS fresh fish, cheap
-selling the day's catch
-nothing like a quiet morning at the docks
-the tide's just right
-patience is the fisherman's virtue
 caught a big one yesterday, this long
 hooked an old boot last cast, ha
 got a message in a bottle once, true story
-these waters run deep
-careful out east, the serpents are stirring
-a good day's catch means a good day's coin
-my father fished these very waters
-the sea provides
-need a fresh pole, this one's near worn
-salt air and a full net, what more could a man want
-calm seas today
-been fishing since i could walk
-they say there's treasure under these waves
-slow day, but the fish'll come
+fish are biting today
+selling todays catch
+need a new pole
+sea serpents east of here, careful
+heard u can fish up treasure maps
+afk fishing
+fishing is so boring lol
+slow day
+0 fish in an hour
