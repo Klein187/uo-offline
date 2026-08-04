@@ -11310,7 +11310,8 @@
       "Z": 0,
       "Connects": [
         "WP 1078",
-        "WP 1066"
+        "WP 1066",
+        "Moonglow Road 8"
       ]
     },
     {
@@ -13451,7 +13452,8 @@
       "Y": 634,
       "Z": 30,
       "Connects": [
-        "WP 1308"
+        "WP 1308",
+        "Despise L1 WP 4 B"
       ]
     },
     {
@@ -15262,22 +15264,11 @@
       ]
     },
     {
-      "Name": "Moonglow Road 7",
-      "X": 4465,
-      "Y": 1179,
-      "Z": 0,
-      "Connects": [
-        "WP 1079"
-      ]
-    },
-    {
       "Name": "Moonglow Road 8",
       "X": 4473,
       "Y": 1176,
       "Z": 0,
-      "Connects": [
-        "Moonglow Road 7"
-      ]
+      "Connects": []
     },
     {
       "Name": "Moonglow Road 9",
@@ -17858,16 +17849,6 @@
       ]
     },
     {
-      "Name": "Terathan Keep L1 WP 12",
-      "X": 5312,
-      "Y": 1682,
-      "Z": 1,
-      "Connects": [
-        "Terathan Keep L1 WP 142",
-        "Terathan Keep L1 WP 65"
-      ]
-    },
-    {
       "Name": "Terathan Keep L1 WP 13",
       "X": 5189,
       "Y": 1645,
@@ -17930,7 +17911,8 @@
       "Y": 1544,
       "Z": 0,
       "Connects": [
-        "Terathan Keep L1 WP 181"
+        "Terathan Keep L1 WP 181",
+        "Terathan Keep Link WP 10"
       ]
     },
     {
@@ -18003,7 +17985,8 @@
       "Y": 1758,
       "Z": -125,
       "Connects": [
-        "Terathan Keep L1 WP 196"
+        "Terathan Keep L1 WP 196",
+        "Terathan Keep Link WP 4"
       ]
     },
     {
@@ -18049,15 +18032,6 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 211"
-      ]
-    },
-    {
-      "Name": "Terathan Keep L1 WP 38",
-      "X": 5282,
-      "Y": 1722,
-      "Z": -18,
-      "Connects": [
-        "Terathan Keep L1 WP 212"
       ]
     },
     {
@@ -18107,13 +18081,6 @@
       ]
     },
     {
-      "Name": "Terathan Keep L1 WP 45",
-      "X": 5354,
-      "Y": 1773,
-      "Z": -122,
-      "Connects": []
-    },
-    {
       "Name": "Terathan Keep L1 WP 46",
       "X": 5144,
       "Y": 1566,
@@ -18154,7 +18121,9 @@
       "X": 5149,
       "Y": 1593,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 206"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 53",
@@ -18171,42 +18140,54 @@
       "X": 5204,
       "Y": 1624,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep Link WP 5"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 55",
       "X": 5208,
       "Y": 1584,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 193"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 57",
       "X": 5291,
       "Y": 1573,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep Link WP 7"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 58",
       "X": 5196,
       "Y": 1672,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 94"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 59",
       "X": 5342,
       "Y": 1578,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep Link WP 8"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 60",
       "X": 5132,
       "Y": 1544,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep Link WP 9"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 62",
@@ -18233,7 +18214,9 @@
       "X": 5189,
       "Y": 1583,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep Link WP 11"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 65",
@@ -18247,7 +18230,9 @@
       "X": 5219,
       "Y": 1607,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 184"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 67",
@@ -18282,7 +18267,9 @@
       "X": 5173,
       "Y": 1713,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 98"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 71",
@@ -18342,28 +18329,7 @@
       "Y": 1693,
       "Z": 0,
       "Connects": [
-        "Terathan Keep L1 WP 75",
-        "Terathan Keep L1 WP 77"
-      ]
-    },
-    {
-      "Name": "Terathan Keep L1 WP 77",
-      "X": 5346,
-      "Y": 1700,
-      "Z": -67,
-      "Connects": [
-        "Terathan Keep L1 WP 76",
-        "Terathan Keep L1 WP 78"
-      ]
-    },
-    {
-      "Name": "Terathan Keep L1 WP 78",
-      "X": 5340,
-      "Y": 1701,
-      "Z": -68,
-      "Connects": [
-        "Terathan Keep L1 WP 77",
-        "Terathan Keep L1 WP 80"
+        "Terathan Keep L1 WP 75"
       ]
     },
     {
@@ -18403,7 +18369,8 @@
       "Z": -27,
       "Connects": [
         "Terathan Keep L1 WP 82",
-        "Terathan Keep L1 WP 84"
+        "Terathan Keep L1 WP 84",
+        "Terathan Keep L1 WP 128"
       ]
     },
     {
@@ -18433,8 +18400,7 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 85",
-        "Terathan Keep L1 WP 87",
-        "Terathan Keep L1 WP 212"
+        "Terathan Keep L1 WP 87"
       ]
     },
     {
@@ -18520,7 +18486,8 @@
         "Terathan Keep L1 WP 93",
         "Terathan Keep L1 WP 95",
         "Terathan Keep L1 WP 143",
-        "Terathan Keep L1 WP 197"
+        "Terathan Keep L1 WP 197",
+        "Terathan Keep L1 WP 58"
       ]
     },
     {
@@ -18562,7 +18529,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 97",
-        "Terathan Keep L1 WP 99"
+        "Terathan Keep L1 WP 99",
+        "Terathan Keep L1 WP 70"
       ]
     },
     {
@@ -18623,7 +18591,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 103",
-        "Terathan Keep L1 WP 105"
+        "Terathan Keep L1 WP 105",
+        "Terathan Keep Link WP 8"
       ]
     },
     {
@@ -18672,18 +18641,7 @@
       "Y": 1601,
       "Z": 0,
       "Connects": [
-        "Terathan Keep L1 WP 108",
-        "Terathan Keep L1 WP 110"
-      ]
-    },
-    {
-      "Name": "Terathan Keep L1 WP 110",
-      "X": 5319,
-      "Y": 1600,
-      "Z": 0,
-      "Connects": [
-        "Terathan Keep L1 WP 109",
-        "Terathan Keep L1 WP 111"
+        "Terathan Keep L1 WP 108"
       ]
     },
     {
@@ -18692,7 +18650,6 @@
       "Y": 1590,
       "Z": 0,
       "Connects": [
-        "Terathan Keep L1 WP 110",
         "Terathan Keep L1 WP 112"
       ]
     },
@@ -18734,7 +18691,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 114",
-        "Terathan Keep L1 WP 116"
+        "Terathan Keep L1 WP 116",
+        "Terathan Keep Link WP 7"
       ]
     },
     {
@@ -18838,7 +18796,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 124",
-        "Terathan Keep L1 WP 126"
+        "Terathan Keep L1 WP 126",
+        "Terathan Keep Link WP 13"
       ]
     },
     {
@@ -18867,7 +18826,9 @@
       "X": 5319,
       "Y": 1712,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L1 WP 83"
+      ]
     },
     {
       "Name": "Terathan Keep L1 WP 132",
@@ -18976,7 +18937,6 @@
       "Y": 1682,
       "Z": -19,
       "Connects": [
-        "Terathan Keep L1 WP 12",
         "Terathan Keep L1 WP 141"
       ]
     },
@@ -19378,7 +19338,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 19",
-        "Terathan Keep L1 WP 185"
+        "Terathan Keep L1 WP 185",
+        "Terathan Keep L1 WP 66"
       ]
     },
     {
@@ -19389,7 +19350,8 @@
       "Connects": [
         "Terathan Keep L1 WP 184",
         "Terathan Keep L1 WP 186",
-        "Terathan Keep L1 WP 187"
+        "Terathan Keep L1 WP 187",
+        "Terathan Keep Link WP 6"
       ]
     },
     {
@@ -19469,7 +19431,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 192",
-        "Terathan Keep L1 WP 194"
+        "Terathan Keep L1 WP 194",
+        "Terathan Keep L1 WP 55"
       ]
     },
     {
@@ -19600,7 +19563,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L1 WP 205",
-        "Terathan Keep L1 WP 207"
+        "Terathan Keep L1 WP 207",
+        "Terathan Keep L1 WP 52"
       ]
     },
     {
@@ -19651,16 +19615,6 @@
       "Connects": [
         "Terathan Keep L1 WP 37",
         "Terathan Keep L1 WP 210"
-      ]
-    },
-    {
-      "Name": "Terathan Keep L1 WP 212",
-      "X": 5292,
-      "Y": 1721,
-      "Z": -10,
-      "Connects": [
-        "Terathan Keep L1 WP 38",
-        "Terathan Keep L1 WP 86"
       ]
     },
     {
@@ -20432,7 +20386,8 @@
       "Y": 680,
       "Z": 0,
       "Connects": [
-        "Deceit L4 WP 4"
+        "Deceit L4 WP 4",
+        "Deceit L6 WP 1"
       ]
     },
     {
@@ -20817,7 +20772,8 @@
       "Z": 0,
       "Connects": [
         "Deceit L6 WP 5",
-        "Deceit L6 WP 6"
+        "Deceit L6 WP 6",
+        "Deceit L4 WP 3"
       ]
     },
     {
@@ -20858,7 +20814,8 @@
       "Z": 0,
       "Connects": [
         "Deceit L6 WP 1",
-        "Deceit L6 WP 6"
+        "Deceit L6 WP 6",
+        "Deceit L1 WP 1 B"
       ]
     },
     {
@@ -21360,8 +21317,7 @@
       "Y": 2025,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 22",
-        "Covetous L1 WP 84"
+        "Covetous L1 WP 22"
       ]
     },
     {
@@ -21381,8 +21337,7 @@
       "Y": 1966,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 73",
-        "Covetous L1 WP 95"
+        "Covetous L1 WP 73"
       ]
     },
     {
@@ -21391,7 +21346,6 @@
       "Y": 1999,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 49",
         "Covetous L1 WP 92"
       ]
     },
@@ -21409,9 +21363,7 @@
       "X": 5586,
       "Y": 2028,
       "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 40"
-      ]
+      "Connects": []
     },
     {
       "Name": "Covetous L1 WP 18",
@@ -21422,15 +21374,6 @@
         "Covetous L1 WP 26",
         "Covetous L1 WP 42",
         "Covetous L1 WP 44"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 19",
-      "X": 5434,
-      "Y": 2014,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 84"
       ]
     },
     {
@@ -21557,23 +21500,11 @@
       ]
     },
     {
-      "Name": "Covetous L1 WP 40",
-      "X": 5577,
-      "Y": 2028,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 15",
-        "Covetous L1 WP 41"
-      ]
-    },
-    {
       "Name": "Covetous L1 WP 41",
       "X": 5562,
       "Y": 2026,
       "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 40"
-      ]
+      "Connects": []
     },
     {
       "Name": "Covetous L1 WP 42",
@@ -21628,19 +21559,7 @@
       "Y": 2010,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 47",
-        "Covetous L1 WP 49"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 49",
-      "X": 5464,
-      "Y": 2007,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 12",
-        "Covetous L1 WP 48",
-        "Covetous L1 WP 25"
+        "Covetous L1 WP 47"
       ]
     },
     {
@@ -21679,19 +21598,7 @@
       "X": 5454,
       "Y": 1980,
       "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 55"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 55",
-      "X": 5448,
-      "Y": 1979,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 54",
-        "Covetous L1 WP 56"
-      ]
+      "Connects": []
     },
     {
       "Name": "Covetous L1 WP 56",
@@ -21699,7 +21606,6 @@
       "Y": 1970,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 55",
         "Covetous L1 WP 57",
         "Covetous L1 WP 35"
       ]
@@ -21862,27 +21768,7 @@
       "Y": 2006,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 81",
-        "Covetous L1 WP 83"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 83",
-      "X": 5572,
-      "Y": 2002,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 82"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 84",
-      "X": 5433,
-      "Y": 2019,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 8",
-        "Covetous L1 WP 19"
+        "Covetous L1 WP 81"
       ]
     },
     {
@@ -21931,15 +21817,6 @@
       "Connects": [
         "Covetous L1 WP 7",
         "Covetous L1 WP 34"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 95",
-      "X": 5478,
-      "Y": 1964,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 11"
       ]
     },
     {
@@ -22004,8 +21881,7 @@
       "Y": 1923,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 36 B",
-        "Covetous L1 WP 114"
+        "Covetous L1 WP 36 B"
       ]
     },
     {
@@ -22054,9 +21930,7 @@
       "X": 5449,
       "Y": 1937,
       "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 126"
-      ]
+      "Connects": []
     },
     {
       "Name": "Covetous L1 WP 33 B",
@@ -22128,22 +22002,11 @@
       ]
     },
     {
-      "Name": "Covetous L1 WP 53 B",
-      "X": 5467,
-      "Y": 1889,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 54 B",
-        "Covetous L1 WP 68 B"
-      ]
-    },
-    {
       "Name": "Covetous L1 WP 54 B",
       "X": 5467,
       "Y": 1884,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 53 B",
         "Covetous L1 WP 55 B"
       ]
     },
@@ -22218,23 +22081,12 @@
       ]
     },
     {
-      "Name": "Covetous L1 WP 64 B",
-      "X": 5437,
-      "Y": 1879,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 65 B",
-        "Covetous L1 WP 107"
-      ]
-    },
-    {
       "Name": "Covetous L1 WP 65 B",
       "X": 5445,
       "Y": 1878,
       "Z": 0,
       "Connects": [
         "Covetous L1 WP 19 B",
-        "Covetous L1 WP 64 B",
         "Covetous L1 WP 29 B"
       ]
     },
@@ -22331,17 +22183,7 @@
       "Y": 1865,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 88 B",
-        "Covetous L1 WP 90 B"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 90 B",
-      "X": 5422,
-      "Y": 1856,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 89 B"
+        "Covetous L1 WP 88 B"
       ]
     },
     {
@@ -22433,8 +22275,7 @@
       "Z": 0,
       "Connects": [
         "Covetous L1 WP 105",
-        "Covetous L1 WP 107",
-        "Covetous L1 WP 64 B"
+        "Covetous L1 WP 107"
       ]
     },
     {
@@ -22474,32 +22315,11 @@
       ]
     },
     {
-      "Name": "Covetous L1 WP 113",
-      "X": 5403,
-      "Y": 1913,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 114",
-        "Covetous L1 WP 111"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 114",
-      "X": 5397,
-      "Y": 1918,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 113",
-        "Covetous L1 WP 115"
-      ]
-    },
-    {
       "Name": "Covetous L1 WP 115",
       "X": 5390,
       "Y": 1918,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 114",
         "Covetous L1 WP 116"
       ]
     },
@@ -22591,18 +22411,7 @@
       "Y": 1932,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 124",
-        "Covetous L1 WP 126"
-      ]
-    },
-    {
-      "Name": "Covetous L1 WP 126",
-      "X": 5457,
-      "Y": 1934,
-      "Z": 0,
-      "Connects": [
-        "Covetous L1 WP 31 B",
-        "Covetous L1 WP 125"
+        "Covetous L1 WP 124"
       ]
     },
     {
@@ -22658,8 +22467,7 @@
       "Y": 62,
       "Z": -10,
       "Connects": [
-        "Shame L1 WP 81",
-        "Shame L1 WP 131"
+        "Shame L1 WP 81"
       ]
     },
     {
@@ -22725,9 +22533,7 @@
       "X": 5451,
       "Y": 46,
       "Z": -10,
-      "Connects": [
-        "Shame L1 WP 131"
-      ]
+      "Connects": []
     },
     {
       "Name": "Shame L1 WP 28",
@@ -23058,7 +22864,8 @@
       "Y": 115,
       "Z": 0,
       "Connects": [
-        "Shame L1 WP 95"
+        "Shame L1 WP 95",
+        "Shame L1 WP 112"
       ]
     },
     {
@@ -23175,7 +22982,8 @@
       "Y": 115,
       "Z": 0,
       "Connects": [
-        "Shame L1 WP 113"
+        "Shame L1 WP 113",
+        "Shame L1 WP 89"
       ]
     },
     {
@@ -23254,15 +23062,6 @@
       "Z": 10,
       "Connects": [
         "Shame L1 WP 129"
-      ]
-    },
-    {
-      "Name": "Shame L1 WP 131",
-      "X": 5451,
-      "Y": 57,
-      "Z": -10,
-      "Connects": [
-        "Shame L1 WP 8"
       ]
     },
     {
@@ -25014,7 +24813,8 @@
       "Y": 776,
       "Z": 0,
       "Connects": [
-        "Despise L1 WP 207"
+        "Despise L1 WP 207",
+        "Despise Link WP 8"
       ]
     },
     {
@@ -25078,7 +24878,9 @@
       "Y": 840,
       "Z": 0,
       "Connects": [
-        "Despise L1 WP 66"
+        "Despise L1 WP 66",
+        "Despise Link WP 23",
+        "Despise Link WP 26"
       ]
     },
     {
@@ -25265,35 +25067,45 @@
       "X": 5580,
       "Y": 798,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 4"
+      ]
     },
     {
       "Name": "Despise L1 WP 48",
       "X": 5432,
       "Y": 780,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 5"
+      ]
     },
     {
       "Name": "Despise L1 WP 49",
       "X": 5481,
       "Y": 815,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 236"
+      ]
     },
     {
       "Name": "Despise L1 WP 50",
       "X": 5507,
       "Y": 991,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 143"
+      ]
     },
     {
       "Name": "Despise L1 WP 51",
       "X": 5493,
       "Y": 895,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 9"
+      ]
     },
     {
       "Name": "Despise L1 WP 52",
@@ -25307,14 +25119,18 @@
       "X": 5514,
       "Y": 840,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 87"
+      ]
     },
     {
       "Name": "Despise L1 WP 54",
       "X": 5514,
       "Y": 942,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 10"
+      ]
     },
     {
       "Name": "Despise L1 WP 55",
@@ -25331,21 +25147,27 @@
       "X": 5384,
       "Y": 850,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 13"
+      ]
     },
     {
       "Name": "Despise L1 WP 57",
       "X": 5406,
       "Y": 1006,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 155"
+      ]
     },
     {
       "Name": "Despise L1 WP 58",
       "X": 5471,
       "Y": 901,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 15"
+      ]
     },
     {
       "Name": "Despise L1 WP 59",
@@ -25380,21 +25202,27 @@
       "X": 5479,
       "Y": 785,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 17"
+      ]
     },
     {
       "Name": "Despise L1 WP 63",
       "X": 5621,
       "Y": 823,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 20"
+      ]
     },
     {
       "Name": "Despise L1 WP 64",
       "X": 5393,
       "Y": 797,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 164"
+      ]
     },
     {
       "Name": "Despise L1 WP 65",
@@ -25419,28 +25247,36 @@
       "X": 5428,
       "Y": 840,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 24"
+      ]
     },
     {
       "Name": "Despise L1 WP 68",
       "X": 5595,
       "Y": 821,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 25"
+      ]
     },
     {
       "Name": "Despise L1 WP 69",
       "X": 5405,
       "Y": 917,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 27"
+      ]
     },
     {
       "Name": "Despise L1 WP 70",
       "X": 5556,
       "Y": 912,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise Link WP 28"
+      ]
     },
     {
       "Name": "Despise L1 WP 71",
@@ -25479,7 +25315,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 73",
-        "Despise L1 WP 75"
+        "Despise L1 WP 75",
+        "Despise Link WP 14"
       ]
     },
     {
@@ -25613,7 +25450,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 86",
-        "Despise L1 WP 88"
+        "Despise L1 WP 88",
+        "Despise L1 WP 53"
       ]
     },
     {
@@ -25759,7 +25597,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 100",
-        "Despise L1 WP 102"
+        "Despise L1 WP 102",
+        "Despise Link WP 4"
       ]
     },
     {
@@ -26194,7 +26033,8 @@
       "Connects": [
         "Despise L1 WP 142",
         "Despise L1 WP 144",
-        "Despise L1 WP 209"
+        "Despise L1 WP 209",
+        "Despise L1 WP 50"
       ]
     },
     {
@@ -26316,7 +26156,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 154",
-        "Despise L1 WP 156"
+        "Despise L1 WP 156",
+        "Despise L1 WP 57"
       ]
     },
     {
@@ -26345,7 +26186,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 108",
-        "Despise L1 WP 159"
+        "Despise L1 WP 159",
+        "Despise Link WP 28"
       ]
     },
     {
@@ -26405,7 +26247,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 163",
-        "Despise L1 WP 165"
+        "Despise L1 WP 165",
+        "Despise L1 WP 64"
       ]
     },
     {
@@ -26985,7 +26828,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 221",
-        "Despise L1 WP 223"
+        "Despise L1 WP 223",
+        "Despise Link WP 27"
       ]
     },
     {
@@ -27125,7 +26969,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 235",
-        "Despise L1 WP 237"
+        "Despise L1 WP 237",
+        "Despise L1 WP 49"
       ]
     },
     {
@@ -27145,7 +26990,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 237",
-        "Despise L1 WP 239"
+        "Despise L1 WP 239",
+        "Despise Link WP 19"
       ]
     },
     {
@@ -27316,7 +27162,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 254",
-        "Despise L1 WP 256"
+        "Despise L1 WP 256",
+        "Despise Link WP 24"
       ]
     },
     {
@@ -27386,7 +27233,9 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 261",
-        "Despise L1 WP 263"
+        "Despise L1 WP 263",
+        "Despise Link WP 9",
+        "Despise Link WP 16"
       ]
     },
     {
@@ -27406,7 +27255,8 @@
       "Z": 0,
       "Connects": [
         "Despise L1 WP 28",
-        "Despise L1 WP 263"
+        "Despise L1 WP 263",
+        "Despise Link WP 12"
       ]
     },
     {
@@ -27638,7 +27488,9 @@
       "X": 5444,
       "Y": 3132,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Terathan Keep L2 WP 23"
+      ]
     },
     {
       "Name": "Terathan Keep L2 WP 14",
@@ -27704,7 +27556,8 @@
       "Connects": [
         "Terathan Keep L2 WP 8",
         "Terathan Keep L2 WP 9",
-        "Terathan Keep L2 WP 39"
+        "Terathan Keep L2 WP 39",
+        "Terathan Keep L2 WP 26"
       ]
     },
     {
@@ -27735,7 +27588,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L2 WP 22",
-        "Terathan Keep L2 WP 24"
+        "Terathan Keep L2 WP 24",
+        "Terathan Keep L2 WP 13"
       ]
     },
     {
@@ -27765,7 +27619,8 @@
       "Z": 0,
       "Connects": [
         "Terathan Keep L2 WP 25",
-        "Terathan Keep L2 WP 27"
+        "Terathan Keep L2 WP 27",
+        "Terathan Keep L2 WP 20"
       ]
     },
     {
@@ -30115,7 +29970,8 @@
       "Z": 0,
       "Connects": [
         "Shame L3 WP 167",
-        "Shame L3 WP 56"
+        "Shame L3 WP 56",
+        "Shame L3 WP 107"
       ]
     },
     {
@@ -30227,7 +30083,8 @@
       "Z": 0,
       "Connects": [
         "Shame L3 WP 25",
-        "Shame L3 WP 187"
+        "Shame L3 WP 187",
+        "Shame Link WP 2"
       ]
     },
     {
@@ -30351,7 +30208,8 @@
       "Connects": [
         "Shame L3 WP 9",
         "Shame L3 WP 16",
-        "Shame L3 WP 53"
+        "Shame L3 WP 53",
+        "Shame Link WP 1"
       ]
     },
     {
@@ -30493,7 +30351,9 @@
       "X": 5567,
       "Y": 241,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Shame L3 WP 161"
+      ]
     },
     {
       "Name": "Shame L3 WP 65",
@@ -30520,7 +30380,9 @@
       "X": 5398,
       "Y": 166,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Shame Link WP 2"
+      ]
     },
     {
       "Name": "Shame L3 WP 71",
@@ -30550,7 +30412,8 @@
       "Connects": [
         "Shame L3 WP 72",
         "Shame L3 WP 74",
-        "Shame L3 WP 2"
+        "Shame L3 WP 2",
+        "Shame L3 WP 98"
       ]
     },
     {
@@ -30639,18 +30502,7 @@
       "Y": 140,
       "Z": 0,
       "Connects": [
-        "Shame L3 WP 81",
-        "Shame L3 WP 83"
-      ]
-    },
-    {
-      "Name": "Shame L3 WP 83",
-      "X": 5551,
-      "Y": 149,
-      "Z": 20,
-      "Connects": [
-        "Shame L3 WP 82",
-        "Shame L3 WP 84"
+        "Shame L3 WP 81"
       ]
     },
     {
@@ -30659,8 +30511,7 @@
       "Y": 155,
       "Z": 20,
       "Connects": [
-        "Shame L3 WP 22",
-        "Shame L3 WP 83"
+        "Shame L3 WP 22"
       ]
     },
     {
@@ -30759,7 +30610,8 @@
       "Y": 190,
       "Z": 0,
       "Connects": [
-        "Shame L3 WP 99"
+        "Shame L3 WP 99",
+        "Shame L3 WP 73"
       ]
     },
     {
@@ -30777,7 +30629,8 @@
       "Y": 211,
       "Z": 0,
       "Connects": [
-        "Shame L3 WP 108"
+        "Shame L3 WP 108",
+        "Shame L3 WP 17"
       ]
     },
     {
@@ -31102,7 +30955,8 @@
       "Y": 184,
       "Z": 0,
       "Connects": [
-        "Shame L3 WP 140"
+        "Shame L3 WP 140",
+        "Shame Link WP 1"
       ]
     },
     {
@@ -31316,7 +31170,8 @@
       "Z": 0,
       "Connects": [
         "Shame L3 WP 160",
-        "Shame L3 WP 162"
+        "Shame L3 WP 162",
+        "Shame L3 WP 61"
       ]
     },
     {
@@ -32014,7 +31869,8 @@
       "Y": 1824,
       "Z": 0,
       "Connects": [
-        "Covetous L4 WP 2"
+        "Covetous L4 WP 2",
+        "Covetous L5 WP 1"
       ]
     },
     {
@@ -32031,14 +31887,19 @@
       "X": 5573,
       "Y": 632,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "WP 1310",
+        "Despise L1 WP 7 B"
+      ]
     },
     {
       "Name": "Despise L1 WP 7 B",
       "X": 5574,
       "Y": 628,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Despise L1 WP 4 B"
+      ]
     },
     {
       "Name": "Covetous L1 WP 1 C",
@@ -32137,7 +31998,8 @@
       "Z": 0,
       "Connects": [
         "Covetous L5 WP 2",
-        "Covetous L5 WP 3"
+        "Covetous L5 WP 3",
+        "Covetous L4 WP 1"
       ]
     },
     {
@@ -33581,7 +33443,8 @@
       "Y": 571,
       "Z": 0,
       "Connects": [
-        "Wrong L2 WP 6"
+        "Wrong L2 WP 6",
+        "Wrong L2 Door WP"
       ]
     },
     {
@@ -34632,7 +34495,8 @@
       "Z": 0,
       "Connects": [
         "Fire L2 WP 74",
-        "Fire L2 WP 76"
+        "Fire L2 WP 76",
+        "Fire Link WP 8"
       ]
     },
     {
@@ -34651,7 +34515,8 @@
       "Y": 1424,
       "Z": 0,
       "Connects": [
-        "Fire L2 WP 76"
+        "Fire L2 WP 76",
+        "Fire Link WP 2"
       ]
     },
     {
@@ -34835,7 +34700,8 @@
       "Y": 1424,
       "Z": 0,
       "Connects": [
-        "Fire L2 WP 97"
+        "Fire L2 WP 97",
+        "Fire Link WP 3"
       ]
     },
     {
@@ -36379,7 +36245,8 @@
       "Y": 555,
       "Z": 0,
       "Connects": [
-        "Wrong L2 WP 3 C"
+        "Wrong L2 WP 3 C",
+        "Wrong L2 Door WP B"
       ]
     },
     {
@@ -36497,7 +36364,8 @@
       "Z": 0,
       "Connects": [
         "Fire L1 WP 27 B",
-        "Fire L1 WP 93 B"
+        "Fire L1 WP 93 B",
+        "Fire Link WP 11"
       ]
     },
     {
@@ -37440,7 +37308,8 @@
       "Connects": [
         "Fire L1 WP 22 B",
         "Fire L1 WP 108 B",
-        "Fire L1 WP 146"
+        "Fire L1 WP 146",
+        "Fire Link WP 12"
       ]
     },
     {
@@ -37641,7 +37510,8 @@
       "Z": 0,
       "Connects": [
         "Fire L1 WP 14 B",
-        "Fire L1 WP 126 B"
+        "Fire L1 WP 126 B",
+        "Fire Link WP 18"
       ]
     },
     {
@@ -37962,7 +37832,8 @@
       "Z": 0,
       "Connects": [
         "Fire L1 WP 42 B",
-        "Fire L1 WP 158"
+        "Fire L1 WP 158",
+        "Fire Link WP 12"
       ]
     },
     {
@@ -39768,7 +39639,8 @@
       "Y": 107,
       "Z": 0,
       "Connects": [
-        "Shame L5 WP 70"
+        "Shame L5 WP 70",
+        "Shame L5 WP 108"
       ]
     },
     {
@@ -40143,7 +40015,8 @@
       "Y": 107,
       "Z": 0,
       "Connects": [
-        "Shame L5 WP 109"
+        "Shame L5 WP 109",
+        "Shame L5 WP 71"
       ]
     },
     {
@@ -41154,7 +41027,9 @@
       "X": 5330,
       "Y": 706,
       "Z": 0,
-      "Connects": []
+      "Connects": [
+        "Deceit L6 WP 5"
+      ]
     },
     {
       "Name": "Hythloth L8 WP 1",
@@ -41220,7 +41095,8 @@
       "Y": 1486,
       "Z": 0,
       "Connects": [
-        "Fire L1 WP 11"
+        "Fire L1 WP 11",
+        "Fire Link WP 17"
       ]
     },
     {
@@ -41229,7 +41105,8 @@
       "Y": 568,
       "Z": 0,
       "Connects": [
-        "Wrong L2 Door WP B"
+        "Wrong L2 Door WP B",
+        "Wrong L2 WP 3"
       ]
     },
     {
@@ -41238,7 +41115,8 @@
       "Y": 566,
       "Z": 0,
       "Connects": [
-        "Wrong L2 Door WP"
+        "Wrong L2 Door WP",
+        "Wrong L2 WP 2 C"
       ]
     },
     {
@@ -42765,9 +42643,7 @@
       "X": 2042,
       "Y": 217,
       "Z": 14,
-      "Connects": [
-        "Wrong Approach 28"
-      ]
+      "Connects": []
     },
     {
       "Name": "Shame Approach 1",
@@ -43045,16 +42921,8 @@
       "Y": 1584,
       "Z": 0,
       "Connects": [
-        "Shame Approach 30"
-      ]
-    },
-    {
-      "Name": "Shame Approach 32",
-      "X": 460,
-      "Y": 1587,
-      "Z": 0,
-      "Connects": [
-        "Shame Approach 31"
+        "Shame Approach 30",
+        "Shame Fix WP 1"
       ]
     },
     {
@@ -43063,7 +42931,7 @@
       "Y": 1587,
       "Z": 0,
       "Connects": [
-        "Shame Approach 32"
+        "Shame Fix WP 1"
       ]
     },
     {
@@ -43717,9 +43585,7 @@
       "X": 5322,
       "Y": 1685,
       "Z": -16,
-      "Connects": [
-        "Terathan Keep L1 WP 12"
-      ]
+      "Connects": []
     },
     {
       "Name": "WP 1367",
@@ -43870,6 +43736,507 @@
       "Connects": [
         "Shame L3 WP 20",
         "Shame L3 WP 78"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 4",
+      "X": 5575,
+      "Y": 793,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 47",
+        "Despise L1 WP 101"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 5",
+      "X": 5433,
+      "Y": 781,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 48",
+        "Despise Link WP 6"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 6",
+      "X": 5452,
+      "Y": 783,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 5",
+        "Despise Link WP 7"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 7",
+      "X": 5455,
+      "Y": 783,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 6",
+        "Despise Link WP 8"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 8",
+      "X": 5456,
+      "Y": 781,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 7",
+        "Despise L1 WP 19"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 9",
+      "X": 5486,
+      "Y": 902,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 51",
+        "Despise L1 WP 262"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 10",
+      "X": 5506,
+      "Y": 931,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 54",
+        "Despise Link WP 11"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 11",
+      "X": 5507,
+      "Y": 930,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 10",
+        "Despise Link WP 12"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 12",
+      "X": 5504,
+      "Y": 926,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 11",
+        "Despise L1 WP 264"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 13",
+      "X": 5390,
+      "Y": 848,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 56",
+        "Despise Link WP 14"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 14",
+      "X": 5391,
+      "Y": 847,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 13",
+        "Despise L1 WP 74"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 15",
+      "X": 5474,
+      "Y": 901,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 58",
+        "Despise Link WP 16"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 16",
+      "X": 5482,
+      "Y": 899,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 15",
+        "Despise L1 WP 262"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 17",
+      "X": 5477,
+      "Y": 792,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 62",
+        "Despise Link WP 18"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 18",
+      "X": 5478,
+      "Y": 793,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 17",
+        "Despise Link WP 19"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 19",
+      "X": 5484,
+      "Y": 794,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 18",
+        "Despise L1 WP 238"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 20",
+      "X": 5614,
+      "Y": 826,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 63",
+        "Despise Link WP 21"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 21",
+      "X": 5600,
+      "Y": 835,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 20",
+        "Despise Link WP 22"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 22",
+      "X": 5598,
+      "Y": 834,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 21",
+        "Despise Link WP 23"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 23",
+      "X": 5596,
+      "Y": 836,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 22",
+        "Despise L1 WP 26"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 24",
+      "X": 5426,
+      "Y": 842,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 67",
+        "Despise L1 WP 255"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 25",
+      "X": 5596,
+      "Y": 823,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 68",
+        "Despise Link WP 26"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 26",
+      "X": 5591,
+      "Y": 831,
+      "Z": 0,
+      "Connects": [
+        "Despise Link WP 25",
+        "Despise L1 WP 26"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 27",
+      "X": 5401,
+      "Y": 915,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 69",
+        "Despise L1 WP 222"
+      ]
+    },
+    {
+      "Name": "Despise Link WP 28",
+      "X": 5551,
+      "Y": 907,
+      "Z": 0,
+      "Connects": [
+        "Despise L1 WP 70",
+        "Despise L1 WP 158"
+      ]
+    },
+    {
+      "Name": "Shame Link WP 1",
+      "X": 5464,
+      "Y": 182,
+      "Z": 0,
+      "Connects": [
+        "Shame L3 WP 139",
+        "Shame L3 WP 44"
+      ]
+    },
+    {
+      "Name": "Shame Link WP 2",
+      "X": 5411,
+      "Y": 163,
+      "Z": 0,
+      "Connects": [
+        "Shame L3 WP 69",
+        "Shame L3 WP 29"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 1",
+      "X": 5474,
+      "Y": 3136,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 2"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 2",
+      "X": 5472,
+      "Y": 3136,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 1"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 3",
+      "X": 5352,
+      "Y": 1762,
+      "Z": -122,
+      "Connects": [
+        "Terathan Keep Link WP 4"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 4",
+      "X": 5361,
+      "Y": 1755,
+      "Z": -122,
+      "Connects": [
+        "Terathan Keep Link WP 3",
+        "Terathan Keep L1 WP 32"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 5",
+      "X": 5205,
+      "Y": 1625,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep L1 WP 54",
+        "Terathan Keep Link WP 6"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 6",
+      "X": 5209,
+      "Y": 1622,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 5",
+        "Terathan Keep L1 WP 185"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 7",
+      "X": 5286,
+      "Y": 1564,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep L1 WP 57",
+        "Terathan Keep L1 WP 115"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 8",
+      "X": 5343,
+      "Y": 1583,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep L1 WP 59",
+        "Terathan Keep L1 WP 104"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 9",
+      "X": 5135,
+      "Y": 1545,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep L1 WP 60",
+        "Terathan Keep Link WP 10"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 10",
+      "X": 5151,
+      "Y": 1545,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 9",
+        "Terathan Keep L1 WP 21"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 11",
+      "X": 5174,
+      "Y": 1583,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep L1 WP 64",
+        "Terathan Keep Link WP 12"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 12",
+      "X": 5172,
+      "Y": 1585,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 11",
+        "Terathan Keep Link WP 13"
+      ]
+    },
+    {
+      "Name": "Terathan Keep Link WP 13",
+      "X": 5174,
+      "Y": 1586,
+      "Z": 0,
+      "Connects": [
+        "Terathan Keep Link WP 12",
+        "Terathan Keep L1 WP 125"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 2",
+      "X": 5653,
+      "Y": 1424,
+      "Z": 0,
+      "Connects": [
+        "Fire L2 WP 77"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 3",
+      "X": 5648,
+      "Y": 1425,
+      "Z": 0,
+      "Connects": [
+        "Fire L2 WP 96"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 4",
+      "X": 5649,
+      "Y": 1426,
+      "Z": 0,
+      "Connects": [
+        "Fire Link WP 5"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 5",
+      "X": 5649,
+      "Y": 1429,
+      "Z": 0,
+      "Connects": [
+        "Fire Link WP 4"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 7",
+      "X": 5654,
+      "Y": 1424,
+      "Z": 0,
+      "Connects": [
+        "Fire Link WP 8"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 8",
+      "X": 5656,
+      "Y": 1423,
+      "Z": 0,
+      "Connects": [
+        "Fire Link WP 7",
+        "Fire L2 WP 75"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 11",
+      "X": 5830,
+      "Y": 1363,
+      "Z": 0,
+      "Connects": [
+        "Fire L1 WP 11 B"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 12",
+      "X": 5849,
+      "Y": 1305,
+      "Z": 0,
+      "Connects": [
+        "Fire L1 WP 159",
+        "Fire L1 WP 107 B"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 17",
+      "X": 5832,
+      "Y": 1477,
+      "Z": 0,
+      "Connects": [
+        "Fire L1 Door WP",
+        "Fire Link WP 18"
+      ]
+    },
+    {
+      "Name": "Fire Link WP 18",
+      "X": 5828,
+      "Y": 1474,
+      "Z": 0,
+      "Connects": [
+        "Fire Link WP 17",
+        "Fire L1 WP 127 B"
+      ]
+    },
+    {
+      "Name": "Shame Fix WP 1",
+      "X": 454,
+      "Y": 1585,
+      "Z": 0,
+      "Connects": [
+        "Shame Approach 31",
+        "Shame Approach 33"
       ]
     }
   ]

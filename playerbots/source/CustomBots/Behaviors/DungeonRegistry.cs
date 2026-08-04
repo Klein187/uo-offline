@@ -268,6 +268,31 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // Nearest interior point on the bot's OWN walkable floor. Dungeon
+        // levels sit side by side in the map strip, so plain 2D proximity
+        // (NearestPoint) can grab a point through a wall on a DIFFERENT
+        // floor and mis-scope the crawler after a stair landing. This form
+        // only considers points whose waypoint component matches the bot's —
+        // callers fall back to NearestPoint when the floor has no points.
+        // -------------------------------------------------------------------
+        public static BotDestination NearestPointOnFloor(Point3D from, int maxDist)
+        {
+            var pts = ReachablePoints(from);
+            BotDestination best = null;
+            int bestDist = maxDist + 1;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int dist = ChebyshevDist(from, pts[i].Location);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = pts[i];
+                }
+            }
+            return best;
+        }
+
+        // -------------------------------------------------------------------
         // Context recovery: which dungeon/level is a bot standing in? Used
         // when a crawler wakes with no context (server reload) — it adopts
         // the nearest interior point's tag/level. This is also the design's

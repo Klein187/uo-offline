@@ -128,6 +128,11 @@ namespace Server.CustomBots
         private DateTime _padStartedAt;
         private PathFollower _padFollower;
         private Timer _padTimer;
+        // Busy stairs queue: another bot parked ON the pad tile blocks the
+        // final step. Extend the timeout a few rounds instead of writing
+        // the pad off (see TravelerBehavior's entrance version).
+        private int _padWaits;
+        private const int PadMaxWaits = 3;
 
         // A single Move is at most one tile; a bigger jump in one beat can
         // only be the teleporter firing.
@@ -780,6 +785,7 @@ namespace Server.CustomBots
 
             _padTile      = pad;
             _padStartedAt = Core.Now;
+            _padWaits     = 0;
             _padFollower  = new PathFollower(bot, pad);
 
             StopPadTimer();
@@ -825,6 +831,16 @@ namespace Server.CustomBots
             // Teleporter item. Resume the crawl rather than loiter forever.
             if (Core.Now - _padStartedAt > PadTimeout)
             {
+                // Another bot is parked on the stair tile — wait our turn a
+                // few rounds before giving up on the pad.
+                if (_padWaits < PadMaxWaits &&
+                    TravelerBehavior.PadOccupiedByOther(bot, _padTile))
+                {
+                    _padWaits++;
+                    _padStartedAt = Core.Now;
+                    return false;
+                }
+
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: teleporter at {_padTile} " +
                     $"({DungeonName} L{Level}) never fired — resuming crawl");
@@ -850,7 +866,10 @@ namespace Server.CustomBots
             StopPadTimer();
             _padFollower = null;
 
-            var p = DungeonRegistry.NearestPoint(bot.Location, 30);
+            // Same-floor first: levels sit side by side on the map, so the
+            // 2D-nearest point can be through a wall on another floor.
+            var p = DungeonRegistry.NearestPointOnFloor(bot.Location, 30)
+                    ?? DungeonRegistry.NearestPoint(bot.Location, 30);
 
             // No point within 30 tiles — but interior points reachable ON
             // FOOT from here mean we landed on another dungeon floor (the
@@ -1057,7 +1076,8 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private bool TryRecoverContext(PlayerBot bot)
         {
-            var p = DungeonRegistry.NearestPoint(bot.Location, 30);
+            var p = DungeonRegistry.NearestPointOnFloor(bot.Location, 30)
+                    ?? DungeonRegistry.NearestPoint(bot.Location, 30);
 
             // Nothing close by — adopt any point on this walkable floor
             // (the entry landing can be a fair walk from the first room).

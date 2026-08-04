@@ -290,6 +290,11 @@ namespace Server.CustomBots
         private bool _dungeonEntryArmed;
         private DateTime _dungeonEntryArmedAt;
         private bool _dungeonEntryWalking;
+        // Busy entrances queue: another bot standing ON the pad tile keeps
+        // this one from stepping onto it. Extend the timeout a few times
+        // while that's the case instead of abandoning the whole trip.
+        private int _dungeonEntryWaits;
+        private const int DungeonEntryMaxWaits = 3;
 
         // A single Move can step at most one tile; a jump larger than this in
         // one move/tick can only be the teleporter firing.
@@ -2261,6 +2266,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 {
                     _dungeonEntryArmed   = true;
                     _dungeonEntryArmedAt = Core.Now;
+                    _dungeonEntryWaits   = 0;
                 }
                 return false;
             }
@@ -2276,6 +2282,19 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // On/near the pad but it never teleported us — don't loiter.
             if (Core.Now - _dungeonEntryArmedAt > DungeonEntryTimeout)
             {
+                // Someone else is standing ON the pad tile (boot cohorts pile
+                // up at popular entrances) — wait our turn a few rounds
+                // before writing the pad off.
+                if (_dungeonEntryWaits < DungeonEntryMaxWaits &&
+                    PadOccupiedByOther(bot, _dungeonEntryTile))
+                {
+                    _dungeonEntryWaits++;
+                    _dungeonEntryArmedAt = Core.Now;
+                    Log(bot, $"Dungeon entrance '{DestinationName}' pad is occupied — " +
+                             $"waiting ({_dungeonEntryWaits}/{DungeonEntryMaxWaits})");
+                    return false;
+                }
+
                 Log(bot, $"Dungeon entrance '{DestinationName}' didn't teleport " +
                          $"(inactive pad?) — picking a new destination");
                 StuckTelemetry.Record(bot, "entry_timeout", DestinationName);
@@ -2283,6 +2302,23 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 return true;
             }
 
+            return false;
+        }
+
+        // Is a different live mobile standing exactly on the teleporter tile?
+        internal static bool PadOccupiedByOther(PlayerBot bot, Point3D pad)
+        {
+            if (bot?.Map == null || bot.Map == Map.Internal)
+            {
+                return false;
+            }
+            foreach (var m in bot.Map.GetMobilesInRange(pad, 0))
+            {
+                if (m != bot && !m.Deleted && m.Alive)
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
