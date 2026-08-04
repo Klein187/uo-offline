@@ -73,13 +73,26 @@ namespace Server.CustomBots
                 case BotClass.Fencer:
                 case BotClass.Archer:
                 case BotClass.Ranger:
-                    // Fighters carry a real bandage PILE (no invisible
+                    // The dexxer pack: a real bandage PILE (no invisible
                     // refills — this stock has to last until the next
-                    // provisioner run) and a few healing potions.
+                    // provisioner run), the potion battery, trapped
+                    // pouches, and a few reagents for Recall and Heal.
+                    // Counts scale with tier — a Novice carries a fraction
+                    // of the veteran kit.
                     AddToPack(bot, "Server.Items.Bandage",
-                              Utility.RandomMinMax(30, 60));
-                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.5,
-                                   Utility.RandomMinMax(1, 4));
+                              KitScale(60, 100, tier));
+                    AddMany(bot, BotSkillTierHelper.Rank(tier) >= 3
+                        ? "Server.Items.GreaterHealPotion"
+                        : "Server.Items.HealPotion", KitScale(5, 12, tier));
+                    AddMany(bot, "Server.Items.CurePotion", KitScale(4, 8, tier));
+                    AddMany(bot, "Server.Items.RefreshPotion", KitScale(4, 10, tier));
+                    AddMany(bot, "Server.Items.StrengthPotion", KitScale(3, 6, tier));
+                    AddMany(bot, "Server.Items.AgilityPotion", KitScale(3, 6, tier));
+                    if (BotSkillTierHelper.Rank(tier) >= 2)
+                    {
+                        AddTrappedPouches(bot, KitScale(2, 6, tier));
+                        AddRecallRegBundle(bot);
+                    }
                     // ...and often a backup weapon riding in the pack.
                     if (Utility.RandomDouble() < 0.30)
                     {
@@ -88,14 +101,27 @@ namespace Server.CustomBots
                     break;
 
                 case BotClass.Mage:
-                    // Mages carry potions and a spare reagent stash.
-                    // (Total refresh, NOT mana potions — mana potions
-                    // didn't exist in T2A; a winded mage meditated.)
-                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.4,
-                                   Utility.RandomMinMax(1, 3));
-                    MaybeAddToPack(bot, "Server.Items.TotalRefreshPotion",
-                                   0.3, Utility.RandomMinMax(1, 2));
+                    // The classic 1999 tank-mage pack: the full reagent
+                    // stash, walls of Greater Heal / Greater Cure / Total
+                    // Refresh bottles, buff and explosion pots, and the
+                    // era essential — trapped pouches, because popping one
+                    // broke Paralyze instantly. (Total refresh, NOT mana
+                    // potions — those didn't exist; a winded mage
+                    // meditated.) All tier-scaled: a Novice carries a
+                    // starter kit, a GM the whole hotkeyed arsenal.
                     AddReagentStash(bot, tier);
+                    AddMany(bot, "Server.Items.GreaterHealPotion", KitScale(10, 20, tier));
+                    AddMany(bot, "Server.Items.GreaterCurePotion", KitScale(10, 20, tier));
+                    AddMany(bot, "Server.Items.TotalRefreshPotion", KitScale(10, 20, tier));
+                    AddMany(bot, "Server.Items.StrengthPotion", KitScale(5, 10, tier));
+                    AddMany(bot, "Server.Items.AgilityPotion", KitScale(5, 10, tier));
+                    if (BotSkillTierHelper.Rank(tier) >= 2)
+                    {
+                        AddMany(bot, "Server.Items.GreaterExplosionPotion",
+                                KitScale(5, 10, tier));
+                    }
+                    AddTrappedPouches(bot, KitScale(5, 10, tier));
+                    PackSpareTankWeapon(bot, tier);
                     break;
 
                 case BotClass.Healer:
@@ -163,6 +189,20 @@ namespace Server.CustomBots
                               Utility.RandomMinMax(3, 10));
                     MaybeAddToPack(bot, "Server.Items.Kindling", 0.5,
                                    Utility.RandomMinMax(2, 5));
+                    // Veteran lumberjacks ran the era's axe-burst PvP
+                    // build — same backpack as a dexxer, scaled down for
+                    // the working life.
+                    if (cls == BotClass.Lumberjack &&
+                        BotSkillTierHelper.Rank(tier) >= 3)
+                    {
+                        AddToPack(bot, "Server.Items.Bandage",
+                                  KitScale(30, 60, tier));
+                        AddMany(bot, "Server.Items.HealPotion", KitScale(3, 8, tier));
+                        AddMany(bot, "Server.Items.RefreshPotion", KitScale(3, 6, tier));
+                        AddMany(bot, "Server.Items.StrengthPotion", KitScale(2, 5, tier));
+                        AddTrappedPouches(bot, KitScale(1, 4, tier));
+                        AddRecallRegBundle(bot);
+                    }
                     break;
 
                 case BotClass.Tamer:
@@ -785,6 +825,82 @@ namespace Server.CustomBots
                 AddToPack(bot, itemType, amount);
         }
 
+        // Tier-scaled kit count: a Novice carries ~40% of the full veteran
+        // loadout, a Grandmaster the whole thing.
+        private static int KitScale(int min, int max, BotSkillTier tier)
+        {
+            double frac = 0.4 + 0.1 * BotSkillTierHelper.Rank(tier);
+            return Math.Max(1, (int)Math.Round(Utility.RandomMinMax(min, max) * frac));
+        }
+
+        // Potions and pouches don't stack — add them one at a time, the
+        // classic wall of bottles a snooped PvP pack showed.
+        private static void AddMany(PlayerBot bot, string itemType, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                AddToPack(bot, itemType, 1);
+            }
+        }
+
+        // The era essential: a self-cast Magic Trap pouch. Popping one
+        // broke Paralyze instantly, so veterans carried a row of them.
+        // Same trap values the Magic Trap spell writes pre-AOS.
+        private static void AddTrappedPouches(PlayerBot bot, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var pouch = new Pouch
+                {
+                    TrapType  = TrapType.MagicTrap,
+                    TrapPower = 1,
+                    TrapLevel = 0,
+                };
+                if (Utility.RandomDouble() < 0.5)
+                {
+                    pouch.Hue = PaletteHue(); // dyed so the hotkey row reads at a glance
+                }
+                bot.AddToBackpack(pouch);
+            }
+        }
+
+        // A dexxer's "few reagents for Recall and Heal" — just the five
+        // that matter, in shallow stacks.
+        private static void AddRecallRegBundle(PlayerBot bot)
+        {
+            AddToPack(bot, "Server.Items.BlackPearl",   Utility.RandomMinMax(5, 15));
+            AddToPack(bot, "Server.Items.Bloodmoss",    Utility.RandomMinMax(5, 15));
+            AddToPack(bot, "Server.Items.MandrakeRoot", Utility.RandomMinMax(5, 15));
+            AddToPack(bot, "Server.Items.Garlic",       Utility.RandomMinMax(5, 15));
+            AddToPack(bot, "Server.Items.Ginseng",      Utility.RandomMinMax(5, 15));
+        }
+
+        // "Extra halberd(s)" — a veteran tank mage packed a spare of its
+        // weapon line, because the one in hand ends up on a corpse
+        // eventually.
+        private static void PackSpareTankWeapon(PlayerBot bot, BotSkillTier tier)
+        {
+            if (BotSkillTierHelper.Rank(tier) < 3 || Utility.RandomDouble() > 0.5)
+            {
+                return;
+            }
+
+            double sw = bot.Skills[SkillName.Swords].Base;
+            double mc = bot.Skills[SkillName.Macing].Base;
+            double fn = bot.Skills[SkillName.Fencing].Base;
+            double best = Math.Max(sw, Math.Max(mc, fn));
+            if (best < BotSkillTemplates.TankWeaponSkillMin)
+            {
+                return; // scribe mage — nothing to swing
+            }
+
+            BaseWeapon spare = best == sw ? new Halberd()
+                             : best == mc ? new WarHammer()
+                             : (BaseWeapon)new Spear();
+            MaybeEnchantWeapon(spare, tier);
+            bot.AddToBackpack(spare);
+        }
+
         // Seed a crafter's starter props from its subtype profile — a few
         // finished goods so a fresh crafter isn't empty-handed. Factories
         // build real item instances (compile-checked, not reflection).
@@ -853,8 +969,9 @@ namespace Server.CustomBots
             else if (roll < 97)  StuddedUp(bot, tier);
             else                 RobeAndCasual(bot, tier);
 
-            // Weapon — Warriors always carry one.
-            EquipWeapon(bot, tier, new int[] { 0, 1, 2, 3, 4 }); // sword/axe pool
+            // Weapon — Warriors always carry one. The era's typical dexxer
+            // arms: swords, the halberd, the executioner's axe.
+            EquipWeapon(bot, tier, new int[] { 0, 1, 2, 3, 4, 5 }); // sword/axe pool
 
             // 35% chance of a shield (one-handed weapons benefit).
             if (Utility.RandomDouble() < 0.35) EquipShield(bot, tier);
@@ -863,17 +980,40 @@ namespace Server.CustomBots
         private static void RollMageLook(PlayerBot bot, BotSkillTier tier)
         {
             int roll = Utility.Random(100);
-            //  0–79: robe + hat (classic)
-            // 80–92: robe only, no wizard hat
-            // 93–98: studded leather (battle-mage)
-            // 99: plate (gish)
+            //  0–39: robe + wizard hat (the classic bank look)
+            // 40–51: robe only
+            // 52–81: full leather suit — THE tank mage field rig: medable
+            //        and cheap, because you were going to lose it. Half
+            //        wear the robe over it.
+            // 82–91: leather with a plate arm/gorget mixed in (individual
+            //        plate pieces happened; FULL plate meant med penalties)
+            // 92–98: studded (battle-mage)
+            // 99: full plate (gish — meditation be damned)
             //
             // The LOOK never rolls a weapon — armor/robe only, hands free
             // for casting. Tank-mage variants get their halberd/mace/spear
             // separately via EquipTankMageWeapon (PlayerBot calls it after
             // the outfit roll); pure scribe-mages stay weaponless.
-            if (roll < 80)       RobeAndMage(bot, tier, withHat: true);
-            else if (roll < 93)  RobeAndMage(bot, tier, withHat: false);
+            if (roll < 40)       RobeAndMage(bot, tier, withHat: true);
+            else if (roll < 52)  RobeAndMage(bot, tier, withHat: false);
+            else if (roll < 82)
+            {
+                LeatherUp(bot, tier);
+                if (Utility.RandomBool())
+                {
+                    Add(bot, new Robe(IsHighTier(tier) ? RichHue() : DrabHue()), 0);
+                }
+            }
+            else if (roll < 92)
+            {
+                var metal = RollMetal(tier);
+                AddArmor(bot, bot.Female ? new FemaleLeatherChest() : (Item)new LeatherChest(), tier);
+                AddArmor(bot, new LeatherLegs(),   tier);
+                AddArmor(bot, new LeatherGloves(), tier);
+                AddArmor(bot, new PlateArms(),   tier, metal);
+                AddArmor(bot, new PlateGorget(), tier, metal);
+                Add(bot, new Boots(), 0);
+            }
             else if (roll < 99)  StuddedUp(bot, tier);   // battle-mage look
             else                 PlatesUp(bot, tier);    // gish look
 
@@ -985,11 +1125,20 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private static void RollGathererLook(PlayerBot bot, BotSkillTier tier)
         {
+            // Veteran LUMBERJACKS ran the era's axe-burst PvP build: plate
+            // armor and a real war axe (which fells trees just as well).
+            bool axeVet = bot.Class == BotClass.Lumberjack &&
+                          BotSkillTierHelper.Rank(tier) >= 3;
+
             int roll = Utility.Random(100);
+            if (axeVet && roll < 45)
+            {
+                PlatesUp(bot, tier);
+            }
             //  0–59: commoner work clothes
             // 60–89: leather (been out in the wild a while)
             // 90–99: studded (the veterans)
-            if (roll < 60)      CommonerUp(bot, tier);
+            else if (roll < 60)      CommonerUp(bot, tier);
             else if (roll < 90) LeatherUp(bot, tier);
             else                StuddedUp(bot, tier);
 
@@ -1000,10 +1149,25 @@ namespace Server.CustomBots
                 if (apron != null) Add(bot, apron, 0);
             }
 
-            // The tool, equipped.
-            var tool = TryNewItem(bot.Class == BotClass.Miner
-                ? "Server.Items.Pickaxe"
-                : "Server.Items.Hatchet", 0);
+            // The tool, equipped. A veteran lumberjack's "tool" is the
+            // dreamed-of Executioner's Axe or Large Battle Axe — possibly
+            // exceptional, occasionally magic (of Vanquishing if the
+            // ladder smiles).
+            Item tool;
+            if (axeVet)
+            {
+                BaseWeapon axe = Utility.RandomDouble() < 0.6
+                    ? new ExecutionersAxe()
+                    : new LargeBattleAxe();
+                MaybeEnchantWeapon(axe, tier);
+                tool = axe;
+            }
+            else
+            {
+                tool = TryNewItem(bot.Class == BotClass.Miner
+                    ? "Server.Items.Pickaxe"
+                    : "Server.Items.Hatchet", 0);
+            }
             if (tool != null && !bot.EquipItem(tool))
             {
                 tool.Delete();
@@ -1254,20 +1418,32 @@ namespace Server.CustomBots
         {
             int rank = BotSkillTierHelper.Rank(tier);
 
-            // Novice ~6% magic weapon; Grandmaster ~48%.
-            if (Utility.RandomDouble() >= 0.06 + 0.07 * rank) return;
+            // Novice ~6% magic weapon; Grandmaster ~48%. A Supremely
+            // Accurate Halberd of Vanquishing was the dream — RollMagicLevel
+            // keeps Vanq/Supremely locked to Master+ and rare even there.
+            if (Utility.RandomDouble() < 0.06 + 0.07 * rank)
+            {
+                w.DamageLevel = (WeaponDamageLevel)RollMagicLevel(rank);
+                if (Utility.RandomDouble() < 0.5)
+                {
+                    w.AccuracyLevel = (WeaponAccuracyLevel)RollMagicLevel(rank);
+                }
+                if (Utility.RandomDouble() < 0.3)
+                {
+                    w.DurabilityLevel = (WeaponDurabilityLevel)RollMagicLevel(rank);
+                }
+                // Bots wear their gear openly — show the name, not "a magic item".
+                w.Identified = true;
+                return;
+            }
 
-            w.DamageLevel = (WeaponDamageLevel)RollMagicLevel(rank);
-            if (Utility.RandomDouble() < 0.5)
+            // Not magic — most fighting gear was plain EXCEPTIONAL crafted:
+            // cheap, replaceable, what you fought in because you were going
+            // to lose it eventually.
+            if (Utility.RandomDouble() < 0.35 + 0.09 * rank)
             {
-                w.AccuracyLevel = (WeaponAccuracyLevel)RollMagicLevel(rank);
+                w.Quality = WeaponQuality.Exceptional;
             }
-            if (Utility.RandomDouble() < 0.3)
-            {
-                w.DurabilityLevel = (WeaponDurabilityLevel)RollMagicLevel(rank);
-            }
-            // Bots wear their gear openly — show the name, not "a magic item".
-            w.Identified = true;
         }
 
         private static void MaybeEnchantArmor(BaseArmor a, BotSkillTier tier)
@@ -1275,15 +1451,25 @@ namespace Server.CustomBots
             int rank = BotSkillTierHelper.Rank(tier);
 
             // Per PIECE, so a suit averages roughly one magic piece at the
-            // top tiers and almost never at the bottom.
-            if (Utility.RandomDouble() >= 0.02 + 0.03 * rank) return;
-
-            a.ProtectionLevel = (ArmorProtectionLevel)RollMagicLevel(rank);
-            if (Utility.RandomDouble() < 0.3)
+            // top tiers and almost never at the bottom. Invulnerability /
+            // Fortification stayed in the bank for guild wars — the ladder
+            // caps them to Master+ and they barely roll even there.
+            if (Utility.RandomDouble() < 0.02 + 0.03 * rank)
             {
-                a.Durability = (ArmorDurabilityLevel)RollMagicLevel(rank);
+                a.ProtectionLevel = (ArmorProtectionLevel)RollMagicLevel(rank);
+                if (Utility.RandomDouble() < 0.3)
+                {
+                    a.Durability = (ArmorDurabilityLevel)RollMagicLevel(rank);
+                }
+                a.Identified = true;
+                return;
             }
-            a.Identified = true;
+
+            // The everyday suit: exceptional crafted, nothing fancy.
+            if (Utility.RandomDouble() < 0.35 + 0.09 * rank)
+            {
+                a.Quality = ArmorQuality.Exceptional;
+            }
         }
 
         // Equip one armor piece: ore resource for metal suits (sets the
@@ -1497,6 +1683,7 @@ namespace Server.CustomBots
                 2  => new Katana(),
                 3  => new VikingSword(),
                 4  => IsHighTier(tier) ? (BaseWeapon)new Halberd() : new Longsword(),
+                5  => IsHighTier(tier) ? (BaseWeapon)new ExecutionersAxe() : new BattleAxe(),
                 10 => IsHighTier(tier) ? (BaseWeapon)new GnarledStaff() : new QuarterStaff(),
                 20 => new Kryss(),
                 21 => new WarFork(),   // T2A fencing — no wakizashi (SE-era)

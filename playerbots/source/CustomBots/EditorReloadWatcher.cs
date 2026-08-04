@@ -328,10 +328,53 @@ namespace Server.CustomBots
                     var weap = bot.FindItemOnLayer(Layer.TwoHanded) as Items.BaseWeapon
                             ?? bot.FindItemOnLayer(Layer.OneHanded) as Items.BaseWeapon;
 
+                    string weapDesc = weap == null ? "none"
+                        : weap.DamageLevel != Items.WeaponDamageLevel.Regular
+                            ? $"{weap.GetType().Name}[{weap.AccuracyLevel}/{weap.DamageLevel}]"
+                        : weap.Quality == Items.WeaponQuality.Exceptional
+                            ? $"{weap.GetType().Name}[exc]"
+                            : weap.GetType().Name;
+
                     Console.WriteLine(
                         $"[t2a] {cls,-10} {bot.RawStr}/{bot.RawDex}/{bot.RawInt} " +
                         $"(sum {sum}{(ok ? "" : " CAP VIOLATION")}) " +
-                        $"weapon={(weap == null ? "none" : weap.GetType().Name)} | {skills}");
+                        $"weapon={weapDesc} | {skills}");
+
+                    // PvP-kit classes: dump the pack so the 1999 loadout is
+                    // verifiable headless (potion battery, trapped pouches,
+                    // bandages, reagent depth, spare weapons).
+                    if (cls is BotClass.Warrior or BotClass.Mage or BotClass.Lumberjack &&
+                        bot.Backpack != null)
+                    {
+                        var tally = new Dictionary<string, int>();
+                        int pouches = 0, armorPieces = 0, excArmor = 0;
+                        foreach (var it in bot.Backpack.Items)
+                        {
+                            if (it is Items.Pouch p && p.TrapType == Items.TrapType.MagicTrap)
+                            {
+                                pouches++;
+                                continue;
+                            }
+                            var key = it.GetType().Name;
+                            tally[key] = tally.GetValueOrDefault(key) + Math.Max(1, it.Amount);
+                        }
+                        foreach (var it in bot.Items)
+                        {
+                            if (it is Items.BaseArmor ar)
+                            {
+                                armorPieces++;
+                                if (ar.Quality == Items.ArmorQuality.Exceptional) excArmor++;
+                            }
+                        }
+                        string packStr = "";
+                        foreach (var (k, v) in tally)
+                        {
+                            packStr += $"{(packStr.Length > 0 ? ", " : "")}{k} x{v}";
+                        }
+                        Console.WriteLine(
+                            $"[t2a]   pack: trappedPouches x{pouches}, " +
+                            $"armor {excArmor}/{armorPieces} exceptional | {packStr}");
+                    }
                 }
                 catch (Exception ex)
                 {
