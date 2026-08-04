@@ -230,7 +230,8 @@ namespace Server.CustomBots
             !bot.CorpseRunPending &&
             bot.Behavior is not GhostBehavior and not CorpseReclaimBehavior &&
             bot.Combatant == null &&
-            !BotPartyManager.IsInParty(bot);
+            !BotPartyManager.IsInParty(bot) &&
+            !BotPlayerParty.InPlayerParty(bot); // never log out mid-adventure
 
         private static void BeginLogout(PlayerBot bot)
         {

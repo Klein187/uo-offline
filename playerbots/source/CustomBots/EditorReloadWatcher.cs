@@ -65,6 +65,10 @@ namespace Server.CustomBots
         // PlayerMobile at (x,y) that says the text, then deletes. Purely a
         // headless test rig for player-facing reactions (speech responder).
         private static readonly string SayReq = Live("say_request.txt");
+        // party_request.txt: "token x y" — rig player at (x,y) invites the
+        // nearest eligible bot to a party, walks a short route while the
+        // bot follows, then vanishes (testing the leader-gone path too).
+        private static readonly string PartyTestReq = Live("partytest_request.txt");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -84,6 +88,7 @@ namespace Server.CustomBots
         private static long _lastGossip = -1;
         private static long _lastPad = -1;
         private static long _lastSay = -1;
+        private static long _lastPartyTest = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -108,6 +113,7 @@ namespace Server.CustomBots
             _lastGossip = ReadToken(GossipReq) ?? 0;
             _lastPad = ReadToken(PadReq) ?? 0;
             _lastSay = ReadSayRequest(out _, out _, out _) ?? 0;
+            _lastPartyTest = ReadCoordRequest(PartyTestReq, out _) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -247,6 +253,138 @@ namespace Server.CustomBots
             {
                 _lastSay = sayTok.Value;
                 DoSay(sayLoc, sayText);
+            }
+
+            var ptTok = ReadCoordRequest(PartyTestReq, out var ptLoc);
+            if (ptTok != null && ptTok.Value != _lastPartyTest)
+            {
+                _lastPartyTest = ptTok.Value;
+                DoPartyTest(ptLoc);
+            }
+        }
+
+        // "token x y" file reader shared by simple coordinate rigs.
+        private static long? ReadCoordRequest(string path, out Point3D loc)
+        {
+            loc = Point3D.Zero;
+            try
+            {
+                if (!File.Exists(path))
+                {
+                    return null;
+                }
+                var parts = File.ReadAllText(path).Split(
+                    new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 3 || !long.TryParse(parts[0], out var t) ||
+                    !int.TryParse(parts[1], out var x) || !int.TryParse(parts[2], out var y))
+                {
+                    return null;
+                }
+                int z = Walkable.TryFindSeedZ(Map.Felucca, x, y, 0, out var seedZ)
+                    ? seedZ
+                    : Map.Felucca.GetAverageZ(x, y);
+                loc = new Point3D(x, y, z);
+                return t;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Headless E2E for player-led parties: rig player appears, invites
+        // the nearest eligible bot, walks a route while logging the bot's
+        // follow distance, then vanishes — the follower should bail out
+        // gracefully via the leader-gone path.
+        private static void DoPartyTest(Point3D loc)
+        {
+            try
+            {
+                var map = Map.Felucca;
+                var rig = new Server.Mobiles.PlayerMobile
+                {
+                    Name = "Party Tester",
+                    Body = 0x190,
+                    Hue = 0x83EA,
+                    Player = true,
+                };
+                rig.MoveToWorld(loc, map);
+
+                PlayerBot pick = null;
+                int best = int.MaxValue;
+                foreach (var m in map.GetMobilesInRange(loc, 25))
+                {
+                    if (m is PlayerBot b && !b.Deleted && b.Alive &&
+                        !b.LifecycleExempt && b.Party == null &&
+                        !BotPartyManager.IsInParty(b) &&
+                        !BotClassHelper.IsArtisan(b.Class) &&
+                        !BotClassHelper.IsGatherer(b.Class) &&
+                        b.Class != BotClass.Crafter &&
+                        b.Behavior is TravelerBehavior or IdleBehavior
+                                   or WanderBehavior or AdventurerBehavior)
+                    {
+                        int d = (int)b.GetDistanceToSqrt(loc);
+                        if (d < best)
+                        {
+                            best = d;
+                            pick = b;
+                        }
+                    }
+                }
+
+                if (pick == null)
+                {
+                    Console.WriteLine("[partytest] no eligible bot within 25 tiles");
+                    rig.Delete();
+                    return;
+                }
+
+                Console.WriteLine($"[partytest] rig at ({loc.X},{loc.Y}) inviting {pick.Name}");
+                Server.Engines.PartySystem.Party.Invite(rig, pick);
+
+                // Walk a square-ish route; log the follower's distance.
+                for (int step = 1; step <= 8; step++)
+                {
+                    int s = step;
+                    Timer.DelayCall(TimeSpan.FromSeconds(8 + s * 6), () =>
+                    {
+                        if (rig.Deleted)
+                        {
+                            return;
+                        }
+                        int dx = s <= 4 ? 5 : 0;
+                        int dy = s <= 4 ? 0 : 5;
+                        var next = new Point3D(rig.X + dx, rig.Y + dy, rig.Z);
+                        if (Walkable.TryFindSeedZ(map, next.X, next.Y, rig.Z, out var nz))
+                        {
+                            next = new Point3D(next.X, next.Y, nz);
+                            rig.MoveToWorld(next, map);
+                        }
+                        int dist = pick.Deleted ? -1 : (int)pick.GetDistanceToSqrt(rig.Location);
+                        Console.WriteLine(
+                            $"[partytest] hop {s}: rig ({rig.X},{rig.Y}), " +
+                            $"{pick.Name} dist={dist}, behavior={pick.Behavior?.SerializableName}");
+                    });
+                }
+
+                Timer.DelayCall(TimeSpan.FromSeconds(70), () =>
+                {
+                    Console.WriteLine("[partytest] rig vanishing (leader-gone path)");
+                    if (!rig.Deleted)
+                    {
+                        rig.Delete();
+                    }
+                });
+                Timer.DelayCall(TimeSpan.FromSeconds(80), () =>
+                {
+                    Console.WriteLine(
+                        $"[partytest] final: {pick.Name} behavior=" +
+                        $"{pick.Behavior?.SerializableName}, party={(pick.Party == null ? "none" : "set")}");
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[partytest] failed: {ex.Message}");
             }
         }
 

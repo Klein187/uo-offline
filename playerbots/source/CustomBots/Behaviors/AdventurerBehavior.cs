@@ -673,7 +673,7 @@ namespace Server.CustomBots
             EnsurePatrolGoal(bot);
             if (_goal != null)
             {
-                EnsureStepTimer(bot, running: false);
+                EnsureStepTimer(bot, running: PatrolRuns);
             }
         }
 
@@ -682,6 +682,15 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void EnsurePatrolGoal(PlayerBot bot)
         {
+            // A subclass tracking a MOVING target (a player-party follower
+            // shadowing its leader) can invalidate the current goal so it
+            // re-picks every pass instead of walking to a stale spot.
+            if (_goal != null && PatrolGoalStale(bot, _goal.Value))
+            {
+                _goal = null;
+                _follower = null;
+            }
+
             bool reached = _goal != null && bot.InRange(_goal.Value, ArrivalRange);
 
             // Reached the current goal — give a subclass first refusal. A
@@ -757,6 +766,19 @@ namespace Server.CustomBots
         // in exit mode overrides this — on the way out you defend
         // yourself, you don't clear rooms.
         protected virtual bool WantsFreshFights => true;
+
+        // Patrol legs walk by default; a follower catching up to its
+        // party leader overrides this to run.
+        protected virtual bool PatrolRuns => false;
+
+        // True = the current patrol goal no longer points where it
+        // should (the tracked target moved) — re-pick this pass.
+        protected virtual bool PatrolGoalStale(PlayerBot bot, Point3D goal) => false;
+
+        // Extra "that's my friend" test for FindNearbyEnemy: a monster
+        // fighting this mobile counts as attacking a friend. Lets a
+        // player-party follower defend its real-player leader.
+        protected virtual bool IsPartyFriend(PlayerBot bot, Mobile m) => false;
 
         // Stop all movement and clear the current goal — for a subclass that
         // is about to teleport and must not keep stepping toward a stale goal.
@@ -1529,7 +1551,9 @@ namespace Server.CustomBots
 
                 int dist = TileDist(bot, bc.Location);
                 bool attackingMe     = bc.Combatant == bot;
-                bool attackingFriend = !attackingMe && bc.Combatant is PlayerBot;
+                bool attackingFriend = !attackingMe &&
+                    (bc.Combatant is PlayerBot ||
+                     (bc.Combatant is Mobile fcm && IsPartyFriend(bot, fcm)));
 
                 // Beyond the bot's own sight a monster only registers when
                 // it's in a fight with the bot or a friendly bot.

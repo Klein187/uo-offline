@@ -62,6 +62,9 @@ namespace Server.CustomBots
 
                 try
                 {
+                    // A real player may have invited this bot to a party
+                    // since the last tick — answer before acting.
+                    BotPlayerParty.CheckInvite(bot);
                     bot.Behavior?.Tick(bot);
                 }
                 catch (Exception ex)

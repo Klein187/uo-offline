@@ -23,12 +23,13 @@ namespace Server.CustomBots
             // their own Configure() method, OR register from this list if
             // we'd rather keep registration centralized.
             Register("Idle",       () => new IdleBehavior());
-            // Wander is retired — pointless milling. Saves that carry it
+            // Wander is retired ï¿½ pointless milling. Saves that carry it
             // wake up as Travelers and get on with their lives.
             Register("Wander",     () => new TravelerBehavior());
             Register("BankSitter", () => new BankSitterBehavior());
             Register("Adventurer", () => new AdventurerBehavior());
             Register("DungeonCrawler", () => new DungeonCrawlerBehavior());
+            Register("PlayerGroup", () => new PlayerGroupBehavior());
             Register("Traveler",   () => new TravelerBehavior());
             Register("Shopper",    () => new ShopperBehavior());
             Register("Crafter",    () => new CrafterBehavior());

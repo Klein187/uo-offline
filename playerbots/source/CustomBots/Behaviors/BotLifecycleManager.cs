@@ -95,6 +95,7 @@ namespace Server.CustomBots
                 // convert one to a DungeonCrawler the moment it steps
                 // inside, breaking the follow).
                 if (BotPartyManager.IsInParty(bot)) continue;
+                if (BotPlayerParty.InPlayerParty(bot)) continue; // adventuring with a player
 
                 // Dead bots (and freshly-ressed ones mid corpse-run) are
                 // owned by the death flow: ghost → healer walk → res →
@@ -137,7 +138,7 @@ namespace Server.CustomBots
                 if (transitions >= MaxTransitionsPerTick) continue;
 
                 // Has the current phase duration elapsed? Wander/Idle are
-                // texture between real phases, not careers � cap them short
+                // texture between real phases, not careers � cap them short
                 // so aimless milling never lasts long enough to look broken.
                 var phaseLen = bot.Personality.AveragePhaseDuration;
                 if (bot.Behavior is WanderBehavior or IdleBehavior)
