@@ -267,7 +267,26 @@ namespace Server.CustomBots
                 return false;
             }
 
-            var hunter = candidates[Utility.Random(candidates.Count)];
+            // Treasure Hunter CLASS bots are the natural pick — maps were
+            // their whole build. When one is idle it usually gets the map;
+            // anyone else scores one now and then, as it ever was.
+            PlayerBot hunter = null;
+            if (Utility.RandomDouble() < 0.75)
+            {
+                var thunters = new List<PlayerBot>();
+                foreach (var c in candidates)
+                {
+                    if (c.Class == BotClass.TreasureHunter)
+                    {
+                        thunters.Add(c);
+                    }
+                }
+                if (thunters.Count > 0)
+                {
+                    hunter = thunters[Utility.Random(thunters.Count)];
+                }
+            }
+            hunter ??= candidates[Utility.Random(candidates.Count)];
             StartTrip(hunter, site, "thunt_start");
             return true;
         }

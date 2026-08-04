@@ -64,9 +64,10 @@ namespace Server.CustomBots
                       or BotClass.Ranger or BotClass.Healer or BotClass.Tamer;
 
         // Only real spell-slingers burn reagents (combat casting consumes
-        // them; the Recall illusion doesn't).
+        // them; the Recall illusion doesn't). Treasure Hunters cast for
+        // real too — spells are how they clear chest guardians.
         private static bool UsesReagents(PlayerBot bot) =>
-            bot.Class == BotClass.Mage;
+            bot.Class is BotClass.Mage or BotClass.TreasureHunter;
 
         // Casters recall on mana. Of the rest, only Journeyman-and-up can
         // afford the mage shop's tickets — a Novice or Apprentice walks

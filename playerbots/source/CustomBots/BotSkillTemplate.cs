@@ -161,6 +161,22 @@ namespace Server.CustomBots
                     new[] { SkillName.Swords, SkillName.Tactics, SkillName.Camping,
                             SkillName.ArmsLore, SkillName.MagicResist }),
 
+                // The classic map-runner: decode, dig, pick the chest,
+                // pull the traps — and clear the guardians with real
+                // Magery (no weapon line; spells were the T2A digger's
+                // defense).
+                BotClass.TreasureHunter => new SkillTemplate(
+                    SkillName.Cartography,
+                    new[] { SkillName.Lockpicking, SkillName.Magery, SkillName.Meditation,
+                            SkillName.DetectHidden, SkillName.RemoveTrap, SkillName.Hiding }),
+
+                // The merchant/mule — Item ID's skill title IS "Merchant".
+                // Appraises everything, fights nothing.
+                BotClass.Merchant => new SkillTemplate(
+                    SkillName.ItemID,
+                    new[] { SkillName.TasteID, SkillName.Magery, SkillName.Meditation,
+                            SkillName.ArmsLore, SkillName.Hiding, SkillName.Camping }),
+
                 _ => new SkillTemplate(
                     SkillName.Swords,
                     new[] { SkillName.Tactics, SkillName.Anatomy, SkillName.Healing,
@@ -261,6 +277,8 @@ namespace Server.CustomBots
                 BotClass.Ranger     => StatsArcher,
                 BotClass.Lumberjack => StatsDexxer,
                 BotClass.Miner      => StatsMiner,
+                BotClass.TreasureHunter => StatsHybrid, // digs, fights, casts
+                BotClass.Merchant       => StatsCaster,
                 _                   => StatsDexxer,
             };
 

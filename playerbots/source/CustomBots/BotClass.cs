@@ -43,6 +43,14 @@ namespace Server.CustomBots
         // lumberjack defends itself with its axe.
         Lumberjack = 13, // forests — logs
         Miner      = 14, // mountains — ore
+
+        // The two remaining classic T2A templates. The Treasure Hunter
+        // (Cartography/Lockpicking/Remove Trap + real Magery) digs the
+        // wilderness chests and clears the guardians with spells; the
+        // Merchant (Item ID/Taste ID — UO titles ItemID "Merchant") is
+        // the town mule: banks, shops, appraises, never fights.
+        TreasureHunter = 15,
+        Merchant       = 16,
     }
 
     public static class BotClassHelper
@@ -52,22 +60,26 @@ namespace Server.CustomBots
         // on more specialized ones.
         private static readonly (BotClass cls, int weight)[] ClassWeights = new[]
         {
-            (BotClass.Warrior,  15),
-            (BotClass.Mage,     15),
+            (BotClass.Warrior,  14),
+            (BotClass.Mage,     14),
             (BotClass.Fencer,   11),
             (BotClass.Archer,   11),
             // The old Crafter share (12) split across the three artisans.
             (BotClass.Smith,     5),
             (BotClass.Tailor,    4),
             (BotClass.Fisherman, 4),
-            (BotClass.Healer,    8),
-            (BotClass.Bard,      8),
+            (BotClass.Healer,    7),
+            (BotClass.Bard,      7),
             (BotClass.Ranger,    6),
             (BotClass.Tamer,     5),
             (BotClass.Thief,     3),
             // Wilderness gatherers — a small but very visible population.
             (BotClass.Lumberjack, 3),
             (BotClass.Miner,      2),
+            // Specialist templates — rare, like the real thing (both were
+            // expensive second characters).
+            (BotClass.TreasureHunter, 2),
+            (BotClass.Merchant,       2),
         };
 
         public static BotClass RollRandom()
@@ -103,6 +115,8 @@ namespace Server.CustomBots
                 BotClass.Fisherman => "Fisherman",
                 BotClass.Lumberjack => "Lumberjack",
                 BotClass.Miner      => "Miner",
+                BotClass.TreasureHunter => "Treasure Hunter",
+                BotClass.Merchant       => "Merchant",
                 _                => "Wanderer",
             };
         }

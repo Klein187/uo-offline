@@ -127,6 +127,31 @@ namespace Server.CustomBots
                                    Utility.RandomMinMax(1, 3));
                     break;
 
+                case BotClass.TreasureHunter:
+                    // The dig kit: shovel, picks for the chest, reagents
+                    // for the guardians (they fight with spells).
+                    AddToPack(bot, "Server.Items.Shovel", 1);
+                    AddToPack(bot, "Server.Items.Lockpick",
+                              Utility.RandomMinMax(3, 12));
+                    AddReagentStash(bot, tier);
+                    MaybeAddToPack(bot, "Server.Items.Torch", 0.5, 1);
+                    MaybeAddToPack(bot, "Server.Items.HealPotion", 0.4,
+                                   Utility.RandomMinMax(1, 3));
+                    break;
+
+                case BotClass.Merchant:
+                    // The richest characters in T2A — a heavier purse and
+                    // the appraiser's scales.
+                    AddToPack(bot, "Server.Items.Gold",
+                              Utility.RandomMinMax(100, 150 + 150 * BotSkillTierHelper.Rank(tier)));
+                    MaybeAddToPack(bot, "Server.Items.Scales", 0.5, 1);
+                    if (Utility.RandomDouble() < 0.5)
+                    {
+                        AddToPack(bot, GemTypes[Utility.Random(GemTypes.Length)],
+                                  Utility.RandomMinMax(1, 2));
+                    }
+                    break;
+
                 case BotClass.Lumberjack:
                 case BotClass.Miner:
                     // A working stash from the last shift, bandages for the
@@ -806,6 +831,8 @@ namespace Server.CustomBots
                 case BotClass.Thief:   RollThiefLook(bot, tier);    break;
                 case BotClass.Bard:    RollBardLook(bot, tier);     break;
                 case BotClass.Ranger:  RollRangerLook(bot, tier);   break;
+                case BotClass.TreasureHunter: RollTreasureHunterLook(bot, tier); break;
+                case BotClass.Merchant:       RollMerchantLook(bot, tier);       break;
                 default:               RollWarriorLook(bot, tier);  break;
             }
         }
@@ -1094,6 +1121,25 @@ namespace Server.CustomBots
             {
                 EquipWeapon(bot, tier, new[] { 0, 1 }); // sword for self-defense
             }
+        }
+
+        private static void RollTreasureHunterLook(PlayerBot bot, BotSkillTier tier)
+        {
+            // Practical field clothes — leather or plain travel wear. No
+            // weapon: like a mage, the hands stay free (guardians are
+            // answered with spells, not steel).
+            int roll = Utility.Random(100);
+            if (roll < 55)      LeatherUp(bot, tier);
+            else if (roll < 85) CommonerUp(bot, tier);
+            else                StuddedUp(bot, tier);
+        }
+
+        private static void RollMerchantLook(PlayerBot bot, BotSkillTier tier)
+        {
+            // Merchants dress WELL — fine town clothes, never armor. The
+            // richest characters in T2A looked the part.
+            if (Utility.RandomDouble() < 0.7) CommonerUp(bot, tier, bright: true);
+            else                              RobeAndCasual(bot, tier, bright: true);
         }
 
         private static void RollRangerLook(PlayerBot bot, BotSkillTier tier)

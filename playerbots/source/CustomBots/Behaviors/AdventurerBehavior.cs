@@ -326,7 +326,8 @@ namespace Server.CustomBots
         // Mages; Healers and Tamers carry real Magery too.
         private bool IsCaster(PlayerBot bot) =>
             SpellcasterMode ||
-            bot.Class is BotClass.Mage or BotClass.Healer or BotClass.Tamer;
+            bot.Class is BotClass.Mage or BotClass.Healer or BotClass.Tamer
+                      or BotClass.TreasureHunter;
 
         // Begin a rest window. Meditation runs longer than a bandage stop
         // and announces itself with the era emote + the meditation hum.
@@ -387,7 +388,11 @@ namespace Server.CustomBots
             }
 
             // Mage bots also fight at range, and additionally throw spells.
-            if (bot.Class == BotClass.Mage)
+            // Treasure Hunters too — their template has no weapon line;
+            // real Magery is how the era's diggers answered chest
+            // guardians. (Tank-mage detection below naturally excludes
+            // them: no weapon skill >= the threshold.)
+            if (bot.Class is BotClass.Mage or BotClass.TreasureHunter)
             {
                 RangedCombat    = true;
                 SpellcasterMode = true;

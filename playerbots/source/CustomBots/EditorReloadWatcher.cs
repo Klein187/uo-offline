@@ -297,6 +297,7 @@ namespace Server.CustomBots
                 BotClass.Smith, BotClass.Tailor, BotClass.Fisherman,
                 BotClass.Healer, BotClass.Thief, BotClass.Bard,
                 BotClass.Ranger, BotClass.Lumberjack, BotClass.Miner,
+                BotClass.TreasureHunter, BotClass.Merchant,
             };
 
             foreach (var cls in classes)
