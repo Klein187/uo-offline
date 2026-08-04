@@ -26,9 +26,12 @@ namespace Server.CustomBots
     {
         public static bool Enabled = true;
 
-        // Permanent sitters per bank. The crowd reads as "regulars" from
-        // three up; more starts to wall off the counters.
-        public const int SittersPerBank = 3;
+        // Permanent sitters per bank. Three read as "regulars", but with
+        // the role variety (AFK statues, hidden stealth macroers) a crowd
+        // of three can roll all-silent — five keeps every bank audibly
+        // alive while the macroers do their thing in the corners. The
+        // mostly-stationary extras don't wall off the counters.
+        public const int SittersPerBank = 5;
 
         // A fixture spawner within this range of the bank's spot counts as
         // "this bank already has its crowd" (covers hand-placed ones that
@@ -78,6 +81,16 @@ namespace Server.CustomBots
                             StringComparison.OrdinalIgnoreCase))
                     {
                         exists = true;
+                        // The spawner ITEM persists across boots with its
+                        // old count baked in — top it up when the target
+                        // grows so every bank gets the full varied crowd.
+                        if (s.Count < SittersPerBank)
+                        {
+                            s.Count = SittersPerBank;
+                            s.Respawn();
+                            Console.WriteLine(
+                                $"[fixtures] bank crowd at '{d.Name}' topped up to {SittersPerBank}");
+                        }
                         break;
                     }
                 }
