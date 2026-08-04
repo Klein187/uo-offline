@@ -68,9 +68,18 @@ namespace Server.CustomBots
         private static bool UsesReagents(PlayerBot bot) =>
             bot.Class == BotClass.Mage;
 
-        // Casters recall on mana; everyone else lives on scrolls.
+        // Casters recall on mana. Of the rest, only Journeyman-and-up can
+        // afford the mage shop's tickets — a Novice or Apprentice walks
+        // everywhere, exactly like every fresh character in the era did,
+        // so they never shop for (or carry) recall scrolls at all.
         private static bool UsesScrolls(PlayerBot bot) =>
-            bot.Skills[SkillName.Magery].Base < MagicTravel.RecallMinMagery;
+            bot.Skills[SkillName.Magery].Base < MagicTravel.RecallMinMagery &&
+            BotSkillTierHelper.Rank(bot.SkillTier) >= 2;
+
+        // How deep a stack this bot restocks to: mid tiers keep a couple
+        // of escapes, veterans a real stack.
+        private static int ScrollTarget(PlayerBot bot) =>
+            BotSkillTierHelper.Rank(bot.SkillTier) >= 4 ? ScrollFull : 3;
 
         // -------------------------------------------------------------------
         // What (if anything) does this bot need? Priority: the thing that
@@ -241,7 +250,7 @@ namespace Server.CustomBots
                 pack.GetAmount(typeof(RecallScroll)) < ScrollLow)
             {
                 int have = pack.GetAmount(typeof(RecallScroll));
-                for (int i = have; i < ScrollFull; i++)
+                for (int i = have; i < ScrollTarget(bot); i++)
                 {
                     pack.DropItem(new RecallScroll());
                     cost += 18;

@@ -155,12 +155,24 @@ namespace Server.CustomBots
             // --- Travel magic — marked recall runes ---
             AddTravelMagic(bot, cls, tier);
 
-            // --- Recall scrolls — the era's bus ticket. EVERYONE carried
-            // a stack: casters as backup for an empty mana pool, everyone
-            // else as their only way to travel like a person. No invisible
-            // refills — the mage shop sells more. Looped adds (not one
-            // stack) so it works whether or not scrolls stack.
-            int recallScrolls = Utility.RandomMinMax(5, 10);
+            // --- Recall scrolls — the era's bus ticket, but a PAID one.
+            // Veterans kept a stack; a fresh character walked everywhere
+            // (18gp a scroll was real money). Tier decides the wallet:
+            //   Novice/Apprentice — none; they walk like every newbie did.
+            //   Journeyman       — sometimes one or two saved-up escapes.
+            //   Adept and up     — a working stack, growing with wealth.
+            // Casters need none of this — enough Magery casts it.
+            // Looped adds (not one stack) so it works whether or not
+            // scrolls stack. No invisible refills — the mage shop sells
+            // more (BotSupplies, same tier rules).
+            int recallScrolls = BotSkillTierHelper.Rank(tier) switch
+            {
+                0 or 1 => 0,
+                2      => Utility.RandomDouble() < 0.30 ? Utility.RandomMinMax(1, 2) : 0,
+                3      => Utility.RandomMinMax(1, 3),
+                4      => Utility.RandomMinMax(2, 5),
+                _      => Utility.RandomMinMax(4, 8),
+            };
             for (int i = 0; i < recallScrolls; i++)
             {
                 AddToPack(bot, "Server.Items.RecallScroll", 1);
