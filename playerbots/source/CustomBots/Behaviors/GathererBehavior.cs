@@ -108,8 +108,10 @@ namespace Server.CustomBots
             {
                 // Handed off (or restored) already standing in the site —
                 // the ClockIn path never runs for this shift, so kit up
-                // here: hop off the horse (nobody mines from the saddle)
-                // and bring up the pack beast that carries the yield.
+                // here: bring up the pack beast that carries the yield.
+                // (Gatherers spawn unmounted now — their only animal is
+                // the pack beast — but keep the dismount as a backstop
+                // against any odd handoff arriving in the saddle.)
                 if (bot.Mounted)
                 {
                     BotMountHelper.DismountAndDelete(bot);
@@ -256,9 +258,9 @@ namespace Server.CustomBots
             _nextSwing = Core.Now;
             _nextHarvest = Core.Now + HarvestInterval;
 
-            // Nobody mines from the saddle. Hop off — the horse is "tied
-            // up out back" (deleted; the haul home is a walk beside the
-            // pack beast, which is the better picture anyway).
+            // Gatherers spawn unmounted (their only animal is the pack
+            // beast) — this dismount is just a backstop against any odd
+            // handoff arriving in the saddle. Nobody mines from one.
             if (bot.Mounted)
             {
                 BotMountHelper.DismountAndDelete(bot);

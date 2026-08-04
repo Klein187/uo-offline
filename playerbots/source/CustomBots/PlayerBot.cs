@@ -639,7 +639,12 @@ namespace Server.CustomBots
             // standing pressed against a wall, mount would clip weirdly).
             // Fishermen never mount — they work the dock edge on foot;
             // casting a line from horseback looks absurd.
-            if (!hugged && Class != BotClass.Fisherman && Utility.RandomDouble() < 0.70)
+            // Miners and Lumberjacks never mount either: their animal is
+            // the PACK beast (which nobody can ride) — they walk out to
+            // the site leading it, like every real gatherer did.
+            if (!hugged && Class != BotClass.Fisherman &&
+                !BotClassHelper.IsGatherer(Class) &&
+                Utility.RandomDouble() < 0.70)
             {
                 BotMountHelper.TryMountRandom(this);
             }

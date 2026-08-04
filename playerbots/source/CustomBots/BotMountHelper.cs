@@ -22,6 +22,9 @@ namespace Server.CustomBots
         // Pool of mount type names tried in random order. Mixed for visual
         // variety in towns. Resolved via reflection so missing types don't
         // fail compile.
+        // NOTE: pack animals (PackHorse/PackLlama) are deliberately absent —
+        // you can't ride a pack beast; they belong to gatherers as cargo
+        // followers (BotPackAnimal), never as mounts.
         private static readonly string[] _mountTypes = new[]
         {
             // Common horses (multiple variants for hue variety)
@@ -29,7 +32,6 @@ namespace Server.CustomBots
             "Server.Mobiles.Horse",   // double weight — most common mount
             "Server.Mobiles.Horse",
             "Server.Mobiles.Horse",
-            "Server.Mobiles.PackHorse",
 
             // Ostards — exotic but classic
             "Server.Mobiles.ForestOstard",
@@ -38,7 +40,6 @@ namespace Server.CustomBots
 
             // Llamas — funny, common in UO
             "Server.Mobiles.Llama",
-            "Server.Mobiles.PackLlama",
         };
 
         // Realistic horse coat colors. Most horses stay at their default
