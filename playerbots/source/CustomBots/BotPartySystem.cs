@@ -1130,6 +1130,10 @@ namespace Server.CustomBots
         {
             _parties.Remove(party);
 
+            // A real player may be tagging along via the leader's guest
+            // engine party — the run's over, fold that too.
+            BotPlayerParty.OnBotPartyEnded(party.Leader);
+
             // Everyone who hunted together is friends now — they'll greet
             // each other by name at banks from here on.
             var everyone = new List<PlayerBot>();

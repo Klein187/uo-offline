@@ -448,7 +448,9 @@ namespace Server.CustomBots
                 m.MoveToWorld(loc, Map.Felucca);
                 m.DoSpeech(text, Array.Empty<int>(), MessageType.Regular, 0x3B2);
                 Console.WriteLine($"[EditorReload] say-rig at ({loc.X},{loc.Y}): \"{text}\"");
-                Timer.DelayCall(TimeSpan.FromSeconds(6), () =>
+                // Long enough for slow reactions to play out (a party
+                // invite chain takes ~8s end to end).
+                Timer.DelayCall(TimeSpan.FromSeconds(30), () =>
                 {
                     if (!m.Deleted)
                     {

@@ -72,6 +72,37 @@ namespace Server.CustomBots
             "can", "does", "do", "is", "are", "u know", "you know",
         };
 
+        // A player recruiting out loud ("lfg despise", "anyone want to
+        // hunt?") — nearby bots that are free answer AND join.
+        private static readonly string[] LfgPhrases =
+        {
+            "lfg", "lf group", "looking for group", "anyone want to hunt",
+            "who wants to hunt", "anyone wanna hunt", "forming a group",
+            "forming group", "need a group",
+        };
+
+        // A player asking the bot in front of them directly.
+        private static readonly string[] GroupAskPhrases =
+        {
+            "wanna group", "want to group", "wanna form a group",
+            "want to form a group", "form a group", "group up", "party up",
+            "wanna hunt", "want to hunt", "join me", "join my party",
+            "come hunt", "come with me", "wanna party",
+        };
+
+        // A player answering a bot's OWN recruiting shout.
+        private static readonly string[] JoinPhrases =
+        {
+            "me", "me too", "im in", "i'm in", "inv", "inv me", "invite me",
+            "count me in", "ill come", "i'll come", "sure",
+        };
+
+        // One LFG shout recruits at most this many bots.
+        private const int LfgJoinBudget = 3;
+        private static Serial _lfgSpeaker;
+        private static DateTime _lfgAt;
+        private static int _lfgJoins;
+
         public static void Handle(PlayerBot bot, SpeechEventArgs e)
         {
             var speaker = e?.Mobile;
@@ -115,14 +146,73 @@ namespace Server.CustomBots
 
             // 1. My name? That always gets a turn and an answer — even if
             // someone else already piped up, and even mid-cooldown (its
-            // own short guard applies instead).
+            // own short guard applies instead). A name + group ask
+            // ("garrick wanna hunt?") is a direct recruitment.
             if (ContainsWord(lower, FirstName(bot.Name)))
             {
                 if (!_lastReplyAt.TryGetValue(bot.Serial, out var last) ||
                     Core.Now - last >= NameReplyGuard)
                 {
                     Claim(speaker, lower);
-                    Reply(bot, speaker, "respond_name");
+                    if (MatchesAny(lower, GroupAskPhrases))
+                    {
+                        AnswerGroupAsk(bot, speaker);
+                    }
+                    else
+                    {
+                        Reply(bot, speaker, "respond_name");
+                    }
+                }
+                return;
+            }
+
+            // 2. Answering a recruiting hunt leader: the player says "me"
+            // near a bot mustering its own dungeon run — the leader sends
+            // a REAL party invite and the player taps accept.
+            if (dist <= GreetRange && IsJoinPhrase(lower) &&
+                BotPlayerParty.IsRecruitingHuntLeader(bot))
+            {
+                if (!Claimed(speaker, lower))
+                {
+                    Claim(speaker, lower);
+                    SetCooldown(bot, TimeSpan.FromSeconds(10));
+                    BotPlayerParty.InvitePlayerToHunt(bot, speaker);
+                }
+                return;
+            }
+
+            // 3. A player's LFG shout: free bots nearby answer and join —
+            // a few of them, staggered, never a whole plaza.
+            if (dist <= NameRange && MatchesAny(lower, LfgPhrases))
+            {
+                if (_lfgSpeaker != speaker.Serial || Core.Now - _lfgAt > TimeSpan.FromSeconds(8))
+                {
+                    _lfgSpeaker = speaker.Serial;
+                    _lfgAt = Core.Now;
+                    _lfgJoins = 0;
+                }
+                if (_lfgJoins >= LfgJoinBudget || OnCooldown(bot) ||
+                    !BotPlayerParty.CanJoin(bot, out _) ||
+                    Utility.RandomDouble() > 0.55)
+                {
+                    return;
+                }
+                if (BotPlayerParty.TryRecruitToPlayer(
+                        speaker, bot, 1.0 + _lfgJoins * 1.6 + Utility.RandomDouble()))
+                {
+                    _lfgJoins++;
+                    SetCooldown(bot, TimeSpan.FromSeconds(30));
+                }
+                return;
+            }
+
+            // 4. A direct "wanna group?" to whoever's closest.
+            if (dist <= GreetRange && MatchesAny(lower, GroupAskPhrases))
+            {
+                if (!Claimed(speaker, lower) && ClosestEligible(bot, speaker, dist))
+                {
+                    Claim(speaker, lower);
+                    AnswerGroupAsk(bot, speaker);
                 }
                 return;
             }
@@ -245,6 +335,57 @@ namespace Server.CustomBots
                 }
             }
             return true;
+        }
+
+        // A free bot says yes and joins (the "im in" comes from the
+        // invite-accept path); a busy one explains itself.
+        private static void AnswerGroupAsk(PlayerBot bot, Mobile speaker)
+        {
+            if (BotPlayerParty.CanJoin(bot, out var declineLine))
+            {
+                SetCooldown(bot, TimeSpan.FromSeconds(20));
+                BotPlayerParty.TryRecruitToPlayer(speaker, bot, 0.8);
+            }
+            else
+            {
+                SetCooldown(bot, TimeSpan.FromSeconds(20));
+                var d = bot.GetDirectionTo(speaker);
+                if (bot.Direction != d)
+                {
+                    bot.Direction = d;
+                }
+                Timer.DelayCall(TimeSpan.FromSeconds(1.0 + Utility.RandomDouble()), () =>
+                {
+                    if (!bot.Deleted && bot.Alive && !string.IsNullOrEmpty(declineLine))
+                    {
+                        bot.Say(declineLine);
+                    }
+                });
+            }
+        }
+
+        private static bool MatchesAny(string lower, string[] phrases)
+        {
+            foreach (var p in phrases)
+            {
+                if (lower.Contains(p))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsJoinPhrase(string lower)
+        {
+            foreach (var p in JoinPhrases)
+            {
+                if (lower == p || lower.StartsWith(p + " ") || lower.EndsWith(" " + p))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static bool IsGreeting(string lower)

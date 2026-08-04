@@ -97,6 +97,102 @@ namespace Server.CustomBots
                 });
         }
 
+        // -------------------------------------------------------------------
+        // Player-initiated recruiting: a player's "lfg" shout or a direct
+        // "wanna group?" routes here. Everything rides the same pending-
+        // invite path as the party gump — Party.Invite pends the bot and
+        // CheckInvite accepts with its "im in" a beat later, so there is
+        // exactly one speech line and one code path.
+        // Returns false when the invite can't even be extended (party full
+        // or the speaker is a member of someone else's party).
+        // -------------------------------------------------------------------
+        public static bool TryRecruitToPlayer(Mobile player, PlayerBot bot, double delaySeconds)
+        {
+            if (player == null || player.Deleted || bot == null || bot.Deleted)
+            {
+                return false;
+            }
+
+            // Only the leader grows a party; and respect the cap.
+            if (player.Party is Party existing)
+            {
+                if (existing.Leader != player ||
+                    existing.Members.Count + existing.Candidates.Count >= Party.Capacity)
+                {
+                    return false;
+                }
+            }
+
+            Timer.DelayCall(TimeSpan.FromSeconds(delaySeconds), () =>
+            {
+                if (player.Deleted || bot.Deleted || !bot.Alive ||
+                    bot.Party != null || bot.Map != player.Map)
+                {
+                    return;
+                }
+                if (player.Party is Party p &&
+                    (p.Leader != player ||
+                     p.Members.Count + p.Candidates.Count >= Party.Capacity))
+                {
+                    return;
+                }
+                Party.Invite(player, bot); // CheckInvite accepts next tick
+            });
+            return true;
+        }
+
+        // Can this bot join a player group right now (public face of the
+        // eligibility gates, for the speech layer)?
+        public static bool CanJoin(PlayerBot bot, out string declineLine) =>
+            WouldJoin(bot, out declineLine);
+
+        // The bot leader of a hunt let a real player tag along via a
+        // guest ENGINE party (party bar + underlines). When the bot-side
+        // party ends, fold the guest party too.
+        public static void OnBotPartyEnded(PlayerBot leader)
+        {
+            if (leader?.Party is Party p && p.Leader == leader)
+            {
+                p.Disband();
+            }
+        }
+
+        // Is this bot the mustering leader of a hunt a player could join?
+        public static bool IsRecruitingHuntLeader(PlayerBot bot) =>
+            BotPartyManager.PartyOf(bot) is BotParty bp &&
+            bp.Leader == bot &&
+            bp.Kind == BotPartyKind.Hunt &&
+            bp.State == BotPartyState.Mustering;
+
+        // A recruiting bot leader takes a player up on "me": answer, then
+        // send the REAL party invite — the player clicks accept in the
+        // client like it's 1999.
+        public static void InvitePlayerToHunt(PlayerBot leader, Mobile player)
+        {
+            leader.Say(Utility.Random(3) switch
+            {
+                0 => "aye, come along — inv sent",
+                1 => "the more the merrier, inv sent",
+                _ => "sent. dont fall behind",
+            });
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), () =>
+            {
+                if (leader.Deleted || player.Deleted || !leader.Alive)
+                {
+                    return;
+                }
+                if (leader.Party is Party p &&
+                    (p.Leader != leader ||
+                     p.Members.Count + p.Candidates.Count >= Party.Capacity))
+                {
+                    return;
+                }
+                Party.Invite(leader, player);
+                Console.WriteLine(
+                    $"[party] {leader.Name} invited {player.Name} to the hunt");
+            });
+        }
+
         // Is this bot in a joinable state, and if not, what does it say?
         private static bool WouldJoin(PlayerBot bot, out string declineLine)
         {
