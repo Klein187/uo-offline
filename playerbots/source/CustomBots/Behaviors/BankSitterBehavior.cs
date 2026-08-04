@@ -17,7 +17,11 @@
 
 using System;
 using Server;
+using Server.Items;
 using Server.Network;
+using Server.Spells;
+using Server.Spells.First;
+using Server.Spells.Fourth;
 
 namespace Server.CustomBots
 {
@@ -60,6 +64,17 @@ namespace Server.CustomBots
         private DateTime _nextMacroAt = DateTime.MinValue;
         private DateTime _revealAt = DateTime.MinValue;   // hiding: when to pop back
         private DateTime _nextSneakStep = DateTime.MinValue;
+
+        // Resist macro cast tracking: we launched a REAL spell and are
+        // waiting for the engine to finish the chant and hand us the
+        // target cursor (which we aim at ourselves).
+        private bool _resistCastPending;
+        private DateTime _resistCastStartedAt = DateTime.MinValue;
+
+        // Enough Magery to work the resist macro at all. Below this the
+        // role re-rolls — a pure warrior couldn't self-cast in 1999
+        // either; he paid a mage friend or stood in a fire field.
+        private const double ResistMacroMinMagery = 25.0;
 
         public BankSitterBehavior()
         {
@@ -150,6 +165,20 @@ namespace Server.CustomBots
                 < 90 => BankRole.HidingMacro,
                 _    => BankRole.StealthMacro,
             };
+
+            // The resist macro is REAL casting now — no Magery, no macro.
+            // A skill-less bot re-rolls into the mundane crowd instead.
+            if (Role == BankRole.ResistMacro &&
+                bot.Skills[SkillName.Magery].Base < ResistMacroMinMagery)
+            {
+                int r2 = Utility.Random(100);
+                Role = r2 switch
+                {
+                    < 46 => BankRole.Regular,
+                    < 77 => BankRole.Hawker,
+                    _    => BankRole.Afk,
+                };
+            }
 
             switch (Role)
             {
@@ -288,43 +317,172 @@ namespace Server.CustomBots
             }
         }
 
-        // ---- Resist macroer: weak self-debuffs on a loop, forever ----
-        // The looks-right subset of first-circle debuffs plus Curse. No
-        // real spell system involved — words of power, the cast animation,
-        // the right particles and sound, a mana dip. When the pool runs
-        // dry the bot stands there "meditating" until it refills, exactly
-        // like the real macro did.
-        private static readonly (string words, int itemID, int speed, int duration,
-            int effect, int sound)[] ResistSpells =
+        // ---- Resist macroer: REAL self-casts on a loop, forever ----
+        // The engine does the whole thing exactly as it did for a player
+        // holding down a macro: words of power, the chant animation, the
+        // cast delay, then the target cursor — which we aim at ourselves.
+        // Mana and REAGENTS are consumed from the pack by the spell
+        // system itself; fizzles happen; when the reg pouch runs dry the
+        // bot visibly restocks from its bank box (it's standing at the
+        // bank — that's where a 1999 macroer kept the stash), and a
+        // broke macroer retires into the mundane crowd.
+
+        // Reagents each option burns (era-correct):
+        //   Clumsy      = bloodmoss + nightshade
+        //   Weaken      = garlic + nightshade
+        //   Feeblemind  = nightshade + ginseng
+        //   Curse (26+) = garlic + nightshade + sulfurous ash
+        private static readonly Type[][] ResistSpellRegs =
         {
-            ("Uus Jux",   0x3779, 1, 46, 5002, 0x1DF), // Clumsy
-            ("Des Mani",  0x3779, 1, 46, 5009, 0x1E6), // Weaken
-            ("Rel Wis",   0x3779, 1, 46, 5004, 0x1E4), // Feeblemind
-            ("Des Sanct", 0x374A, 10, 15, 5028, 0x1E1), // Curse
+            new[] { typeof(Bloodmoss), typeof(Nightshade) },
+            new[] { typeof(Garlic), typeof(Nightshade) },
+            new[] { typeof(Nightshade), typeof(Ginseng) },
+            new[] { typeof(Garlic), typeof(Nightshade), typeof(SulfurousAsh) },
         };
 
         private void TickResistMacro(PlayerBot bot)
         {
-            if (Core.Now < _nextMacroAt)
+            // The chant finished and the cursor is up — target ourselves.
+            // CheckSequence consumes the mana and reagents right here.
+            if (_resistCastPending && bot.Target != null)
+            {
+                _resistCastPending = false;
+                bot.Target.Invoke(bot, bot);
+                _nextMacroAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+                return;
+            }
+
+            // Launched but no cursor after a while — the cast got
+            // disturbed (shoved mid-chant). Reset and try again later.
+            if (_resistCastPending)
+            {
+                if (Core.Now - _resistCastStartedAt > TimeSpan.FromSeconds(10))
+                {
+                    _resistCastPending = false;
+                    _nextMacroAt = Core.Now + TimeSpan.FromSeconds(6);
+                }
+                return;
+            }
+
+            if (bot.Spell != null || Core.Now < _nextMacroAt)
             {
                 return;
             }
 
-            // Out of mana — stand and regenerate like everyone did.
-            if (bot.Mana < 10)
+            // Out of mana — sit and regenerate like everyone did.
+            if (bot.Mana < 12)
             {
                 _nextMacroAt = Core.Now + TimeSpan.FromSeconds(15);
                 return;
             }
 
-            var s = ResistSpells[Utility.Random(ResistSpells.Length)];
-            bot.PublicOverheadMessage(MessageType.Spell, bot.SpeechHue, false, s.words);
-            bot.Animate(16, 7, 1, true, false, 0);
-            bot.FixedParticles(s.itemID, s.speed, s.duration, s.effect, EffectLayer.Waist);
-            bot.PlaySound(s.sound);
-            bot.Mana = Math.Max(0, bot.Mana - 6);
+            var spell = PickResistSpell(bot);
+            if (spell == null)
+            {
+                RestockRegsOrRetire(bot);
+                return;
+            }
 
-            _nextMacroAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+            try
+            {
+                if (!spell.Cast())
+                {
+                    _nextMacroAt = Core.Now + TimeSpan.FromSeconds(6);
+                    return;
+                }
+            }
+            catch
+            {
+                _nextMacroAt = Core.Now + TimeSpan.FromSeconds(10);
+                return;
+            }
+
+            _resistCastPending = true;
+            _resistCastStartedAt = Core.Now;
+        }
+
+        // An option the bot can actually pay for right now, or null when
+        // the pouch can't cover ANY of them.
+        private Spell PickResistSpell(PlayerBot bot)
+        {
+            var pack = bot.Backpack;
+            if (pack == null)
+            {
+                return null;
+            }
+
+            int options = bot.Skills[SkillName.Magery].Base >= 26 ? 4 : 3;
+            int start = Utility.Random(options);
+            for (int n = 0; n < options; n++)
+            {
+                int i = (start + n) % options;
+                bool haveRegs = true;
+                foreach (var t in ResistSpellRegs[i])
+                {
+                    if (pack.GetAmount(t) < 1)
+                    {
+                        haveRegs = false;
+                        break;
+                    }
+                }
+                if (!haveRegs)
+                {
+                    continue;
+                }
+                return i switch
+                {
+                    0 => new ClumsySpell(bot),
+                    1 => new WeakenSpell(bot),
+                    2 => new FeeblemindSpell(bot),
+                    _ => new CurseSpell(bot),
+                };
+            }
+            return null;
+        }
+
+        // The reg pouch ran dry. A macroer standing AT the bank pulls a
+        // fresh batch from the bank box — visible bend, gold deducted —
+        // and one who can't afford it gives up the grind and joins the
+        // mundane crowd.
+        private void RestockRegsOrRetire(PlayerBot bot)
+        {
+            var pack = bot.Backpack;
+            var regTypes = new[]
+            {
+                typeof(Bloodmoss), typeof(Garlic), typeof(Ginseng),
+                typeof(Nightshade), typeof(SulfurousAsh),
+            };
+
+            int cost = 0;
+            foreach (var t in regTypes)
+            {
+                cost += Math.Max(0, 30 - pack.GetAmount(t)) * 2;
+            }
+
+            if (cost > 0 && pack.GetAmount(typeof(Gold)) >= cost)
+            {
+                pack.ConsumeTotal(typeof(Gold), cost);
+                foreach (var t in regTypes)
+                {
+                    int add = 30 - pack.GetAmount(t);
+                    if (add > 0)
+                    {
+                        pack.DropItem((Item)Activator.CreateInstance(t, add));
+                    }
+                }
+                bot.Animate(32, 5, 1, true, false, 0); // into the bank box
+                Console.WriteLine(
+                    $"[macro] {bot.Name} restocked resist reagents from the " +
+                    $"bank box (-{cost}gp)");
+                _nextMacroAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+                return;
+            }
+
+            Console.WriteLine(
+                $"[macro] {bot.Name} is out of reagents and gold — resist " +
+                $"session over, joining the crowd");
+            Role = BankRole.Regular;
+            ChatChance = 0.25;
         }
 
         // ---- Hiding macroer: blink out, blink back, repeat all day ----
