@@ -2121,8 +2121,14 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     _stableDropoff = false;
                     if (bot.PackAnimal is { Deleted: false })
                     {
-                        BotScene.Deliver(bot, "*stables the pack animal*");
-                        BotPackAnimals.Release(bot);
+                        // The era ritual: you SAY it to the stablemaster.
+                        // The beast stands through the exchange, then gets
+                        // led into the pens.
+                        BotScene.Play(
+                            (0.0, bot, "vendor stable"),
+                            (2.0, bot, "*hands the reins to the stablemaster*"));
+                        Timer.DelayCall(TimeSpan.FromSeconds(2.5),
+                            () => BotPackAnimals.Release(bot));
                         Log(bot, "Pack animal stabled after the haul");
                     }
                     // fall through — linger at the stables like any stop
@@ -2132,14 +2138,20 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 {
                     var resume = _stablePickupResume;
                     _stablePickupResume = null;
-                    if (DestinationCatalog.GetByName(resume) != null &&
-                        BotPackAnimals.SpawnFor(bot) != null)
+                    if (DestinationCatalog.GetByName(resume) != null)
                     {
-                        BotScene.Deliver(bot, "*leads the pack animal out of the stables*");
-                        Log(bot, $"Pack animal in tow — on to '{resume}'");
-                        _forcedNextDestination = resume;
-                        PickNewDestination(bot);
-                        return true; // trip continues; no visit at the stables
+                        // Say it to the stablemaster FIRST — then the
+                        // beast comes out of the pens.
+                        BotScene.Play(
+                            (0.0, bot, "vendor claim"),
+                            (1.5, bot, "*leads the pack animal out of the stables*"));
+                        if (BotPackAnimals.SpawnFor(bot) != null)
+                        {
+                            Log(bot, $"Pack animal in tow — on to '{resume}'");
+                            _forcedNextDestination = resume;
+                            PickNewDestination(bot);
+                            return true; // trip continues; no visit at the stables
+                        }
                     }
                     // beast or site fell through — carry on as a normal stop
                 }
