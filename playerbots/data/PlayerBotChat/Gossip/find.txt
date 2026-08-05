@@ -1,0 +1,7 @@
+# find.txt — gossip about someone's magic-item find in a dungeon.
+# Tokens: {actor} {other} {place} {when}
+{actor} pulled {other} off a corpse down {place} {when}
+heard {actor} found {other} in {place}. lucky
+{actor} got {other} {when}, wont shut up about it
+they say {actor} looted {other} in {place}
+{actor} found {other}?? i farm that place for weeks and get nothing

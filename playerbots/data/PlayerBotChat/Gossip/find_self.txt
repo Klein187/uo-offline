@@ -1,0 +1,8 @@
+# Gossip/find_self.txt — a bot bragging about ITS OWN magic find.
+# {other} = the item ("a halberd of vanquishing"), {place}, {when}.
+
+i found {other} down {place} {when}. not selling
+pulled {other} off a corpse in {place}. best drop ive ever had
+{other}. off a random corpse in {place}. i couldnt believe it
+got {other} {when}. it never leaves my pack
+finally got a real drop in {place}, {other}

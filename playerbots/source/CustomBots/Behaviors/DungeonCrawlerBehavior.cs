@@ -265,6 +265,109 @@ namespace Server.CustomBots
             // The subset that CAN carries fire, which is exactly how a
             // real group walked in.
             LightTorch(bot);
+
+            // A provocation bard never leaves home without an instrument
+            // — make sure one is in the pack before the first brawl call.
+            if (bot.Skills[SkillName.Provocation].Base >= ProvokeSkillMin &&
+                bot.Backpack != null &&
+                bot.Backpack.FindItemByType(typeof(BaseInstrument)) == null)
+            {
+                bot.Backpack.DropItem(new Lute());
+            }
+        }
+
+        // ---- Bard provocation ----
+        // The era's richest dungeon build: a Provocation bard makes the
+        // monsters kill EACH OTHER and loots both corpses. A crawler with
+        // real Provocation works its instrument constantly — its own
+        // attacker gets redirected onto the nearest other monster (and the
+        // bard slips out of the fight), and idle pairs get set brawling
+        // so there's always a corpse to pick over.
+        private const double ProvokeSkillMin = 60.0;
+        private DateTime _nextProvokeAt = DateTime.MinValue;
+
+        private void TryProvoke(PlayerBot bot)
+        {
+            double prov = bot.Skills[SkillName.Provocation].Base;
+            if (prov < ProvokeSkillMin || Core.Now < _nextProvokeAt)
+            {
+                return;
+            }
+
+            // Target A: our own attacker first (getting a monster off you
+            // is the whole trick), else any idle monster nearby.
+            BaseCreature a = null;
+            if (bot.Combatant is BaseCreature attacker && attacker.Alive &&
+                !attacker.Deleted && !attacker.Controlled)
+            {
+                a = attacker;
+            }
+            else
+            {
+                foreach (var m in bot.GetMobilesInRange(8))
+                {
+                    if (m is BaseCreature bc && bc.Alive && !bc.Deleted &&
+                        !bc.Controlled && bc.Combatant is not BaseCreature)
+                    {
+                        a = bc;
+                        break;
+                    }
+                }
+            }
+            if (a == null)
+            {
+                return;
+            }
+
+            // Target B: another monster close enough to A to take the bait.
+            BaseCreature b = null;
+            foreach (var m in a.GetMobilesInRange(8))
+            {
+                if (m is BaseCreature bc && bc != a && bc.Alive &&
+                    !bc.Deleted && !bc.Controlled &&
+                    bc.Combatant is not BaseCreature)
+                {
+                    b = bc;
+                    break;
+                }
+            }
+            if (b == null)
+            {
+                return;
+            }
+
+            _nextProvokeAt = Core.Now +
+                TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+
+            var instrument =
+                bot.Backpack?.FindItemByType(typeof(BaseInstrument))
+                    as BaseInstrument;
+
+            // Skill check — a GM lands it nearly every time; a 60 bard
+            // plays plenty of sour notes.
+            if (Utility.RandomDouble() * 100.0 > prov)
+            {
+                if (instrument != null)
+                {
+                    instrument.PlayInstrumentBadly(bot);
+                }
+                return; // the pair ignores the fumbled tune
+            }
+
+            if (instrument != null)
+            {
+                instrument.PlayInstrumentWell(bot);
+            }
+            a.Combatant = b;
+            b.Combatant = a;
+            if (bot.Combatant == a)
+            {
+                bot.Combatant = null; // slip out while they brawl
+            }
+
+            Console.WriteLine(
+                $"[DungeonCrawler] {bot.Name}: provoked {a.Name} onto " +
+                $"{b.Name} in {DungeonName} L{Level}");
         }
 
         // -------------------------------------------------------------------
@@ -340,9 +443,13 @@ namespace Server.CustomBots
             return best;
         }
 
-        // Adjacent to an unlooted corpse and not fighting — pocket the
-        // gold. One corpse per beat so a pile of kills reads as the bot
-        // working through them, not hoovering the room in a tick.
+        // Adjacent to an unlooted corpse and not fighting — pick it OVER.
+        // Gold, gems, scrolls and reagents all ride home (that's why
+        // anyone crawls), and a MAGIC weapon or armor piece is the run's
+        // real payday: the crawler brags out loud and the find hits the
+        // event journal, so the bank gossip mill retells it. One corpse
+        // per beat so a pile of kills reads as the bot working through
+        // them, not hoovering the room in a tick.
         private void TryLootNearby(PlayerBot bot)
         {
             if (Core.Now < _nextLootAt)
@@ -362,24 +469,90 @@ namespace Server.CustomBots
             }
             _nextLootAt = Core.Now + TimeSpan.FromSeconds(2.5);
 
-            int gold = 0;
+            int gold = 0, trinkets = 0;
+            string find = null;
             var items = corpse.Items;
             for (int i = items.Count - 1; i >= 0; i--)
             {
-                if (items[i] is Gold g)
+                var item = items[i];
+                switch (item)
                 {
-                    gold += g.Amount;
-                    bot.Backpack?.DropItem(g);
+                    case Gold g:
+                        gold += g.Amount;
+                        bot.Backpack?.DropItem(g);
+                        break;
+
+                    case SpellScroll:
+                    case BaseReagent:
+                        trinkets++;
+                        bot.Backpack?.DropItem(item);
+                        break;
+
+                    case BaseWeapon w when
+                        w.DamageLevel != WeaponDamageLevel.Regular ||
+                        w.AccuracyLevel != WeaponAccuracyLevel.Regular:
+                        w.Identified = true;
+                        find = DescribeFind(w);
+                        bot.Backpack?.DropItem(w);
+                        break;
+
+                    case BaseArmor a when
+                        a.ProtectionLevel != ArmorProtectionLevel.Regular:
+                        a.Identified = true;
+                        find = $"a {a.ItemData.Name} of " +
+                               $"{a.ProtectionLevel.ToString().ToLowerInvariant()}";
+                        bot.Backpack?.DropItem(a);
+                        break;
+
+                    default:
+                        if (Array.IndexOf(Loot.GemTypes, item.GetType()) >= 0)
+                        {
+                            trinkets++;
+                            bot.Backpack?.DropItem(item);
+                        }
+                        break;
                 }
             }
 
             bot.Animate(32, 5, 1, true, false, 0); // bend over the body
-            if (CombatDebug && gold > 0)
+
+            if (find != null)
             {
+                var line = ChatLibrary.PickRandom("dungeon_find");
+                if (!string.IsNullOrEmpty(line))
+                {
+                    bot.Say(line);
+                }
+                BotEventJournal.Record("find", bot, find);
                 Console.WriteLine(
-                    $"[DungeonCrawler] {bot.Name}: looted {gold}gp in " +
+                    $"[DungeonCrawler] {bot.Name}: found {find} in " +
                     $"{DungeonName} L{Level}");
             }
+            else if (CombatDebug && (gold > 0 || trinkets > 0))
+            {
+                Console.WriteLine(
+                    $"[DungeonCrawler] {bot.Name}: looted {gold}gp + " +
+                    $"{trinkets} trinket(s) in {DungeonName} L{Level}");
+            }
+        }
+
+        // "a halberd of vanquishing" — the name every 1999 player dreamed
+        // of seeing on a corpse.
+        private static string DescribeFind(BaseWeapon w)
+        {
+            string name = w.ItemData.Name ?? "weapon";
+            string power = w.DamageLevel switch
+            {
+                WeaponDamageLevel.Ruin  => "ruin",
+                WeaponDamageLevel.Might => "might",
+                WeaponDamageLevel.Force => "force",
+                WeaponDamageLevel.Power => "power",
+                WeaponDamageLevel.Vanq  => "vanquishing",
+                _                       => null,
+            };
+            return power != null
+                ? $"a {name} of {power}"
+                : $"an accurate {name}";
         }
 
         public override void Tick(PlayerBot bot)
@@ -514,6 +687,13 @@ namespace Server.CustomBots
             if (bot.Alive && bot.Combatant == null)
             {
                 TryLootNearby(bot);
+            }
+
+            // The bard's whole game — runs in AND out of combat (getting a
+            // monster off yourself is exactly when you play).
+            if (bot.Alive)
+            {
+                TryProvoke(bot);
             }
 
             base.Tick(bot);
