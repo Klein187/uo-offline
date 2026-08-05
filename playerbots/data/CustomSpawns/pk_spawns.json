@@ -1,0 +1,164 @@
+{
+  "Spawns": [
+    {
+      "name": "Wrong L1 Entrance reds",
+      "x": 2040,
+      "y": 217,
+      "z": 14,
+      "amount": 3,
+      "hunt": [
+        [
+          2010,
+          187
+        ],
+        [
+          2070,
+          187
+        ],
+        [
+          2070,
+          247
+        ],
+        [
+          2010,
+          247
+        ]
+      ]
+    },
+    {
+      "name": "Deceit L1 Entrance reds",
+      "x": 4109,
+      "y": 432,
+      "z": 5,
+      "amount": 3,
+      "hunt": [
+        [
+          4079,
+          402
+        ],
+        [
+          4139,
+          402
+        ],
+        [
+          4139,
+          462
+        ],
+        [
+          4079,
+          462
+        ]
+      ]
+    },
+    {
+      "name": "Ice L1 Entrance reds",
+      "x": 1997,
+      "y": 79,
+      "z": 7,
+      "amount": 3,
+      "hunt": [
+        [
+          1967,
+          49
+        ],
+        [
+          2027,
+          49
+        ],
+        [
+          2027,
+          109
+        ],
+        [
+          1967,
+          109
+        ]
+      ]
+    },
+    {
+      "name": "Shame L1 Entrance reds",
+      "x": 511,
+      "y": 1561,
+      "z": 0,
+      "amount": 3,
+      "hunt": [
+        [
+          481,
+          1531
+        ],
+        [
+          541,
+          1531
+        ],
+        [
+          541,
+          1591
+        ],
+        [
+          481,
+          1591
+        ]
+      ]
+    },
+    {
+      "name": "Destard L1 Entrance reds",
+      "x": 1174,
+      "y": 2637,
+      "z": 0,
+      "amount": 3,
+      "hunt": [
+        [
+          1144,
+          2607
+        ],
+        [
+          1204,
+          2607
+        ],
+        [
+          1204,
+          2667
+        ],
+        [
+          1144,
+          2667
+        ]
+      ]
+    },
+    {
+      "name": "Compassion Shrine reds",
+      "x": 1856,
+      "y": 872,
+      "z": 0,
+      "amount": 3
+    },
+    {
+      "name": "Chaos Shrine reds",
+      "x": 1456,
+      "y": 854,
+      "z": 0,
+      "amount": 3
+    },
+    {
+      "name": "Honor Shrine reds",
+      "x": 1724,
+      "y": 3528,
+      "z": 0,
+      "amount": 3
+    },
+    {
+      "name": "Valor Shrine reds",
+      "x": 2492,
+      "y": 3931,
+      "z": 0,
+      "amount": 3
+    },
+    {
+      "name": "Sacrifice Shrine reds",
+      "x": 3355,
+      "y": 290,
+      "z": 0,
+      "amount": 3
+    }
+  ]
+}

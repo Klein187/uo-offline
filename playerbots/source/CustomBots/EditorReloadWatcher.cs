@@ -73,6 +73,10 @@ namespace Server.CustomBots
         // (plus extra Mage rolls so the tank-mage variants show), dump
         // stats + skills to console, verify the T2A caps, delete them.
         private static readonly string T2AReq = Live("t2a_request.txt");
+        // pkfresh_request.txt: "token" — delete the live PK BOTS (keeping
+        // their spawners) and force an immediate respawn, so the roads
+        // refill with reds rolled under the current PK templates.
+        private static readonly string PKFreshReq = Live("pkfresh_request.txt");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -94,6 +98,7 @@ namespace Server.CustomBots
         private static long _lastSay = -1;
         private static long _lastPartyTest = -1;
         private static long _lastT2A = -1;
+        private static long _lastPKFresh = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -120,6 +125,7 @@ namespace Server.CustomBots
             _lastSay = ReadSayRequest(out _, out _, out _) ?? 0;
             _lastPartyTest = ReadCoordRequest(PartyTestReq, out _) ?? 0;
             _lastT2A = ReadToken(T2AReq) ?? 0;
+            _lastPKFresh = ReadToken(PKFreshReq) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -274,6 +280,54 @@ namespace Server.CustomBots
                 _lastT2A = t2aTok.Value;
                 DoT2AAudit(t2aTok.Value);
             }
+
+            var pkFreshTok = ReadToken(PKFreshReq);
+            if (pkFreshTok != null && pkFreshTok.Value != _lastPKFresh)
+            {
+                _lastPKFresh = pkFreshTok.Value;
+                DoPKFresh(pkFreshTok.Value);
+            }
+        }
+
+        // pkfresh_request.txt: cull the live PK bots (spawners untouched)
+        // and respawn them immediately — the fresh reds roll the current
+        // PK templates. Unlike pks_request this never re-places spawners,
+        // so it's safe when pk_spawns.json is empty.
+        private static void DoPKFresh(long token)
+        {
+            var bots = new List<PlayerBot>();
+            foreach (var m in World.Mobiles.Values)
+            {
+                if (m is PlayerBot b && !b.Deleted && b.Behavior is PKBehavior)
+                {
+                    bots.Add(b);
+                }
+            }
+            foreach (var b in bots)
+            {
+                try { b.Delete(); } catch { }
+            }
+
+            // Collect FIRST, respawn after — Respawn() creates bots whose
+            // equipment lands in World.Items, and mutating the collection
+            // mid-enumeration is a hard crash.
+            var spawners = new List<PlayerBotSpawner>();
+            foreach (var item in World.Items.Values)
+            {
+                if (item is PlayerBotSpawner sp && !sp.Deleted &&
+                    sp.BehaviorName == "PK")
+                {
+                    spawners.Add(sp);
+                }
+            }
+            foreach (var sp in spawners)
+            {
+                try { sp.Respawn(); } catch { }
+            }
+
+            Console.WriteLine(
+                $"[EditorReload] pkfresh: culled {bots.Count} red(s), " +
+                $"respawned {spawners.Count} PK spawner(s) (token {token}).");
         }
 
         // -------------------------------------------------------------------

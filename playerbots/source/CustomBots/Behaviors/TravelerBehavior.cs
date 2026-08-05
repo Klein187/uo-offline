@@ -1907,7 +1907,13 @@ namespace Server.CustomBots
                     return;   // drift timer is walking us in; roll when done
                 }
                 _handoffRolled = true;
-                if (TryHandoffToDestinationBehavior(bot))
+                // Handoffs only when this Traveler IS the bot's active
+                // behavior. An INTERNAL traveler (PKBehavior's patrol
+                // drives one) must never swap the bot's brain — a red
+                // arriving at a graveyard was retiring into a friendly
+                // Adventurer, and a dig-site arrival made it a treasure
+                // hunter mid-prowl.
+                if (bot.Behavior == this && TryHandoffToDestinationBehavior(bot))
                 {
                     // Behavior swapped — THIS Traveler is detached. Stop.
                     return;

@@ -185,6 +185,60 @@ namespace Server.CustomBots
             };
         }
 
+        // ---- PK templates ----
+        // The era's killer builds. The Red Mage IS the tank mage — never
+        // a scribe (a murderer with Inscription is a joke). Field PKs run
+        // the dexxer line with Tracking and Hiding swapped in — built for
+        // hunting dungeon entrances.
+        public static SkillTemplate RollPKTemplate(BotClass cls)
+        {
+            return cls switch
+            {
+                BotClass.Mage => RollRedMageTemplate(),
+
+                // Field PK swordsman — half run the lumberjack axe line
+                // (the era's highest melee burst), half the classic dexxer.
+                BotClass.Warrior => Utility.RandomBool()
+                    ? new SkillTemplate(
+                        SkillName.Swords,
+                        new[] { SkillName.Lumberjacking, SkillName.Tactics, SkillName.Anatomy,
+                                SkillName.Tracking, SkillName.Hiding },
+                        new[] { SkillName.Magery })
+                    : new SkillTemplate(
+                        SkillName.Swords,
+                        new[] { SkillName.Tactics, SkillName.Anatomy, SkillName.Healing,
+                                SkillName.Tracking, SkillName.Hiding },
+                        new[] { SkillName.Magery }),
+
+                BotClass.Fencer => new SkillTemplate(
+                    SkillName.Fencing,
+                    new[] { SkillName.Tactics, SkillName.Anatomy, SkillName.Healing,
+                            SkillName.Tracking, SkillName.Hiding },
+                    new[] { SkillName.Magery }),
+
+                BotClass.Archer => new SkillTemplate(
+                    SkillName.Archery,
+                    new[] { SkillName.Tactics, SkillName.Anatomy, SkillName.Healing,
+                            SkillName.Tracking, SkillName.Hiding },
+                    new[] { SkillName.Magery }),
+
+                _ => RollTemplate(cls),
+            };
+        }
+
+        // Red Mage — always a weapon line, weighted toward the hally.
+        private static SkillTemplate RollRedMageTemplate()
+        {
+            int roll = Utility.Random(100);
+            SkillName weapon = roll < 55 ? SkillName.Swords
+                             : roll < 80 ? SkillName.Macing
+                             : SkillName.Fencing;
+            return new SkillTemplate(
+                SkillName.Magery,
+                new[] { SkillName.EvalInt, SkillName.Meditation, SkillName.Wrestling,
+                        SkillName.MagicResist, weapon, SkillName.Tactics });
+        }
+
         // The Mage class rolls its T2A variant per bot:
         //   40% Hally Mage  (Swords)  — the king of T2A
         //   20% Mace Tank   (Macing)  — maces wrecked armor and stamina

@@ -80,6 +80,25 @@ namespace Server.CustomBots
         public static (int placed, int totalPKs) PlaceDefault()
         {
             var defs = PKSpawnData.Load();
+
+            // Nothing drawn in the editor — synthesize the classic set
+            // from the destination catalog (crews leashed to dungeon
+            // mouths, roaming crews at road chokepoints), persist it to
+            // pk_spawns.json so leashes survive restarts and the editor
+            // can adjust them, and reload.
+            if (defs.Count == 0)
+            {
+                var synth = SynthesizeDefault();
+                if (synth.Count > 0)
+                {
+                    WriteSpawnJson(synth);
+                    defs = PKSpawnData.Load();
+                    Console.WriteLine(
+                        $"[GeneratePKs] no drawn spawns — synthesized " +
+                        $"{defs.Count} default spawn(s) from the catalog.");
+                }
+            }
+
             var map = Map.Felucca;
             int placed = 0, totalPKs = 0;
 
@@ -121,6 +140,117 @@ namespace Server.CustomBots
                 totalPKs += s.Amount;
             }
             return (placed, totalPKs);
+        }
+
+        // The synthesized default: crews of 3 leashed to a handful of
+        // dungeon mouths (the era's most feared ground — the field PK
+        // hunted entrances), plus free-roaming road crews at crossroads
+        // and bridges who patrol and mount their own mouth ambushes.
+        private static List<PKSpawnDef> SynthesizeDefault()
+        {
+            var mouths = new List<BotDestination>();
+            var roads  = new List<BotDestination>();
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (d.Type == DestinationType.DungeonEntrance)
+                {
+                    mouths.Add(d);
+                }
+                else if (d.Type is DestinationType.Shrine
+                                or DestinationType.GatherSpot)
+                {
+                    // Wilderness anchors for the roaming crews — shrine
+                    // campers ganking fresh resurrections were an era
+                    // institution.
+                    roads.Add(d);
+                }
+            }
+            Shuffle(mouths);
+            Shuffle(roads);
+
+            var defs = new List<PKSpawnDef>();
+            for (int i = 0; i < mouths.Count && i < 5; i++)
+            {
+                var m = mouths[i];
+                const int r = 30; // the leash box around the mouth
+                defs.Add(new PKSpawnDef
+                {
+                    Name = $"{m.Name} reds",
+                    Location = m.Location,
+                    Amount = 3,
+                    Hunt = new[]
+                    {
+                        new Point2D(m.Location.X - r, m.Location.Y - r),
+                        new Point2D(m.Location.X + r, m.Location.Y - r),
+                        new Point2D(m.Location.X + r, m.Location.Y + r),
+                        new Point2D(m.Location.X - r, m.Location.Y + r),
+                    },
+                });
+            }
+            for (int i = 0; i < roads.Count && i < 5; i++)
+            {
+                var d = roads[i];
+                defs.Add(new PKSpawnDef
+                {
+                    Name = $"{d.Name} reds",
+                    Location = d.Location,
+                    Amount = 3,
+                    Hunt = null, // roaming crew
+                });
+            }
+            return defs;
+        }
+
+        private static void Shuffle(List<BotDestination> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = Utility.Random(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+        }
+
+        // Persist synthesized spawns in the editor's own schema.
+        private static void WriteSpawnJson(List<PKSpawnDef> defs)
+        {
+            try
+            {
+                var path = System.IO.Path.Combine(
+                    Core.BaseDirectory, "Data", "CustomSpawns", "pk_spawns.json");
+                using var stream = System.IO.File.Create(path);
+                using var w = new System.Text.Json.Utf8JsonWriter(stream,
+                    new System.Text.Json.JsonWriterOptions { Indented = true });
+                w.WriteStartObject();
+                w.WriteStartArray("Spawns");
+                foreach (var d in defs)
+                {
+                    w.WriteStartObject();
+                    w.WriteString("name", d.Name);
+                    w.WriteNumber("x", d.Location.X);
+                    w.WriteNumber("y", d.Location.Y);
+                    w.WriteNumber("z", d.Location.Z);
+                    w.WriteNumber("amount", d.Amount);
+                    if (d.Hunt != null && d.Hunt.Length >= 3)
+                    {
+                        w.WriteStartArray("hunt");
+                        foreach (var p in d.Hunt)
+                        {
+                            w.WriteStartArray();
+                            w.WriteNumberValue(p.X);
+                            w.WriteNumberValue(p.Y);
+                            w.WriteEndArray();
+                        }
+                        w.WriteEndArray();
+                    }
+                    w.WriteEndObject();
+                }
+                w.WriteEndArray();
+                w.WriteEndObject();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GeneratePKs] spawn-json write failed: {ex.Message}");
+            }
         }
 
         public static int ClearPKSpawners()

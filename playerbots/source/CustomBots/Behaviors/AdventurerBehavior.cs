@@ -1342,10 +1342,11 @@ namespace Server.CustomBots
             "Server.Items.LesserCurePotion",
         };
 
-        private static bool DrinkHealPotion(PlayerBot bot) =>
+        // Internal: PKBehavior shares these combat-care helpers.
+        internal static bool DrinkHealPotion(PlayerBot bot) =>
             DrinkPotion(bot, HealPotionTypes);
 
-        private static bool DrinkCurePotion(PlayerBot bot) =>
+        internal static bool DrinkCurePotion(PlayerBot bot) =>
             DrinkPotion(bot, CurePotionTypes);
 
         // Find the first potion of the given types in the pack and drink
@@ -1381,7 +1382,7 @@ namespace Server.CustomBots
         // ModernUO's Bandage uses a BandageContext.BeginHeal(healer,
         // patient) static. Reflection keeps this from being a hard build
         // dependency in case the API differs.
-        private static bool StartBandageSelf(PlayerBot bot)
+        internal static bool StartBandageSelf(PlayerBot bot)
         {
             var bandageType = FindType("Server.Items.Bandage");
             if (bandageType == null) return false;
@@ -1427,7 +1428,7 @@ namespace Server.CustomBots
             return null;
         }
 
-        private static Server.Spells.Spell CreateSpell(string typeName, PlayerBot caster)
+        internal static Server.Spells.Spell CreateSpell(string typeName, PlayerBot caster)
         {
             try
             {

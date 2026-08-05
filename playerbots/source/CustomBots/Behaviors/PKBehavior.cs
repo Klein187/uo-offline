@@ -83,6 +83,21 @@ namespace Server.CustomBots
         private DateTime _fleeUntil = DateTime.MinValue;
         private DateTime _nextTauntAt = DateTime.MinValue;
 
+        // ---- Combat kit (Red Mage casting, dexxer self-care) ----
+        private DateTime _nextCastAt = DateTime.MinValue;
+        private DateTime _nextCareAt = DateTime.MinValue;
+
+        // ---- Dungeon-mouth ambush ----
+        // Every so often a roaming crew walks to a dungeon entrance and
+        // lurks it — jumping travelers coming out with their loot. The
+        // field PK's whole reason for carrying Tracking.
+        private Point3D _ambushSpot;
+        private string _ambushName;
+        private DateTime _ambushDeadline;   // give up if the walk drags
+        private DateTime _lurkUntil;        // set on arrival
+        private bool _atAmbush;
+        private DateTime _nextAmbushRoll = DateTime.MinValue;
+
         // The patrol uses a Traveler under the hood for road navigation.
         private TravelerBehavior _patrol;
 
@@ -100,6 +115,7 @@ namespace Server.CustomBots
                 Phase.Hunt => $"PK — hunting{gang}",
                 Phase.Flee => $"PK — fleeing{gang}",
                 Phase.Loot => $"PK — looting a kill{gang}",
+                _ when _atAmbush => $"PK — ambushing {_ambushName}{gang}",
                 _          => $"PK — prowling for prey{gang}",
             };
         }
@@ -165,6 +181,30 @@ namespace Server.CustomBots
         // ---- PATROL ------------------------------------------------------
         private void TickPatrol(PlayerBot bot)
         {
+            // Something (wildlife, a dungeon-mouth guardian) jumped us
+            // mid-patrol — turn and fight it with the full kit instead of
+            // walking on and getting ground down. The engine swings at
+            // Combatant; we add the spells and the bandages.
+            if (bot.Combatant is Mobile threat && threat.Alive &&
+                !threat.Deleted && threat.Map == bot.Map)
+            {
+                TryCombatCare(bot);
+                TryCombatMagic(bot, threat);
+                if (bot.Spell != null)
+                {
+                    return;
+                }
+                RearmWeapon(bot);
+                if (!bot.InRange(threat.Location, 1) &&
+                    bot.Skills[SkillName.Archery].Base < 50.0)
+                {
+                    var td = bot.GetDirectionTo(threat);
+                    if (bot.Direction != td) bot.Direction = td;
+                    bot.Move(td);
+                }
+                return;
+            }
+
             // Dungeon reds CAMP their hall instead of road-patrolling: the
             // patrol Traveler's surface destination rolls would churn
             // (everything is unreachable from a dungeon component) and its
@@ -205,6 +245,26 @@ namespace Server.CustomBots
             {
                 RetreatFromTown(bot);
                 return;
+            }
+
+            // Dungeon-mouth ambush: either lurking one now (TickAmbush
+            // owns the tick), walking to one (fall through — the patrol
+            // Traveler is driving the trip), or rolling whether to start.
+            if (_ambushSpot != Point3D.Zero)
+            {
+                if (TickAmbush(bot))
+                {
+                    return;
+                }
+            }
+            else if (Core.Now >= _nextAmbushRoll)
+            {
+                _nextAmbushRoll = Core.Now +
+                    TimeSpan.FromMinutes(Utility.RandomMinMax(6, 12));
+                if (Utility.RandomDouble() < 0.35)
+                {
+                    TryBeginAmbush(bot);
+                }
             }
 
             // Pack cohesion: reds roam in gangs. When a fellow red is
@@ -304,6 +364,142 @@ namespace Server.CustomBots
                 }
             }
             return _hunt.Centroid();
+        }
+
+        // ---- Dungeon-mouth ambush ----
+
+        // Returns true when this tick was consumed by lurking. While the
+        // crew is still WALKING to the mouth, returns false so the patrol
+        // Traveler keeps driving the trip.
+        private bool TickAmbush(PlayerBot bot)
+        {
+            if (!_atAmbush)
+            {
+                if (bot.InRange(_ambushSpot, 12))
+                {
+                    _atAmbush = true;
+                    _lurkUntil = Core.Now +
+                        TimeSpan.FromMinutes(Utility.RandomMinMax(4, 8));
+                    Console.WriteLine(
+                        $"[pk] {bot.Name} lurking the mouth of '{_ambushName}'");
+                }
+                else if (Core.Now >= _ambushDeadline)
+                {
+                    // The walk dragged (bad route, a running fight on the
+                    // way) — give it up and go back to prowling.
+                    ClearAmbush(bot);
+                }
+                return false;
+            }
+
+            if (Core.Now >= _lurkUntil)
+            {
+                ClearAmbush(bot);
+                return false;
+            }
+
+            // Lurking the mouth: shuffle like the dungeon camp, keep
+            // scanning for prey stepping out with its loot.
+            if (Core.Now >= _nextCampShuffle)
+            {
+                _nextCampShuffle = Core.Now +
+                    TimeSpan.FromSeconds(Utility.RandomMinMax(4, 10));
+                if (bot.InRange(_ambushSpot, 8))
+                {
+                    var dir = (Direction)Utility.Random(8);
+                    bot.Direction = dir;
+                    bot.Move(dir);
+                }
+                else
+                {
+                    var back = bot.GetDirectionTo(_ambushSpot);
+                    bot.Direction = back;
+                    bot.Move(back);
+                    bot.Move(back);
+                }
+            }
+
+            if (Core.Now >= _nextScan)
+            {
+                _nextScan = Core.Now + ScanInterval;
+                TryBeginPackHunt(bot);
+            }
+            return true;
+        }
+
+        // Pick a nearby dungeon entrance and send the crew. One red
+        // initiates; same-gang mates in earshot adopt the same spot, so
+        // the whole gang marches together.
+        private void TryBeginAmbush(PlayerBot bot)
+        {
+            BotDestination pick = null;
+            int bestRank = int.MaxValue;
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (d.Type != DestinationType.DungeonEntrance)
+                {
+                    continue;
+                }
+                // Prefer near mouths, with jitter so a crew doesn't camp
+                // the same one forever.
+                int rank = (int)bot.GetDistanceToSqrt(d.Location) +
+                           Utility.Random(400);
+                if (rank < bestRank)
+                {
+                    bestRank = rank;
+                    pick = d;
+                }
+            }
+            if (pick == null)
+            {
+                return;
+            }
+
+            BeginAmbushAt(bot, pick);
+            int crew = 1;
+            foreach (var m in bot.GetMobilesInRange(30))
+            {
+                if (m is PlayerBot mate && mate != bot &&
+                    mate.Behavior is PKBehavior pk &&
+                    pk.GangId == GangId && pk._phase == Phase.Patrol &&
+                    pk._ambushSpot == Point3D.Zero && pk._hunt == null &&
+                    !DungeonRegistry.IsInDungeon(mate))
+                {
+                    pk.BeginAmbushAt(mate, pick);
+                    crew++;
+                }
+            }
+            Console.WriteLine(
+                $"[pk] {bot.Name} leads {crew} red(s) to ambush '{pick.Name}'");
+        }
+
+        private void BeginAmbushAt(PlayerBot bot, BotDestination dest)
+        {
+            _ambushSpot = dest.Location;
+            _ambushName = dest.Name;
+            _atAmbush = false;
+            _ambushDeadline = Core.Now + TimeSpan.FromMinutes(12);
+
+            // Re-aim the patrol at the mouth. The Traveler handles the
+            // whole trip (roads, recall if it owns the magic, rescue).
+            _patrol?.OnDetached(bot);
+            _patrol = new TravelerBehavior
+            {
+                AvoidTowns = true,
+                DestinationName = dest.Name,
+            };
+            _patrol.OnAttached(bot);
+        }
+
+        private void ClearAmbush(PlayerBot bot)
+        {
+            _ambushSpot = Point3D.Zero;
+            _ambushName = null;
+            _atAmbush = false;
+
+            _patrol?.OnDetached(bot);
+            _patrol = new TravelerBehavior { AvoidTowns = true };
+            _patrol.OnAttached(bot);
         }
 
         // A red only commits to a hunt with a pack (2+ reds) and only when
@@ -495,12 +691,8 @@ namespace Server.CustomBots
             bot.Combatant = victim;
             Taunt(bot);
 
-            // Pull in gang-mates: any PK with the same GangId nearby drops
-            // what it's doing and converges on this victim.
-            if (GangId != 0)
-            {
-                AlertGang(bot, victim);
-            }
+            // Pull in the crew — reds gank, they don't duel.
+            AlertGang(bot, victim);
         }
 
         private void TickHunt(PlayerBot bot)
@@ -533,17 +725,183 @@ namespace Server.CustomBots
                 return;
             }
 
-            // Keep the pressure on. The combat system attacks Combatant
-            // each weapon/spell tick; we just keep Combatant set and close
-            // distance if we've drifted out of reach.
+            // Keep the pressure on. The engine swings the weapon at
+            // Combatant on its own; the upgrades below add the rest of a
+            // real killer's game.
             bot.Combatant = victim;
             Taunt(bot);
+
+            // Mid-fight care — bandage under the swings like every real
+            // dexxer, pots when it's dire.
+            TryCombatCare(bot);
+
+            // The Red Mage throws real spells: Paralyze the runner,
+            // e-bolt/explosion the rest. Casting pockets the weapon
+            // (pre-AOS ClearHands) — re-arm it between casts, the same
+            // tank-mage rhythm the blues use.
+            TryCombatMagic(bot, victim);
+            if (bot.Spell != null)
+            {
+                return; // committed to the cast — stand and deliver
+            }
+            RearmWeapon(bot);
+
+            // Positioning: archers hold their range band; everyone else
+            // closes to swing.
+            if (bot.Skills[SkillName.Archery].Base >= 50.0)
+            {
+                int adist = (int)bot.GetDistanceToSqrt(victim.Location);
+                if (adist < 3)
+                {
+                    var away = Opposite(bot.GetDirectionTo(victim));
+                    if (bot.Direction != away) bot.Direction = away;
+                    bot.Move(away);
+                }
+                else if (adist > 7)
+                {
+                    var din = bot.GetDirectionTo(victim);
+                    if (bot.Direction != din) bot.Direction = din;
+                    bot.Move(din);
+                }
+                return;
+            }
 
             if (!bot.InRange(victim.Location, 1))
             {
                 var d = bot.GetDirectionTo(victim);
                 if (bot.Direction != d) bot.Direction = d;
                 bot.Move(d);
+            }
+        }
+
+        // Drink/bandage on a short cadence while fighting or fleeing.
+        private void TryCombatCare(PlayerBot bot)
+        {
+            if (Core.Now < _nextCareAt || bot.HitsMax <= 0)
+            {
+                return;
+            }
+            double frac = (double)bot.Hits / bot.HitsMax;
+            if (frac >= 0.65 && !bot.Poisoned)
+            {
+                return;
+            }
+            _nextCareAt = Core.Now + TimeSpan.FromSeconds(4);
+
+            if (bot.Poisoned && AdventurerBehavior.DrinkCurePotion(bot))
+            {
+                return;
+            }
+            if (frac < 0.40 && AdventurerBehavior.DrinkHealPotion(bot))
+            {
+                return;
+            }
+            if (bot.Skills[SkillName.Healing].Base >= 50.0)
+            {
+                AdventurerBehavior.StartBandageSelf(bot);
+            }
+        }
+
+        // Real ModernUO casting for mage-skilled reds. Launch here; the
+        // NEXT tick delivers the target cursor onto the victim (era casts
+        // resolved over seconds anyway).
+        private void TryCombatMagic(PlayerBot bot, Mobile victim)
+        {
+            double magery = bot.Skills[SkillName.Magery].Base;
+            if (magery < 50.0)
+            {
+                return;
+            }
+
+            // A cursor is up from the last cast — deliver it.
+            if (bot.Target != null)
+            {
+                try { bot.Target.Invoke(bot, victim); } catch { }
+                _nextCastAt = Core.Now +
+                    TimeSpan.FromSeconds(2.5 + Utility.RandomDouble() * 2.0);
+                return;
+            }
+            if (bot.Spell != null || Core.Now < _nextCastAt)
+            {
+                return;
+            }
+            if (!bot.InRange(victim.Location, 10) || !bot.InLOS(victim))
+            {
+                return;
+            }
+
+            string spell;
+            if (magery >= 65.0 && bot.Mana >= 14 && !victim.Paralyzed &&
+                Utility.RandomDouble() < 0.30)
+            {
+                spell = "Server.Spells.Fifth.ParalyzeSpell"; // the PK opener
+            }
+            else if (magery >= 85.0 && bot.Mana >= 20)
+            {
+                spell = Utility.RandomDouble() < 0.35
+                    ? "Server.Spells.Sixth.ExplosionSpell"
+                    : "Server.Spells.Sixth.EnergyBoltSpell";
+            }
+            else if (magery >= 55.0 && bot.Mana >= 11)
+            {
+                spell = "Server.Spells.Fourth.LightningSpell";
+            }
+            else if (bot.Mana >= 9)
+            {
+                spell = "Server.Spells.Third.FireballSpell";
+            }
+            else
+            {
+                return; // winded — swing the weapon till the pool refills
+            }
+
+            var s = AdventurerBehavior.CreateSpell(spell, bot);
+            if (s == null)
+            {
+                return;
+            }
+            var face = bot.GetDirectionTo(victim);
+            if (bot.Direction != face) bot.Direction = face;
+            try
+            {
+                if (!s.Cast())
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                return;
+            }
+            // Cooldown is stamped when the cursor is delivered.
+        }
+
+        // Casting pocketed the weapon (pre-AOS ClearHands) — put it back
+        // in hand once the hands are free.
+        private static void RearmWeapon(PlayerBot bot)
+        {
+            if (bot.Spell != null)
+            {
+                return;
+            }
+            if (bot.FindItemOnLayer(Layer.TwoHanded) is BaseWeapon ||
+                bot.FindItemOnLayer(Layer.OneHanded) is BaseWeapon)
+            {
+                return;
+            }
+            var pack = bot.Backpack;
+            if (pack == null)
+            {
+                return;
+            }
+            foreach (var item in pack.Items)
+            {
+                if (item is BaseWeapon w && w.Skill != SkillName.Wrestling &&
+                    bot.Skills[w.Skill].Base >= 45.0)
+                {
+                    bot.EquipItem(w);
+                    return;
+                }
             }
         }
 
@@ -572,6 +930,10 @@ namespace Server.CustomBots
                 _phase = Phase.Patrol;
                 return;
             }
+
+            // Chug and bandage WHILE running — a red that flees at 30%
+            // and comes back at 70% is how gank crews reset a fight.
+            TryCombatCare(bot);
 
             // Run directly away from the threat. Double-step for a real
             // gap, like the v47 flee.
@@ -726,6 +1088,9 @@ namespace Server.CustomBots
         }
 
         // ---- GANG --------------------------------------------------------
+        // Same-gang reds ALWAYS converge on the victim; any other red on
+        // patrol nearby usually piles in too — reds have no loyalty, just
+        // appetite. (The phase check stops the pull from ping-ponging.)
         private void AlertGang(PlayerBot bot, Mobile victim)
         {
             foreach (var m in bot.Map.GetMobilesInRange(
@@ -733,10 +1098,10 @@ namespace Server.CustomBots
             {
                 if (m is not PlayerBot mate || mate == bot) continue;
                 if (mate.Behavior is not PKBehavior pk) continue;
-                if (pk.GangId != GangId) continue;
+                if (pk._phase != Phase.Patrol) continue;
 
-                // Pull a gang-mate that's just patrolling onto this victim.
-                if (pk._phase == Phase.Patrol)
+                bool sameGang = GangId != 0 && pk.GangId == GangId;
+                if (sameGang || Utility.RandomDouble() < 0.5)
                 {
                     pk.BeginHunt(mate, victim);
                 }

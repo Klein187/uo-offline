@@ -875,6 +875,15 @@ namespace Server.CustomBots
             AddToPack(bot, "Server.Items.Ginseng",      Utility.RandomMinMax(5, 15));
         }
 
+        // The murderer's extras, stacked on top of the class kit: more
+        // explosion pots and trapped pouches (the Red Mage signature).
+        // A red owns nothing worth keeping — it all rides into the fight.
+        public static void AddPKExtras(PlayerBot bot, BotSkillTier tier)
+        {
+            AddMany(bot, "Server.Items.GreaterExplosionPotion", KitScale(3, 6, tier));
+            AddTrappedPouches(bot, KitScale(2, 5, tier));
+        }
+
         // "Extra halberd(s)" — a veteran tank mage packed a spare of its
         // weapon line, because the one in hand ends up on a corpse
         // eventually.

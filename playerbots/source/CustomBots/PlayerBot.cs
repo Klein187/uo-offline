@@ -337,8 +337,11 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private void ApplyClassSkills()
         {
-            var template = BotSkillTemplates.RollTemplate(Class);
+            ApplySkillTemplate(BotSkillTemplates.RollTemplate(Class));
+        }
 
+        private void ApplySkillTemplate(SkillTemplate template)
+        {
             double primaryTarget   = BotSkillTemplates.PrimarySkillTarget(SkillTier);
             double secondaryTarget = BotSkillTemplates.SecondarySkillTarget(SkillTier);
             double utilityTarget   = BotSkillTemplates.UtilitySkillTarget(SkillTier);
@@ -431,10 +434,22 @@ namespace Server.CustomBots
             Class = cls;
 
             StripGearAndPack();
+            ResetSkills();
 
             ApplyClassSkills();
             ApplyClassStats();
             EquipmentTable.RollOutfit(this, Class, SkillTier);
+        }
+
+        // Zero every skill before a re-derive — without this, the old
+        // class's template bleeds through (a re-derived smith keeping GM
+        // Provocation from its constructor roll).
+        private void ResetSkills()
+        {
+            for (int i = 0; i < Skills.Length; i++)
+            {
+                Skills[i].Base = 0;
+            }
         }
 
         // Remove constructor-rolled equipment and backpack contents (they were
@@ -595,34 +610,48 @@ namespace Server.CustomBots
                 }
             }
 
-            // PK setup. PKs are strong (mostly Master/Grandmaster) and may
-            // belong to a gang. ~40% of a PK spawner's bots form a gang
-            // keyed to the spawner's serial, so PKs from the same spawner
-            // hunt together; the rest are solo (GangId 0).
+            // PK setup. PKs are strong (mostly Master/Grandmaster), run
+            // the era's KILLER templates, and always work as a crew — the
+            // whole spawner is one gang keyed to the spawner's serial.
             if (Behavior is PKBehavior pk)
             {
-                // PKs must be a COMBAT class — a Bard or Crafter PK can't
-                // fight and is tonally wrong. Force one of the four real
-                // fighting classes and re-roll the skill template for it.
-                BotClass[] combatClasses =
-                {
-                    BotClass.Warrior, BotClass.Mage,
-                    BotClass.Fencer,  BotClass.Archer,
-                };
-                Class = combatClasses[Utility.Random(combatClasses.Length)];
+                // The era's PK class mix: the Red Mage (tank mage) was THE
+                // classic; field dexxers fill out the gank squad.
+                int classRoll = Utility.Random(100);
+                Class = classRoll < 40 ? BotClass.Mage
+                      : classRoll < 65 ? BotClass.Warrior
+                      : classRoll < 85 ? BotClass.Fencer
+                      : BotClass.Archer;
 
-                // Strong: re-roll tier weighted high. Then re-apply skills
-                // so BOTH the new class and new tier take effect (skills
-                // were set from the original class/tier in the constructor).
                 SkillTier = Utility.RandomDouble() < 0.7
                     ? BotSkillTier.Grandmaster
                     : BotSkillTier.Master;
-                ApplyClassSkills();
 
-                if (Utility.RandomDouble() < 0.40 && Spawner != null)
+                // Full re-derive: the constructor rolled a random class's
+                // gear and skills. Strip both, apply the PK template (Red
+                // Mage / field PK with Tracking+Hiding), re-stat, re-outfit
+                // as the real class — then the murderer's extras (explosion
+                // pots, trapped pouches).
+                StripGearAndPack();
+                ResetSkills();
+                ApplySkillTemplate(BotSkillTemplates.RollPKTemplate(Class));
+                ApplyClassStats();
+                EquipmentTable.RollOutfit(this, Class, SkillTier);
+                if (Class == BotClass.Mage)
+                {
+                    EquipmentTable.EquipTankMageWeapon(this, SkillTier);
+                }
+                EquipmentTable.AddPKExtras(this, SkillTier);
+
+                // Reds run in gangs, period — pack hunts need a crew.
+                if (Spawner != null)
                 {
                     pk.GangId = (int)Spawner.Serial.Value;
                 }
+
+                Console.WriteLine(
+                    $"[pk] {Name} spawned: {SkillTier} " +
+                    $"{BotClassHelper.DisplayName(Class)} (gang {pk.GangId})");
             }
 
             // A bot that spawns INSIDE a dungeon is a dungeon crawler, no
