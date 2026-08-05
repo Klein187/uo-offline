@@ -87,8 +87,16 @@ LifecycleTransitions.cs.
 
 # 2. Crafter rebuild
 
-**Status:** current CrafterBehavior is a placeholder — rebuild from scratch,
-don't extend it.
+**Status: BUILT — and then some (Aug 2026).** The engine below shipped
+(anchor + loop + two-roll production + sell-off + props), and a later round
+replaced the "illusion" half with a real material economy: production
+consumes actual pack stock (ingots/cloth/boards), crafters buy the miners'
+ore and lumberjacks' logs with real gold, restock at the shop when dry, and
+sell finished pieces both to browsing bots (real item + coin transfer) and
+over the counter. A fourth artisan — the Carpenter — works the carpentry
+shops and buys the lumber. Per-trade chat pools and crafter-specific
+night lines landed in the same round. The notes below are the original
+design, kept for the rationale.
 
 ## Core idea: illusion, not simulation
 Crafters don't craft. No ore/ingots/cloth/fishing mechanics. They stand in the

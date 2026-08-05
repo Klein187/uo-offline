@@ -432,9 +432,10 @@ namespace Server.CustomBots
         // random bot). Mirrors the bank/vendor pinned-crowd logic.
         private static readonly (DestinationType station, BotClass cls)[] CrafterStations =
         {
-            (DestinationType.Forge,        BotClass.Smith),
-            (DestinationType.Dock,         BotClass.Fisherman),
-            (DestinationType.VendorTailor, BotClass.Tailor),
+            (DestinationType.Forge,           BotClass.Smith),
+            (DestinationType.Dock,            BotClass.Fisherman),
+            (DestinationType.VendorTailor,    BotClass.Tailor),
+            (DestinationType.VendorCarpenter, BotClass.Carpenter),
         };
 
         // Seed one artisan at each craft-station arrival point in the city,

@@ -190,7 +190,33 @@ namespace Server.CustomBots
         private static void PlayPurchase(PlayerBot buyer, PlayerBot seller)
         {
             SetCooldown(buyer, seller);
-            Console.WriteLine($"[economy] {buyer.Name} buys from {seller.Name} at ({seller.X},{seller.Y})");
+
+            // A REAL sale when the shelf and the purse allow: the finished
+            // piece moves into the buyer's pack and the coin into the
+            // crafter's. Either missing → the browse stays window-shopping.
+            Item sold = null;
+            int price = 0;
+            if (seller.Behavior is CrafterBehavior shop)
+            {
+                var item = shop.TakeMadeItem();
+                if (item != null)
+                {
+                    int asking = Utility.RandomMinMax(25, 80);
+                    if (CrafterStock.GoldOnHand(buyer) >= asking &&
+                        buyer.AddToBackpack(item) &&
+                        CrafterStock.SpendGold(buyer, asking))
+                    {
+                        seller.AddToBackpack(new Server.Items.Gold(asking));
+                        sold = item;
+                        price = asking;
+                    }
+                }
+            }
+
+            Console.WriteLine(sold != null
+                ? $"[economy] {buyer.Name} bought a {sold.GetType().Name} from {seller.Name} for {price}gp at ({seller.X},{seller.Y})"
+                : $"[economy] {buyer.Name} browses at {seller.Name}'s station at ({seller.X},{seller.Y})");
+
             BotScene.Play(
                 (0.0, buyer,  BotScene.Pick("trade_ask")),
                 (2.5, seller, BotScene.Pick("trade_reply")),
@@ -239,7 +265,12 @@ namespace Server.CustomBots
 
         // -------------------------------------------------------------------
         // DELIVERY — a hauling gatherer arrives in town. Called from the
-        // Traveler's arrival handoff. Real materials leave the pack.
+        // Traveler's arrival handoff. The haul is REAL trade now: a crafter
+        // of the matching trade working nearby (smith for ore, carpenter
+        // for logs) pays actual gold from its purse and the raw load is
+        // refined into the crafter's working stock (ingots/boards) on the
+        // spot. No matching crafter — or a broke one — and the load goes
+        // to the bank/shop like before.
         // -------------------------------------------------------------------
         public static void DeliverMaterials(PlayerBot gatherer, DestinationType at)
         {
@@ -248,11 +279,12 @@ namespace Server.CustomBots
             // Count and remove the haul — the bot's own pack AND the pack
             // beast's (that's where a shift with a beast put the yield).
             int hauled = 0;
-            hauled += TakeYield(gatherer.Backpack);
+            Type rawType = null;
+            hauled += TakeYield(gatherer.Backpack, ref rawType);
             var beast = gatherer.PackAnimal;
             if (beast is { Deleted: false })
             {
-                hauled += TakeYield(beast.Backpack);
+                hauled += TakeYield(beast.Backpack, ref rawType);
             }
 
             // The beast stands through the unload with its packs empty.
@@ -260,46 +292,70 @@ namespace Server.CustomBots
             // walks it back to the nearest stables and puts it away (or
             // turns it loose offscreen when no stables is in reach).
 
-            // Payment proportional to the haul, straight into the purse.
-            if (hauled > 0)
-            {
-                gatherer.AddToBackpack(new Server.Items.Gold(hauled * Utility.RandomMinMax(2, 4)));
-            }
-
-            // A crafter working nearby buys the load in person.
+            // A crafter of the matching trade working nearby buys the load.
             PlayerBot crafter = null;
-            foreach (var m in gatherer.Map.GetMobilesInRange(gatherer.Location, 12))
+            CrafterProfile buyingProfile = null;
+            if (hauled > 0 && rawType != null)
             {
-                if (m is PlayerBot c && c != gatherer &&
-                    c.Behavior is CrafterBehavior && c.Alive)
+                foreach (var m in gatherer.Map.GetMobilesInRange(gatherer.Location, 12))
                 {
-                    crafter = c;
-                    break;
+                    if (m is PlayerBot c && c != gatherer && c.Alive &&
+                        c.Behavior is CrafterBehavior)
+                    {
+                        var p = CrafterProfiles.For(c.Class);
+                        if (p.RawGood == rawType)
+                        {
+                            crafter = c;
+                            buyingProfile = p;
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (crafter != null)
+            int price = hauled * Utility.RandomMinMax(2, 4);
+            bool crafterPaid = crafter != null && hauled > 0 &&
+                               CrafterStock.SpendGold(crafter, price);
+
+            if (crafterPaid)
             {
+                // Real coin changes hands; the raw haul is refined straight
+                // into the crafter's stock (ore → ingots, logs → boards).
+                // Anything past the stock cap "goes to the shop" with the
+                // rest of the shipment.
+                gatherer.AddToBackpack(new Server.Items.Gold(price));
+                int accepted = CrafterStock.Add(crafter, buyingProfile, hauled);
+
                 BotScene.Play(
                     (0.0, gatherer, BotScene.Pick("gather_deliver")),
-                    (2.0, crafter,  BotScene.Pick("trade_reply")),
-                    (2.0, crafter,  "ty"),
-                    (1.5, gatherer, BotScene.Pick("trade_close")));
-            }
-            else
-            {
-                BotScene.Play(
-                    (0.0, gatherer, BotScene.Pick("gather_deliver")));
+                    (2.0, crafter,  BotScene.Pick("craft_buy")),
+                    (2.0, gatherer, "ty"),
+                    (1.5, crafter,  BotScene.Pick("trade_close")));
+
+                Console.WriteLine(
+                    $"[economy] {gatherer.Name} sold {hauled} raw materials to {crafter.Name} " +
+                    $"for {price}gp at {at} ({accepted} into stock)" +
+                    (beast != null ? " (pack beast unloaded)" : ""));
+                return;
             }
 
+            // No trade buyer — bank the load; the shop pays instead.
+            if (hauled > 0)
+            {
+                gatherer.AddToBackpack(new Server.Items.Gold(price));
+            }
+            BotScene.Play(
+                (0.0, gatherer, BotScene.Pick("gather_deliver")));
+
             Console.WriteLine(
-                $"[economy] {gatherer.Name} delivered {hauled} materials at {at}" +
-                (crafter != null ? $" to {crafter.Name}" : " (banked)") +
+                $"[economy] {gatherer.Name} delivered {hauled} materials at {at} (banked)" +
                 (beast != null ? " (pack beast unloaded)" : ""));
         }
 
-        // Remove all raw materials from a container; returns the amount.
-        private static int TakeYield(Server.Items.Container pack)
+        // Remove all raw materials from a container; returns the amount and
+        // reports the dominant raw type seen (a haul is single-type — logs
+        // for lumberjacks, ore for miners).
+        private static int TakeYield(Server.Items.Container pack, ref Type rawType)
         {
             if (pack == null)
             {
@@ -317,6 +373,8 @@ namespace Server.CustomBots
             foreach (var item in goods)
             {
                 taken += item.Amount;
+                rawType = item is Server.Items.IronOre ? typeof(Server.Items.IronOre)
+                                                       : typeof(Server.Items.Log);
                 item.Delete();
             }
             return taken;

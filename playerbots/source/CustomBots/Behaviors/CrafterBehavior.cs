@@ -29,7 +29,27 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Crafter";
 
-        public override string GetStatusLine(PlayerBot bot) => "working the shop";
+        public override string GetStatusLine(PlayerBot bot)
+        {
+            string doing = bot.Class switch
+            {
+                BotClass.Smith     => "smithing at the forge",
+                BotClass.Tailor    => "sewing at the tailor shop",
+                BotClass.Carpenter => "working the carpenter bench",
+                BotClass.Fisherman => "fishing off the dock",
+                _                  => "working the shop",
+            };
+
+            var profile = CrafterProfiles.For(bot.Class);
+            if (profile.Materials.Length == 0)
+            {
+                return doing;
+            }
+            int stock = CrafterStock.Count(bot, profile);
+            return stock < profile.CostMax
+                ? $"{doing} — out of {profile.MaterialNoun}"
+                : $"{doing} ({stock} {profile.MaterialNoun})";
+        }
 
         // Shoved-off-tile tolerance, same as BankSitter.
         public int HomeRadius { get; set; } = 1;
@@ -47,6 +67,14 @@ namespace Server.CustomBots
         private DateTime _nextSellAt = DateTime.MinValue;
         private static readonly TimeSpan SellMin = TimeSpan.FromSeconds(45);
         private static readonly TimeSpan SellMax = TimeSpan.FromSeconds(120);
+
+        // Dry spell — the shop is out of materials. The bot stops producing,
+        // asks around for stock, and after a while restocks over the counter
+        // if no gatherer's haul has come through (and the purse allows).
+        private DateTime? _drySince;
+        private DateTime _nextNeedLineAt = DateTime.MinValue;
+        private static readonly TimeSpan DryRestockAfter = TimeSpan.FromMinutes(3);
+        private const int RestockUnitPrice = 2; // gp per unit over the counter
 
         // Hard cap on tracked made-items so a pack never balloons even before
         // the sell-off timer fires.
@@ -71,16 +99,7 @@ namespace Server.CustomBots
 
         public CrafterBehavior()
         {
-            // Craft-themed chatter. craft_talk is the craft line pool;
-            // wts/wtb because crafters sell wares and buy materials;
-            // small_talk for ambient color.
-            ChatCategories = new[]
-            {
-                "craft_talk",
-                "wts",
-                "wtb",
-                "small_talk",
-            };
+            ChatCategories = CraftChat;
 
             // Moderate chatter — busier than a wanderer, calmer than a bank
             // crowd; a crafter is focused on the work.
@@ -89,9 +108,18 @@ namespace Server.CustomBots
             MaxChatCooldown = TimeSpan.FromSeconds(50);
         }
 
-        // Per-class ambient chatter. Fishermen get their own dialogue pool.
-        private static readonly string[] FisherChat = { "fishing", "small_talk" };
-        private static readonly string[] CraftChat  = { "craft_talk", "wts", "wtb", "small_talk" };
+        // Per-class ambient chatter — a smith talks like a smith, a tailor
+        // like a tailor. The shared craft_talk pool carries the handful of
+        // any-trade lines; each class file carries the trade's own patter.
+        private static readonly string[] FisherChat    = { "fishing", "small_talk" };
+        private static readonly string[] SmithChat     = { "smith_talk", "craft_talk" };
+        private static readonly string[] TailorChat    = { "tailor_talk", "craft_talk" };
+        private static readonly string[] CarpenterChat = { "carpenter_talk", "craft_talk" };
+        private static readonly string[] CraftChat     = { "craft_talk" };
+
+        // A crafter's late-night mutter is about the SHOP, not dungeon runs
+        // — the generic night_talk pool belongs to adventurers.
+        protected override string NightTalkCategory => "craft_night";
 
         public override void OnAttached(PlayerBot bot)
         {
@@ -101,7 +129,14 @@ namespace Server.CustomBots
 
             // Per-class chatter. Fishermen walk themselves to the water's edge
             // each tick (see FishermanWork) rather than anchoring to a Home.
-            ChatCategories = bot.Class == BotClass.Fisherman ? FisherChat : CraftChat;
+            ChatCategories = bot.Class switch
+            {
+                BotClass.Fisherman => FisherChat,
+                BotClass.Smith     => SmithChat,
+                BotClass.Tailor    => TailorChat,
+                BotClass.Carpenter => CarpenterChat,
+                _                  => CraftChat,
+            };
 
             // A smith works AT the anvil — face it. (Without this the
             // hammer swings at whatever direction the walk-in happened to
@@ -206,13 +241,63 @@ namespace Server.CustomBots
                 return;  // moving this tick; work on a tick we're settled
             }
 
-            // Settled at the station — work on cadence: play the animation and
-            // attempt production.
+            // Settled at the station — work on cadence. With materials in
+            // stock, that's the animation + a production attempt; dry, the
+            // hammer stays down and the bot hunts for stock instead.
             if (Core.Now >= _nextCraftAt)
             {
-                WorkCycle(bot);
+                var profile = CrafterProfiles.For(bot.Class);
+                if (profile.Materials.Length > 0 &&
+                    CrafterStock.Count(bot, profile) < profile.CostMax)
+                {
+                    DrySpell(bot, profile);
+                }
+                else
+                {
+                    _drySince = null;
+                    WorkCycle(bot);
+                }
                 ScheduleNextCraft();
             }
+        }
+
+        // -------------------------------------------------------------------
+        // DrySpell — no materials to work. Ask around for stock (era-real
+        // "wtb iron ingots" lines), and if no hauler shows up for a while,
+        // restock over the counter with real gold. A broke, dry crafter
+        // just waits — the next sale or delivery gets the shop moving again.
+        // -------------------------------------------------------------------
+        private void DrySpell(PlayerBot bot, CrafterProfile profile)
+        {
+            _drySince ??= Core.Now;
+
+            if (Core.Now >= _nextNeedLineAt && IsPlayerNearby(bot))
+            {
+                var line = BotScene.Pick("craft_need", "{mat}", profile.MaterialNoun);
+                if (!string.IsNullOrEmpty(line))
+                {
+                    bot.Say(line);
+                }
+                _nextNeedLineAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(45, 100));
+            }
+
+            if (Core.Now - _drySince.Value < DryRestockAfter)
+            {
+                return;
+            }
+
+            int units = Utility.RandomMinMax(40, 80);
+            int price = units * RestockUnitPrice;
+            if (!CrafterStock.SpendGold(bot, price))
+            {
+                return; // purse can't cover it — keep waiting for a haul
+            }
+
+            CrafterStock.Add(bot, profile, units);
+            _drySince = null;
+            Console.WriteLine(
+                $"[crafter] {bot.Name} restocked {units} {profile.MaterialNoun} " +
+                $"over the counter for {price}gp");
         }
 
         public override void OnDetached(PlayerBot bot)
@@ -476,6 +561,23 @@ namespace Server.CustomBots
             return null;
         }
 
+        // Hand one finished piece to a buyer — the purchase scenes in
+        // BotEconomy call this so a "sold!" actually moves a real item into
+        // the buyer's pack. Returns null when there's nothing on the shelf.
+        public Item TakeMadeItem()
+        {
+            while (_made.Count > 0)
+            {
+                var item = _made[^1];
+                _made.RemoveAt(_made.Count - 1);
+                if (item is { Deleted: false })
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
         // Record a produced item and enforce the hard pack cap by selling the
         // oldest overflow immediately.
         private void Track(Item item)
@@ -501,21 +603,52 @@ namespace Server.CustomBots
                 return;
             }
 
-            if (_made.Count == 0)
+            // Keep a couple of finished pieces ON the shelf — that's what a
+            // browsing bot actually buys in the purchase scenes. Only the
+            // surplus goes over the counter to the shop.
+            if (_made.Count <= 2)
             {
                 return;
             }
 
-            int sell = Math.Min(_made.Count, Utility.RandomMinMax(1, 2));
+            int sell = Math.Min(_made.Count - 2, Utility.RandomMinMax(1, 2));
             for (int i = 0; i < sell; i++)
             {
                 Vanish(_made[0]);
                 _made.RemoveAt(0);
             }
 
+            // The batch goes over the counter to the shop's NPC vendor —
+            // turn to face them for the hand-off when one's in range.
+            FaceNearestVendor(bot);
+
             // The shop PAYS for the batch — the crafter's purse grows with
-            // its work (and the counter hand-off is visible now and then).
-            bot.AddToBackpack(new Gold(sell * Utility.RandomMinMax(15, 40)));
+            // its work (and that gold buys the next ore haul).
+            int paid = sell * Utility.RandomMinMax(15, 40);
+            bot.AddToBackpack(new Gold(paid));
+            Console.WriteLine($"[crafter] {bot.Name} sold {sell} finished piece(s) to the shop for {paid}gp");
+        }
+
+        // Face the shop's NPC vendor for the counter hand-off, if one is
+        // within conversational range.
+        private static void FaceNearestVendor(PlayerBot bot)
+        {
+            if (bot.Map == null || bot.Map == Map.Internal)
+            {
+                return;
+            }
+            foreach (var m in bot.Map.GetMobilesInRange(bot.Location, 8))
+            {
+                if (m is Server.Mobiles.BaseVendor vendor && !vendor.Deleted)
+                {
+                    var d = bot.GetDirectionTo(vendor.Location);
+                    if (bot.Direction != d)
+                    {
+                        bot.Direction = d;
+                    }
+                    return;
+                }
+            }
         }
 
         // Sell off a fisherman's real catch so the pack never fills. Deletes

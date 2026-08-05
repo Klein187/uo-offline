@@ -1,0 +1,11 @@
+# craft_need.txt — a crafter out of materials, asking around. {mat} is
+# filled with the trade's material ("iron ingots", "cloth", "boards").
+
+wtb {mat}, paying well
+anyone selling {mat}
+out of {mat}, cant work
+need {mat} bad, good price paid
+wtb {mat}, meet me at the shop
+completely dry on {mat}
+{mat}. anyone. please
+shop wont run without {mat}

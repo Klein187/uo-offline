@@ -1,35 +1,16 @@
-# craft_talk.txt — lines for crafter bots working their station. T2A era.
-# Period-accurate: GM-made gear, ingots, boards, cloth, fletching, repairs.
-# Mix of work-mutter, sales pitch, and material requests.
+# craft_talk.txt — any-trade crafter lines (shared pool). The per-trade
+# patter lives in smith_talk / tailor_talk / carpenter_talk; keep this
+# file generic so nothing here reads wrong at any station.
 
-Anyone need armor repaired?
-GM smith here, fair prices
-Full plate suits, made to order
-Selling GM weapons, all types
-Need 200 iron ingots, paying well
-This one came out nicely
-WTS GM platemail
-Repairs while you wait
-Fine clothing, any color
-GM tailor, leather and cloth
-Need hides and leather, buying
-Selling sewing kits
-Dyed cloak, pick your color
-Bows and crossbows, GM made
-Selling arrows, 100 a bundle
-Need feathers and shafts
-GM bowcraft, best in town
-Crossbows, heavy crossbows, hally bows
-Tools, all kinds, cheap
-GM tinker at your service
-Need ingots for tinkering
-Selling lockpicks and tools
-Scrolls scribed here
-GM scribe, all circles
-Need blank scrolls and regs
-Furniture made to order
-GM carpenter, good wood
-Need boards, lots of boards
-Honest work, honest prices
-Been at this craft for years
-Quality takes time
+honest work, honest prices
+quality takes time
+been at this craft for years
+this one came out nicely
+back to work
+orders piling up
+long day at the bench
+hands are killing me
+customers all morning, no break
+almost got the knack of this
+slow day. anyone buying
+gm work doesnt come cheap

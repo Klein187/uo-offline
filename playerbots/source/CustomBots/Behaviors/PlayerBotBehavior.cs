@@ -31,6 +31,11 @@ namespace Server.CustomBots
         public virtual TimeSpan MaxChatCooldown { get; protected set; } = TimeSpan.FromSeconds(90);
         public virtual int ChatHearRange        { get; protected set; } = 22;
 
+        // Which pool the late-night texture layer draws from. Behaviors
+        // whose bots aren't adventurers override this so a smith's 2am
+        // mutter is about closing the shop, never "one more dungeon run".
+        protected virtual string NightTalkCategory => "night_talk";
+
         // Probability that a spoken line gets its first letter capitalized.
         // Mimics how some real players naturally capitalize sentences while
         // others don't. ~35% feels right — most lowercase (1998 UO style),
@@ -135,7 +140,7 @@ namespace Server.CustomBots
 
             if (Utility.RandomDouble() < GossipShare)
             {
-                var gossip = BotEventJournal.ComposeGossip(bot.Name);
+                var gossip = BotEventJournal.ComposeGossip(bot.Name, bot.Location);
                 if (!string.IsNullOrEmpty(gossip))
                 {
                     SpeakLine(bot, gossip);
@@ -159,7 +164,7 @@ namespace Server.CustomBots
             double texture = Utility.RandomDouble();
             if (night && texture < 0.25)
             {
-                line = ChatLibrary.PickRandom("night_talk");
+                line = ChatLibrary.PickRandom(NightTalkCategory);
             }
             else if (texture < 0.10)
             {
@@ -296,7 +301,7 @@ namespace Server.CustomBots
             bot.Say(line);
         }
 
-        private bool IsPlayerNearby(PlayerBot bot)
+        protected bool IsPlayerNearby(PlayerBot bot)
         {
             var range = ChatHearRange;
             foreach (var m in bot.Map.GetMobilesInRange(bot.Location, range))

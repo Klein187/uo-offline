@@ -151,6 +151,7 @@ namespace Server.CustomBots
                 case BotClass.Smith:
                 case BotClass.Tailor:
                 case BotClass.Fisherman:
+                case BotClass.Carpenter:
                     // Seed a few finished pieces of the bot's trade so a
                     // freshly-seen artisan already looks established. The set
                     // is data-driven per class (CrafterProfiles.StarterProps)
@@ -952,7 +953,8 @@ namespace Server.CustomBots
                 case BotClass.Crafter:
                 case BotClass.Smith:
                 case BotClass.Tailor:
-                case BotClass.Fisherman: RollCrafterLook(bot, tier); break;
+                case BotClass.Fisherman:
+                case BotClass.Carpenter: RollCrafterLook(bot, tier); break;
                 case BotClass.Lumberjack:
                 case BotClass.Miner:   RollGathererLook(bot, tier);  break;
                 case BotClass.Healer:  RollHealerLook(bot, tier);   break;

@@ -70,6 +70,16 @@ namespace Server.CustomBots
                 return null;
             }
 
+            // Materials are REAL now: a finished piece eats stock from the
+            // pack (ingots/cloth/boards). No stock, no output — the behavior
+            // notices the dry spell and goes looking for materials instead.
+            if (profile.Materials.Length > 0 &&
+                !CrafterStock.Consume(bot, profile,
+                    Utility.RandomMinMax(profile.CostMin, profile.CostMax)))
+            {
+                return null;
+            }
+
             // Roll 2 — pick a band, then an item within it.
             var band = PickBand(bot.SkillTier, profile);
             if (band.Length == 0)

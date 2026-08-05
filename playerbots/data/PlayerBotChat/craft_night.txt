@@ -1,0 +1,15 @@
+# craft_night.txt — a crafter's late-night lines (21:00–05:00). Replaces
+# the generic night_talk pool for crafter bots: their 2am is about the
+# SHOP, never "one more dungeon run".
+
+one more order then i close up
+shops closed soon
+should bank the till and sleep
+arms ache. nearly done
+last batch of the night
+cant leave work half finished
+early orders tomorrow, should sleep
+still behind on orders
+whos buying at this hour
+late shift again
+just finishing this piece then bed

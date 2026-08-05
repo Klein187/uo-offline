@@ -190,16 +190,17 @@ namespace Server.CustomBots
 
                 if (hauling)
                 {
-                    // Loaded up — take the goods to town. Miners favor the
-                    // forge/smith (their buyer), lumberjacks the carpenter;
-                    // the bank takes anything.
+                    // Loaded up — take the goods to town. Strongly favor the
+                    // trade that PAYS for the load in person (smiths buy ore
+                    // at the forge, carpenters buy logs at the shop); the
+                    // bank still takes anything, but it's the fallback now.
                     w = d.Type switch
                     {
-                        DestinationType.Bank => 4.0,
+                        DestinationType.Bank => 2.0,
                         DestinationType.Forge or DestinationType.VendorSmith
-                            when bot.Class == BotClass.Miner => 6.0,
+                            when bot.Class == BotClass.Miner => 9.0,
                         DestinationType.VendorCarpenter
-                            when bot.Class == BotClass.Lumberjack => 6.0,
+                            when bot.Class == BotClass.Lumberjack => 9.0,
                         _ => 0.02,
                     };
                 }

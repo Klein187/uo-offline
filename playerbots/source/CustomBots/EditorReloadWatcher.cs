@@ -349,6 +349,7 @@ namespace Server.CustomBots
                 BotClass.Mage, BotClass.Mage, BotClass.Mage,
                 BotClass.Fencer, BotClass.Archer, BotClass.Tamer,
                 BotClass.Smith, BotClass.Tailor, BotClass.Fisherman,
+                BotClass.Carpenter,
                 BotClass.Healer, BotClass.Thief, BotClass.Bard,
                 BotClass.Ranger, BotClass.Lumberjack, BotClass.Miner,
                 BotClass.TreasureHunter, BotClass.Merchant,
@@ -968,14 +969,25 @@ namespace Server.CustomBots
             var lines = new List<string>();
             try
             {
-                var speakers = new List<string> { "A Passerby" };
+                // Speakers carry a LOCATION now — gossip is distance-gated
+                // (news travels at walking-rumor speed). Event actors speak
+                // from where their event happened (they were there), the
+                // Britain passerby hears only what's reached Britain, and
+                // the Minoc miner demonstrates the gate: fresh far-off news
+                // never comes out of them.
+                var speakers = new List<(string name, Point3D loc)>
+                {
+                    ("A Passerby", new Point3D(1424, 1683, 0)),      // Britain bank
+                    ("A Miner In Minoc", new Point3D(2500, 561, 0)), // far north-east
+                };
                 foreach (var ev in BotEventJournal.Recent(30))
                 {
-                    if (!string.IsNullOrEmpty(ev.Actor) && !speakers.Contains(ev.Actor))
+                    if (!string.IsNullOrEmpty(ev.Actor) &&
+                        !speakers.Exists(s => s.name == ev.Actor))
                     {
-                        speakers.Add(ev.Actor);
+                        speakers.Add((ev.Actor, new Point3D(ev.X, ev.Y, 0)));
                     }
-                    if (speakers.Count >= 8)
+                    if (speakers.Count >= 9)
                     {
                         break;
                     }
@@ -983,9 +995,9 @@ namespace Server.CustomBots
 
                 for (int round = 0; round < 3; round++)
                 {
-                    foreach (var speaker in speakers)
+                    foreach (var (speaker, loc) in speakers)
                     {
-                        var line = BotEventJournal.ComposeGossip(speaker);
+                        var line = BotEventJournal.ComposeGossip(speaker, loc);
                         if (!string.IsNullOrEmpty(line))
                         {
                             lines.Add($"{speaker}: {line}");

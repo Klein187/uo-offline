@@ -116,6 +116,13 @@ namespace Server.CustomBots
                     new[] { SkillName.ArmsLore, SkillName.Cooking, SkillName.Tinkering,
                             SkillName.Camping, SkillName.MagicResist }),
 
+                // The era carpenter: real Lumberjacking (their own boards
+                // when the shop runs dry) and utility Magery like the smith.
+                BotClass.Carpenter => new SkillTemplate(
+                    SkillName.Carpentry,
+                    new[] { SkillName.Lumberjacking, SkillName.Tinkering, SkillName.Magery,
+                            SkillName.Meditation, SkillName.Musicianship, SkillName.ArmsLore }),
+
                 // Treasure maps and sea serpents — the fighting fisherman.
                 BotClass.Fisherman => new SkillTemplate(
                     SkillName.Fishing,
@@ -342,6 +349,7 @@ namespace Server.CustomBots
                 BotClass.Crafter    => StatsSmith,
                 BotClass.Smith      => StatsSmith,
                 BotClass.Tailor     => StatsTailor,
+                BotClass.Carpenter  => StatsSmith,
                 BotClass.Fisherman  => StatsHybrid,
                 BotClass.Healer     => StatsCaster,
                 BotClass.Thief      => StatsThief,

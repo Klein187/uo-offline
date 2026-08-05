@@ -278,18 +278,28 @@ namespace Server.CustomBots
             return "the wilderness";
         }
 
+        // News doesn't teleport: a rumor spreads outward from where it
+        // happened at roughly this many seconds per tile (~30 tiles a
+        // minute — word of mouth, travelers, recall runs). A murder in
+        // Trinsic reaches Minoc's bank crowd in about an hour and a
+        // quarter, not two minutes; the same murder is talk of Trinsic
+        // itself almost immediately.
+        private const double NewsSecondsPerTile = 2.0;
+
         // -------------------------------------------------------------------
         // Gossip — compose a line about a recent event. Null when there's
         // nothing fresh to talk about (or no templates). An event about
         // the SPEAKER uses the "<type>_self" first-person templates ("i
         // got murdered by X, watch yourself") — a bot never narrates its
         // own story in the third person. Nobody gossips about an event
-        // they couldn't plausibly have heard of yet (< 60s old), retold
-        // events fade (TellCount halves the weight per telling), and a
-        // template that needs a token the event doesn't have (a self-kill
-        // has no {other}) is never picked.
+        // they couldn't plausibly have heard of yet — a minimum 60s
+        // everywhere, plus travel time proportional to how far the
+        // speaker is from where it happened (own events are exempt: the
+        // speaker was there). Retold events fade (TellCount halves the
+        // weight per telling), and a template that needs a token the
+        // event doesn't have (a self-kill has no {other}) is never picked.
         // -------------------------------------------------------------------
-        public static string ComposeGossip(string speakerName)
+        public static string ComposeGossip(string speakerName, Point3D speakerLoc)
         {
             if (_templates.Count == 0 || _ring.Count == 0)
             {
@@ -324,6 +334,19 @@ namespace Server.CustomBots
                 if (!_templates.ContainsKey(key))
                 {
                     continue;
+                }
+
+                // Distance gate: someone ELSE's news has to physically reach
+                // the speaker. (Point3D.Zero = caller has no location —
+                // legacy/test paths — which skips the gate.)
+                if (!own && speakerLoc != Point3D.Zero)
+                {
+                    int dist = Math.Max(Math.Abs(ev.X - speakerLoc.X),
+                                        Math.Abs(ev.Y - speakerLoc.Y));
+                    if (age < TimeSpan.FromSeconds(60 + dist * NewsSecondsPerTile))
+                    {
+                        continue; // word hasn't traveled this far yet
+                    }
                 }
 
                 double w = baseW / (1.0 + ev.TellCount);

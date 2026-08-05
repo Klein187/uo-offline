@@ -54,6 +54,30 @@ namespace Server.CustomBots
         // Seeded once at spawn so a freshly-seen crafter already has a few
         // pieces of their trade in their pack.
         public Func<PlayerBot, Item>[] StarterProps = Array.Empty<Func<PlayerBot, Item>>();
+
+        // ---- Materials (the real side of the economy) ----
+        //
+        // Item types that count as this trade's working stock (iron ingots,
+        // cloth/leather, boards). Empty = the trade doesn't consume
+        // materials (fisherman). Production CONSUMES stock: no materials,
+        // no output — the bot asks around for more instead.
+        public Type[] Materials = Array.Empty<Type>();
+
+        // Build a stack of the trade's staple material (used for starter
+        // stock, refining a bought raw haul, and vendor restocks).
+        public Func<int, Item> MakeMaterial;
+
+        // Materials consumed per finished piece, rolled in [CostMin,CostMax].
+        public int CostMin = 6;
+        public int CostMax = 16;
+
+        // The RAW gatherer good this trade buys off a hauler (iron ore for
+        // the smith, logs for the carpenter). Null = nobody's haul feeds
+        // this trade; it restocks from the shop instead.
+        public Type RawGood;
+
+        // How the material reads in chat/status ("iron ingots", "cloth").
+        public string MaterialNoun = "materials";
     }
 
     public static class CrafterProfiles
@@ -104,7 +128,16 @@ namespace Server.CustomBots
                 {
                     _ => new Dagger(),
                     _ => new RingmailGloves(),
+                    // Working stock + a purse to buy the miners' ore with.
+                    _ => new IronIngot(Utility.RandomMinMax(40, 90)),
+                    _ => new Gold(Utility.RandomMinMax(150, 400)),
                 },
+                Materials     = new[] { typeof(IronIngot) },
+                MakeMaterial  = amt => new IronIngot(amt),
+                CostMin       = 8,
+                CostMax       = 20,
+                RawGood       = typeof(IronOre),
+                MaterialNoun  = "iron ingots",
             },
 
             // ---------------------------------------------------------------
@@ -144,7 +177,66 @@ namespace Server.CustomBots
                     _ => new Cap(),
                     _ => new SewingKit(),   // the tailor's trade tools ride in the pack
                     _ => new Scissors(),
+                    // Working stock: bolts' worth of cloth plus some cured
+                    // leather, and coin for restocking at the shop.
+                    _ => new Cloth(Utility.RandomMinMax(40, 80)),
+                    _ => new Leather(Utility.RandomMinMax(15, 35)),
+                    _ => new Gold(Utility.RandomMinMax(120, 300)),
                 },
+                Materials     = new[] { typeof(Cloth), typeof(Leather) },
+                MakeMaterial  = amt => new Cloth(amt),
+                CostMin       = 6,
+                CostMax       = 14,
+                RawGood       = null, // no gatherer hauls cloth — shop restocks
+                MaterialNoun  = "cloth",
+            },
+
+            // ---------------------------------------------------------------
+            // CARPENTER — staves, furniture and instruments from the
+            // lumberjacks' logs. The lumber supply line's in-town buyer.
+            // Action 9 reads as working the bench; 0x23D is the saw rasp.
+            // Weapons (staves/clubs) take the maker's mark; furniture just
+            // ignores the stamp.
+            // ---------------------------------------------------------------
+            [BotClass.Carpenter] = new CrafterProfile
+            {
+                Type     = BotClass.Carpenter,
+                Action   = 9,
+                Sound    = 0x23D,
+                Markable = true,
+                Tool     = null, // saw / smoothing plane are pack tools (see StarterProps)
+                Common = new Func<PlayerBot, Item>[]
+                {
+                    _ => new Club(),
+                    _ => new QuarterStaff(),
+                    _ => new GnarledStaff(),
+                },
+                Minor = new Func<PlayerBot, Item>[]
+                {
+                    _ => new Stool(),
+                    _ => new WoodenChair(),
+                    _ => new WoodenBox(),
+                },
+                Rare = new Func<PlayerBot, Item>[]
+                {
+                    _ => new Lute(),
+                    _ => new LapHarp(),
+                },
+                StarterProps = new Func<PlayerBot, Item>[]
+                {
+                    _ => new Saw(),
+                    _ => new SmoothingPlane(),
+                    _ => new Club(),
+                    // Working stock + coin for the lumberjacks' hauls.
+                    _ => new Board(Utility.RandomMinMax(40, 90)),
+                    _ => new Gold(Utility.RandomMinMax(120, 300)),
+                },
+                Materials     = new[] { typeof(Board) },
+                MakeMaterial  = amt => new Board(amt),
+                CostMin       = 8,
+                CostMax       = 18,
+                RawGood       = typeof(Log),
+                MaterialNoun  = "boards",
             },
 
             // ---------------------------------------------------------------

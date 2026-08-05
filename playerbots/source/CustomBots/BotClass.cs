@@ -51,6 +51,12 @@ namespace Server.CustomBots
         // the town mule: banks, shops, appraises, never fights.
         TreasureHunter = 15,
         Merchant       = 16,
+
+        // Fourth artisan — works the carpenter shop, buys the lumberjacks'
+        // log hauls and turns them into staves, furniture and instruments.
+        // Gives the lumber supply line a real in-town buyer the way smiths
+        // buy the miners' ore.
+        Carpenter = 17,
     }
 
     public static class BotClassHelper
@@ -64,9 +70,10 @@ namespace Server.CustomBots
             (BotClass.Mage,     14),
             (BotClass.Fencer,   11),
             (BotClass.Archer,   11),
-            // The old Crafter share (12) split across the three artisans.
-            (BotClass.Smith,     5),
-            (BotClass.Tailor,    4),
+            // The old Crafter share (12) split across the artisans.
+            (BotClass.Smith,     4),
+            (BotClass.Tailor,    3),
+            (BotClass.Carpenter, 2),
             (BotClass.Fisherman, 4),
             (BotClass.Healer,    7),
             (BotClass.Bard,      7),
@@ -113,6 +120,7 @@ namespace Server.CustomBots
                 BotClass.Smith     => "Blacksmith",
                 BotClass.Tailor    => "Tailor",
                 BotClass.Fisherman => "Fisherman",
+                BotClass.Carpenter => "Carpenter",
                 BotClass.Lumberjack => "Lumberjack",
                 BotClass.Miner      => "Miner",
                 BotClass.TreasureHunter => "Treasure Hunter",
@@ -130,12 +138,14 @@ namespace Server.CustomBots
                 BotClass.Smith     => DestinationType.Forge,
                 BotClass.Tailor    => DestinationType.VendorTailor,
                 BotClass.Fisherman => DestinationType.Dock,
+                BotClass.Carpenter => DestinationType.VendorCarpenter,
                 _                  => null,
             };
         }
 
         public static bool IsArtisan(BotClass cls) =>
-            cls is BotClass.Smith or BotClass.Tailor or BotClass.Fisherman;
+            cls is BotClass.Smith or BotClass.Tailor or BotClass.Fisherman
+                or BotClass.Carpenter;
 
         // Wilderness resource gatherers. NOT artisans: artisans station at
         // a town fixture forever; gatherers run a loop (wilderness spot →

@@ -12,6 +12,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 The theme of this month's work: **bots that pass for players.** Newest first:
 
+- **Crafters run a real economy — and talk like their trade.** Smiths, tailors, and the new **Carpenter** class consume actual pack stock (ingots / cloth / boards) with every piece they make, buy the miners' ore and lumberjacks' logs for real coin, sell finished goods to browsing bots, and shout "wtb iron ingots" when they run dry. Each trade has its own shop-talk now — no more tailor lines at the forge, and no "one more dungeon run then bed" from a smith at 2am. Gossip also travels at rumor speed: fresh Trinsic news takes an hour to reach Minoc's bank.
 - **Tamers fight with their pets — by player rules.** They claim the pet at the stables ("vendor claim"), from a Novice's timber wolf up to the GM's **nightmare, white wyrm, or dragon**. Orders are typed out loud — "all kill", "all stay", "all follow me" — the pet gets vet-bandaged and fed real raw ribs, and a tamer who runs out of food watches it go wild for real.
 - **Crawlers loot like it's 1999 — and the bards sing.** Corpses give up gold, gems, scrolls, and reagents; a magic drop gets bragged about and retold at the bank for days. Bards use **Provocation everywhere** ("provoked a dragon onto a dragon") and some roll the **Peacemaking** build to calm what they can't redirect — skill-checked, sour notes included.
 - **The reds got organized.** PKs run the era's murderer templates — mostly **Red Mages**, plus field dexxers with Tracking and Hiding — in gangs that converge on victims, **ambush dungeon mouths**, and drink pots and bandage mid-fight. A fresh world seeds red crews at dungeon entrances and wilderness chokepoints automatically.
@@ -115,7 +116,7 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 
 **PK ecology + region danger.** Reds run the era's murderer builds — mostly **Red Mages**, plus field dexxers with Tracking and Hiding — at Master/Grandmaster strength, in gangs that converge on victims, ambush dungeon entrances, and bandage and chug pots mid-fight. Murders heat a danger map; hot places drain of foot traffic. A civilian who spots a red screams "RED AT {PLACE}!!" and nearby travelers scatter.
 
-**A visible economy.** Lumberjacks and Miners work real wilderness sites (40 generated across the map), fill their packs with actual logs and ore, and haul the load to town — selling to a working crafter in a coins-for-materials scene, or banking it. Adventurers buy from crafters ("how much for a katana" → "800 gold" → "ty" → "sold!"), and the endless WTS bank spam occasionally *concludes* with a real deal.
+**A visible economy.** Lumberjacks and Miners work real wilderness sites (40 generated across the map), fill their packs with actual logs and ore, and haul the load to town — where the matching crafter pays real gold from its own purse and the raw haul becomes the smith's ingots or the carpenter's boards (no trade buyer around, the bank takes it). Adventurers buy actual finished pieces off a crafter's shelf ("how much for a katana" → "800 gold" → "ty" — the katana and the coin really change packs), and the endless WTS bank spam occasionally *concludes* with a real deal.
 
 **Duels outside the bank.** Two fighters call a challenge ("1v1 me"), trade a "gl", walk ten tiles clear of the crowd, and fight to low health — never to the death — then close with "gf" while the loser demands a rematch (or blames lag). Era-perfect, legal in town.
 
@@ -154,7 +155,7 @@ The `admin` account is a Game Master — it's how you set up and manage the worl
 - **BankSitter** — stands at a bank, chats (and occasionally challenges someone to a duel or closes a WTS deal).
 - **Traveler** — walks or rides between destinations along the waypoint road network.
 - **Shopper** — stands at a vendor area and browses ("vendor buy", browsing chatter), then moves on.
-- **Crafter** — settles at its station (Smith → Forge, Tailor → shop, Fisherman → dock) for long working sessions, producing real goods.
+- **Crafter** — settles at its station (Smith → Forge, Tailor → shop, Carpenter → carpentry shop, Fisherman → dock) for long working sessions, producing real goods from real materials and restocking when the shelf runs dry.
 - **Gatherer** — works a wilderness site (chop/mine animations, real logs and ore into the pack), then hauls to town to sell.
 - **Adventurer** — full combat: melee, archery, and real magic (spell ladders up to Flamestrike, kiting, target switching, threat assessment); retreats scale with experience.
 - **DungeonCrawler** — enters dungeons through the real entrance teleporters (torch lit if a hand is free), sweeps rooms floor by floor (skill-weighted descent — novices stay shallow), **loots the gold off its kills**, camps respawns, and climbs out when the run timer expires or the supplies run dry — fighting only in self-defense on the way up, because leaving should look like leaving.
