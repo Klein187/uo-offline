@@ -266,108 +266,10 @@ namespace Server.CustomBots
             // real group walked in.
             LightTorch(bot);
 
-            // A provocation bard never leaves home without an instrument
-            // — make sure one is in the pack before the first brawl call.
-            if (bot.Skills[SkillName.Provocation].Base >= ProvokeSkillMin &&
-                bot.Backpack != null &&
-                bot.Backpack.FindItemByType(typeof(BaseInstrument)) == null)
-            {
-                bot.Backpack.DropItem(new Lute());
-            }
-        }
-
-        // ---- Bard provocation ----
-        // The era's richest dungeon build: a Provocation bard makes the
-        // monsters kill EACH OTHER and loots both corpses. A crawler with
-        // real Provocation works its instrument constantly — its own
-        // attacker gets redirected onto the nearest other monster (and the
-        // bard slips out of the fight), and idle pairs get set brawling
-        // so there's always a corpse to pick over.
-        private const double ProvokeSkillMin = 60.0;
-        private DateTime _nextProvokeAt = DateTime.MinValue;
-
-        private void TryProvoke(PlayerBot bot)
-        {
-            double prov = bot.Skills[SkillName.Provocation].Base;
-            if (prov < ProvokeSkillMin || Core.Now < _nextProvokeAt)
-            {
-                return;
-            }
-
-            // Target A: our own attacker first (getting a monster off you
-            // is the whole trick), else any idle monster nearby.
-            BaseCreature a = null;
-            if (bot.Combatant is BaseCreature attacker && attacker.Alive &&
-                !attacker.Deleted && !attacker.Controlled)
-            {
-                a = attacker;
-            }
-            else
-            {
-                foreach (var m in bot.GetMobilesInRange(8))
-                {
-                    if (m is BaseCreature bc && bc.Alive && !bc.Deleted &&
-                        !bc.Controlled && bc.Combatant is not BaseCreature)
-                    {
-                        a = bc;
-                        break;
-                    }
-                }
-            }
-            if (a == null)
-            {
-                return;
-            }
-
-            // Target B: another monster close enough to A to take the bait.
-            BaseCreature b = null;
-            foreach (var m in a.GetMobilesInRange(8))
-            {
-                if (m is BaseCreature bc && bc != a && bc.Alive &&
-                    !bc.Deleted && !bc.Controlled &&
-                    bc.Combatant is not BaseCreature)
-                {
-                    b = bc;
-                    break;
-                }
-            }
-            if (b == null)
-            {
-                return;
-            }
-
-            _nextProvokeAt = Core.Now +
-                TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
-
-            var instrument =
-                bot.Backpack?.FindItemByType(typeof(BaseInstrument))
-                    as BaseInstrument;
-
-            // Skill check — a GM lands it nearly every time; a 60 bard
-            // plays plenty of sour notes.
-            if (Utility.RandomDouble() * 100.0 > prov)
-            {
-                if (instrument != null)
-                {
-                    instrument.PlayInstrumentBadly(bot);
-                }
-                return; // the pair ignores the fumbled tune
-            }
-
-            if (instrument != null)
-            {
-                instrument.PlayInstrumentWell(bot);
-            }
-            a.Combatant = b;
-            b.Combatant = a;
-            if (bot.Combatant == a)
-            {
-                bot.Combatant = null; // slip out while they brawl
-            }
-
-            Console.WriteLine(
-                $"[DungeonCrawler] {bot.Name}: provoked {a.Name} onto " +
-                $"{b.Name} in {DungeonName} L{Level}");
+            // Bard arts (Provocation / Peacemaking) are inherited from
+            // AdventurerBehavior — EnsureInstrument and TryBardArts run
+            // from the base attach/tick, so a bard crawler farms brawls
+            // down here with the same brain it uses on the surface.
         }
 
         // -------------------------------------------------------------------
@@ -687,13 +589,6 @@ namespace Server.CustomBots
             if (bot.Alive && bot.Combatant == null)
             {
                 TryLootNearby(bot);
-            }
-
-            // The bard's whole game — runs in AND out of combat (getting a
-            // monster off yourself is exactly when you play).
-            if (bot.Alive)
-            {
-                TryProvoke(bot);
             }
 
             base.Tick(bot);

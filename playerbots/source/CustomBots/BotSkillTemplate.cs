@@ -133,12 +133,8 @@ namespace Server.CustomBots
                             SkillName.Lockpicking, SkillName.MagicResist }),
 
                 // The richest character in T2A — made monsters kill each
-                // other. 7th skill rolls Hiding or Wrestling, as it did.
-                BotClass.Bard => new SkillTemplate(
-                    SkillName.Provocation,
-                    new[] { SkillName.Musicianship, SkillName.Magery, SkillName.Meditation,
-                            SkillName.EvalInt, SkillName.MagicResist,
-                            Utility.RandomBool() ? SkillName.Hiding : SkillName.Wrestling }),
+                // other. Rolls one of two era variants (see RollBardTemplate).
+                BotClass.Bard => RollBardTemplate(),
 
                 BotClass.Ranger => new SkillTemplate(
                     SkillName.Archery,
@@ -224,6 +220,28 @@ namespace Server.CustomBots
 
                 _ => RollTemplate(cls),
             };
+        }
+
+        // Two era bard builds, both Provocation-led (the money skill).
+        // 55% the classic: Eval Int rounds it out (a provo bard that can
+        // dump its own e-bolts). 45% the PEACE bard: trades Eval for
+        // Peacemaking — calms what it can't redirect. 7th skill rolls
+        // Hiding or Wrestling either way, as it did.
+        private static SkillTemplate RollBardTemplate()
+        {
+            SkillName seventh = Utility.RandomBool()
+                ? SkillName.Hiding
+                : SkillName.Wrestling;
+
+            return Utility.RandomDouble() < 0.55
+                ? new SkillTemplate(
+                    SkillName.Provocation,
+                    new[] { SkillName.Musicianship, SkillName.Magery, SkillName.Meditation,
+                            SkillName.EvalInt, SkillName.MagicResist, seventh })
+                : new SkillTemplate(
+                    SkillName.Provocation,
+                    new[] { SkillName.Musicianship, SkillName.Peacemaking, SkillName.Magery,
+                            SkillName.Meditation, SkillName.MagicResist, seventh });
         }
 
         // Red Mage — always a weapon line, weighted toward the hally.

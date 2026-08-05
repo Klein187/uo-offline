@@ -405,6 +405,7 @@ namespace Server.CustomBots
                 StandoffMin = 6;
                 StandoffMax = 10;
 
+                // (Bard instrument check runs below for every class.)
                 // Tank mage detection — did this mage's template roll a
                 // weapon line? (BotSkillTemplate bakes it at creation.)
                 double sw = bot.Skills[SkillName.Swords].Base;
@@ -420,6 +421,8 @@ namespace Server.CustomBots
                 }
             }
 
+            // A bard heading into the field packs its lute.
+            EnsureInstrument(bot);
         }
 
         public override void OnDetached(PlayerBot bot)
@@ -454,6 +457,14 @@ namespace Server.CustomBots
             {
                 EnsureStepTimer(bot, running: true);
                 return;
+            }
+
+            // Bard arts — provoke/peace fire on their own cooldown, in and
+            // out of combat (getting a monster off you is exactly when you
+            // play). Cheap no-op for everyone without the skills.
+            if (bot.Alive)
+            {
+                TryBardArts(bot);
             }
 
             // If this is a timed destination visit (e.g. a graveyard
@@ -1115,6 +1126,144 @@ namespace Server.CustomBots
             _castPointBlank = pointBlank;
             _castSelfTarget = false;
             return true;
+        }
+
+        // -------------------------------------------------------------------
+        // Bard arts — Provocation and Peacemaking, ANYWHERE. The era's
+        // bard: a bot with real Provocation redirects its own attacker
+        // onto the nearest other monster (and slips out of the fight), or
+        // sets an idle pair brawling for the loot when it's out hunting.
+        // One with Peacemaking calms an attacker it can't redirect — the
+        // defensive tune. Skill-checked with real instrument sounds; the
+        // crawler subclass inherits all of it, so it works roadside, at
+        // the graveyard, and five floors down alike.
+        // -------------------------------------------------------------------
+        protected const double BardSkillMin = 60.0;
+        private DateTime _nextBardArtAt = DateTime.MinValue;
+
+        // A working bard never leaves home without an instrument.
+        protected static void EnsureInstrument(PlayerBot bot)
+        {
+            if ((bot.Skills[SkillName.Provocation].Base >= BardSkillMin ||
+                 bot.Skills[SkillName.Peacemaking].Base >= BardSkillMin) &&
+                bot.Backpack != null &&
+                bot.Backpack.FindItemByType(typeof(BaseInstrument)) == null)
+            {
+                bot.Backpack.DropItem(new Lute());
+            }
+        }
+
+        // Something worth pointing a tune at: a genuine AGGRESSIVE
+        // monster — never a vendor, townsperson, grazing animal, pet or
+        // summon (the first live test provoked a giant rat onto the
+        // town weaver). Own attackers bypass this — whatever's already
+        // biting the bard is fair game to redirect.
+        private static bool ProvokeTarget(BaseCreature bc) =>
+            bc.Alive && !bc.Deleted && !bc.Controlled && !bc.Summoned &&
+            bc is not Server.Mobiles.BaseVendor &&
+            bc.FightMode is FightMode.Closest or FightMode.Weakest
+                         or FightMode.Strongest or FightMode.Evil &&
+            bc.Combatant is not BaseCreature;
+
+        protected void TryBardArts(PlayerBot bot)
+        {
+            double prov  = bot.Skills[SkillName.Provocation].Base;
+            double peace = bot.Skills[SkillName.Peacemaking].Base;
+            if ((prov < BardSkillMin && peace < BardSkillMin) ||
+                Core.Now < _nextBardArtAt)
+            {
+                return;
+            }
+
+            var attacker = bot.Combatant as BaseCreature;
+            if (attacker != null && (!attacker.Alive || attacker.Deleted ||
+                                     attacker.Controlled))
+            {
+                attacker = null;
+            }
+
+            // Provocation first — turning a fight into loot beats merely
+            // stopping it.
+            if (prov >= BardSkillMin)
+            {
+                var a = attacker;
+                if (a == null && WantsFreshFights)
+                {
+                    // Nothing on us — set an idle pair brawling (the
+                    // farming trick). Only while out LOOKING for fights;
+                    // a defender or a bot climbing out doesn't stir pots.
+                    foreach (var m in bot.GetMobilesInRange(8))
+                    {
+                        if (m is BaseCreature bc && ProvokeTarget(bc))
+                        {
+                            a = bc;
+                            break;
+                        }
+                    }
+                }
+                if (a != null)
+                {
+                    BaseCreature b = null;
+                    foreach (var m in a.GetMobilesInRange(8))
+                    {
+                        if (m is BaseCreature bc && bc != a && ProvokeTarget(bc))
+                        {
+                            b = bc;
+                            break;
+                        }
+                    }
+                    if (b != null)
+                    {
+                        _nextBardArtAt = Core.Now +
+                            TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+                        var lute = bot.Backpack?.FindItemByType(
+                            typeof(BaseInstrument)) as BaseInstrument;
+
+                        // Skill check — a GM lands it nearly every time.
+                        if (Utility.RandomDouble() * 100.0 > prov)
+                        {
+                            lute?.PlayInstrumentBadly(bot);
+                            return; // sour note — the pair ignores it
+                        }
+                        lute?.PlayInstrumentWell(bot);
+                        a.Combatant = b;
+                        b.Combatant = a;
+                        if (bot.Combatant == a)
+                        {
+                            bot.Combatant = null; // slip out while they brawl
+                        }
+                        Console.WriteLine(
+                            $"[Bard] {bot.Name}: provoked {a.Name} onto {b.Name}");
+                        return;
+                    }
+                }
+            }
+
+            // Peacemaking — nothing to redirect onto; calm the attacker
+            // down instead. Its real era use: the defensive tune.
+            if (peace >= BardSkillMin && attacker != null)
+            {
+                _nextBardArtAt = Core.Now +
+                    TimeSpan.FromSeconds(Utility.RandomMinMax(8, 15));
+                var lute = bot.Backpack?.FindItemByType(
+                    typeof(BaseInstrument)) as BaseInstrument;
+
+                if (Utility.RandomDouble() * 100.0 > peace)
+                {
+                    lute?.PlayInstrumentBadly(bot);
+                    return;
+                }
+                lute?.PlayInstrumentWell(bot);
+                double secs = 4.0 + peace / 10.0; // GM ≈ 14s of calm
+                attacker.Pacify(bot, Core.Now + TimeSpan.FromSeconds(secs));
+                if (bot.Combatant == attacker)
+                {
+                    bot.Combatant = null;
+                }
+                Console.WriteLine(
+                    $"[Bard] {bot.Name}: peaced {attacker.Name} off " +
+                    $"({(int)secs}s of calm)");
+            }
         }
 
         // -------------------------------------------------------------------
