@@ -423,6 +423,12 @@ namespace Server.CustomBots
 
             // A bard heading into the field packs its lute.
             EnsureInstrument(bot);
+
+            // A tamer heading into the field brings the REAL weapon — its
+            // pet, tier-laddered up to the GM's nightmare/white wyrm. The
+            // central upkeep (BotCombatPets) runs it from here: "all kill"
+            // on the tamer's combatant, vet bandages, catch-up teleports.
+            BotCombatPets.EnsureFor(bot);
         }
 
         public override void OnDetached(PlayerBot bot)

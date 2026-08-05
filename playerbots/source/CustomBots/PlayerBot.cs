@@ -205,6 +205,12 @@ namespace Server.CustomBots
         // own ownerless reaper. See BotPackAnimal.cs.
         public Server.Mobiles.BaseCreature PackAnimal;
 
+        // The tamer's FIGHTING pet (nightmare, white wyrm...) — spawned
+        // when a Tamer-class bot heads out to hunt, driven centrally by
+        // BotCombatPets' upkeep. Runtime-only, same lifecycle doctrine as
+        // PackAnimal: restarts sweep strays, deletion releases it.
+        public Server.Mobiles.BaseCreature CombatPet;
+
         // Supply-errand cooldown (see BotSupplies): a failed shopping trip
         // or an empty purse must not loop the bot at the counter.
         // Runtime-only — bots are transient.
@@ -764,6 +770,7 @@ namespace Server.CustomBots
         {
             BotMountHelper.DismountAndDelete(this);
             BotPackAnimals.Release(this);
+            BotCombatPets.Release(this);
             if (LifecycleExempt)
             {
                 BotSessionManager.FixedRoleCount--;
