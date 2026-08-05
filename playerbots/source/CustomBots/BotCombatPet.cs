@@ -1,23 +1,27 @@
 // =========================================================================
-// BotCombatPet.cs — the tamer's FIGHTING pet.
+// BotCombatPet.cs — the tamer's FIGHTING pet, run by PLAYER RULES.
 //
 // "Nightmares, dragons, and white wyrms dominated PvM." A Tamer-class
-// bot heading out to hunt brings a real controlled pet scaled to its
-// tier — a Novice walks with a timber wolf, a Grandmaster with a
-// nightmare or white wyrm — and USES it: the pet is ordered onto the
-// tamer's combatant with the era's actual typed command ("all kill"),
-// gets vet-bandaged when hurt, kept loyal (fed), and teleport-caught-up
-// when a recall or stairwell leaves it behind.
+// bot hunts with a real controlled pet — and everything about it works
+// the way it worked for a 1999 player, no shortcuts:
 //
-// Everything here is driven by ONE central upkeep timer over a runtime
-// registry, so the pet fights for its master under ANY behavior —
-// adventurer, crawler, defender — with a single spawn hook at
-// AdventurerBehavior.OnAttached.
+//   - The pet comes OUT OF THE STABLES: a tamer heading to a hunt
+//     without its pet detours to the stables first (TravelerBehavior's
+//     MaybeStableFirst), says "vendor claim" at the counter, and the
+//     beast walks out of the pens (ClaimAt). No pets appear mid-field.
+//   - Orders are ALWAYS typed out loud, exactly the commands players
+//     hammered: "all kill" on every target, "all stay" before a vet
+//     bandage, "all follow me" to heel.
+//   - FEEDING IS REAL: no loyalty pinning. The tamer carries raw ribs,
+//     feeds the pet when it gets unhappy (real +10-per-piece engine
+//     rate, munch sounds), and restocks ribs on supply errands. A tamer
+//     that runs dry watches loyalty decay until the ENGINE frees the
+//     pet — a wild ex-pet loose in the world, the era's own tax.
 //
-// Lifecycle discipline (same doctrine as BotPackAnimal): the reference
-// is runtime-only, orphans are reaped when the master is deleted or
-// logged out, and world load sweeps every PlayerBot-controlled creature
-// — the next hunt spawns a fresh pet. Zero leaks.
+// One central upkeep timer drives it all under any behavior. Lifecycle
+// discipline (same doctrine as BotPackAnimal): runtime-only reference,
+// orphans reaped when the master is deleted or logged out, world load
+// sweeps every PlayerBot-controlled creature.
 // =========================================================================
 
 using System;
@@ -38,9 +42,22 @@ namespace Server.CustomBots
             "Grim", "Talon", "Frost", "Midnight",
         };
 
-        // The registry the upkeep timer walks. Runtime-only.
-        private static readonly List<(PlayerBot bot, BaseCreature pet)> _pets = new();
+        private sealed class PetRec
+        {
+            public PlayerBot Bot;
+            public BaseCreature Pet;
+            public bool Staying;          // "all stay" issued for a bandage
+            public DateTime StayUntil;
+            public DateTime NextFeedThink;
+            public Serial LastFoe;        // throttle the "all kill" spam —
+            public DateTime NextKillSayAt; // re-orders stay silent for 15s
+        }
+
+        private static readonly List<PetRec> _pets = new();
         private static Timer _upkeep;
+
+        // Ribs run out → loyalty decays → the engine frees the pet.
+        private const int FeedBelowLoyalty = 70;
 
         public static void Initialize()
         {
@@ -74,33 +91,32 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Spawn the tier-appropriate pet for a hunting tamer. Called from
-        // AdventurerBehavior.OnAttached (crawlers inherit it). Steps DOWN
-        // the ladder if the roll lands above what the bot's Animal Taming
-        // could actually control — orders that fail their control checks
-        // make pets go wild, and a wild nightmare is a leak.
+        // Claim the pet at the STABLES counter. Called from the traveler's
+        // stables-arrival handoff right after the bot says "vendor claim"
+        // — the beast comes out of the pens beside the tamer, and the
+        // follow order is spoken like every other command.
         // -------------------------------------------------------------------
-        public static void EnsureFor(PlayerBot bot)
+        public static BaseCreature ClaimAt(PlayerBot bot)
         {
             if (bot == null || bot.Deleted || bot.Map == null ||
                 bot.Map == Map.Internal || !bot.Alive ||
                 bot.Class != BotClass.Tamer)
             {
-                return;
+                return null;
             }
-            if (bot.CombatPet is { Deleted: false, Alive: true })
+            if (bot.CombatPet is { Deleted: false, Alive: true } existing)
             {
-                return; // already walking with one
+                return existing;
             }
             if (bot.Skills[SkillName.AnimalTaming].Base < 50.0)
             {
-                return; // not enough tamer to hold a fighting pet
+                return null; // not enough tamer to hold a fighting pet
             }
 
             var pet = RollPet(bot);
             if (pet == null)
             {
-                return;
+                return null;
             }
 
             pet.Name = PetNames[Utility.Random(PetNames.Length)];
@@ -108,28 +124,28 @@ namespace Server.CustomBots
             if (!pet.SetControlMaster(bot))
             {
                 pet.Delete();
-                return;
+                return null;
             }
             pet.ControlTarget = bot;
             pet.ControlOrder = OrderType.Follow;
-            pet.Loyalty = BaseCreature.MaxLoyalty;
 
             bot.CombatPet = pet;
-            _pets.Add((bot, pet));
-            BotScene.Play((1.0, bot, $"{pet.Name} follow me"));
+            _pets.Add(new PetRec { Bot = bot, Pet = pet });
+            BotScene.Play((1.5, bot, "all follow me"));
             Console.WriteLine(
-                $"[tamer] {bot.Name} ({bot.SkillTier}) heads out with " +
-                $"{pet.Name} the {pet.GetType().Name}");
+                $"[tamer] {bot.Name} ({bot.SkillTier}) claims " +
+                $"{pet.Name} the {pet.GetType().Name} from the stables");
+            return pet;
         }
 
-        // The era's PvM ladder, tier-gated and control-checked.
+        // The era's PvM ladder, tier-gated — and stepped DOWN past
+        // anything the bot's Animal Taming couldn't genuinely control
+        // (failed control checks drain loyalty and free the pet).
         private static BaseCreature RollPet(PlayerBot bot)
         {
             double taming = bot.Skills[SkillName.AnimalTaming].Base;
             int rank = BotSkillTierHelper.Rank(bot.SkillTier);
 
-            // Candidates from strongest the tier allows downward; first
-            // one the bot could genuinely control wins.
             var ladder = new List<BaseCreature>();
             if (rank >= 6)
             {
@@ -200,18 +216,17 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // The central upkeep pass: sic the pet on the master's combatant
-        // ("all kill"), vet-bandage it, keep it fed/loyal, catch it up
-        // after recalls and stairs, and reap orphans. Runs every 3s over
-        // the (small) registry.
+        // The central upkeep pass, every 3s over the (small) registry.
         // -------------------------------------------------------------------
         private static void Upkeep()
         {
             for (int i = _pets.Count - 1; i >= 0; i--)
             {
-                var (bot, pet) = _pets[i];
+                var rec = _pets[i];
+                var bot = rec.Bot;
+                var pet = rec.Pet;
 
-                // Reap: master gone (deleted / logged out) or pet gone.
+                // Reap: master or pet gone.
                 if (bot == null || bot.Deleted ||
                     pet == null || pet.Deleted || !pet.Alive)
                 {
@@ -219,42 +234,70 @@ namespace Server.CustomBots
                     {
                         pet.Delete();
                     }
-                    if (bot is { Deleted: false } &&
-                        (pet == null || pet.Deleted || !pet.Alive))
+                    if (bot is { Deleted: false } && bot.CombatPet == pet)
                     {
-                        if (pet != null && bot.CombatPet == pet)
-                        {
-                            bot.CombatPet = null; // died in the line of duty
-                        }
+                        bot.CombatPet = null; // died in the line of duty
                     }
                     _pets.RemoveAt(i);
                     continue;
                 }
                 if (bot.Map == Map.Internal)
                 {
-                    pet.Delete(); // master logged out mid-hunt
+                    // Logged out — the pet went into the stables with them
+                    // (a player stabled before logging; the beast simply
+                    // isn't in the world any more).
+                    pet.Delete();
+                    bot.CombatPet = null;
                     _pets.RemoveAt(i);
                     continue;
                 }
+
+                // WENT WILD — loyalty hit zero and the engine freed it, or
+                // enough orders failed. The tamer lost its pet for real;
+                // the creature stays loose in the world. The era's tax.
+                if (pet.ControlMaster != bot || !pet.Controlled)
+                {
+                    Console.WriteLine(
+                        $"[tamer] {pet.Name} has gone WILD on {bot.Name} " +
+                        $"(loyalty ran out) — loose at ({pet.X},{pet.Y})");
+                    if (bot.CombatPet == pet)
+                    {
+                        bot.CombatPet = null;
+                    }
+                    _pets.RemoveAt(i);
+                    continue;
+                }
+
                 if (!bot.Alive)
                 {
                     continue; // pet waits by the ghost, like Bessie does
                 }
 
-                // Fed and happy — loyalty decay must never free a nightmare.
-                pet.Loyalty = BaseCreature.MaxLoyalty;
-
-                // Catch-up: a recall, gate or stairwell left it behind.
-                if (pet.Map != bot.Map ||
-                    !pet.InRange(bot.Location, 20))
+                // Catch-up: gates and stairs carry a following pet through
+                // in the era too — never across a fight, only a lost pet.
+                if (pet.Map != bot.Map || !pet.InRange(bot.Location, 20))
                 {
                     pet.MoveToWorld(
                         new Point3D(bot.X + 1, bot.Y + 1, bot.Z), bot.Map);
                     pet.ControlTarget = bot;
                     pet.ControlOrder = OrderType.Follow;
+                    rec.Staying = false;
                 }
 
-                // Combat: master fighting → pet fights the same target.
+                // FEED — the real chore. Unhappy pet + ribs in the pack →
+                // feed at the engine's own rate. No ribs? Loyalty keeps
+                // sliding and eventually the pet frees itself (above).
+                if (Core.Now >= rec.NextFeedThink)
+                {
+                    rec.NextFeedThink = Core.Now + TimeSpan.FromSeconds(20);
+                    if (pet.Loyalty < FeedBelowLoyalty)
+                    {
+                        TryFeed(bot, pet);
+                    }
+                }
+
+                // Combat: master fighting → pet ordered onto the target,
+                // command ALWAYS typed out loud.
                 if (bot.Combatant is Mobile foe && !foe.Deleted && foe.Alive &&
                     foe.Map == bot.Map && foe != pet)
                 {
@@ -263,35 +306,92 @@ namespace Server.CustomBots
                     {
                         pet.ControlTarget = foe;
                         pet.ControlOrder = OrderType.Attack;
-                        // The era's most typed sentence, sometimes aloud.
-                        if (Utility.RandomDouble() < 0.35)
+                        rec.Staying = false;
+                        // The engine consumes orders, so this re-issues
+                        // every pass — but the SAY only fires on a new
+                        // target (or a long fight): players hammered
+                        // "all kill", not ten times per zombie.
+                        if (rec.LastFoe != foe.Serial ||
+                            Core.Now >= rec.NextKillSayAt)
                         {
+                            rec.LastFoe = foe.Serial;
+                            rec.NextKillSayAt = Core.Now + TimeSpan.FromSeconds(15);
                             bot.Say("all kill");
+                            Console.WriteLine(
+                                $"[tamer] {bot.Name} sics {pet.Name} on {foe.Name}");
                         }
-                        Console.WriteLine(
-                            $"[tamer] {bot.Name} sics {pet.Name} on {foe.Name}");
                     }
-                }
-                else if (pet.ControlOrder == OrderType.Attack &&
-                         (pet.Combatant is not Mobile pc || !pc.Alive))
-                {
-                    // Fight's over — heel.
-                    pet.ControlTarget = bot;
-                    pet.ControlOrder = OrderType.Follow;
+                    continue; // no bandaging mid-melee — survive first
                 }
 
-                // Veterinary: a hurt pet in reach gets the bandage (the
-                // template carries GM Vet for exactly this). Never while
-                // the TAMER is badly hurt — self-care wins the bandage.
-                if (pet.Hits < pet.HitsMax * 0.6 &&
-                    bot.Hits > bot.HitsMax * 0.5 &&
-                    bot.InRange(pet.Location, 2) &&
-                    bot.Skills[SkillName.Veterinary].Base >= 50.0 &&
-                    Utility.RandomDouble() < 0.5)
+                // Fight over and the pet still has attack orders — heel.
+                if (pet.ControlOrder == OrderType.Attack &&
+                    (pet.Combatant is not Mobile pc || !pc.Alive))
                 {
+                    pet.ControlTarget = bot;
+                    pet.ControlOrder = OrderType.Follow;
+                    bot.Say("all follow me");
+                }
+
+                // Veterinary. The real ritual: "all stay", bandage, then
+                // "all follow me" when it's patched up. Tamer self-care
+                // wins the bandage when both are hurt.
+                if (rec.Staying)
+                {
+                    if (pet.Hits >= pet.HitsMax * 0.95 ||
+                        Core.Now >= rec.StayUntil)
+                    {
+                        rec.Staying = false;
+                        pet.ControlTarget = bot;
+                        pet.ControlOrder = OrderType.Follow;
+                        bot.Say("all follow me");
+                    }
+                    else if (bot.InRange(pet.Location, 2))
+                    {
+                        TryVetBandage(bot, pet);
+                    }
+                }
+                else if (pet.Hits < pet.HitsMax * 0.6 &&
+                         bot.Hits > bot.HitsMax * 0.5 &&
+                         bot.InRange(pet.Location, 3) &&
+                         bot.Skills[SkillName.Veterinary].Base >= 50.0)
+                {
+                    rec.Staying = true;
+                    rec.StayUntil = Core.Now + TimeSpan.FromSeconds(25);
+                    pet.ControlTarget = bot;
+                    pet.ControlOrder = OrderType.Stay;
+                    bot.Say("all stay");
                     TryVetBandage(bot, pet);
                 }
             }
+        }
+
+        // Feed ribs from the pack at the engine's own loyalty rate
+        // (+10 per piece), with the real munch sounds and eat animation.
+        private static void TryFeed(PlayerBot bot, BaseCreature pet)
+        {
+            var pack = bot.Backpack;
+            var ribs = pack?.FindItemByType(typeof(RawRibs));
+            if (ribs == null)
+            {
+                return; // out of pet food — the decay is the tamer's problem
+            }
+
+            int want = (BaseCreature.MaxLoyalty - pet.Loyalty) /
+                       BaseCreature.LoyaltyIncreasePerFood;
+            int feed = Math.Clamp(Math.Min(want, ribs.Amount), 1, 5);
+
+            ribs.Consume(feed);
+            pet.Loyalty += feed * BaseCreature.LoyaltyIncreasePerFood;
+            pet.PlaySound(Utility.RandomList(0x3A, 0x3B, 0x3C)); // munch
+            if (pet.Body.IsAnimal)
+            {
+                pet.Animate(3, 5, 1, true, false, 0);
+            }
+
+            Console.WriteLine(
+                $"[tamer] {bot.Name} feeds {pet.Name} {feed} rib(s) " +
+                $"(loyalty {pet.Loyalty}/{BaseCreature.MaxLoyalty})");
         }
 
         // BandageContext.BeginHeal(healer, patient) via reflection — same

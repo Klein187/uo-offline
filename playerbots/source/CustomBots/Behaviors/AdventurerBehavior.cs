@@ -421,14 +421,11 @@ namespace Server.CustomBots
                 }
             }
 
-            // A bard heading into the field packs its lute.
+            // A bard heading into the field packs its lute. (Tamers get no
+            // pet here — pets come out of the STABLES: the travel leg that
+            // brought the tamer detours to claim it, like a real player.
+            // A tamer that arrives petless hunts petless.)
             EnsureInstrument(bot);
-
-            // A tamer heading into the field brings the REAL weapon — its
-            // pet, tier-laddered up to the GM's nightmare/white wyrm. The
-            // central upkeep (BotCombatPets) runs it from here: "all kill"
-            // on the tamer's combatant, vet bandages, catch-up teleports.
-            BotCombatPets.EnsureFor(bot);
         }
 
         public override void OnDetached(PlayerBot bot)

@@ -632,16 +632,37 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private string MaybeStableFirst(PlayerBot bot, string destName)
         {
-            if (destName == null || !BotClassHelper.IsGatherer(bot.Class) ||
-                bot.PackAnimal is { Deleted: false })
+            if (destName == null)
+            {
+                return destName;
+            }
+
+            // Who needs a stable stop? A gatherer without its pack beast
+            // heading to a work site — or a TAMER without its fighting pet
+            // heading somewhere there's fighting to do. Pets come out of
+            // the pens, they don't appear in the field.
+            bool gatherNeed = BotClassHelper.IsGatherer(bot.Class) &&
+                              bot.PackAnimal is not { Deleted: false };
+            bool tamerNeed = bot.Class == BotClass.Tamer &&
+                             bot.CombatPet is not { Deleted: false, Alive: true } &&
+                             bot.Skills[SkillName.AnimalTaming].Base >= 50.0;
+            if (!gatherNeed && !tamerNeed)
             {
                 return destName;
             }
 
             var dest = DestinationCatalog.GetByName(destName);
-            if (dest == null ||
-                dest.Type is not (DestinationType.GatherSpot
-                    or DestinationType.MiningSpot or DestinationType.LumberSpot))
+            if (dest == null)
+            {
+                return destName;
+            }
+
+            bool wants = gatherNeed
+                ? dest.Type is DestinationType.GatherSpot
+                    or DestinationType.MiningSpot or DestinationType.LumberSpot
+                : dest.Type is DestinationType.Graveyard
+                    or DestinationType.DungeonEntrance;
+            if (!wants)
             {
                 return destName;
             }
@@ -653,8 +674,11 @@ namespace Server.CustomBots
             }
 
             _stablePickupResume = destName;
-            Log(bot, $"Fetching the pack animal from '{stables.Name}' before " +
-                     $"the shift at '{destName}'");
+            Log(bot, gatherNeed
+                ? $"Fetching the pack animal from '{stables.Name}' before " +
+                  $"the shift at '{destName}'"
+                : $"Claiming the pet from '{stables.Name}' before " +
+                  $"the hunt at '{destName}'");
             return stables.Name;
         }
 
@@ -2140,21 +2164,35 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     // fall through — linger at the stables like any stop
                 }
 
-                // Tamers live at the stables counter: one arriving mounted
-                // sometimes boards the horse ("vendor stable", hops off, the
-                // horse goes to the pens); one on foot usually claims a ride
-                // out. Same spoken ritual as everyone else, then the normal
-                // stables visit continues.
-                if (bot.Class == BotClass.Tamer && !_stableDropoff &&
-                    _stablePickupResume == null)
+                // Tamers live at the stables counter. FIRST priority is the
+                // FIGHTING pet: a petless tamer claims it here whether this
+                // stop was a deliberate detour or a passing visit — recall
+                // and gate hops attach fresh Travelers and can strand the
+                // detour's resume state, so the counter itself is the
+                // source of truth. Otherwise the old horse ritual rolls.
+                if (bot.Class == BotClass.Tamer && !_stableDropoff)
                 {
-                    if (bot.Mounted && Utility.RandomDouble() < 0.40)
+                    if (bot.CombatPet is not { Deleted: false, Alive: true } &&
+                        bot.Skills[SkillName.AnimalTaming].Base >= 50.0)
+                    {
+                        BotScene.Play((0.0, bot, "vendor claim"));
+                        Timer.DelayCall(TimeSpan.FromSeconds(1.8), () =>
+                        {
+                            if (!bot.Deleted && bot.Alive)
+                            {
+                                BotCombatPets.ClaimAt(bot);
+                            }
+                        });
+                    }
+                    else if (_stablePickupResume == null &&
+                             bot.Mounted && Utility.RandomDouble() < 0.40)
                     {
                         BotScene.Play((0.0, bot, "vendor stable"));
                         Timer.DelayCall(TimeSpan.FromSeconds(1.8),
                             () => BotMountHelper.DismountAndDelete(bot));
                     }
-                    else if (!bot.Mounted && Utility.RandomDouble() < 0.60)
+                    else if (_stablePickupResume == null &&
+                             !bot.Mounted && Utility.RandomDouble() < 0.60)
                     {
                         BotScene.Play((0.0, bot, "vendor claim"));
                         Timer.DelayCall(TimeSpan.FromSeconds(1.8),
@@ -2169,12 +2207,17 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     if (DestinationCatalog.GetByName(resume) != null)
                     {
                         // Say it to the stablemaster FIRST — the beast
-                        // comes out of the pens and SpawnFor's follow
-                        // order ("Bessie follow me") lands right after.
+                        // comes out of the pens and the follow order
+                        // ("Bessie follow me" / "all follow me") lands
+                        // right after. Tamers claim their fighting pet;
+                        // gatherers their pack animal.
                         BotScene.Play((0.0, bot, "vendor claim"));
-                        if (BotPackAnimals.SpawnFor(bot) != null)
+                        bool inTow = bot.Class == BotClass.Tamer
+                            ? BotCombatPets.ClaimAt(bot) != null
+                            : BotPackAnimals.SpawnFor(bot) != null;
+                        if (inTow)
                         {
-                            Log(bot, $"Pack animal in tow — on to '{resume}'");
+                            Log(bot, $"Beast in tow — on to '{resume}'");
                             _forcedNextDestination = resume;
                             PickNewDestination(bot);
                             return true; // trip continues; no visit at the stables

@@ -34,6 +34,7 @@ namespace Server.CustomBots
         Bandages,
         Reagents,
         Scrolls,
+        PetFood,
     }
 
     public static class BotSupplies
@@ -44,6 +45,7 @@ namespace Server.CustomBots
         private const int BandageLow = 8,   BandageFull = 50;
         private const int ReagentLow = 8,   ReagentFull = 50;
         private const int ScrollLow = 2,    ScrollFull = 6;
+        private const int PetFoodLow = 5,   PetFoodFull = 25;
 
         // Don't re-run errands back to back (a failed trip or an empty
         // purse shouldn't loop the bot at the counter).
@@ -116,6 +118,13 @@ namespace Server.CustomBots
             {
                 return SupplyNeed.Scrolls;
             }
+            // A tamer walking a pet has a mouth to feed — the ribs are as
+            // real a consumable as arrows.
+            if (bot.CombatPet is { Deleted: false, Alive: true } &&
+                pack.GetAmount(typeof(RawRibs)) < PetFoodLow)
+            {
+                return SupplyNeed.PetFood;
+            }
             return SupplyNeed.None;
         }
 
@@ -132,6 +141,7 @@ namespace Server.CustomBots
                 SupplyNeed.Reagents => at is DestinationType.VendorMage
                                           or DestinationType.VendorAlchemist,
                 SupplyNeed.Scrolls  => at == DestinationType.VendorMage,
+                SupplyNeed.PetFood  => at == DestinationType.VendorProvisioner,
                 _                   => false,
             };
 
@@ -257,6 +267,14 @@ namespace Server.CustomBots
                     cost += 18;
                 }
                 bought.Add("recall scrolls");
+            }
+            if (bot.CombatPet is { Deleted: false, Alive: true } &&
+                Satisfies(at, SupplyNeed.PetFood) &&
+                pack.GetAmount(typeof(RawRibs)) < PetFoodLow)
+            {
+                int added = TopUp(pack, typeof(RawRibs), PetFoodFull);
+                cost += added; // ~1gp a rib at the butcher's counter
+                bought.Add("ribs for the pet");
             }
 
             if (bought.Count == 0)

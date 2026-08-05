@@ -130,6 +130,16 @@ namespace Server.CustomBots
                     AddReagentStash(bot, tier);
                     break;
 
+                case BotClass.Tamer:
+                    // The tamer's working kit: vet bandages for the pet
+                    // and a slab of raw ribs — the pet EATS for real, and
+                    // a tamer that runs dry watches its loyalty slide.
+                    AddToPack(bot, "Server.Items.Bandage",
+                              KitScale(30, 50, tier));
+                    AddToPack(bot, "Server.Items.RawRibs",
+                              KitScale(15, 25, tier));
+                    break;
+
                 case BotClass.Thief:
                     // Thieves carry the tools of the trade.
                     AddToPack(bot, "Server.Items.Lockpick",
@@ -205,13 +215,6 @@ namespace Server.CustomBots
                     }
                     break;
 
-                case BotClass.Tamer:
-                    AddToPack(bot, "Server.Items.Bandage",
-                              Utility.RandomMinMax(5, 15));
-                    // Something to keep the pets keen.
-                    MaybeAddToPack(bot, "Server.Items.RawRibs", 0.5,
-                                   Utility.RandomMinMax(2, 6));
-                    break;
             }
 
             // --- Spell scrolls — casters carry a working selection ---
