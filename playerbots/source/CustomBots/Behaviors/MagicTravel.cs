@@ -5,20 +5,24 @@
 // of the skill. When a Traveler starts a LONG trip, this rolls whether it
 // travels by magic instead:
 //
-//   - Recall (Magery >= 40, 11 mana): mantra + cast beat, then the bot
-//     vanishes in a flash and reappears at the destination. Kal Ort Por.
-//   - Gate Travel (Magery >= 90, 40 mana): mantra + cast beat, then a
-//     REAL pair of Moongate items opens (one here, one there), the bot
-//     steps through, and the gates linger ~30s. Real players — and even
-//     other bots — can hop through while they stand; the gate is a
-//     genuine world object.
-//
-// Illusion, not simulation (same philosophy as the crafters): we don't
-// run the real RecallSpell/GateTravelSpell classes — those need a marked
-// rune target and the full targeting flow. We say the words of power,
-// play the cast beat and effects, charge the mana, and do the move with
-// the proven moongate-style DelayCall pattern. To a bystander it reads
-// exactly like a player recalling out.
+//   - Recall: the REAL RecallSpell, end to end. The bot pulls a marked
+//     recall rune from its pack (kept and re-marked between trips, like
+//     a player's rune collection), casts from the book — engine words of
+//     power, cast delay, real BlackPearl/Bloodmoss/MandrakeRoot burned
+//     from the pack, real mana, real fizzles — or reads a genuine recall
+//     scroll (consumed on success, easier skill check, exactly why shaky
+//     casters carried them). When the target cursor comes up we aim it
+//     at the rune and the engine does the rest: travel checks, the 0x1FC
+//     sound at both ends, the move. A fizzle is retried a couple of
+//     times (burning more reagents — fizzles always did); a trip that
+//     won't come off is abandoned and the bot walks.
+//   - Gate Travel (Magery >= 90, 40 mana): mantra + cast beat + real
+//     gate reagents burned, then a REAL pair of Moongate items opens
+//     (one here, one there), the bot steps through, and the gates linger
+//     ~30s. Real players — and even other bots — can hop through while
+//     they stand. (The gate pair stays our own BotTravelGate objects —
+//     the stock moongate would gump-block bots — so this half keeps the
+//     scripted move; the spell COST is real.)
 //
 // The sequence ends by attaching a FRESH TravelerBehavior with the same
 // destination. The bot lands a couple of tiles off the arrival point, so
@@ -35,16 +39,36 @@ namespace Server.CustomBots
 {
     public static class MagicTravel
     {
-        // Skill and mana gates. Recall is 4th circle (11 mana) — and in
-        // the era EVERYONE traveled by it: most templates kept ~25-30
-        // Magery just for Recall, and everyone else burned recall
-        // SCROLLS. Bots mirror that: enough Magery casts it; no Magery
-        // reads a scroll from the pack (kits carry a few, restocked
-        // offscreen in town). Gate Travel stays 7th circle GM territory.
-        public const double RecallMinMagery = 26.0;
-        public const int    RecallManaCost  = 11;
-        public const double GateMinMagery   = 90.0;
-        public const int    GateManaCost    = 40;
+        // Skill gates, derived from the REAL 4th-circle difficulty (pre-ML
+        // table: book min 30 / max 70, scroll min 10 / max 50):
+        //   - Book cast needs Magery 40+ to be worth attempting (25% at
+        //     40, 50% at 50, sure thing at 70) plus the three reagents.
+        //   - A scroll casts two circles easier — 25% at Magery 20, sure
+        //     thing at 50 — which is exactly why the era's shaky casters
+        //     read scrolls. Below Magery 20 even a scroll won't take:
+        //     those bots walk (and no longer shop for scrolls).
+        //   - Anyone under 55 with a scroll on hand prefers it over the
+        //     book — better odds, and that's how people actually played.
+        public const double BookMinMagery       = 40.0;
+        public const double ScrollMinMagery     = 20.0;
+        public const double ScrollPreferredBelowMagery = 55.0;
+        public const int    RecallManaCost      = 11;
+        public const double GateMinMagery       = 90.0;
+        public const int    GateManaCost        = 40;
+
+        // The real spell components. Recall burns these from the pack on
+        // every attempt (fizzles included — fizzles always ate reagents);
+        // gate burns its own trio when the portal opens.
+        public static readonly Type[] RecallReagents =
+            { typeof(BlackPearl), typeof(Bloodmoss), typeof(MandrakeRoot) };
+        public static readonly Type[] GateReagents =
+            { typeof(BlackPearl), typeof(MandrakeRoot), typeof(SulfurousAsh) };
+
+        // A trip that fizzles this many casts in a row gets abandoned —
+        // the bot shrugs and walks. Five, because a shaky caster in 1999
+        // just kept mashing the macro; three straight fizzles at 25-50%
+        // a cast were routine, not a reason to hoof it.
+        private const int MaxCastAttempts = 5;
 
         // Only trips at least this long (straight-line tiles) justify the
         // mana — short hops stay on foot so streets keep their traffic.
@@ -62,11 +86,10 @@ namespace Server.CustomBots
         // …and of those, how many a gate-capable mage opens a gate for.
         public const double GateShare = 0.4;
 
-        private const int RecallSound  = 0x1FC;
         private const int GateSound    = 0x20E;
-        private const int SparkleId    = 0x3728;
 
         // Cast beat: mantra -> effect/move. Roughly a real cast delay.
+        // (Gate only — recall runs the engine's own cast timing now.)
         private static readonly TimeSpan CastBeat         = TimeSpan.FromSeconds(2.0);
         // Gate only: pause between the gate opening and stepping through.
         private static readonly TimeSpan StepThroughDelay = TimeSpan.FromSeconds(1.5);
@@ -74,22 +97,46 @@ namespace Server.CustomBots
         private static readonly TimeSpan GateLinger       = TimeSpan.FromSeconds(30.0);
 
         // -------------------------------------------------------------------
-        // Capability — can this bot travel by magic RIGHT NOW? Casting
-        // needs the magery + mana; failing that, a recall scroll in the
-        // pack does the job (that's how the non-mage half of Britannia
-        // got around).
+        // Capability — can this bot travel by magic RIGHT NOW? A book cast
+        // needs the magery, the mana, AND the three reagents in the pack;
+        // a scroll needs the scroll plus enough magery to read it. Below
+        // both bars the bot walks — exactly like every reagent-dry mage
+        // and zero-magery character did.
         // -------------------------------------------------------------------
+        public static bool HasReagents(PlayerBot bot, Type[] regs)
+        {
+            var pack = bot?.Backpack;
+            if (pack == null)
+            {
+                return false;
+            }
+            foreach (var t in regs)
+            {
+                if (pack.GetAmount(t) < 1)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public static bool CanCastRecall(PlayerBot bot) =>
             bot != null &&
-            bot.Skills[SkillName.Magery].Base >= RecallMinMagery &&
-            bot.Mana >= RecallManaCost;
+            bot.Skills[SkillName.Magery].Base >= BookMinMagery &&
+            bot.Mana >= RecallManaCost &&
+            HasReagents(bot, RecallReagents);
 
         public static bool HasRecallScroll(PlayerBot bot) =>
             bot?.Backpack?.FindItemByType(typeof(RecallScroll)) != null;
 
+        public static bool CanScrollRecall(PlayerBot bot) =>
+            bot != null &&
+            bot.Skills[SkillName.Magery].Base >= ScrollMinMagery &&
+            HasRecallScroll(bot);
+
         public static bool CanTravel(PlayerBot bot) =>
             bot is { Deleted: false, Alive: true } &&
-            (CanCastRecall(bot) || HasRecallScroll(bot));
+            (CanCastRecall(bot) || CanScrollRecall(bot));
 
         // (No offscreen scroll restock — un-T2A. Scrolls come from the
         // mage shop like everything else: BotSupplies turns "low on
@@ -135,6 +182,7 @@ namespace Server.CustomBots
 
             double magery = bot.Skills[SkillName.Magery].Base;
             bool gate = magery >= GateMinMagery && bot.Mana >= GateManaCost &&
+                        HasReagents(bot, GateReagents) &&
                         Utility.RandomDouble() < GateShare;
 
             var landing = PickLanding(bot, destName, destCoord, destType);
@@ -142,12 +190,13 @@ namespace Server.CustomBots
             if (gate)
             {
                 BeginGateTrip(bot, destName, landing);
+                return true;
             }
-            else
-            {
-                BeginRecallTrip(bot, destName, landing);
-            }
-            return true;
+
+            // False = the real cast couldn't even start (criminal flag,
+            // recent combat, hands tied up) — the caller just keeps
+            // walking, no harm done.
+            return TryCastRecall(bot, destName, landing, attempt: 1);
         }
 
         // -------------------------------------------------------------------
@@ -167,8 +216,7 @@ namespace Server.CustomBots
 
             var landing = PickLanding(
                 bot, dest.Name, dest.ArrivalPoint ?? dest.Location, dest.Type);
-            BeginRecallTrip(bot, null, landing);
-            return true;
+            return TryCastRecall(bot, null, landing, attempt: 1);
         }
 
         // -------------------------------------------------------------------
@@ -195,10 +243,13 @@ namespace Server.CustomBots
             bool entrance = destType == DestinationType.DungeonEntrance ||
                             destType == DestinationType.Dungeon;
 
-            // Base point: entrances aim at their approach node instead of
-            // the pad's doorstep.
-            var basePoint = destCoord;
-            if (entrance)
+            // The destination's approach waypoint — entrances ALWAYS aim
+            // here instead of the pad's doorstep; everyone else keeps it
+            // as the fallback anchor for when the doorstep itself can't
+            // take a landing (a pier ringed by water, a shop interior
+            // packed wall-to-wall) — the node sits on proven-walkable
+            // ground a few steps out.
+            Point3D? nodePoint = null;
             {
                 var dest = DestinationCatalog.GetByName(destName);
                 var node = dest != null && !string.IsNullOrEmpty(dest.NearestWaypoint)
@@ -206,30 +257,75 @@ namespace Server.CustomBots
                     : null;
                 if (node != null)
                 {
-                    basePoint = node.Location;
+                    nodePoint = node.Location;
                 }
             }
 
-            // Spread candidates, validated against the real map. Entrance
-            // landings additionally refuse tiles beside the pad itself.
-            for (int i = 0; i < 10; i++)
+            var basePoint = entrance && nodePoint != null ? nodePoint.Value : destCoord;
+
+            // Spread candidates, validated against the real map. Two key
+            // details, both learned from the real RecallSpell refusing
+            // landings the old scripted teleport silently forced:
+            //   - Each spot is tried at TWO heights: the authored point's
+            //     Z first (docks and shop floors sit ABOVE what
+            //     GetAverageZ reports — averaging under a pier returns
+            //     the water level), then the averaged ground Z.
+            //   - CanSpawnMobile counts MOBILES, and popular arrival
+            //     points are permanently crowded (bank sitters, pinned
+            //     artisans, gate camps) — so the spread ESCALATES until a
+            //     free tile turns up, exactly like a player recalling in
+            //     beside the crowd. The fresh Traveler walks the last few
+            //     tiles regardless.
+            // Entrance landings additionally refuse tiles beside the pad.
+            Point3D? ScanRings(Point3D anchor)
             {
-                int spread = entrance && basePoint == destCoord ? 4 : 2;
-                int x = basePoint.X + Utility.RandomMinMax(-spread, spread);
-                int y = basePoint.Y + Utility.RandomMinMax(-spread, spread);
-                if (entrance &&
-                    Math.Max(Math.Abs(x - destCoord.X), Math.Abs(y - destCoord.Y)) <= 1)
+                foreach (var ring in new[] { 2, 4, 6, 8 })
                 {
-                    continue; // on/beside the teleporter pad
+                    int spread = entrance && anchor == destCoord && ring < 4 ? 4 : ring;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        int x = anchor.X + Utility.RandomMinMax(-spread, spread);
+                        int y = anchor.Y + Utility.RandomMinMax(-spread, spread);
+                        if (entrance &&
+                            Math.Max(Math.Abs(x - destCoord.X), Math.Abs(y - destCoord.Y)) <= 1)
+                        {
+                            continue; // on/beside the teleporter pad
+                        }
+                        if (map.CanSpawnMobile(x, y, anchor.Z))
+                        {
+                            return new Point3D(x, y, anchor.Z);
+                        }
+                        int z = map.GetAverageZ(x, y);
+                        if (z != anchor.Z && map.CanSpawnMobile(x, y, z))
+                        {
+                            return new Point3D(x, y, z);
+                        }
+                    }
                 }
-                int z = map.GetAverageZ(x, y);
-                if (map.CanSpawnMobile(x, y, z))
-                {
-                    return new Point3D(x, y, z);
-                }
+                return null;
             }
 
-            // The base point itself (waypoint nodes are engine-verified).
+            if (ScanRings(basePoint) is Point3D hit)
+            {
+                return hit;
+            }
+
+            // Doorstep won't take a landing at all (pier ringed by water,
+            // interior packed solid) — land at the approach waypoint and
+            // let the fresh Traveler walk in, same as entrances do.
+            if (!entrance && nodePoint != null && nodePoint.Value != basePoint &&
+                ScanRings(nodePoint.Value) is Point3D nodeHit)
+            {
+                return nodeHit;
+            }
+
+            // The base point itself — authored Z first (arrival points and
+            // waypoint nodes carry engine-verified heights), averaged Z as
+            // the backup.
+            if (map.CanSpawnMobile(basePoint.X, basePoint.Y, basePoint.Z))
+            {
+                return basePoint;
+            }
             int bz = map.GetAverageZ(basePoint.X, basePoint.Y);
             if (map.CanSpawnMobile(basePoint.X, basePoint.Y, bz))
             {
@@ -241,41 +337,280 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Recall — Kal Ort Por, flash, gone. Pays with mana when the bot
-        // can cast it; otherwise burns a recall scroll from the pack (the
-        // scroll still speaks the words — that's how scrolls work).
+        // Recall — the REAL spell. Pull the bot's recall rune, mark it at
+        // the (pre-validated) landing, cast RecallSpell (book or scroll),
+        // and when the engine hands over the target cursor, aim it at the
+        // rune. Everything downstream is the genuine pipeline: skill
+        // check, reagent/mana/scroll consumption, travel restrictions,
+        // the 0x1FC sound at both ends, the move itself.
+        //
+        // Returns false when the cast couldn't START (the caller keeps
+        // walking). Fizzles after a successful start are retried by the
+        // watcher; a trip that won't come off hands the bot a fresh
+        // Traveler so it finishes the journey on foot.
         // -------------------------------------------------------------------
-        private static void BeginRecallTrip(PlayerBot bot, string destName, Point3D landing)
+        private static bool TryCastRecall(PlayerBot bot, string destName, Point3D landing, int attempt)
         {
-            if (CanCastRecall(bot))
+            if (bot == null || bot.Deleted || !bot.Alive) return false;
+            if (bot.Map == null || bot.Map == Map.Internal) return false;
+
+            double magery = bot.Skills[SkillName.Magery].Base;
+            bool bookAble   = CanCastRecall(bot);
+            bool scrollAble = CanScrollRecall(bot);
+            if (!bookAble && !scrollAble)
             {
-                bot.Mana = Math.Max(0, bot.Mana - RecallManaCost);
+                return false; // a fizzle burned the last reagents, most likely
             }
-            else if (bot.Backpack?.FindItemByType(typeof(RecallScroll)) is RecallScroll scroll)
+
+            // The era choice: a scroll casts two circles easier, so
+            // anyone shaky (or bookless) reads the scroll; a confident
+            // caster saves the gold and casts from the book.
+            bool useScroll = scrollAble &&
+                             (!bookAble || magery < ScrollPreferredBelowMagery);
+            var scroll = useScroll
+                ? bot.Backpack?.FindItemByType(typeof(RecallScroll)) as RecallScroll
+                : null;
+            if (useScroll && scroll == null)
             {
-                scroll.Consume(1);
+                if (!bookAble) return false;
+                useScroll = false;
             }
-            else
+
+            var rune = GetTravelRune(bot, destName, landing);
+            if (rune == null)
             {
-                return; // no way to pay (callers gate on CanTravel — belt+suspenders)
+                return false;
             }
-            SayMantra(bot, "Kal Ort Por");
 
-            Timer.DelayCall(CastBeat, () =>
+            var spell = new BotRecallSpell(bot, useScroll ? scroll : null);
+            if (!spell.Cast())
             {
-                if (bot == null || bot.Deleted || !bot.Alive) return;
-                if (bot.Map == null || bot.Map == Map.Internal) return;
+                return false; // criminal / fresh combat / mid-something — walk
+            }
 
-                // Departure flash where the bot stood…
-                SafeEffect(bot, RecallSound);
+            new RecallCastWatcher(bot, destName, landing, rune, attempt).Start();
+            return true;
+        }
 
-                bot.MoveToWorld(landing, bot.Map);
+        // The genuine RecallSpell minus the anti-macro cast-recovery gate.
+        // That gate exists to stop human macro spam; the bots' retry
+        // pacing already throttles harder than it does, and other bot
+        // systems casting in the same window kept re-stamping
+        // NextSpellTime and starving honest retries. Everything REAL
+        // stays: skill roll, reagents, mana, scroll consumption, travel
+        // checks, fizzles.
+        private sealed class BotRecallSpell : Server.Spells.Fourth.RecallSpell
+        {
+            public BotRecallSpell(Mobile caster, Item scroll) : base(caster, scroll) { }
+            public override bool CheckNextSpellTime => false;
+        }
 
-                // …and an arrival flash where it lands.
-                SafeEffect(bot, RecallSound);
+        // The bot's own recall rune — ONE per bot, kept in the pack and
+        // re-marked for each trip (from outside: pulls a rune, casts,
+        // gone; snooping the pack shows a genuinely marked rune).
+        private static RecallRune GetTravelRune(PlayerBot bot, string destName, Point3D landing)
+        {
+            var pack = bot.Backpack;
+            if (pack == null)
+            {
+                return null;
+            }
 
-                HandOffFreshTraveler(bot, destName, "Recall");
-            });
+            var rune = pack.FindItemByType(typeof(RecallRune)) as RecallRune;
+            if (rune == null)
+            {
+                rune = new RecallRune();
+                if (!bot.AddToBackpack(rune))
+                {
+                    rune.Delete();
+                    return null;
+                }
+            }
+
+            rune.Target      = landing;
+            rune.TargetMap   = bot.Map;
+            rune.Marked      = true;
+            rune.Description = string.IsNullOrEmpty(destName)
+                ? "somewhere safe"
+                : destName.ToLowerInvariant();
+            return rune;
+        }
+
+        // -------------------------------------------------------------------
+        // RecallCastWatcher — waits out the engine's cast delay, aims the
+        // target cursor at the rune, and reads the outcome. The Effect
+        // pipeline is synchronous once the cursor is invoked, so "did the
+        // bot move to the landing" IS the success test.
+        // -------------------------------------------------------------------
+        private sealed class RecallCastWatcher
+        {
+            private readonly PlayerBot _bot;
+            private readonly string _destName;
+            private readonly Point3D _landing;
+            private readonly RecallRune _rune;
+            private readonly int _attempt;
+            // Set on the FIRST tick, not at construction: casts started
+            // during world load sit in the timer queue until the game
+            // loop begins, and clocking from construction made every one
+            // of them look ancient the moment it first ticked (the boot
+            // flood of phantom "wouldn't take" failures).
+            private DateTime _started = DateTime.MinValue;
+            private Timer _timer;
+
+            public RecallCastWatcher(PlayerBot bot, string destName,
+                Point3D landing, RecallRune rune, int attempt)
+            {
+                _bot = bot; _destName = destName;
+                _landing = landing; _rune = rune; _attempt = attempt;
+            }
+
+            public void Start() =>
+                _timer = Timer.DelayCall(
+                    TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(250), Tick);
+
+            private void Stop() => _timer?.Stop();
+
+            private void Tick()
+            {
+                if (_started == DateTime.MinValue)
+                {
+                    _started = Core.Now;
+                }
+
+                if (_bot == null || _bot.Deleted || !_bot.Alive ||
+                    _bot.Map == null || _bot.Map == Map.Internal)
+                {
+                    Stop(); // death/despawn mid-cast — their systems own it
+                    return;
+                }
+
+                // Cursor's up — target the rune. The whole Effect chain
+                // (CheckSequence: skill roll, reagents, mana, scroll,
+                // travel checks, the move) runs synchronously inside
+                // Invoke, so the outcome is readable right after.
+                if (_bot.Target != null && _bot.Spell is Server.Spells.Fourth.RecallSpell)
+                {
+                    Stop();
+                    try { _bot.Target.Invoke(_bot, _rune); } catch { }
+
+                    if (_bot.X == _landing.X && _bot.Y == _landing.Y)
+                    {
+                        RearmWeapon(_bot);
+                        HandOffFreshTraveler(_bot, _destName,
+                            _attempt > 1 ? $"Recall (attempt {_attempt})" : "Recall");
+                    }
+                    else
+                    {
+                        RetryOrWalk(); // fizzle (or the landing got blocked)
+                    }
+                    return;
+                }
+
+                // Chant broken (shoved, hit) — no spell and no cursor.
+                if (_bot.Spell == null && Core.Now - _started > TimeSpan.FromSeconds(1.5))
+                {
+                    Stop();
+                    RetryOrWalk();
+                    return;
+                }
+
+                // Belt + suspenders: truly wedged (a cast that never
+                // resolves). Never fires while the chant is merely slow —
+                // the spell object is checked, not just the clock.
+                if (Core.Now - _started > TimeSpan.FromSeconds(15))
+                {
+                    Stop();
+                    if (_bot.Spell is Server.Spells.Fourth.RecallSpell stuck)
+                    {
+                        try { stuck.Disturb(Server.Spells.DisturbType.Kill); } catch { }
+                    }
+                    RetryOrWalk();
+                }
+            }
+
+            private void RetryOrWalk()
+            {
+                RearmWeapon(_bot);
+
+                if (_attempt >= MaxCastAttempts)
+                {
+                    WalkInstead();
+                    return;
+                }
+
+                // Breathe, then try the cast again (real players spammed
+                // the macro until it took). If the engine refuses to even
+                // START the cast (recovery window, lingering state), give
+                // it one grace beat before writing the trip off — a
+                // refused START costs nothing, so patience is free.
+                Timer.DelayCall(
+                    TimeSpan.FromMilliseconds(Utility.RandomMinMax(3000, 4500)), () =>
+                    {
+                        if (_bot == null || _bot.Deleted || !_bot.Alive) return;
+                        if (TryCastRecall(_bot, _destName, _landing, _attempt + 1))
+                        {
+                            return;
+                        }
+                        Timer.DelayCall(TimeSpan.FromMilliseconds(1500), () =>
+                        {
+                            if (_bot == null || _bot.Deleted || !_bot.Alive) return;
+                            if (!TryCastRecall(_bot, _destName, _landing, _attempt + 1))
+                            {
+                                WalkInstead();
+                            }
+                        });
+                    });
+            }
+
+            private void WalkInstead()
+            {
+                if (_bot == null || _bot.Deleted || !_bot.Alive) return;
+
+                if (Utility.RandomDouble() < 0.35)
+                {
+                    try { _bot.Say("cant get this spell off"); } catch { }
+                }
+                Console.WriteLine(
+                    $"[MagicTravel] {_bot.Name}: recall wouldn't take " +
+                    $"(attempt {_attempt}, dest '{_destName ?? "fresh"}' at {_landing}) — continuing on foot");
+                try
+                {
+                    _bot.Behavior = new TravelerBehavior { DestinationName = _destName };
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MagicTravel] {_bot.Name}: walk handoff failed: {ex.Message}");
+                }
+            }
+        }
+
+        // Casting pocketed the weapon (pre-AOS ClearHands) — put it back
+        // in hand once the trip resolves, success or not.
+        private static void RearmWeapon(PlayerBot bot)
+        {
+            if (bot == null || bot.Deleted || bot.Spell != null)
+            {
+                return;
+            }
+            if (bot.FindItemOnLayer(Layer.TwoHanded) is BaseWeapon ||
+                bot.FindItemOnLayer(Layer.OneHanded) is BaseWeapon)
+            {
+                return;
+            }
+            var pack = bot.Backpack;
+            if (pack == null)
+            {
+                return;
+            }
+            foreach (var item in pack.Items)
+            {
+                if (item is BaseWeapon w && w.Skill != SkillName.Wrestling &&
+                    bot.Skills[w.Skill].Base >= 45.0)
+                {
+                    bot.EquipItem(w);
+                    return;
+                }
+            }
         }
 
         // -------------------------------------------------------------------
@@ -284,6 +619,18 @@ namespace Server.CustomBots
         private static void BeginGateTrip(PlayerBot bot, string destName, Point3D landing)
         {
             bot.Mana = Math.Max(0, bot.Mana - GateManaCost);
+
+            // The spell's real components leave the pack (black pearl,
+            // mandrake, sulfurous ash) — TryBeginTrip verified they're
+            // there before rolling the gate.
+            var pack = bot.Backpack;
+            if (pack != null)
+            {
+                foreach (var t in GateReagents)
+                {
+                    pack.ConsumeTotal(t, 1);
+                }
+            }
 
             // Gate etiquette (IDEAS 6.2): a public gate is a public
             // service — announce it. The pair lingers ~30s and anyone
@@ -376,15 +723,5 @@ namespace Server.CustomBots
             catch { }
         }
 
-        // Sparkle + sound on the bot, swallowing effect errors.
-        private static void SafeEffect(PlayerBot bot, int soundId)
-        {
-            try
-            {
-                bot.PlaySound(soundId);
-                bot.FixedParticles(SparkleId, 9, 32, 5008, EffectLayer.Waist);
-            }
-            catch { }
-        }
     }
 }

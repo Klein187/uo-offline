@@ -247,6 +247,24 @@ namespace Server.CustomBots
                 AddToPack(bot, "Server.Items.RecallScroll", 1);
             }
 
+            // --- Travel reagents — Recall is a REAL cast now, so anyone
+            // with book-recall Magery keeps the trio (black pearl,
+            // bloodmoss, mandrake) in the pack. Full casters' reagent
+            // stash already covers it; this seeds the utility-magery
+            // templates so a fresh dexxer doesn't stampede the mage shop
+            // before its first trip.
+            if (bot.Backpack != null &&
+                bot.Skills[SkillName.Magery].Base >= MagicTravel.BookMinMagery)
+            {
+                foreach (var t in new[] { typeof(BlackPearl), typeof(Bloodmoss), typeof(MandrakeRoot) })
+                {
+                    if (bot.Backpack.GetAmount(t) < 10)
+                    {
+                        AddToPack(bot, "Server.Items." + t.Name, Utility.RandomMinMax(15, 30));
+                    }
+                }
+            }
+
             // --- Potion belt — heal/cure/refresh and the odd extra ---
             AddPotionKit(bot, cls, tier);
 

@@ -65,18 +65,31 @@ namespace Server.CustomBots
             bot.Class is BotClass.Warrior or BotClass.Fencer or BotClass.Archer
                       or BotClass.Ranger or BotClass.Healer or BotClass.Tamer;
 
-        // Only real spell-slingers burn reagents (combat casting consumes
-        // them; the Recall illusion doesn't). Treasure Hunters cast for
-        // real too — spells are how they clear chest guardians.
+        // Real spell-slingers burn the full reagent shelf (combat casting).
+        // Treasure Hunters cast for real too — spells are how they clear
+        // chest guardians.
         private static bool UsesReagents(PlayerBot bot) =>
             bot.Class is BotClass.Mage or BotClass.TreasureHunter;
 
-        // Casters recall on mana. Of the rest, only Journeyman-and-up can
-        // afford the mage shop's tickets — a Novice or Apprentice walks
-        // everywhere, exactly like every fresh character in the era did,
-        // so they never shop for (or carry) recall scrolls at all.
+        // Recall is a REAL cast now, so anyone who book-casts it burns
+        // black pearl / bloodmoss / mandrake on every trip (fizzles too).
+        // The utility-magery dexxers fall here: not full casters, but the
+        // travel trio has to stay stocked or they're walking.
+        private static readonly Type[] TravelReagentTypes =
+            { typeof(BlackPearl), typeof(Bloodmoss), typeof(MandrakeRoot) };
+        private const int TravelReagentFull = 30;
+
+        private static bool UsesTravelReagents(PlayerBot bot) =>
+            !UsesReagents(bot) &&
+            bot.Skills[SkillName.Magery].Base >= MagicTravel.BookMinMagery;
+
+        // Who shops for recall scrolls: the shaky-caster band. Below
+        // Magery 20 even a scroll won't take (they walk, like every
+        // zero-magery character did); above ~55 the book is reliable and
+        // free. Novice/Apprentice can't afford the tickets regardless.
         private static bool UsesScrolls(PlayerBot bot) =>
-            bot.Skills[SkillName.Magery].Base < MagicTravel.RecallMinMagery &&
+            bot.Skills[SkillName.Magery].Base >= MagicTravel.ScrollMinMagery &&
+            bot.Skills[SkillName.Magery].Base < MagicTravel.ScrollPreferredBelowMagery &&
             BotSkillTierHelper.Rank(bot.SkillTier) >= 2;
 
         // How deep a stack this bot restocks to: mid tiers keep a couple
@@ -107,6 +120,16 @@ namespace Server.CustomBots
             if (UsesReagents(bot))
             {
                 foreach (var t in ReagentTypes)
+                {
+                    if (pack.GetAmount(t) < ReagentLow)
+                    {
+                        return SupplyNeed.Reagents;
+                    }
+                }
+            }
+            if (UsesTravelReagents(bot))
+            {
+                foreach (var t in TravelReagentTypes)
                 {
                     if (pack.GetAmount(t) < ReagentLow)
                     {
@@ -255,6 +278,22 @@ namespace Server.CustomBots
                 {
                     cost += added * 2;
                     bought.Add("reagents");
+                }
+            }
+            if (UsesTravelReagents(bot) && Satisfies(at, SupplyNeed.Reagents))
+            {
+                int added = 0;
+                foreach (var t in TravelReagentTypes)
+                {
+                    if (pack.GetAmount(t) < ReagentLow)
+                    {
+                        added += TopUp(pack, t, TravelReagentFull);
+                    }
+                }
+                if (added > 0)
+                {
+                    cost += added * 2;
+                    bought.Add("recall reagents");
                 }
             }
             if (UsesScrolls(bot) && Satisfies(at, SupplyNeed.Scrolls) &&
