@@ -1,4 +1,4 @@
-# =========================================================================
+﻿# =========================================================================
 # UO Offline (ModernUO edition) — Windows Installer
 #
 # The Windows counterpart to install.sh. Same result: a fully offline
@@ -17,9 +17,15 @@
 #   7. Writes ModernUO + ClassicUO configs (T2A, localhost only).
 #   8. Installs start/stop scripts and a Desktop shortcut.
 #
-# Run via install.bat (double-click), or in PowerShell:
+# Run via install.bat (double-click — opens the GUI installer), or run this
+# console version directly in PowerShell:
 #   powershell -ExecutionPolicy Bypass -File install.ps1
+#
+# -NoRun: define the paths + step functions but run nothing — the GUI
+# installer (install-gui.ps1) dot-sources this file as its engine and
+# invokes the steps itself.
 # =========================================================================
+param([switch]$NoRun)
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
@@ -35,6 +41,13 @@ $SpawnersDir   = Join-Path $DistDir "Spawners\uoclassic"
 
 $ClassicUODir  = Join-Path $InstallRoot "ClassicUO"
 $ClassicUOReleaseUrl = "https://api.github.com/repos/ClassicUO/ClassicUO/releases"
+
+# Razor (Community Edition) — the classic UO assistant, loaded into
+# ClassicUO as a plugin so clicking Play opens the game with Razor attached.
+# $InstallRazor = $false to skip.
+$InstallRazor   = $true
+$RazorDir       = Join-Path $InstallRoot "Razor"
+$RazorReleaseUrl = "https://api.github.com/repos/markdwags/Razor/releases/latest"
 
 $UODataUrl     = "https://mirror.ashkantra.de/fullclients/7.0.23.1.exe"
 $UODataVersion = "7.0.23.1"
@@ -70,7 +83,9 @@ function Banner($m) { Write-Host "`n=== $m ===" -ForegroundColor Cyan }
 function Say($m)    { Write-Host "--> $m" -ForegroundColor Cyan }
 function Ok($m)     { Write-Host "[OK] $m" -ForegroundColor Green }
 function Warn($m)   { Write-Host "[WARN] $m" -ForegroundColor Yellow }
-function Die($m)    { Write-Host "[ERROR] $m" -ForegroundColor Red; exit 1 }
+# Die throws (instead of exit) so the GUI installer can catch a failed step
+# and show it; the console runner at the bottom catches and prints red.
+function Die($m)    { throw "INSTALL FAILED: $m" }
 
 # ---------------------------------------------------------------------------
 # Step 1 — Pre-flight
@@ -219,6 +234,15 @@ function FindOrDownloadUOData {
     if ((Test-Path (Join-Path $c "art.mul")) -and (Test-Path (Join-Path $c "map0.mul"))) {
       $script:UOData = $c; Ok "Found UO data: $c"; return
     }
+  }
+
+  # A previous run may have extracted into a NESTED folder under UOData
+  # (some builds of the self-extractor create their own subdirectory) —
+  # search recursively before re-running the interactive installer.
+  $uoDataRoot = Join-Path $InstallRoot "UOData"
+  if (Test-Path $uoDataRoot) {
+    $preHit = Get-ChildItem -Path $uoDataRoot -Recurse -Filter "art.mul" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($preHit) { $script:UOData = $preHit.DirectoryName; Ok "Found UO data: $($preHit.DirectoryName)"; return }
   }
 
   Warn "No existing UO data found. Downloading UO Classic $UODataVersion (~929 MB, third-party mirror, EA content)."
@@ -389,6 +413,48 @@ function InstallClassicUO {
 }
 
 # ---------------------------------------------------------------------------
+# Step 8b — Razor (Community Edition)
+#
+# Razor runs INSIDE ClassicUO as a plugin (the modern, supported way to use
+# it): WriteClassicUOSettings points ClassicUO's "plugins" list at Razor.exe,
+# so launching the game brings up Razor attached to the client — macros,
+# hotkeys, agents, the works.
+# ---------------------------------------------------------------------------
+function InstallRazor {
+  Banner "Downloading Razor assistant"
+  if (-not $InstallRazor) { Say "InstallRazor is off; skipping."; return }
+
+  $razorExe = Join-Path $RazorDir "Razor.exe"
+  if (Test-Path $razorExe) {
+    Say "Razor already present. Skipping."
+    Set-Content (Join-Path $InstallRoot ".razor-bin-path") $razorExe
+    return
+  }
+
+  Say "Querying GitHub for the latest Razor CE release..."
+  $rel = Invoke-RestMethod -Uri $RazorReleaseUrl -Headers @{ "User-Agent"="uo-offline-installer" }
+  $asset = $rel.assets | Where-Object { $_.name -match "x64" -and $_.name -match "\.zip$" } | Select-Object -First 1
+  if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -match "\.zip$" } | Select-Object -First 1 }
+  if (-not $asset) { Warn "No Razor release zip found; skipping Razor (game still works without it)."; return }
+
+  $tmpZip = Join-Path $InstallRoot ".razor.zip"
+  Say "Downloading: $($asset.browser_download_url)"
+  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpZip
+  New-Item -ItemType Directory -Force -Path $RazorDir | Out-Null
+  Say "Extracting..."
+  Expand-Archive -Path $tmpZip -DestinationPath $RazorDir -Force
+  Remove-Item $tmpZip -Force
+
+  $hit = Get-ChildItem $RazorDir -Recurse -Filter "Razor.exe" | Select-Object -First 1
+  if ($hit) {
+    Set-Content (Join-Path $InstallRoot ".razor-bin-path") $hit.FullName
+    Ok "Razor: $($hit.FullName)"
+  } else {
+    Warn "Razor extracted but Razor.exe not located; the game will launch without it."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # Step 9 — ModernUO config
 # ---------------------------------------------------------------------------
 function WriteModernUOConfig {
@@ -437,11 +503,21 @@ function WriteClassicUOSettings {
   $binPath = Join-Path $InstallRoot ".classicuo-bin-path"
   if (Test-Path $binPath) { $nested = Split-Path -Parent (Get-Content $binPath); if ($nested -ne $ClassicUODir) { $targets += $nested } }
 
+  # Razor rides along as a ClassicUO plugin when installed.
+  $plugins = "[]"
+  $razorBinPath = Join-Path $InstallRoot ".razor-bin-path"
+  if (Test-Path $razorBinPath) {
+    $razorExe = (Get-Content $razorBinPath).Replace([char]92,[char]47)
+    if ($razorExe) { $plugins = "[`"$razorExe`"]" }
+  }
+
+  # save_password + auto_login: clicking the desktop shortcut goes straight
+  # into the shard (the first login auto-creates the admin account).
   foreach ($t in $targets) {
     @"
 {
   "username": "$OwnerUser",
-  "password": "",
+  "password": "$OwnerPass",
   "ip": "127.0.0.1",
   "port": 2593,
   "ultimaonlinedirectory": "$uoData",
@@ -450,13 +526,14 @@ function WriteClassicUOSettings {
   "last_server_name": "$ShardName",
   "fps": 60,
   "encryption": 0,
-  "save_password": false,
-  "auto_login": false,
-  "plugins": []
+  "save_password": true,
+  "auto_login": true,
+  "plugins": $plugins
 }
 "@ | Set-Content (Join-Path $t "settings.json")
     Ok "Wrote $t\settings.json"
   }
+  if ($plugins -ne "[]") { Ok "Razor wired in as a ClassicUO plugin." }
 }
 
 # ---------------------------------------------------------------------------
@@ -470,22 +547,34 @@ function InstallRuntimeScripts {
 
   $startPs1 = Join-Path $InstallRoot "start.ps1"
   @"
-# Start the ModernUO server (minimized), wait until it's actually listening
-# on 2593, THEN launch ClassicUO. Polling the port avoids the race where the
+# One-click play: start the ModernUO server (minimized) unless one is
+# already running, wait until it's actually listening on 2593, THEN launch
+# ClassicUO — which loads Razor as its plugin (see settings.json) and
+# auto-logs into the shard. Polling the port avoids the race where the
 # client connects before the server has finished its (slow) first boot.
 `$dist = "$DistDir"
 `$dotnet = "$DotnetRoot\dotnet.exe"
-`$server = Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist -WindowStyle Minimized -PassThru
-Write-Host "Starting server, waiting for it to listen on 2593..."
-`$ready = `$false
-for (`$i = 0; `$i -lt 120; `$i++) {
+
+function PortOpen {
   try {
     `$c = New-Object System.Net.Sockets.TcpClient
-    `$c.Connect("127.0.0.1", 2593)
-    `$c.Close(); `$ready = `$true; break
-  } catch { Start-Sleep -Seconds 1 }
+    `$c.Connect("127.0.0.1", 2593); `$c.Close(); return `$true
+  } catch { return `$false }
 }
-if (-not `$ready) { Write-Host "Server didn't come up within 120s; check the server window."; }
+
+if (PortOpen) {
+  Write-Host "Server already running - launching the game."
+} else {
+  Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist -WindowStyle Minimized | Out-Null
+  Write-Host "Starting server, waiting for it to listen on 2593..."
+  `$ready = `$false
+  for (`$i = 0; `$i -lt 120; `$i++) {
+    if (PortOpen) { `$ready = `$true; break }
+    Start-Sleep -Seconds 1
+  }
+  if (-not `$ready) { Write-Host "Server didn't come up within 120s; check the server window." }
+}
+
 `$cuo = "$cuoBin"
 if (`$cuo -and (Test-Path `$cuo)) { Start-Process -FilePath `$cuo -WorkingDirectory (Split-Path -Parent `$cuo) }
 else { Write-Host "ClassicUO.exe not found; start it manually." }
@@ -500,13 +589,20 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0start.ps1"
 "@ | Set-Content (Join-Path $InstallRoot "start.bat")
   Ok "Wrote start.bat"
 
-  # Desktop shortcut to start.ps1
+  # Desktop shortcut to start.ps1, with the UO icon when the repo ships one.
+  $iconSpec = "shell32.dll,18"
+  $icoSrc = Join-Path $ScriptDir "uoico.ico"
+  if (Test-Path $icoSrc) {
+    $icoDst = Join-Path $InstallRoot "uoico.ico"
+    Copy-Item $icoSrc $icoDst -Force
+    $iconSpec = "$icoDst,0"
+  }
   $wsh = New-Object -ComObject WScript.Shell
   $lnk = $wsh.CreateShortcut((Join-Path ([Environment]::GetFolderPath("Desktop")) "UO Offline.lnk"))
   $lnk.TargetPath = "powershell.exe"
-  $lnk.Arguments = "-ExecutionPolicy Bypass -File `"$startPs1`""
+  $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File `"$startPs1`""
   $lnk.WorkingDirectory = $InstallRoot
-  $lnk.IconLocation = "shell32.dll,18"
+  $lnk.IconLocation = $iconSpec
   $lnk.Save()
   Ok "Desktop shortcut: UO Offline"
 }
@@ -519,12 +615,14 @@ function Finish {
 Install root:   $InstallRoot
 Server:         $DistDir
 Client:         $ClassicUODir
+Razor:          $RazorDir  (loads inside ClassicUO as a plugin)
 UO data:        $($script:UOData)
 Listener:       $ListenAddr  (localhost only, offline)
 Owner login:    $OwnerUser / $OwnerPass
 
-To play:        Double-click the "UO Offline" desktop shortcut.
-                (or run $InstallRoot\start.ps1)
+To play:        Double-click the "UO Offline" desktop shortcut — it starts
+                the server, then opens the game with Razor attached and
+                logs you straight in. (or run $InstallRoot\start.bat)
 
 First launch: create the owner account in-game ($OwnerUser/$OwnerPass),
 make a character, then populate the world with the [-commands in
@@ -534,17 +632,32 @@ $InstallRoot\POPULATE-WORLD.txt (same as the Linux version).
 }
 
 # ---------------------------------------------------------------------------
-Preflight
-BootstrapDotnet
-FetchModernUO
-InstallPlayerBots
-BuildModernUO
-FixFeluccaSeason
-FindOrDownloadUOData
-SwapT2AMap
-FetchSpawnMap
-InstallClassicUO
-WriteModernUOConfig
-WriteClassicUOSettings
-InstallRuntimeScripts
-Finish
+# The install sequence. The GUI installer (install-gui.ps1) dot-sources this
+# file with -NoRun and drives these same steps itself, one checklist row per
+# entry, so console and GUI installs can never drift apart.
+# ---------------------------------------------------------------------------
+$script:InstallSteps = @(
+  @{ Name = "Check requirements";           Run = { Preflight } },
+  @{ Name = "Install .NET (no admin)";      Run = { BootstrapDotnet } },
+  @{ Name = "Download the ModernUO server"; Run = { FetchModernUO } },
+  @{ Name = "Add the PlayerBots";           Run = { InstallPlayerBots } },
+  @{ Name = "Build the server";             Run = { BuildModernUO } },
+  @{ Name = "Set Felucca to summer";        Run = { FixFeluccaSeason } },
+  @{ Name = "Get the UO game data";         Run = { FindOrDownloadUOData } },
+  @{ Name = "Install T2A-era map art";      Run = { SwapT2AMap } },
+  @{ Name = "Fetch the monster spawns";     Run = { FetchSpawnMap } },
+  @{ Name = "Download ClassicUO client";    Run = { InstallClassicUO } },
+  @{ Name = "Download Razor assistant";     Run = { InstallRazor } },
+  @{ Name = "Write the configuration";      Run = { WriteModernUOConfig; WriteClassicUOSettings } },
+  @{ Name = "Create launcher + shortcut";   Run = { InstallRuntimeScripts } }
+)
+
+if (-not $NoRun) {
+  try {
+    foreach ($step in $script:InstallSteps) { & $step.Run }
+    Finish
+  } catch {
+    Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+  }
+}

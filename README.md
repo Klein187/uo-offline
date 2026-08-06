@@ -12,6 +12,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 The theme of this month's work: **bots that pass for players.** Newest first:
 
+- **A real Windows installer — and Razor in the box.** `install.bat` now opens a graphical installer that lays the whole setup out as a live checklist (same engine as the console install, safe to re-run). It also installs **Razor** and wires it into ClassicUO as a plugin, and the desktop shortcut is one-click-to-playing: server starts, game opens with Razor attached, and you're logged into the shard.
 - **Crafters run a real economy — and talk like their trade.** Smiths, tailors, and the new **Carpenter** class consume actual pack stock (ingots / cloth / boards) with every piece they make, buy the miners' ore and lumberjacks' logs for real coin, sell finished goods to browsing bots, and shout "wtb iron ingots" when they run dry. Each trade has its own shop-talk now — no more tailor lines at the forge, and no "one more dungeon run then bed" from a smith at 2am. Gossip also travels at rumor speed: fresh Trinsic news takes an hour to reach Minoc's bank.
 - **Tamers fight with their pets — by player rules.** They claim the pet at the stables ("vendor claim"), from a Novice's timber wolf up to the GM's **nightmare, white wyrm, or dragon**. Orders are typed out loud — "all kill", "all stay", "all follow me" — the pet gets vet-bandaged and fed real raw ribs, and a tamer who runs out of food watches it go wild for real.
 - **Crawlers loot like it's 1999 — and the bards sing.** Corpses give up gold, gems, scrolls, and reagents; a magic drop gets bragged about and retold at the bank for days. Bards use **Provocation everywhere** ("provoked a dragon onto a dragon") and some roll the **Peacemaking** build to calm what they can't redirect — skill-checked, sour notes included.
@@ -38,7 +39,7 @@ The theme of this month's work: **bots that pass for players.** Newest first:
 
 ## Install
 
-The installer does everything for you: it builds ModernUO with the PlayerBots compiled in, bootstraps .NET, downloads ClassicUO and the UO Classic game data (from a community mirror, or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and sets up a launcher. Takes 15-25 minutes, and re-running it is safe -- it skips anything already done.
+The installer does everything for you: it builds ModernUO with the PlayerBots compiled in, bootstraps .NET, downloads ClassicUO, the Razor assistant, and the UO Classic game data (from a community mirror, or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A/localhost configs, and sets up a launcher. Takes 15-25 minutes, and re-running it is safe -- it skips anything already done.
 
 ### Windows (easiest)
 
@@ -46,11 +47,11 @@ The installer does everything for you: it builds ModernUO with the PlayerBots co
 2. Unzip it anywhere (your Desktop is fine). You'll get a folder named `uo-offline-main`.
 3. Open that folder and **double-click `install.bat`**.
 
-That's it. `install.bat` launches the installer with the right permissions, so you don't have to change any Windows settings or install anything else first.
+That's it. A **graphical installer** opens: it lays out what's about to happen, lets you toggle the T2A map art and Razor, and then walks a live checklist while it works -- no Windows settings to change, nothing else to install first. (Prefer a plain console? Run `powershell -ExecutionPolicy Bypass -File install.ps1` instead; both drive the exact same steps.)
 
 Two things to expect during the install:
 - A **UO Classic setup window** may pop up while the game data downloads -- just install to the default location and click through it. The installer continues automatically after.
-- When it finishes, launch the game with the **UO Offline** desktop shortcut (or `start.bat`). Don't run `start.ps1` directly -- Windows blocks unsigned scripts, which the shortcut and `.bat` work around for you.
+- When it finishes, click **Play Now** (or the **UO Offline** desktop shortcut any time after). One click starts the server, then opens the game **with Razor attached** and logs you straight into the shard. Don't run `start.ps1` directly -- Windows blocks unsigned scripts, which the shortcut and `.bat` work around for you.
 
 ### Linux / Steam Deck
 
@@ -78,7 +79,7 @@ chmod +x install.sh
 
 ## First-time setup
 
-Double-click the **UO Offline** desktop icon. Log in as `admin` / `admin`, create a character, pick any starting city.
+Double-click the **UO Offline** desktop icon. It starts the server, opens the game with Razor attached, and logs you in as `admin` automatically (the account is created on first login) — just make a character and pick any starting city. Razor's window comes up alongside the game; set up macros and hotkeys there, or minimize it and ignore it.
 
 The world starts empty. To populate it:
 
