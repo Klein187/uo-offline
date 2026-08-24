@@ -38,6 +38,22 @@ die()  { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 [[ -f "${DIST_DIR}/ModernUO.dll" ]] || die "ModernUO not built. Run install.sh first."
 
 # ---------------------------------------------------------------------------
+# Ask GitHub whether there is a newer UO Offline before starting anything.
+#
+# The checker stays silent unless there is genuinely something new, and any
+# failure at all - no internet, GitHub down, rate limited - falls straight
+# through to launching the game. Exit code 10 means the player chose to
+# update and the installer is now running, so we get out of the way.
+# ---------------------------------------------------------------------------
+UPDATER="${INSTALL_ROOT}/update-check.sh"
+if [[ -x "${UPDATER}" ]]; then
+  "${UPDATER}"
+  if [[ $? -eq 10 ]]; then
+    exit 0
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Already running?
 #
 # If the server is already up (user clicked the desktop icon twice, or

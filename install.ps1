@@ -558,6 +558,54 @@ function WriteClassicUOSettings {
 }
 
 # ---------------------------------------------------------------------------
+# Version stamp - what the launcher's update check compares against.
+#
+# Prefer the git sha of the source we are installing FROM, because that is
+# exactly what the player has on disk. Downloaded zips carry no sha, so for
+# those we fall back to the current branch head, which is accurate to within
+# however long ago the zip was downloaded.
+#
+# Failing to write this is not an install failure. It only means the launcher
+# will not offer updates, which is the quiet, safe direction to fail in.
+# ---------------------------------------------------------------------------
+function WriteVersionStamp {
+  $repo   = "Klein187/uo-offline"
+  $branch = "main"
+  $sha    = ""
+
+  try {
+    Push-Location $ScriptDir
+    try {
+      $probe = (git rev-parse HEAD 2>$null)
+      if ($LASTEXITCODE -eq 0 -and $probe) { $sha = "$probe".Trim() }
+    } finally { Pop-Location }
+  } catch { $sha = "" }
+
+  if (-not $sha) {
+    try {
+      $head = Invoke-RestMethod `
+        -Uri "https://api.github.com/repos/$repo/commits/$branch" `
+        -Headers @{ "User-Agent" = "uo-offline-installer" } -TimeoutSec 10
+      $sha = $head.sha
+    } catch { $sha = "" }
+  }
+
+  if (-not $sha) {
+    Warn "Could not determine the source version; the launcher will not check for updates."
+    return
+  }
+
+  $stamp = [ordered]@{
+    Repo         = $repo
+    Branch       = $branch
+    Sha          = $sha
+    InstalledUtc = (Get-Date).ToUniversalTime().ToString("o")
+  }
+  $stamp | ConvertTo-Json | Set-Content (Join-Path $InstallRoot "uo-offline-version.json")
+  Ok "Version stamp: $($sha.Substring(0, [Math]::Min(7, $sha.Length)))"
+}
+
+# ---------------------------------------------------------------------------
 # Step 11 — start/stop scripts + Desktop shortcut
 # ---------------------------------------------------------------------------
 function InstallRuntimeScripts {
@@ -575,6 +623,17 @@ function InstallRuntimeScripts {
 # client connects before the server has finished its (slow) first boot.
 `$dist = "$DistDir"
 `$dotnet = "$DotnetRoot\dotnet.exe"
+
+# Ask GitHub whether there is a newer UO Offline before starting anything.
+# The checker stays silent unless there is genuinely something new, and any
+# failure at all - no internet, GitHub down, rate limited - falls straight
+# through to launching the game.
+`$verdict = "continue"
+`$updater = Join-Path `$PSScriptRoot "update-check.ps1"
+if (Test-Path `$updater) {
+  try { `$verdict = (& `$updater | Select-Object -Last 1) } catch { `$verdict = "continue" }
+}
+if (`$verdict -eq "updating") { return }
 
 function PortOpen {
   try {
@@ -609,6 +668,14 @@ else { Write-Host "ClassicUO.exe not found; start it manually." }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0start.ps1"
 "@ | Set-Content (Join-Path $InstallRoot "start.bat")
   Ok "Wrote start.bat"
+
+  # The launcher's update checker, and the version stamp it compares against.
+  $updSrc = Join-Path $ScriptDir "scripts\update-check.ps1"
+  if (Test-Path $updSrc) {
+    Copy-Item $updSrc (Join-Path $InstallRoot "update-check.ps1") -Force
+    Ok "Wrote update-check.ps1"
+  }
+  WriteVersionStamp
 
   # Desktop shortcut to start.ps1, with the UO icon when the repo ships one.
   $iconSpec = "shell32.dll,18"

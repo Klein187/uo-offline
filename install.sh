@@ -685,11 +685,62 @@ install_runtime_scripts() {
   cp "${src_dir}/stop.sh"               "${INSTALL_ROOT}/stop.sh"
   cp "${src_dir}/reset-first-launch.sh" "${INSTALL_ROOT}/reset-first-launch.sh"
 
+  # The launcher's update checker is optional - an install without it just
+  # never offers updates, which is the quiet way to fail.
+  if [[ -f "${src_dir}/update-check.sh" ]]; then
+    cp "${src_dir}/update-check.sh" "${INSTALL_ROOT}/update-check.sh"
+    chmod +x "${INSTALL_ROOT}/update-check.sh"
+    ok "Installed update-check.sh"
+  fi
+
+  write_version_stamp
+
   chmod +x "${INSTALL_ROOT}/start.sh" \
            "${INSTALL_ROOT}/stop.sh" \
            "${INSTALL_ROOT}/reset-first-launch.sh"
 
   ok "Installed start.sh, stop.sh, reset-first-launch.sh"
+}
+
+# ---------------------------------------------------------------------------
+# Version stamp - what the launcher's update check compares against.
+#
+# Prefer the git sha of the source we are installing FROM, because that is
+# exactly what the player has on disk. Downloaded zips carry no sha, so for
+# those we fall back to the current branch head, which is accurate to within
+# however long ago the zip was downloaded.
+#
+# Failing to write this is not an install failure. It only means the launcher
+# will not offer updates, which is the quiet, safe direction to fail in.
+# ---------------------------------------------------------------------------
+write_version_stamp() {
+  local repo="Klein187/uo-offline"
+  local branch="main"
+  local sha=""
+  local api="https://api.github.com/repos/${repo}/commits/${branch}"
+
+  if command -v git >/dev/null 2>&1 && [[ -d "${SCRIPT_DIR}/.git" ]]; then
+    sha="$(git -C "${SCRIPT_DIR}" rev-parse HEAD 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${sha}" ]] && command -v curl >/dev/null 2>&1; then
+    sha="$(curl -fsSL --max-time 10 -H "User-Agent: uo-offline-installer" "${api}" 2>/dev/null | grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | head -n1 | grep -oE '[0-9a-f]{40}' || true)"
+  fi
+
+  if [[ -z "${sha}" ]]; then
+    warn "Could not determine the source version; the launcher will not check for updates."
+    return 0
+  fi
+
+  cat > "${INSTALL_ROOT}/uo-offline-version.json" <<EOF
+{
+  "Repo": "${repo}",
+  "Branch": "${branch}",
+  "Sha": "${sha}",
+  "InstalledUtc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+  ok "Version stamp: ${sha:0:7}"
 }
 
 # ---------------------------------------------------------------------------
