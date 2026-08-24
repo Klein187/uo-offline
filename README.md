@@ -6,12 +6,17 @@ The point of it is the PlayerBots. The world is full of bots that fight, shop, b
 
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, all on localhost.
 
----
+<details>
+<summary><b>What's new — August 2026</b></summary>
 
-## What's new — August 2026
+<br>
 
 Newest first.
 
+- **Bots open doors.** Walk a bot into a closed door and it opens, the same way the client's auto-open-doors setting has always worked for players. Before this they only opened doors during stuck-recovery, so a bot that walked into a dungeon room or the Britain bank stayed shut in there until a rescue timer fired. Locked doors still stay locked, and house doors still run their own access checks.
+- **One button sets up the world.** The GM panel's WORLD tab was a 3x3 grid of setup commands that always got run in the same order anyway. It is now a single **First Time Setup** button, and it also places the PKs, which the old Run All never did.
+- **Twice as many bots.** The world population target went from 800 to 1600, and the reds scale with it. Dial it back live with `[SetBotPopulation` if your machine complains.
+- **The launcher checks for updates.** Starting the game asks GitHub whether there is a newer version, and if there is you get one prompt listing what changed. Up to date, offline, or GitHub having a bad day all mean it says nothing at all.
 - **Moongates work for normal characters.** Walking into a city moongate did nothing unless you were on the staff account. New characters count as "young", and the young destination list only offers Trammel, which a Felucca-only shard doesn't have, so the menu never opened. The young player system is off now (it's a UO:R feature, not T2A), and the gate falls back to the full city list if a ruleset ever leaves someone with nowhere to go.
 - **Dungeon waypoints cleaned up.** The underground road network carried 541 duplicate and stacked waypoints left over from generation: corridors recorded twice on the same tiles, plus blobs around teleporter pads. They're merged or deleted, the graph went from 176 disconnected pieces down to 78, and it audits clean now — no duplicates, no dangling edges, no one-way links.
 - **Map editor panel tidied.** The side panel is grouped into collapsible sections (Layers, Live, Edit tools, Game actions) instead of one long column.
@@ -38,9 +43,12 @@ Newest first.
 - **Era-correct clothes.** Every hue comes from the classic dye tub range, with true black as the rare flex. Mana potions are gone from mage kits; they didn't exist yet.
 - **The shard watches itself.** A live status page tracks stuck bots and rescues, and the fleet routes around road sections that keep causing trouble.
 
----
+</details>
 
-## Install
+<details open>
+<summary><b>Install</b></summary>
+
+<br>
 
 The installer does the whole job: it builds ModernUO with the PlayerBots compiled in, sets up .NET, downloads ClassicUO, Razor, and the UO Classic game data (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A configs, and makes a launcher. It takes 15-25 minutes. Re-running it is safe, since it skips anything already done.
 
@@ -79,15 +87,27 @@ chmod +x install.sh
 
 No git? On the GitHub page click **Code**, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod` and `./install.sh`.
 
----
+### Updates
 
-## First-time setup
+Starting the game checks GitHub for a newer version. If there is one, you get a
+single prompt listing what changed, and you can update, play anyway, or skip
+that version for good. If you are up to date, or offline, or GitHub is having a
+bad day, it says nothing at all and the game just starts. Updating re-runs the
+installer, which rebuilds the server with the new bots and keeps your world,
+characters and accounts.
+
+</details>
+
+<details>
+<summary><b>First-time setup</b></summary>
+
+<br>
 
 Double-click the **UO Offline** desktop icon. It starts the server, opens the game with Razor attached, and logs you in as `admin` (the account is created on first login). Make a character and pick any starting city. Razor's window comes up alongside the game — set up macros there, or minimize it and forget about it.
 
 The world starts empty. To fill it:
 
-**1.** Type `[GmPanel` to open the GM panel. Click **★ Run All** under "WORLD". That seeds vendors, monsters, signs, moongates, town criers, and PlayerBots at every bank.
+**1.** Type `[GmPanel` to open the GM panel and click **★ First Time Setup**. That one button lays down decor, signs, teleporters, moongates, town criers, the monster and vendor spawners, and the whole player bot population — town and road bots plus the reds — then saves. It is safe to run again later.
 
 **2.** That's all. The Lifecycle system takes over from there. Bank-sitters become shoppers and adventurers, travelers walk the roads, and bots step through moongates to other cities.
 
@@ -99,9 +119,12 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **2.** Make a character on that account and play. You can switch back to `admin` whenever you need GM tools by logging out and back in.
 
----
+</details>
 
-## Features
+<details>
+<summary><b>Features</b></summary>
+
+<br>
 
 **Bot identity.** Every bot has a class (Warrior, Mage, Fencer, Archer, Tamer, Healer, Thief, Bard, Ranger, Treasure Hunter, Merchant, plus the working classes: Smith, Tailor, Fisherman, Lumberjack, Miner) and a skill tier from Novice to Grandmaster, spread on a bell curve. Skills, stats, and gear all come from class plus tier under the real T2A caps: 100 per stat, 225 total, seven-skill templates. A Grandmaster Mage really is one, usually a Tank Mage with a halberd, a full spellbook, and a hued robe.
 
@@ -189,9 +212,12 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Lifecycle.** Every bot has a personality: weighted leanings toward each behavior plus optional traits (Restless, Homebody, Brave, Cautious, Wealthy, Rough). The lifecycle manager checks each bot periodically and moves it to a new behavior when its current phase runs out.
 
----
+</details>
 
-## The map editor
+<details>
+<summary><b>The map editor</b></summary>
+
+<br>
 
 A browser-based editor for the world's navigation data and population, served live from the running shard. It lives in `tools/map/`:
 
@@ -224,9 +250,12 @@ These work through a small token-file bridge the game polls. You can still run t
 
 The map background PNG is generated. If it's missing, rebuild it from your UO client's map files with `make_interactive_map.py`.
 
----
+</details>
 
-## GM commands
+<details>
+<summary><b>GM commands</b></summary>
+
+<br>
 
 **Marking the world as you walk:**
 
@@ -265,9 +294,12 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 - `[GenerateCustomSpawners` — turn the spawn editor's `spawns.json` into real in-game spawners.
 - `[LiveMap on|off [seconds]` — stream a live entity snapshot to the map editor.
 
----
+</details>
 
-## Currently being worked on
+<details>
+<summary><b>Currently being worked on</b></summary>
+
+<br>
 
 **Cities — the mainland is done.** All eight mainland cities have their road networks, destination clusters, arrival points, and painted areas live:
 
@@ -293,9 +325,12 @@ The island cities still need their own waypoint pockets and arrival handling. Si
 - **Bots stuck at login** — bots that don't resume their routine after coming back into the world.
 - **Player houses** — bot behavior in and around player-owned housing.
 
----
+</details>
 
-## Credits
+<details>
+<summary><b>Credits</b></summary>
+
+<br>
 
 - **[ModernUO](https://github.com/modernuo/ModernUO)** — the game server emulator. GPL-3.0.
 - **[ClassicUO](https://github.com/ClassicUO/ClassicUO)** — the open-source UO client. BSD.
@@ -307,3 +342,5 @@ The island cities still need their own waypoint pockets and arrival handling. Si
 The PlayerBots system was built for this project. GPL-3.0.
 
 Ultima Online is © Electronic Arts. This project doesn't redistribute any EA-copyrighted assets; the installer downloads them from a third-party community mirror.
+
+</details>
