@@ -5133,7 +5133,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Destard L1 WP 1",
+      "NearestWaypoint": "Destard L1 WP 3",
       "Dungeon": "Destard lvl1",
       "Level": 1
     },
@@ -5199,7 +5199,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Orc Cave L1 WP 3",
+      "NearestWaypoint": "Orc Cave L1 WP 4",
       "Dungeon": "Orc Cave lvl1",
       "Level": 1
     },
@@ -5210,7 +5210,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Destard L1 WP 1 B",
+      "NearestWaypoint": "Destard L1 WP 3 B",
       "Dungeon": "Destard lvl1b",
       "Level": 1
     },
@@ -5234,18 +5234,38 @@
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 1",
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5137,
+          "Y": 660,
+          "Z": 0,
+          "Waypoints": [
+            "Deceit L2 WP 19"
+          ]
+        }
+      ]
     },
     {
       "Name": "Deceit lvl2 Room 2",
-      "X": 5217,
-      "Y": 756,
+      "X": 5220,
+      "Y": 755,
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 4",
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5220,
+          "Y": 752,
+          "Z": -20,
+          "Waypoints": [
+            "Deceit L2 WP 3"
+          ]
+        }
+      ]
     },
     {
       "Name": "Deceit lvl2 Room 3",
@@ -5256,7 +5276,17 @@
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 5",
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5221,
+          "Y": 676,
+          "Z": -20,
+          "Waypoints": [
+            "Deceit L2 WP 36"
+          ]
+        }
+      ]
     },
     {
       "Name": "Deceit lvl2 Room 4",
@@ -5267,7 +5297,18 @@
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 6",
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5172,
+          "Y": 701,
+          "Z": 0,
+          "Waypoints": [
+            "Deceit L2 WP 6",
+            "Deceit L2 WP 30"
+          ]
+        }
+      ]
     },
     {
       "Name": "Deceit lvl2 Room 5",
@@ -5278,7 +5319,17 @@
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 7",
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5219,
+          "Y": 720,
+          "Z": -20,
+          "Waypoints": [
+            "Deceit L2 WP 23"
+          ]
+        }
+      ]
     },
     {
       "Name": "Terathan Keep lvl2b Room",
@@ -5298,7 +5349,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Destard L2 WP 1",
+      "NearestWaypoint": "Destard L2 WP 3",
       "Dungeon": "Destard lvl2",
       "Level": 2
     },
@@ -5397,7 +5448,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Deceit L1 WP 1",
+      "NearestWaypoint": "Deceit L1 WP 2",
       "Dungeon": "Deceit lvl1",
       "Level": 1
     },
@@ -5452,7 +5503,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Deceit L3 WP 1",
+      "NearestWaypoint": "Deceit L3 WP 2",
       "Dungeon": "Deceit lvl3",
       "Level": 3
     },
@@ -5551,7 +5602,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Deceit L5 WP 1",
+      "NearestWaypoint": "Deceit L5 WP 3",
       "Dungeon": "Deceit lvl5",
       "Level": 5
     },
@@ -5815,7 +5866,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Despise L1 WP 1",
+      "NearestWaypoint": "Despise L1 WP 4",
       "Dungeon": "Despise lvl1b",
       "Level": 1
     },
@@ -5870,7 +5921,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Terathan Keep L2 WP 1 B",
+      "NearestWaypoint": "Terathan Keep L2 WP 2 B",
       "Dungeon": "Terathan Keep lvl2",
       "Level": 2
     },
@@ -5938,7 +5989,17 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 1",
       "Dungeon": "Despise lvl2b",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5499,
+          "Y": 568,
+          "Z": 60,
+          "Waypoints": [
+            "Despise L2 WP 1"
+          ]
+        }
+      ]
     },
     {
       "Name": "Despise lvl2 Room 2",
@@ -5949,7 +6010,17 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 5",
       "Dungeon": "Despise lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5389,
+          "Y": 613,
+          "Z": 53,
+          "Waypoints": [
+            "Despise L2 WP 5"
+          ]
+        }
+      ]
     },
     {
       "Name": "Despise lvl2 Room 3",
@@ -5960,7 +6031,17 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 6",
       "Dungeon": "Despise lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5397,
+          "Y": 526,
+          "Z": 65,
+          "Waypoints": [
+            "Despise L2 WP 113"
+          ]
+        }
+      ]
     },
     {
       "Name": "Despise lvl2b Room B",
@@ -5969,9 +6050,20 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Despise L2 WP 7",
+      "NearestWaypoint": "Despise L2 WP 35",
       "Dungeon": "Despise lvl2b",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5486,
+          "Y": 625,
+          "Z": 25,
+          "Waypoints": [
+            "Despise L2 WP 106",
+            "Despise L2 WP 35"
+          ]
+        }
+      ]
     },
     {
       "Name": "Despise lvl2 Room 5",
@@ -5982,7 +6074,17 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 8",
       "Dungeon": "Despise lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5448,
+          "Y": 577,
+          "Z": 60,
+          "Waypoints": [
+            "Despise L2 WP 8"
+          ]
+        }
+      ]
     },
     {
       "Name": "Shame lvl4 Room 1",
@@ -6080,7 +6182,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Covetous L3 WP 1",
+      "NearestWaypoint": "Covetous L3 WP 2",
       "Dungeon": "Covetous lvl3",
       "Level": 3
     },
@@ -6135,7 +6237,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Fire L1 WP 1 B",
+      "NearestWaypoint": "Fire L1 WP 2 B",
       "Dungeon": "Fire lvl1",
       "Level": 1
     },
@@ -6157,7 +6259,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Fire L1 WP 3",
+      "NearestWaypoint": "Fire L1 WP 6",
       "Dungeon": "Fire lvl1",
       "Level": 1
     },
@@ -6300,7 +6402,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Ice L1 WP 1",
+      "NearestWaypoint": "Ice L1 WP 2",
       "Dungeon": "Ice lvl1",
       "Level": 1
     },
@@ -6355,7 +6457,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Ice L2 WP 1",
+      "NearestWaypoint": "Ice L2 WP 3",
       "Dungeon": "Ice lvl2",
       "Level": 2
     },
@@ -6399,7 +6501,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Fire L1 WP 1 C",
+      "NearestWaypoint": "Fire L1 WP 3 B",
       "Dungeon": "Fire lvl1",
       "Level": 1
     },
@@ -6465,7 +6567,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Wrong L1 WP 2",
+      "NearestWaypoint": "Wrong L1 WP 3",
       "Dungeon": "Wrong lvl1",
       "Level": 1
     },
@@ -6509,7 +6611,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Ice L2 WP 1 B",
+      "NearestWaypoint": "Ice L2 WP 3 B",
       "Dungeon": "Ice lvl2b",
       "Level": 2
     },
@@ -6707,7 +6809,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Hythloth L6 WP 1",
+      "NearestWaypoint": "Hythloth L6 WP 3",
       "Dungeon": "Hythloth lvl6",
       "Level": 6
     },
@@ -6718,7 +6820,7 @@
       "Z": 0,
       "Type": "DungeonRoom",
       "City": "",
-      "NearestWaypoint": "Hythloth L7 WP 1",
+      "NearestWaypoint": "Hythloth L7 WP 2",
       "Dungeon": "Hythloth lvl7b",
       "Level": 7
     },
@@ -9563,17 +9665,6 @@
       ]
     },
     {
-      "Name": "Despise lvl1c Room 21",
-      "X": 5579,
-      "Y": 632,
-      "Z": 30,
-      "Type": "DungeonRoom",
-      "City": "",
-      "NearestWaypoint": "WP 1308",
-      "Dungeon": "Despise lvl1c",
-      "Level": 1
-    },
-    {
       "Name": "Destard lvl1 Room 21",
       "X": 5330,
       "Y": 788,
@@ -9813,7 +9904,17 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 11",
       "Dungeon": "Despise lvl2b",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": [
+        {
+          "X": 5505,
+          "Y": 524,
+          "Z": 60,
+          "Waypoints": [
+            "Despise L2 WP 94"
+          ]
+        }
+      ]
     },
     {
       "Name": "Despise lvl2 Room 21",
@@ -9824,7 +9925,8 @@
       "City": "",
       "NearestWaypoint": "Despise L2 WP 9",
       "Dungeon": "Despise lvl2",
-      "Level": 2
+      "Level": 2,
+      "Arrivals": []
     },
     {
       "Name": "Shame lvl2 Room 21",
@@ -10042,6 +10144,139 @@
           "Z": 0,
           "Waypoints": [
             "WP 398"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "MiningSpot 448",
+      "X": 1256,
+      "Y": 1239,
+      "Z": 56,
+      "Type": "MiningSpot",
+      "City": "Britain",
+      "NearestWaypoint": "WP 542",
+      "Polygon": [
+        [
+          1224,
+          1262
+        ],
+        [
+          1225,
+          1254
+        ],
+        [
+          1229,
+          1248
+        ],
+        [
+          1236,
+          1244
+        ],
+        [
+          1237,
+          1245
+        ],
+        [
+          1245,
+          1239
+        ],
+        [
+          1254,
+          1239
+        ],
+        [
+          1252,
+          1230
+        ],
+        [
+          1259,
+          1221
+        ],
+        [
+          1258,
+          1216
+        ],
+        [
+          1272,
+          1210
+        ],
+        [
+          1280,
+          1212
+        ],
+        [
+          1282,
+          1220
+        ],
+        [
+          1280,
+          1229
+        ],
+        [
+          1276,
+          1232
+        ],
+        [
+          1267,
+          1231
+        ],
+        [
+          1265,
+          1237
+        ],
+        [
+          1270,
+          1248
+        ],
+        [
+          1258,
+          1251
+        ],
+        [
+          1245,
+          1251
+        ],
+        [
+          1243,
+          1258
+        ],
+        [
+          1239,
+          1263
+        ],
+        [
+          1230,
+          1265
+        ],
+        [
+          1223,
+          1265
+        ]
+      ],
+      "Arrivals": [
+        {
+          "X": 1239,
+          "Y": 1249,
+          "Z": 43,
+          "Waypoints": [
+            "WP 1409"
+          ]
+        },
+        {
+          "X": 1251,
+          "Y": 1243,
+          "Z": 42,
+          "Waypoints": [
+            "WP 1409"
+          ]
+        },
+        {
+          "X": 1265,
+          "Y": 1223,
+          "Z": 48,
+          "Waypoints": [
+            "WP 1409"
           ]
         }
       ]

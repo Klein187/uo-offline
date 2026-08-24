@@ -3,10 +3,33 @@
 <style>
  body{margin:0;font-family:sans-serif;background:#111;color:#eee;overflow:hidden}
  #c{display:block;cursor:grab}
- #panel{position:fixed;top:10px;right:10px;width:270px;background:rgba(20,20,25,.92);
-   border:1px solid #444;border-radius:8px;padding:12px;font-size:13px}
- #panel h3{margin:0 0 6px;font-size:14px;color:#ffd76e}
- #info{min-height:90px;border-top:1px solid #333;margin-top:8px;padding-top:8px;white-space:pre-line}
+ #panel{position:fixed;top:10px;right:10px;width:280px;max-height:calc(100vh - 20px);
+   display:flex;flex-direction:column;box-sizing:border-box;background:rgba(20,20,25,.92);
+   border:1px solid #444;border-radius:8px;padding:10px 12px;font-size:13px}
+ #panel h3{margin:0 0 6px;font-size:14px;color:#ffd76e;flex:0 0 auto}
+ #panelBody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+   padding-right:6px;margin-right:-6px}
+ #panelFoot{flex:0 0 auto;border-top:1px solid #333;margin-top:6px;padding-top:6px}
+ details.grp{border-top:1px solid #2c2c34}
+ details.grp:first-of-type{border-top:0}
+ details.grp>summary{cursor:pointer;list-style:none;color:#b9c2d4;font-size:11px;
+   letter-spacing:.5px;text-transform:uppercase;padding:4px 0;user-select:none}
+ details.grp>summary::-webkit-details-marker{display:none}
+ details.grp>summary::before{content:'\25b8';color:#777;margin-right:5px}
+ details.grp[open]>summary::before{content:'\25be';color:#ffd76e}
+ details.grp>summary:hover{color:#fff}
+ details.grp[open]{padding-bottom:5px}
+ #censusList{max-height:200px;overflow-y:auto}
+ #info{min-height:60px;max-height:30vh;overflow-y:auto;border-top:1px solid #333;
+   margin-top:8px;padding-top:8px;white-space:pre-line}
+ #panelBody::-webkit-scrollbar,#info::-webkit-scrollbar,#searchResults::-webkit-scrollbar,
+ #censusList::-webkit-scrollbar{width:8px}
+ #panelBody::-webkit-scrollbar-track,#info::-webkit-scrollbar-track,
+ #searchResults::-webkit-scrollbar-track,#censusList::-webkit-scrollbar-track{background:transparent}
+ #panelBody::-webkit-scrollbar-thumb,#info::-webkit-scrollbar-thumb,
+ #searchResults::-webkit-scrollbar-thumb,#censusList::-webkit-scrollbar-thumb{
+   background:#454554;border-radius:4px}
+ #panelBody::-webkit-scrollbar-thumb:hover,#info::-webkit-scrollbar-thumb:hover{background:#5c5c70}
  label{display:block;margin:2px 0;cursor:pointer}
  #search{width:100%;box-sizing:border-box;margin-top:6px;padding:4px;background:#222;
    color:#eee;border:1px solid #444;border-radius:4px}
@@ -37,23 +60,13 @@
 <div id="ticker"></div>
 <div id="panel">
  <h3>UO Bot World</h3>
+ <div id="panelBody">
+ <details class="grp" id="gLayers" open><summary>Layers</summary>
  <label><input type="checkbox" id="lEdges" checked> Graph edges</label>
  <label><input type="checkbox" id="lWps" checked> Waypoints</label>
  <label><input type="checkbox" id="lDests" checked> Destinations</label>
  <label><input type="checkbox" id="lLabels"> Labels (zoomed)</label>
  <label><input type="checkbox" id="lZones" checked> Zones</label>
- <label style="color:#ffb066"><input type="checkbox" id="editZones"> EDIT zones</label>
- <div id="zoneCtl" style="display:none;margin:4px 0">
-  <select id="zKind"><option>Portal</option><option>Area</option><option>Waypoint</option><option>Arrival</option></select>
-  <select id="zType" style="display:none"><option>Bank</option><option>Tavern</option>
-   <option>Inn</option><option>Healer</option><option>Stables</option>
-   <option>VendorSmith</option><option>VendorWeaponer</option><option>VendorMage</option>
-   <option>VendorTailor</option><option>VendorCarpenter</option><option>VendorBowyer</option>
-   <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
-   <option>Dock</option><option>Library</option><option>Graveyard</option>
-   <option>Moongate</option><option>CityCenter</option><option>Dungeon</option>
-   <option>MiningSpot</option><option>LumberSpot</option></select>
- </div>
  <label><input type="checkbox" id="lSpawns" checked> Spawns</label>
  <div id="spawnFilters" style="font-size:11px;margin:1px 0 3px 16px;color:#bbb">
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="spF" data-k="Monster" checked> <span style="color:#e74c3c">Mon</span></label>
@@ -63,12 +76,11 @@
   <label style="display:inline"><input type="checkbox" class="spF" data-k="PlayerBotLifecycle" checked> <span style="color:#9b59b6">BotL</span></label>
  </div>
  <label style="color:#e8a0a0"><input type="checkbox" id="lPK" checked> PK spawns</label>
- <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
- <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
-  click = add hunt-area corner &middot; Enter = save (asks name + count)<br>Esc = cancel
- </div>
  <label style="color:#e07a5f"><input type="checkbox" id="lDigs"> Dig sites</label>
-<label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
+ <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
+ </details>
+
+ <details class="grp" id="gLive" open><summary>Live</summary>
  <label style="color:#9fffd0"><input type="checkbox" id="lLive"> Live entities <span id="liveStamp" style="color:#888;font-size:11px"></span></label>
  <div id="liveFilters" style="display:none;font-size:11px;margin:1px 0 3px 16px;color:#bbb">
   <label style="display:inline;margin-right:6px"><input type="checkbox" class="lvF" data-k="Bot" checked> <span style="color:#3cff5a">Bot</span></label>
@@ -81,6 +93,25 @@
   <span style="color:#ff5050">stuck bots</span> <span id="stuckCount" style="cursor:pointer;color:#666"></span></label>
  <button id="censusBtn" style="width:100%;margin-top:3px;background:#2d3a5a">📊 bot census</button>
  <div id="censusList" style="display:none;margin-top:2px"></div>
+ </div>
+ </details>
+
+ <details class="grp" id="gEdit" open><summary>Edit tools</summary>
+ <label style="color:#ffb066"><input type="checkbox" id="editZones"> EDIT zones</label>
+ <div id="zoneCtl" style="display:none;margin:4px 0">
+  <select id="zKind"><option>Portal</option><option>Area</option><option>Waypoint</option><option>Arrival</option></select>
+  <select id="zType" style="display:none"><option>Bank</option><option>Tavern</option>
+   <option>Inn</option><option>Healer</option><option>Stables</option>
+   <option>VendorSmith</option><option>VendorWeaponer</option><option>VendorMage</option>
+   <option>VendorTailor</option><option>VendorCarpenter</option><option>VendorBowyer</option>
+   <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
+   <option>Dock</option><option>Library</option><option>Graveyard</option>
+   <option>Moongate</option><option>CityCenter</option><option>Dungeon</option>
+   <option>MiningSpot</option><option>LumberSpot</option></select>
+ </div>
+ <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
+ <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
+  click = add hunt-area corner &middot; Enter = save (asks name + count)<br>Esc = cancel
  </div>
  <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
  <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
@@ -113,25 +144,20 @@
   <div style="margin-top:3px">target lvl <input id="dgTargetLevel" type="number" value="1" min="0" style="width:42px">
    <button id="dgSetTarget" style="margin-left:4px;background:#4a3a2d">Set target&hellip;</button></div>
  </div>
- <input id="search" placeholder="search bots &amp; places (bot:/wp:/dest:/spawn:)">
-<div id="searchResults"></div>
- <div style="margin-top:6px">
-  <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
-  <button onclick="goHome()">Britain</button>
-  <button id="refresh" onclick="loadData()">&#10227; Refresh</button>
- </div>
+ </details>
+
+ <details class="grp" id="gActions"><summary>Game actions</summary>
  <button id="reloadGame" style="width:100%;margin-top:6px;padding:5px;background:#3a2d5a"
    title="Hot-reload waypoints, destinations/arrivals and zones in the running game">
    &#8635; Reload in game</button>
  <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33" title="Place the PK spawns drawn in the editor (pk_spawns.json)">
   ☠ Place PK spawns in game</button>
-<button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
+ <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
    &#9851; Regenerate bots in game</button>
- <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
-   onclick="toggleActive()"></button>
- <div id="stamp"></div>
- <div id="info">Click a dot for details.</div>
+ </details>
+
+ <details class="grp" id="gHelp"><summary>Legend &amp; help</summary>
  <div class="hint">drag = pan &nbsp; wheel = zoom &nbsp; click = inspect<br>
   Refresh re-reads the game's JSON files live.<br>
   <b>EDIT mode:</b> click = add corner &middot; Enter = save zone &middot;
@@ -140,6 +166,22 @@
   edges: <span style="color:#3cff5a">ok</span> &middot;
   <span style="color:#ffc832">near 38t limit</span> &middot;
   <span style="color:#ff5050">BROKEN (&gt;38t)</span></div>
+ </details>
+ </div>
+
+ <div id="panelFoot">
+  <input id="search" placeholder="search bots &amp; places (bot:/wp:/dest:/spawn:)">
+  <div id="searchResults"></div>
+  <div style="margin-top:6px">
+   <button onclick="zoomBy(1.5)">+</button><button onclick="zoomBy(1/1.5)">&minus;</button>
+   <button onclick="goHome()">Britain</button>
+   <button id="refresh" onclick="loadData()">&#10227; Refresh</button>
+  </div>
+  <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
+    onclick="toggleActive()"></button>
+  <div id="stamp"></div>
+  <div id="info">Click a dot for details.</div>
+ </div>
 </div>
 <script>
 let DESTS=[], WPS=[], EDGES=[], ZONES=[], GATHER=[], wpByName={};
@@ -1404,4 +1446,24 @@ document.getElementById("genBots").onclick=function(){
   a=>"regenerated bots: "+a.spawners+" spawner(s) placed",30);};
 goHome();
 loadData();
+
+// ---- side-panel: remember which groups are open, and keep controls reachable ----
+(function(){
+ document.querySelectorAll('#panelBody details.grp').forEach(d=>{
+  const k='mapPanel:'+d.id;
+  try{const v=localStorage.getItem(k); if(v!==null) d.open=(v==='1');}catch(e){}
+  d.addEventListener('toggle',()=>{try{localStorage.setItem(k,d.open?'1':'0');}catch(e){}});
+ });
+ // if something inside a collapsed group gets shown (edit sub-panels, Apply button),
+ // pop that group open so it is not silently hidden
+ const body=document.getElementById('panelBody');
+ new MutationObserver(muts=>{
+  for(const m of muts){
+   const el=m.target;
+   if(el.nodeType!==1||el.style.display==='none') continue;
+   const g=el.closest('details.grp');
+   if(g&&!g.open) g.open=true;
+  }
+ }).observe(body,{attributes:true,attributeFilter:['style'],subtree:true});
+})();
 </script></body></html>
