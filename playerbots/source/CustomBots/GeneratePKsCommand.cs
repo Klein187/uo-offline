@@ -128,7 +128,11 @@ namespace Server.CustomBots
                         new Point3D(s.Location.X + r, s.Location.Y + r, s.Location.Z + 20));
                 }
 
-                var spawner = new PlayerBotSpawner("PK", s.Amount, MinDelay, MaxDelay)
+                // Reds scale with the town population rather than on their
+                // own dial in the data file -- see PKDensityMultiplier.
+                var amount = Math.Max(1, s.Amount * BotPopulation.PKDensityMultiplier);
+
+                var spawner = new PlayerBotSpawner("PK", amount, MinDelay, MaxDelay)
                 {
                     Name = $"PK Spawner ({s.Name})",
                 };
@@ -137,7 +141,7 @@ namespace Server.CustomBots
                 spawner.Respawn();
 
                 placed++;
-                totalPKs += s.Amount;
+                totalPKs += amount;
             }
             return (placed, totalPKs);
         }

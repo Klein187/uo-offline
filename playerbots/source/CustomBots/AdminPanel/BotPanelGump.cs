@@ -10,9 +10,10 @@
 //   │  Nearby (20 tiles): N bot(s), M spawner(s)     │
 //   ├────────────────────────────────────────────────┤
 //   │  WORLD                                          │
-//   │    [Decorate]  [SignGen]   [TelGen]            │
-//   │    [MoonGen]   [TownCriers][Spawners]          │
-//   │    [Bots]      [Save]      [★ Run All]         │
+//   │    [★ First Time Setup]                        │
+//   │      decorate, signs, teleporters, moongates,  │
+//   │      criers, spawners, ALL player bots incl.   │
+//   │      the reds, then saves.                     │
 //   ├────────────────────────────────────────────────┤
 //   │  SPAWN HERE                                     │
 //   │    (draft table — see below)                   │
@@ -95,16 +96,8 @@ namespace Server.CustomBots
             Close = 1,
             Refresh,
 
-            // World setup
-            FreshDecorate    = 10,
-            FreshSignGen,
-            FreshTelGen,
-            FreshMoonGen,
-            FreshTownCriers,
-            FreshSpawners,
-            FreshGenerateBots,
-            FreshSaveWorld,
-            FreshRunAll,
+            // World setup — one button does the whole first-time pass.
+            FirstTimeSetup = 10,
 
             // Draft
             DraftAddBehavior  = 30,
@@ -225,34 +218,26 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
-        // Section: World — 3x3 grid (8 setup commands + Run All)
+        // Section: World — one button that lays the whole world down.
+        //
+        // This used to be a 3x3 grid of the individual setup commands. On a
+        // fresh shard they were always run in the same order anyway, and
+        // running them out of order (or forgetting one) just made a broken
+        // world, so the grid is gone. The commands are all still there to
+        // type by hand if a single step needs re-running.
         // -------------------------------------------------------------------
         private int BuildWorldSection(int y)
         {
-            string[] labels = {
-                "Decorate", "SignGen", "TelGen",
-                "MoonGen", "TownCriers", "Spawners",
-                "Bots", "Save World", "★ Run All",
-            };
-            Act[] acts = {
-                Act.FreshDecorate, Act.FreshSignGen, Act.FreshTelGen,
-                Act.FreshMoonGen, Act.FreshTownCriers, Act.FreshSpawners,
-                Act.FreshGenerateBots, Act.FreshSaveWorld, Act.FreshRunAll,
-            };
+            AddButton(PadX, y, BtnNormal, BtnPressed, ButtonID(Act.FirstTimeSetup));
+            AddLabel(PadX + 30, y + 2, LabelHue, "★ First Time Setup");
+            y += ButtonH + 2;
 
-            // Three columns evenly across panel width.
-            int colW = (PanelW - 2 * PadX) / 3;
-            for (int i = 0; i < labels.Length; i++)
-            {
-                int col = i % 3;
-                int row = i / 3;
-                int bx  = PadX + col * colW;
-                int by  = y   + row * (ButtonH + 4);
+            AddHtml(PadX + 30, y, PanelW - PadX - 44, 36,
+                "<BASEFONT COLOR=#C8C0A8><I>Decor, signs, teleporters, moongates, " +
+                "criers and spawners, then every player bot including the reds. " +
+                "Saves when it is done. Safe to run again.</I></BASEFONT>");
 
-                AddButton(bx, by, BtnNormal, BtnPressed, ButtonID(acts[i]));
-                AddLabel(bx + 30, by + 2, LabelHue, labels[i]);
-            }
-            return y + 3 * (ButtonH + 4) + SectionGap;
+            return y + 38 + SectionGap;
         }
 
         // -------------------------------------------------------------------
@@ -439,25 +424,7 @@ namespace Server.CustomBots
                     break;
 
                 // ----- World setup -----
-                case Act.FreshDecorate:
-                    BotPanelActions.RunCommand(from, "Decorate"); break;
-                case Act.FreshSignGen:
-                    BotPanelActions.RunCommand(from, "SignGen"); break;
-                case Act.FreshTelGen:
-                    BotPanelActions.RunCommand(from, "TelGen"); break;
-                case Act.FreshMoonGen:
-                    BotPanelActions.RunCommand(from, "MoonGen"); break;
-                case Act.FreshTownCriers:
-                    BotPanelActions.RunCommand(from, "TownCriers"); break;
-                case Act.FreshSpawners:
-                    BotPanelActions.RunCommand(from,
-                        "GenerateSpawners Spawners/uoclassic/UOClassic.map");
-                    break;
-                case Act.FreshGenerateBots:
-                    BotPanelActions.RunCommand(from, "GenerateBots"); break;
-                case Act.FreshSaveWorld:
-                    BotPanelActions.SaveWorld(from); break;
-                case Act.FreshRunAll:
+                case Act.FirstTimeSetup:
                     BotPanelActions.RunCommand(from, "Decorate");
                     BotPanelActions.RunCommand(from, "SignGen");
                     BotPanelActions.RunCommand(from, "TelGen");
@@ -465,9 +432,14 @@ namespace Server.CustomBots
                     BotPanelActions.RunCommand(from, "TownCriers");
                     BotPanelActions.RunCommand(from,
                         "GenerateSpawners Spawners/uoclassic/UOClassic.map");
+                    // Both halves of the player bot population: the towns and
+                    // roads from GenerateBots, the reds from GeneratePKs.
                     BotPanelActions.RunCommand(from, "GenerateBots");
+                    BotPanelActions.RunCommand(from, "GeneratePKs");
                     BotPanelActions.SaveWorld(from);
-                    BotPanelState.Log(from, "Run All complete.");
+                    BotPanelState.Log(from,
+                        $"First Time Setup complete — target {BotPopulation.TargetCount} " +
+                        $"bots plus reds.");
                     break;
 
                 // ----- Draft -----

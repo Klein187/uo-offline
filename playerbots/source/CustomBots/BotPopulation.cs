@@ -15,7 +15,13 @@ namespace Server.CustomBots
         // many bots across all city spawners.
         //
         // Runtime-adjustable via [SetBotPopulation <n>.
-        public static int TargetCount { get; set; } = 800;
+        public static int TargetCount { get; set; } = 1600;
+
+        // PKs are player bots too, but they come from their own drawn spawn
+        // set (Data/CustomSpawns/pk_spawns.json) instead of the TargetCount
+        // split, so they need their own dial to scale alongside the towns.
+        // [GeneratePKs multiplies every spawn's amount by this.
+        public static int PKDensityMultiplier { get; set; } = 2;
 
         // Safety ceiling for the startup respawn. Sits ABOVE TargetCount so
         // it never caps a legitimate population — it only catches a genuine
