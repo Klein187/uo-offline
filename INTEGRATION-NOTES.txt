@@ -117,3 +117,46 @@ rush on every boot. One-line patch in:
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or
 bot houses will vanish on the first restart.
+
+Stock-file patch: public moongates for young players (2026-08-23)
+-----------------------------------------------------------------
+This shard runs the T2A ruleset with Felucca as the ONLY enabled map
+(Configuration/expansion.json -> MapSelectionFlags). Stock ModernUO
+hands young players a reduced moongate destination list that omits
+Felucca on purpose, assuming Trammel exists to send them to instead
+(PMList.T2AListsYoung = { Trammel }). With Trammel disabled that list
+filters down to nothing, MoongateGump.DisplayTo returns before sending
+anything, and a young player walking into a public moongate gets the
+gate sound and no gump at all -- the gates look broken.
+
+Staff characters never hit it: their access level is inherited from the
+account at character creation, so they are never flagged young. Every
+character made on a normal (non-staff) account is, which is why this
+only showed up for regular players. Patch in:
+
+  Projects/UOContent/Items/Misc/PublicMoongate.cs
+  (MoongateGump.DisplayTo)
+
+  The expansion switch now yields both the full and the young list.
+  If filtering the young list by the enabled maps leaves nothing, it
+  re-filters using the full list, so the gate always opens something.
+
+The young player system itself is now OFF as well (2026-08-23). It is a
+UO:R-era feature that did not exist in T2A, and switching it off removes
+the cause of the above outright, along with the "(Young)" name suffix,
+young monster protection, the Haven transport option in the help gump,
+the New Player Ticket, and the young death teleport. It is a feature
+flag, not a code change:
+
+  Distribution/Configuration/FeatureFlags/flags.json
+
+  [ { "Key": "young_player_system", "Enabled": false, ... } ]
+
+Both installers write that file next to expansion.json, so a fresh
+install gets it too (install.ps1 / install.sh, right after the T2A
+expansion config). Startup confirms it with:
+
+  Feature Flag system initialized with 1 flags, ...
+
+The moongate patch above is kept regardless -- it is the safety net for
+any ruleset that filters a player's facet list down to nothing.

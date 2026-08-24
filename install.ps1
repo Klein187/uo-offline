@@ -490,6 +490,27 @@ function WriteModernUOConfig {
 "@ | Set-Content (Join-Path $CfgDir "expansion.json")
   Ok "Wrote expansion.json (T2A, Felucca-only)"
   Warn "NOTE: expansion.json here is abbreviated. If ModernUO rejects it, copy the full schema from the Linux install.sh write_modernuo_config function."
+
+  # The Young player system is a UO:R-era feature that did not exist in T2A.
+  # Left on, young characters also get a Trammel-only public moongate list,
+  # which filters down to nothing on this Felucca-only shard and makes the
+  # city moongates silently do nothing for every non-staff player.
+  $FlagsDir = Join-Path $CfgDir "FeatureFlags"
+  New-Item -ItemType Directory -Force -Path $FlagsDir | Out-Null
+  @"
+[
+  {
+    "Key": "young_player_system",
+    "Description": "UO:R-era new player (Young) system. Off for T2A: no (Young) name suffix, no young monster protection, no Haven transport, no New Player Ticket, and no Trammel-only public moongate list.",
+    "Enabled": false,
+    "DefaultEnabled": true,
+    "Category": "Content",
+    "LastModified": "2026-08-23T00:00:00Z",
+    "LastModifiedBy": "T2A ruleset"
+  }
+]
+"@ | Set-Content (Join-Path $FlagsDir "flags.json")
+  Ok "Wrote FeatureFlags/flags.json (Young player system off - not a T2A feature)"
 }
 
 # ---------------------------------------------------------------------------
