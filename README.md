@@ -316,14 +316,7 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 
 The island cities still need their own waypoint pockets and arrival handling. Six virtue shrines are live as walkable pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice, Justice, Honor), each with a server-verified overland trail. Valor and Humility sit on gateless isles and get their pilgrims by Recall. Honesty's island hasn't been authored yet.
 
-**Dungeons — all twelve wired up, and now cleaned up.** Every Felucca dungeon has generated interiors: floor meshes, rooms, and teleporter records for entrances, descents, ascents, and the cross-dungeon passages, plus six overland approach trails and Recall service to the isle dungeons. Two passes have landed since. Every stair record was re-typed against the real teleporter topology, so the old scrambled level numbering is gone, and the waypoint graph was audited against the engine with the edge-walk reporting zero blocked links. The August cleanup then merged or deleted 541 duplicate and stacked waypoints, cutting the graph from 176 disconnected pieces to 78 with no duplicates, dangling edges, or one-way links left. Floors the engine says are genuinely sealed are treated honestly: bots inside hunt what they can reach and recall out.
-
-**What's left underground** is the long tail: a few tight corridors where crawlers still jam under monster traffic (the telemetry flags them), the deep Hythloth floors whose T2A geometry sits under later-era region labels and hasn't been meshed, and a set of steep vertical edges that want a shard-backed height re-check.
-
-**Known issues being worked on:**
-
-- **Bots stuck at login** — bots that don't resume their routine after coming back into the world.
-- **Player houses** — bot behavior in and around player-owned housing.
+**Dungeons — the waypoint network is the work in progress.** All twelve Felucca dungeons are wired up: generated interiors, teleporter records for entrances, descents, ascents and the cross-dungeon passages, six overland approach trails, and Recall service to the isle dungeons. What is still being worked on is the waypoint graph the bots actually walk. The August pass merged or deleted 541 duplicate and stacked nodes and cut the graph from 176 disconnected pieces down to 78, and it now audits clean. The rest of that job is the long tail: tight corridors where crawlers still jam under monster traffic, the deep Hythloth floors that have not been meshed yet, and a set of steep vertical links that want a height re-check against the running shard.
 
 </details>
 
