@@ -503,6 +503,31 @@ namespace Server.CustomBots
         public override bool CheckShove(Mobile shoved) => true;
 
         // -------------------------------------------------------------------
+        // Doors open when a bot walks into them — the same thing the client's
+        // "auto-open doors" checkbox has always done for players.
+        //
+        // Every behaviour steps through Mobile.Move, so overriding it here is
+        // the one place that covers all of them: dungeon rooms, the Britain
+        // bank, shops, houses. Before this, doors were only opened by
+        // Traveler stuck-recovery and by Shoppers on the way in, which left
+        // bots shut inside rooms until a rescue fired.
+        //
+        // Mobile.Move only returns false for a genuinely blocked STEP — a
+        // turn always succeeds — so by the time we get here the bot is
+        // already facing d, which is the tile DoorHelper looks at.
+        // -------------------------------------------------------------------
+        public override bool Move(Direction d)
+        {
+            if (base.Move(d))
+            {
+                return true;
+            }
+
+            // Blocked. If it was a closed door, open it and take the step.
+            return DoorHelper.TryOpenAhead(this, d) && base.Move(d);
+        }
+
+        // -------------------------------------------------------------------
         // Order vs Chaos is LEGAL combat (IDEAS 2.1 phase 3): harming an
         // opposing faction bot is not a criminal act, so no gray flag and —
         // crucially — no guard whack. This is what lets shield wars rage in
