@@ -316,7 +316,7 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 
 The island cities still need their own waypoint pockets and arrival handling. Six virtue shrines are live as walkable pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice, Justice, Honor), each with a server-verified overland trail. Valor and Humility sit on gateless isles and get their pilgrims by Recall. Honesty's island hasn't been authored yet.
 
-**Dungeons — the waypoint network is the work in progress.** All twelve Felucca dungeons are wired up: generated interiors, teleporter records for entrances, descents, ascents and the cross-dungeon passages, six overland approach trails, and Recall service to the isle dungeons. What is still being worked on is the waypoint graph the bots actually walk. The August pass merged or deleted 541 duplicate and stacked nodes and cut the graph from 176 disconnected pieces down to 78, and it now audits clean. The rest of that job is the long tail: tight corridors where crawlers still jam under monster traffic, the deep Hythloth floors that have not been meshed yet, and a set of steep vertical links that want a height re-check against the running shard.
+**Dungeons.** Still being worked on, mainly the waypoint network the bots walk underground.
 
 </details>
 
