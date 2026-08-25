@@ -1145,6 +1145,7 @@ function InstallRuntimeScripts {
 # client connects before the server has finished its (slow) first boot.
 `$dist = "$DistDir"
 `$dotnet = "$DotnetRoot\dotnet.exe"
+`$serverLog = "$InstallRoot\server.log"
 
 # Ask GitHub whether there is a newer UO Offline before starting anything.
 # The checker stays silent unless there is genuinely something new, and any
@@ -1171,23 +1172,61 @@ function PortOpen {
 # window the first time instead of the usual minimized one.
 `$firstRun = -not (Test-Path (Join-Path `$dist "Saves\Accounts\Accounts.bin"))
 
+# The shortcut runs this minimized, so Write-Host is invisible to the player.
+# Anything they actually need to see goes in a message box.
+Add-Type -AssemblyName System.Windows.Forms
+
 if (PortOpen) {
   Write-Host "Server already running - launching the game."
-} elseif (`$firstRun) {
-  Write-Host ""
-  Write-Host "First launch - the server window will ask you two things:" -ForegroundColor Yellow
-  Write-Host "  1. Create the owner account now? Answer  y" -ForegroundColor Yellow
-  Write-Host "  2. Username and password. admin / admin is fine, it is your own machine." -ForegroundColor Yellow
-  Write-Host "The game starts once the server finishes loading." -ForegroundColor Yellow
-  Write-Host ""
-  Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist | Out-Null
-  Write-Host "Starting server, waiting for it to listen on 2593..."
+} else {
+  if (`$firstRun) {
+    [System.Windows.Forms.MessageBox]::Show(
+      "First launch. A server window is about to open and ask you two things:" + [Environment]::NewLine + [Environment]::NewLine +
+      "  1. Create the owner account now?  Answer  y" + [Environment]::NewLine +
+      "  2. A username and password.  admin / admin is fine - it is your own machine." + [Environment]::NewLine + [Environment]::NewLine +
+      "The game starts by itself once the server has finished loading.",
+      "UO Offline - first launch") | Out-Null
+
+    # Visible on purpose: those questions cannot be answered any other way.
+    Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist | Out-Null
+  } else {
+    # Output goes to a log, not to a console window.
+    #
+    # Handed a raw console, the server stalls before it ever binds the port -
+    # measured here at 0.6 CPU seconds and still dead after three minutes,
+    # against 9 seconds and 14.8 CPU seconds with its output redirected. The
+    # client then opens against a port nothing is listening on and the player
+    # gets "No connection could be made because the target machine actively
+    # refused it", which explains nothing.
+    #
+    # A log file is also just better: when something does go wrong there is
+    # something to read, instead of a console window hidden behind the game.
+    Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist ``
+      -WindowStyle Minimized -RedirectStandardOutput `$serverLog | Out-Null
+  }
+
+  # First launch builds the world from scratch, which takes far longer than a
+  # normal boot, so do not hold both to the same clock.
+  `$limit = if (`$firstRun) { 600 } else { 180 }
+  Write-Host "Starting server, waiting up to `$limit s for it to listen on 2593..."
+
   `$ready = `$false
-  for (`$i = 0; `$i -lt 120; `$i++) {
+  for (`$i = 0; `$i -lt `$limit; `$i++) {
     if (PortOpen) { `$ready = `$true; break }
     Start-Sleep -Seconds 1
   }
-  if (-not `$ready) { Write-Host "Server didn't come up within 120s; check the server window." }
+
+  if (-not `$ready) {
+    # Starting the client now would only produce "No connection could be made
+    # because the target machine actively refused it", which tells the player
+    # nothing about what went wrong. Say it plainly instead.
+    [System.Windows.Forms.MessageBox]::Show(
+      "The server did not start listening within `$limit seconds, so the game has not been launched - it would only fail to connect." + [Environment]::NewLine + [Environment]::NewLine +
+      "What went wrong should be at the end of:" + [Environment]::NewLine + "`$serverLog" + [Environment]::NewLine + [Environment]::NewLine +
+      "If it is still loading on a slow machine, waiting a moment and clicking UO Offline again will connect to it.",
+      "UO Offline - server did not start") | Out-Null
+    return
+  }
 }
 
 `$cuo = "$cuoBin"
