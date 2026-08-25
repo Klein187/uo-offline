@@ -640,6 +640,66 @@ function FindOrDownloadUOData {
 # left modern (stable across eras). Fully reversible — the modern files are
 # backed up to _backup-modern-map\ first. See docs/T2A-MAP.md.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Remove what the UOSA installer scattered around.
+#
+# Deliberately narrow: a shortcut is only removed if it points INTO the
+# scratch folder we created, so a Razor or an Ultima Online the player
+# installed themselves is never touched. -WhatIfOnly lists without deleting.
+# ---------------------------------------------------------------------------
+function RemoveUosaLeftovers {
+  param([Parameter(Mandatory)][string]$ExtractDir, [switch]$WhatIfOnly)
+
+  $found = @()
+
+  $roots = @(
+    [Environment]::GetFolderPath("Desktop"),
+    [Environment]::GetFolderPath("CommonDesktopDirectory"),
+    [Environment]::GetFolderPath("Programs"),
+    [Environment]::GetFolderPath("CommonPrograms")
+  ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
+
+  $wsh = New-Object -ComObject WScript.Shell
+
+  foreach ($root in $roots) {
+    $links = Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue
+    foreach ($lnk in $links) {
+      $target = $null
+      try { $target = $wsh.CreateShortcut($lnk.FullName).TargetPath } catch { continue }
+      if (-not $target) { continue }
+
+      if ($target.StartsWith($ExtractDir, [StringComparison]::OrdinalIgnoreCase)) {
+        $found += $lnk.FullName
+        if (-not $WhatIfOnly) { Remove-Item $lnk.FullName -Force -ErrorAction SilentlyContinue }
+      }
+    }
+  }
+
+  # Its Start-Menu folder, in whichever profile it landed in. Only if empty
+  # after the shortcuts above went, so a folder holding anything else stays.
+  foreach ($progs in @([Environment]::GetFolderPath("Programs"), [Environment]::GetFolderPath("CommonPrograms"))) {
+    if (-not $progs) { continue }
+    $dir = Join-Path $progs "Ultima Online"
+    if ((Test-Path $dir) -and -not (Get-ChildItem $dir -Recurse -File -ErrorAction SilentlyContinue)) {
+      $found += $dir
+      if (-not $WhatIfOnly) { Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+  }
+
+  if ($WhatIfOnly) { return $found }
+
+  foreach ($f in $found) { Say "Removed leftover: $f" }
+
+  # And the client itself. The swap is idempotent through the backup folder
+  # it leaves behind, so nothing needs these files again.
+  if (Test-Path $ExtractDir) {
+    Remove-Item $ExtractDir -Recurse -Force -ErrorAction SilentlyContinue
+    Say "Removed the extracted UO Second Age client."
+  }
+
+  Ok "Cleaned up after the UOSA installer ($($found.Count) shortcut(s))."
+}
+
 function SwapT2AMap {
   Banner "Installing T2A-era map art"
   if (-not $InstallT2AMap) { Say "InstallT2AMap is off; keeping modern map art."; return }
@@ -683,10 +743,6 @@ function SwapT2AMap {
       Say "7-Zip not found; running the UOSA installer silently into $extractDir..."
       # NSIS switches: /S = silent, /D = install dir (must be last, unquoted).
       Start-Process -FilePath $uosaExe -ArgumentList "/S", "/D=$extractDir" -Wait
-      # The installer drops a Start-Menu shortcut for the legacy 2D client we
-      # don't use (we run ClassicUO). Remove it.
-      $sm = Join-Path ([Environment]::GetFolderPath("Programs")) "Ultima Online"
-      if (Test-Path $sm) { Remove-Item $sm -Recurse -Force -ErrorAction SilentlyContinue }
     }
   }
 
@@ -710,6 +766,14 @@ function SwapT2AMap {
 
   # 4. Copy the T2A files over the live data dir.
   foreach ($f in $T2AMulFiles) { Copy-Item $srcMap[$f] (Join-Path $script:UOData $f) -Force }
+
+  # 5. Put away what the UOSA installer left lying about.
+  #
+  # We wanted three map files. Run silently, that installer also lays down a
+  # complete, working UO Second Age client and drops shortcuts on the desktop
+  # for it. People click those, arrive at the real Second Age login server,
+  # and cannot work out why they are not on their own shard.
+  RemoveUosaLeftovers $extractDir
   Ok "T2A map art installed (intact Magincia). Revert: copy _backup-modern-map\* back over the data dir."
 }
 
