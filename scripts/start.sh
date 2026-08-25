@@ -101,8 +101,26 @@ else
     # Truncate log so we don't match prompts from a previous failed run.
     : > "${LOGFILE}"
 
-    nohup dotnet ModernUO.dll <&9 >"${LOGFILE}" 2>&1 &
-    SERVER_PID=$!
+    # ModernUO refuses to read ANY interactive prompt when stdin isn't a
+    # real TTY - it throws instead of blocking (upstream added this so a
+    # headless server can't spin a CPU core polling a closed/EOF stdin).
+    # A plain pipe/FIFO trips that check even though it behaves fine.
+    # `script` gives the process a genuine pty so the wizard runs as
+    # designed; that flips the server's logger into color mode, so we
+    # strip ANSI codes on the way into the logfile to keep it greppable.
+    nohup script -qec "dotnet ModernUO.dll" /dev/null <&9 2>&1 \
+      | sed -u -E 's/\x1b\[[0-9;?]*[A-Za-z]//g; s/\x1b[=>]//g' >"${LOGFILE}" &
+
+    # `script` wraps the real dotnet process in that pty, so $! here would
+    # be the sed tail of the pipeline, not the server. Find the actual PID
+    # so the rest of this script and stop.sh can signal it directly.
+    SERVER_PID=""
+    for _ in $(seq 1 50); do
+      SERVER_PID="$(pgrep -x dotnet | head -1)"
+      [[ -n "${SERVER_PID}" ]] && break
+      sleep 0.1
+    done
+    [[ -n "${SERVER_PID}" ]] || die "ModernUO process did not start. See ${LOGFILE}."
     echo "${SERVER_PID}" > "${PIDFILE}"
 
     # ---------------------------------------------------------------------

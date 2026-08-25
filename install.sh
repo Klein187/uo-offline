@@ -355,8 +355,10 @@ find_or_download_uo_data() {
   for pattern in "${candidates[@]}"; do
     for c in ${pattern}; do
       [[ -d "${c}" ]] || continue
-      # Only accept folders that contain the required .mul files.
-      if [[ -f "${c}/art.mul" ]] && [[ -f "${c}/map0.mul" ]]; then
+      # Only accept folders that contain the required .mul files, and
+      # non-empty ones — a prior failed/interrupted extraction can leave
+      # zero-byte stubs behind that would otherwise look "found".
+      if [[ -s "${c}/art.mul" ]] && [[ -s "${c}/map0.mul" ]]; then
         UO_DATA="${c}"
         ok "Found UO data: ${UO_DATA}"
         return
@@ -392,15 +394,16 @@ find_or_download_uo_data() {
   "${SEVENZIP}" x -y "-o${INSTALL_ROOT}/UOData" "${exe_path}" >/dev/null
 
   # The 7z extract creates ${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}/ with
-  # the .mul files. Verify.
-  if [[ ! -f "${UO_DATA_DIR}/art.mul" ]] || [[ ! -f "${UO_DATA_DIR}/map0.mul" ]]; then
+  # the .mul files. Verify they're actually there, not zero-byte stubs left
+  # by a prior failed/interrupted extraction.
+  if [[ ! -s "${UO_DATA_DIR}/art.mul" ]] || [[ ! -s "${UO_DATA_DIR}/map0.mul" ]]; then
     # Maybe the extract put files at a different path. Search.
     local found
-    found="$(find "${INSTALL_ROOT}/UOData" -maxdepth 3 -name "art.mul" -print -quit 2>/dev/null)"
+    found="$(find "${INSTALL_ROOT}/UOData" -maxdepth 3 -name "art.mul" -size +0 -print -quit 2>/dev/null)"
     if [[ -n "${found}" ]]; then
       UO_DATA_DIR="$(dirname "${found}")"
     else
-      die "Extraction succeeded but no art.mul found under ${INSTALL_ROOT}/UOData."
+      die "Extraction failed: no non-empty art.mul found under ${INSTALL_ROOT}/UOData. The archive may be truncated — delete ${exe_path} and re-run."
     fi
   fi
 
@@ -582,7 +585,8 @@ write_modernuo_config() {
     "serverList.autoDetect": "false",
     "serverListing.name": "${SHARD_NAME}",
     "serverListing.serverName": "${SHARD_NAME}",
-    "accountHandler.enableAutoAccountCreation": "True"
+    "accountHandler.enableAutoAccountCreation": "True",
+    "pathfinding.prebakeMaps": "false"
   }
 }
 EOF
