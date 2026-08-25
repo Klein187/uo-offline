@@ -11,51 +11,46 @@ Run:  python3 ~/uo-map/serve_map.py    open http://localhost:8777/map.html
 import json, os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-MAP_DIR = os.path.expanduser("~/uo-map")
-DEST_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Destinations/destinations.json")
-GEN_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Destinations/destinations_generated.json")
-WP_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Waypoints/waypoints.json")
-ZONES_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Zones/zones.json")
-SPAWNS_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/CustomSpawns/spawns.json")
+# Where things live.
+#
+# The installer can put the shard anywhere now, so both roots are read from
+# the environment when set. The old hardcoded locations remain the defaults,
+# so running this by hand out of a checkout still works with no setup.
+MAP_DIR = os.environ.get("UO_MAP_DIR") or os.path.expanduser("~/uo-map")
+SHARD_ROOT = os.environ.get("UO_SHARD_ROOT") or os.path.expanduser("~/uo-modernuo")
+
+
+def _data(rel):
+    """A path under the shard's Distribution/Data, from a '/'-joined tail."""
+    return os.path.join(SHARD_ROOT, "ModernUO", "Distribution", "Data", *rel.split("/"))
+
+DEST_JSON = _data("Destinations/destinations.json")
+GEN_JSON = _data("Destinations/destinations_generated.json")
+WP_JSON = _data("Waypoints/waypoints.json")
+ZONES_JSON = _data("Zones/zones.json")
+SPAWNS_JSON = _data("CustomSpawns/spawns.json")
 # Phase 2 live view: snapshot written by the game's [LiveMap command.
-LIVE_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/entities.json")
+LIVE_JSON = _data("Live/entities.json")
 # "Reload in game" bridge: editor bumps a token, EditorReloadWatcher acts on it.
-RELOAD_REQ = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/reload_request.txt")
-RELOAD_ACK = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/reload_ack.json")
+RELOAD_REQ = _data("Live/reload_request.txt")
+RELOAD_ACK = _data("Live/reload_ack.json")
 # "Regenerate bots" bridge (= [GenerateBots): re-lay the whole bot population.
-GENBOTS_REQ = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_request.txt")
-GENBOTS_ACK = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/genbots_ack.json")
+GENBOTS_REQ = _data("Live/genbots_request.txt")
+GENBOTS_ACK = _data("Live/genbots_ack.json")
 # Living-shard event journal (logins, deaths, duels, trades...). The bot
 # inspector's "recent history" feed greps this by actor name.
-JOURNAL_JSONL = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/event-journal.jsonl")
+JOURNAL_JSONL = _data("Live/event-journal.jsonl")
 # LiveMap on/off bridge: the editor's Live checkbox starts/stops the game's
 # snapshot timer directly (file content: "token seconds"; seconds<=0 = off).
-LIVEMAP_REQ = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/livemap_request.txt")
-LIVEMAP_ACK = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/livemap_ack.json")
+LIVEMAP_REQ = _data("Live/livemap_request.txt")
+LIVEMAP_ACK = _data("Live/livemap_ack.json")
 # Synthetic wilderness work sites, exported by the game at boot (GatherSpots).
-GATHER_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/gather_spots.json")
+GATHER_JSON = _data("Live/gather_spots.json")
 # "Spawn road PKs" bridge (= [GeneratePKs): place the born-red hunter set.
-PKS_REQ = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_request.txt")
-PKS_ACK = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/Live/pks_ack.json")
+PKS_REQ = _data("Live/pks_request.txt")
+PKS_ACK = _data("Live/pks_ack.json")
 # Editor-authored PK spawns + hunt-area polygons (read by PKSpawnData).
-PK_SPAWNS_JSON = os.path.expanduser(
-    "~/uo-modernuo/ModernUO/Distribution/Data/CustomSpawns/pk_spawns.json")
+PK_SPAWNS_JSON = _data("CustomSpawns/pk_spawns.json")
 
 # Valid Kind values for a spawn record (drives generator type + filter layer).
 SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
@@ -65,7 +60,7 @@ SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle
 # candidate that actually contains map0.mul (an empty allowlist silently breaks
 # waypoint placing/moving, since both snap to road tiles read from the mul).
 def _resolve_uo_dir():
-    base = os.path.expanduser("~/uo-modernuo/UOData/7.0.23.1")
+    base = os.path.join(SHARD_ROOT, "UOData", "7.0.23.1")
     candidates = [base, os.path.join(base, "7.0.23.1")]
     for c in candidates:
         if os.path.exists(os.path.join(c, "map0.mul")):

@@ -47,8 +47,15 @@ for _arg_i in $(seq 1 $#); do
     INSTALL_ROOT="${!_next:-}"
   elif [[ "${!_arg_i}" == --install-root=* ]]; then
     INSTALL_ROOT="${!_arg_i#*=}"
+  elif [[ "${!_arg_i}" == "--no-map-editor" ]]; then
+    INSTALL_MAP_EDITOR=0
   fi
 done
+
+# The map editor is a builder's tool - waypoints, spawns, a live view of the
+# bots - not something you need in order to play. On by default, off with
+# --no-map-editor or INSTALL_MAP_EDITOR=0.
+INSTALL_MAP_EDITOR="${INSTALL_MAP_EDITOR:-1}"
 unset _arg_i _next
 
 INSTALL_ROOT="${INSTALL_ROOT:-${HOME}/uo-modernuo}"
@@ -928,23 +935,59 @@ EOF
 install_map_editor() {
   banner "Installing map editor"
 
+  if [[ "${INSTALL_MAP_EDITOR}" != "1" ]]; then
+    say "Skipped by choice (--no-map-editor)."
+    return
+  fi
+
   local src_dir="${SCRIPT_DIR}/tools/map"
   if [[ ! -d "${src_dir}" ]]; then
     say "No tools/map/ in repo; skipping map editor (optional)."
     return
   fi
 
-  local map_dir="${HOME}/uo-map"
+  if ! command -v python3 >/dev/null; then
+    warn "The map editor needs python3, which is not installed. Skipping."
+    warn "Install python3 and re-run to get it."
+    return
+  fi
+
+  local map_dir="${INSTALL_ROOT}/map-editor"
   mkdir -p "${map_dir}"
-  for f in serve_map.py map.html uo-map-launch.sh uomap.png make_map_png.py; do
-    [[ -f "${src_dir}/${f}" ]] && cp "${src_dir}/${f}" "${map_dir}/"
+
+  # Everything but the debris a working checkout collects.
+  local f
+  for f in "${src_dir}"/*; do
+    case "$(basename "${f}")" in
+      __pycache__|*.bak-*) continue ;;
+    esac
+    cp -r "${f}" "${map_dir}/"
   done
-  [[ -f "${map_dir}/uo-map-launch.sh" ]] && chmod +x "${map_dir}/uo-map-launch.sh"
+
+  # Generated, not copied: it has to know where this install actually is, and
+  # serve_map.py reads both roots from the environment.
+  cat > "${map_dir}/uo-map-launch.sh" <<EOF
+#!/bin/bash
+# Starts the map editor server if it is not already up, then opens it.
+export UO_MAP_DIR="${map_dir}"
+export UO_SHARD_ROOT="${INSTALL_ROOT}"
+URL="http://localhost:8777/map.html"
+LOG="${map_dir}/serve_map.log"
+
+if ! curl -s -o /dev/null --max-time 1 "\${URL}"; then
+    nohup python3 "${map_dir}/serve_map.py" >"\${LOG}" 2>&1 &
+    for _ in \$(seq 1 10); do
+        sleep 0.5
+        curl -s -o /dev/null --max-time 1 "\${URL}" && break
+    done
+fi
+
+xdg-open "\${URL}"
+EOF
+  chmod +x "${map_dir}/uo-map-launch.sh"
 
   say "Map editor installed to ${map_dir}."
   say "Run ${map_dir}/uo-map-launch.sh to serve it on http://localhost:8777"
-  say "Note: the world background PNG regenerates from your UO data via"
-  say "make_interactive_map.py if not present."
   ok "Map editor ready."
 }
 

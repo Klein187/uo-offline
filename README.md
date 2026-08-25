@@ -231,15 +231,19 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 <br>
 
-A browser-based editor for the world's navigation data and population, served live from the running shard. It lives in `tools/map/`:
+A browser-based editor for the world's navigation data and population, served live from the running shard.
+
+The installer sets it up for you — it's one of the tick-boxes on the first screen, on by default. Untick it if you only want to play. On Windows it needs Python; if you haven't got one, the installer fetches the small embeddable build rather than making you install anything.
 
 ```
-# Linux / Steam Deck
-cd ~/uo-map && ./uo-map-launch.sh    # serves on http://localhost:8777
-
 # Windows — double-click the "UO Map Editor" desktop icon
-#           (or run tools/map/uo-map-launch.ps1)
+#           (or run map-editor\uo-map.bat inside your install folder)
+
+# Linux / Steam Deck
+~/uo-modernuo/map-editor/uo-map-launch.sh     # serves on http://localhost:8777
 ```
+
+Skip it at install time with `--no-map-editor` on Linux, or by unticking the box on Windows.
 
 It draws the full Felucca map with your waypoints, destinations, zones, and spawns on top, read live from the shard's JSON on every refresh. In EDIT mode you can:
 

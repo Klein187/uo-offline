@@ -60,6 +60,12 @@ $SpawnMapUrl   = "https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/mas
 # swapping these three files restores the T2A look. Set $InstallT2AMap = $false
 # to keep modern map art. See docs/T2A-MAP.md.
 $InstallT2AMap   = $true
+
+# The map editor: a browser tool for the waypoint network, destinations,
+# zones, spawns, and a live view of every bot in the world. Optional - it is
+# a builder's tool, not something you need to play. $false to skip.
+$InstallMapEditor = $true
+$PythonEmbedUrl   = "https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip"
 $T2AInstallerUrl = "https://download.uosecondage.com/UOSA_Client_Setup.exe"
 $T2AMulFiles     = @("map0.mul", "statics0.mul", "staidx0.mul")
 
@@ -98,6 +104,8 @@ function Set-InstallRoot {
   $script:RazorDir     = [IO.Path]::Combine($Path, "Razor")
   $script:UODataDir    = [IO.Path]::Combine($Path, "UOData", $UODataVersion)
   $script:T2ASrcDir    = [IO.Path]::Combine($Path, "t2a-src")
+  $script:MapDir       = [IO.Path]::Combine($Path, "map-editor")
+  $script:PythonDir    = [IO.Path]::Combine($Path, "python")
 }
 
 # The default is the same place it has always been.
@@ -1019,6 +1027,107 @@ function WriteVersionStamp {
 }
 
 # ---------------------------------------------------------------------------
+# The map editor.
+#
+# A browser tool for the waypoint network, destinations, zones and spawns,
+# plus a live view of every bot in the world. Pure stdlib Python, so the
+# only requirement is a Python 3 - and most people playing a UO shard do not
+# have one. Rather than making that their problem, fall back to the official
+# embeddable build: an 11 MB zip, no installer, no admin, no PATH changes.
+# ---------------------------------------------------------------------------
+function InstallMapEditor {
+  Banner "Installing the map editor"
+
+  if (-not $InstallMapEditor) { Say "Skipped by choice."; return }
+
+  $srcDir = [IO.Path]::Combine($ScriptDir, "tools", "map")
+  if (-not (Test-Path $srcDir)) { Warn "No tools/map in the download; skipping."; return }
+
+  New-Item -ItemType Directory -Force -Path $MapDir | Out-Null
+
+  # Everything except the debris a working checkout collects: python caches
+  # and the editor's own timestamped backups.
+  Get-ChildItem -Path $srcDir -Force |
+    Where-Object { $_.Name -ne "__pycache__" -and $_.Name -notlike "*.bak-*" } |
+    ForEach-Object { Copy-Item $_.FullName -Destination $MapDir -Recurse -Force }
+
+  Ok "Map editor files -> $MapDir"
+
+  # A Python already on the machine is preferred; ours is the fallback.
+  $py = $null
+  foreach ($name in @("pythonw.exe", "python.exe")) {
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue
+    if ($cmd) { $py = $cmd.Source; break }
+  }
+
+  if (-not $py) {
+    $embedded = [IO.Path]::Combine($PythonDir, "pythonw.exe")
+    if (Test-Path $embedded) {
+      $py = $embedded
+    } else {
+      Say "No Python found. Downloading the embeddable build (~11 MB, no admin needed)..."
+      try {
+        $tmpZip = [IO.Path]::Combine($InstallRoot, ".python-embed.zip")
+        Invoke-WebRequest -Uri $PythonEmbedUrl -OutFile $tmpZip
+        New-Item -ItemType Directory -Force -Path $PythonDir | Out-Null
+        Expand-Archive -Path $tmpZip -DestinationPath $PythonDir -Force
+        Remove-Item $tmpZip -Force -ErrorAction SilentlyContinue
+        if (Test-Path $embedded) { $py = $embedded }
+      } catch {
+        Warn "Could not download Python: $($_.Exception.Message)"
+      }
+    }
+  }
+
+  if (-not $py) {
+    Warn "The map editor needs Python 3. Install it from https://python.org and re-run,"
+    Warn "or start it by hand with:  python `"$MapDir\serve_map.py`""
+    return
+  }
+  Ok "Python for the map editor: $py"
+
+  # Generated, not copied: it has to know where this install actually is,
+  # and serve_map.py reads both roots from the environment.
+  $launcher = [IO.Path]::Combine($MapDir, "uo-map.ps1")
+  @"
+# Starts the map editor server if it is not already up, then opens it.
+`$env:UO_MAP_DIR    = "$MapDir"
+`$env:UO_SHARD_ROOT = "$InstallRoot"
+`$here  = "$MapDir"
+`$py    = "$py"
+`$serve = "$MapDir\serve_map.py"
+`$url   = "http://localhost:8777/map.html"
+
+function Up {
+  try { `$c = New-Object Net.Sockets.TcpClient; `$c.Connect("127.0.0.1", 8777); `$c.Close(); return `$true }
+  catch { return `$false }
+}
+
+if (-not (Up)) {
+  Start-Process -FilePath `$py -ArgumentList @(`$serve) -WorkingDirectory `$here -WindowStyle Hidden
+  for (`$i = 0; `$i -lt 20; `$i++) { Start-Sleep -Milliseconds 500; if (Up) { break } }
+}
+if (-not (Up)) { Write-Host "The map server did not start. Run: `$py `$serve" -ForegroundColor Yellow; Start-Sleep 5; exit 1 }
+Start-Process `$url
+"@ | Set-Content $launcher
+
+  @"
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0uo-map.ps1"
+"@ | Set-Content ([IO.Path]::Combine($MapDir, "uo-map.bat"))
+
+  $wsh = New-Object -ComObject WScript.Shell
+  $lnk = $wsh.CreateShortcut([IO.Path]::Combine([Environment]::GetFolderPath("Desktop"), "UO Map Editor.lnk"))
+  $lnk.TargetPath = "powershell.exe"
+  $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcher`""
+  $lnk.WorkingDirectory = $MapDir
+  $lnk.IconLocation = "shell32.dll,13"
+  $lnk.Save()
+
+  Ok "Desktop shortcut: UO Map Editor"
+}
+
+# ---------------------------------------------------------------------------
 # Step 11 — start/stop scripts + Desktop shortcut
 # ---------------------------------------------------------------------------
 function InstallRuntimeScripts {
@@ -1165,6 +1274,7 @@ $script:InstallSteps = @(
   @{ Name = "Download ClassicUO client";    Run = { InstallClassicUO } },
   @{ Name = "Download Razor assistant";     Run = { InstallRazor } },
   @{ Name = "Write the configuration";      Run = { WriteModernUOConfig; WriteClassicUOSettings } },
+  @{ Name = "Install the map editor";       Run = { InstallMapEditor } },
   @{ Name = "Create launcher + shortcut";   Run = { InstallRuntimeScripts } }
 )
 

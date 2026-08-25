@@ -59,7 +59,7 @@ $fontMono  = New-Object System.Drawing.Font("Consolas", 9)
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "UO Offline — Installer"
-$form.ClientSize      = New-Object System.Drawing.Size(820, 600)
+$form.ClientSize      = New-Object System.Drawing.Size(820, 648)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -107,7 +107,7 @@ $introBox.Controls.Add((NewLabel "Takes 15–25 minutes depending on your connec
 
 $optBox = New-Object System.Windows.Forms.Panel
 $optBox.Location = New-Object System.Drawing.Point(40, 376)
-$optBox.Size     = New-Object System.Drawing.Size(740, 110)
+$optBox.Size     = New-Object System.Drawing.Size(740, 138)
 $optBox.BackColor = $colPanel
 $panelWelcome.Controls.Add($optBox)
 $optBox.Controls.Add((NewLabel "Options" 20 12 300 24 $fontHead $colText))
@@ -128,13 +128,21 @@ $chkRazor.Size = New-Object System.Drawing.Size(690, 24)
 $chkRazor.Font = $fontBody; $chkRazor.ForeColor = $colText
 $optBox.Controls.Add($chkRazor)
 
-$panelWelcome.Controls.Add((NewLabel "Installs to:" 42 501 78 22 $fontBody $colDim))
+$chkMap = New-Object System.Windows.Forms.CheckBox
+$chkMap.Text = "Install the map editor (waypoints, spawns and a live view of every bot)"
+$chkMap.Checked = $true
+$chkMap.Location = New-Object System.Drawing.Point(28, 98)
+$chkMap.Size = New-Object System.Drawing.Size(690, 24)
+$chkMap.Font = $fontBody; $chkMap.ForeColor = $colText
+$optBox.Controls.Add($chkMap)
+
+$panelWelcome.Controls.Add((NewLabel "Installs to:" 42 549 78 22 $fontBody $colDim))
 
 # Editable on purpose: Change... is the easy path, but typing a path directly
 # is quicker if you already know where it goes.
 $txtPath = New-Object System.Windows.Forms.TextBox
 $txtPath.Text = $InstallRootLabel
-$txtPath.Location = New-Object System.Drawing.Point(124, 498)
+$txtPath.Location = New-Object System.Drawing.Point(124, 546)
 $txtPath.Size = New-Object System.Drawing.Size(310, 26)
 $txtPath.Font = $fontBody
 $txtPath.BackColor = $colPanel; $txtPath.ForeColor = $colText
@@ -143,7 +151,7 @@ $panelWelcome.Controls.Add($txtPath)
 
 $btnBrowse = New-Object System.Windows.Forms.Button
 $btnBrowse.Text = "Change..."
-$btnBrowse.Location = New-Object System.Drawing.Point(444, 496)
+$btnBrowse.Location = New-Object System.Drawing.Point(444, 544)
 $btnBrowse.Size = New-Object System.Drawing.Size(100, 30)
 $btnBrowse.Font = $fontBody
 $btnBrowse.BackColor = $colPanel; $btnBrowse.ForeColor = $colText; $btnBrowse.FlatStyle = "Flat"
@@ -167,7 +175,7 @@ $panelWelcome.Controls.Add($btnBrowse)
 
 $btnInstall = New-Object System.Windows.Forms.Button
 $btnInstall.Text = "Install"
-$btnInstall.Location = New-Object System.Drawing.Point(600, 528)
+$btnInstall.Location = New-Object System.Drawing.Point(600, 576)
 $btnInstall.Size = New-Object System.Drawing.Size(180, 44)
 $btnInstall.Font = $fontHead
 $btnInstall.BackColor = $colGold
@@ -177,7 +185,7 @@ $panelWelcome.Controls.Add($btnInstall)
 
 $btnQuit = New-Object System.Windows.Forms.Button
 $btnQuit.Text = "Cancel"
-$btnQuit.Location = New-Object System.Drawing.Point(470, 528)
+$btnQuit.Location = New-Object System.Drawing.Point(470, 576)
 $btnQuit.Size = New-Object System.Drawing.Size(115, 44)
 $btnQuit.Font = $fontBody
 $btnQuit.BackColor = $colPanel; $btnQuit.ForeColor = $colText; $btnQuit.FlatStyle = "Flat"
@@ -230,7 +238,7 @@ $logBox.BorderStyle = "None"
 $panelProgress.Controls.Add($logBox)
 
 $progBar = New-Object System.Windows.Forms.ProgressBar
-$progBar.Location = New-Object System.Drawing.Point(40, 520)
+$progBar.Location = New-Object System.Drawing.Point(40, 568)
 $progBar.Size = New-Object System.Drawing.Size(740, 18)
 $progBar.Style = "Continuous"
 $panelProgress.Controls.Add($progBar)
@@ -240,7 +248,7 @@ $panelProgress.Controls.Add($lblPatience)
 
 $btnCancel = New-Object System.Windows.Forms.Button
 $btnCancel.Text = "Cancel"
-$btnCancel.Location = New-Object System.Drawing.Point(665, 544)
+$btnCancel.Location = New-Object System.Drawing.Point(665, 592)
 $btnCancel.Size = New-Object System.Drawing.Size(115, 36)
 $btnCancel.Font = $fontBody
 $btnCancel.BackColor = $colPanel; $btnCancel.ForeColor = $colText; $btnCancel.FlatStyle = "Flat"
@@ -268,7 +276,7 @@ $panelDone.Controls.Add($doneLog)
 
 $btnPlay = New-Object System.Windows.Forms.Button
 $btnPlay.Text = "Play Now"
-$btnPlay.Location = New-Object System.Drawing.Point(600, 528)
+$btnPlay.Location = New-Object System.Drawing.Point(600, 576)
 $btnPlay.Size = New-Object System.Drawing.Size(180, 44)
 $btnPlay.Font = $fontHead
 $btnPlay.BackColor = $colGold; $btnPlay.ForeColor = $colBack; $btnPlay.FlatStyle = "Flat"
@@ -281,7 +289,7 @@ $panelDone.Controls.Add($btnPlay)
 
 $btnClose = New-Object System.Windows.Forms.Button
 $btnClose.Text = "Close"
-$btnClose.Location = New-Object System.Drawing.Point(470, 528)
+$btnClose.Location = New-Object System.Drawing.Point(470, 576)
 $btnClose.Size = New-Object System.Drawing.Size(115, 44)
 $btnClose.Font = $fontBody
 $btnClose.BackColor = $colPanel; $btnClose.ForeColor = $colText; $btnClose.FlatStyle = "Flat"
@@ -298,13 +306,14 @@ $form.Controls.Add($panelDone)
 $script:ps = $null
 $script:rs = $null
 
-function StartWorker($optT2A, $optRazor, $installPath) {
+function StartWorker($optT2A, $optRazor, $optMap, $installPath) {
     $script:rs = [runspacefactory]::CreateRunspace()
     $script:rs.Open()
     $script:rs.SessionStateProxy.SetVariable('sync',       $sync)
     $script:rs.SessionStateProxy.SetVariable('EnginePath', $EnginePath)
     $script:rs.SessionStateProxy.SetVariable('OptT2A',     $optT2A)
     $script:rs.SessionStateProxy.SetVariable('OptRazor',   $optRazor)
+    $script:rs.SessionStateProxy.SetVariable('OptMap',     $optMap)
     $script:rs.SessionStateProxy.SetVariable('InstallChoice', $installPath)
 
     $script:ps = [powershell]::Create()
@@ -315,6 +324,7 @@ function StartWorker($optT2A, $optRazor, $installPath) {
             if ($InstallChoice) { Set-InstallRoot $InstallChoice }
             $InstallT2AMap = $OptT2A
             $InstallRazor  = $OptRazor
+            $InstallMapEditor = $OptMap
 
             # Re-point the engine's console voice at the GUI log.
             function Banner($m) { $sync.Log.Enqueue("") ; $sync.Log.Enqueue("=== $m ===") }
@@ -392,7 +402,7 @@ $btnInstall.Add_Click({
         return
     }
     $script:InstallRootLabel = $chosenPath
-    StartWorker $chkT2A.Checked $chkRazor.Checked $chosenPath
+    StartWorker $chkT2A.Checked $chkRazor.Checked $chkMap.Checked $chosenPath
     $timer.Start()
 })
 
