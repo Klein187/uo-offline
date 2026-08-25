@@ -1,0 +1,3 @@
+# Patches are fed to "git apply" against LF-ending engine sources.
+# Windows autocrlf would check them out as CRLF and git apply would refuse them.
+patches/*.patch -text
