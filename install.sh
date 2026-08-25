@@ -218,6 +218,23 @@ bootstrap_dotnet() {
 # ---------------------------------------------------------------------------
 # Step 5 — Build ModernUO
 # ---------------------------------------------------------------------------
+# Delete every Projects/*/obj and /bin. Pure build output - restore and the
+# next build regenerate all of it.
+clear_build_artifacts() {
+  local projects_dir="${MODERNUO_DIR}/Projects"
+  [[ -d "${projects_dir}" ]] || return 0
+
+  local removed=0
+  local d
+  for d in "${projects_dir}"/*/obj "${projects_dir}"/*/bin; do
+    if [[ -d "${d}" ]]; then
+      rm -rf "${d}"
+      removed=$((removed + 1))
+    fi
+  done
+  say "Cleared ${removed} stale build output folder(s)."
+}
+
 build_modernuo() {
   banner "Building ModernUO"
 
@@ -231,7 +248,20 @@ build_modernuo() {
 
   cd "${MODERNUO_DIR}"
   chmod +x ./publish.sh
-  ./publish.sh release linux x64
+  ./publish.sh release linux x64 || true
+
+  if [[ ! -f "${DIST_DIR}/ModernUO.dll" ]]; then
+    # A build can fail on stale intermediate output left behind by a
+    # DIFFERENT .NET SDK - if a distro package or another install is on PATH,
+    # whichever ran last wins. The giveaway is the build tool reporting
+    # "'Cleaning project' failed with exit code 1", with a
+    # ResolvePackageAssets NullReferenceException buried in the output.
+    # Clearing obj/ and bin/ makes restore regenerate them, so try once
+    # before giving up.
+    warn "Build produced no ModernUO.dll. Clearing stale build output and retrying once..."
+    clear_build_artifacts
+    ./publish.sh release linux x64 || true
+  fi
 
   [[ -f "${DIST_DIR}/ModernUO.dll" ]] || die "Build produced no ModernUO.dll. Check output above."
   ok "Build artifacts at ${DIST_DIR}"
@@ -568,7 +598,7 @@ EOF
     "ExpansionLBR": false,
     "ExpansionT2A": true,
     "ExpansionUOR": false,
-    "ContextMenus": false,
+    "ContextMenus": true,
     "SlotLimit": false,
     "AOS": false,
     "SixthCharacterSlot": false,

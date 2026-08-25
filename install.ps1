@@ -261,11 +261,58 @@ function BuildModernUO {
     Say "ModernUO already built. Skipping (delete Distribution\ModernUO.dll to force rebuild)."
     return
   }
+  # publish.ps1 sets its own $ErrorActionPreference = "Stop", so a failing
+  # build throws out of it rather than just returning non-zero. Catch that,
+  # because the whole point is to look at the result and decide whether a
+  # retry is worth it.
+  $tryPublish = {
+    try {
+      Invoke-ScriptTolerant { & .\publish.ps1 release win x64 }
+    } catch {
+      Warn "Build attempt failed: $($_.Exception.Message)"
+    }
+  }
+
   Push-Location $ModernUODir
-  Invoke-ScriptTolerant { & .\publish.ps1 release win x64 }
-  Pop-Location
+  try {
+    & $tryPublish
+
+    if (-not (Test-Path (Join-Path $DistDir "ModernUO.dll"))) {
+      # A build can fail on stale intermediate output left behind by a
+      # DIFFERENT .NET SDK - anyone with Visual Studio has a second one, and
+      # whichever ran last wins. The giveaway is the build tool reporting
+      # "'Cleaning project' failed with exit code 1", with a
+      # ResolvePackageAssets NullReferenceException buried in the output.
+      # Clearing obj/ and bin/ makes restore regenerate them; it costs a
+      # minute and fixes it, so try once before giving up.
+      Warn "Build produced no ModernUO.dll. Clearing stale build output and retrying once..."
+      ClearBuildArtifacts
+      & $tryPublish
+    }
+  } finally {
+    Pop-Location
+  }
   if (-not (Test-Path (Join-Path $DistDir "ModernUO.dll"))) { Die "Build produced no ModernUO.dll. Check output above." }
   Ok "Build artifacts at $DistDir"
+}
+
+# Delete every Projects\*\obj and in. Pure build output - restore and the
+# next build regenerate all of it.
+function ClearBuildArtifacts {
+  $projectsDir = Join-Path $ModernUODir "Projects"
+  if (-not (Test-Path $projectsDir)) { return }
+
+  $removed = 0
+  foreach ($proj in (Get-ChildItem -Path $projectsDir -Directory -ErrorAction SilentlyContinue)) {
+    foreach ($sub in @("obj", "bin")) {
+      $dir = Join-Path $proj.FullName $sub
+      if (Test-Path $dir) {
+        Remove-Item $dir -Recurse -Force -ErrorAction SilentlyContinue
+        $removed++
+      }
+    }
+  }
+  Say "Cleared $removed stale build output folder(s)."
 }
 
 # ---------------------------------------------------------------------------
@@ -549,17 +596,90 @@ function WriteModernUOConfig {
 "@ | Set-Content (Join-Path $CfgDir "modernuo.json")
   Ok "Wrote modernuo.json"
 
+  # The full schema, matching install.sh. An abbreviated file used to go
+  # here, which left most flags to chance and set ContextMenus off while
+  # setting ExpansionT2A on - the same bit, contradicting itself.
   @"
 {
   "Id": $ExpansionId,
   "ClientFlags": "None",
-  "SupportedFeatures": { "ExpansionT2A": true, "T2A": true, "LiveAccount": true },
-  "CharacterListFlags": { "ExpansionT2A": true },
-  "MapSelectionFlags": { "Felucca": true, "Trammel": false, "Ilshenar": false, "Malas": false, "Tokuno": false, "TerMur": false }
+  "SupportedFeatures": {
+    "ExpansionT2A": true,
+    "T2A": true,
+    "UOR": false,
+    "UOTD": false,
+    "LBR": false,
+    "AOS": false,
+    "SixthCharacterSlot": false,
+    "SE": false,
+    "ML": false,
+    "EighthAge": false,
+    "NinthAge": false,
+    "TenthAge": false,
+    "IncreasedStorage": false,
+    "SeventhCharacterSlot": false,
+    "RoleplayFaces": false,
+    "TrialAccount": false,
+    "LiveAccount": true,
+    "SA": false,
+    "HS": false,
+    "Gothic": false,
+    "Rustic": false,
+    "Jungle": false,
+    "Shadowguard": false,
+    "TOL": false,
+    "EJ": false
+  },
+  "CharacterListFlags": {
+    "Unk1": false,
+    "OverwriteConfigButton": false,
+    "OneCharacterSlot": false,
+    "ExpansionNone": false,
+    "ExpansionUOTD": false,
+    "ExpansionLBR": false,
+    "ExpansionT2A": true,
+    "ExpansionUOR": false,
+    "ContextMenus": true,
+    "SlotLimit": false,
+    "AOS": false,
+    "SixthCharacterSlot": false,
+    "SE": false,
+    "ML": false,
+    "KR": false,
+    "UO3DClientType": false,
+    "Unk3": false,
+    "SeventhCharacterSlot": false,
+    "Unk4": false,
+    "NewMovementSystem": false,
+    "NewFeluccaAreas": false
+  },
+  "HousingFlags": {
+    "AOS": false,
+    "HousingAOS": false,
+    "SE": false,
+    "ML": false,
+    "Crystal": false,
+    "SA": false,
+    "HS": false,
+    "Gothic": false,
+    "Rustic": false,
+    "Jungle": false,
+    "Shadowguard": false,
+    "TOL": false,
+    "EJ": false
+  },
+  "MobileStatusVersion": 0,
+  "MapSelectionFlags": {
+    "Felucca": true,
+    "Trammel": false,
+    "Ilshenar": false,
+    "Malas": false,
+    "Tokuno": false,
+    "TerMur": false
+  }
 }
 "@ | Set-Content (Join-Path $CfgDir "expansion.json")
   Ok "Wrote expansion.json (T2A, Felucca-only)"
-  Warn "NOTE: expansion.json here is abbreviated. If ModernUO rejects it, copy the full schema from the Linux install.sh write_modernuo_config function."
 
   # The Young player system is a UO:R-era feature that did not exist in T2A.
   # Left on, young characters also get a Trammel-only public moongate list,
