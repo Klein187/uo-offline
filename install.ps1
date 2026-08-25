@@ -34,6 +34,12 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # ---------------------------------------------------------------------------
 $InstallRoot   = Join-Path $env:USERPROFILE "uo-modernuo"
 $ModernUORepo  = "https://github.com/modernuo/ModernUO.git"
+
+# Updating an ALREADY-CLONED ModernUO is opt-in. A checkout that has built
+# once is known-good; pulling upstream mid-install can drag in months of
+# engine changes and turn a working shard into one that will not compile.
+# Fresh installs always clone. Set to $true to track upstream on re-runs.
+$UpdateModernUO = $false
 $ModernUODir   = Join-Path $InstallRoot "ModernUO"
 $DistDir       = Join-Path $ModernUODir "Distribution"
 $CfgDir        = Join-Path $DistDir "Configuration"
@@ -88,6 +94,50 @@ function Warn($m)   { Write-Host "[WARN] $m" -ForegroundColor Yellow }
 function Die($m)    { throw "INSTALL FAILED: $m" }
 
 # ---------------------------------------------------------------------------
+# Native commands write ordinary progress to stderr - git announces
+# "From https://github.com/..." on a perfectly good fetch, and 7-Zip and
+# dotnet do much the same. With $ErrorActionPreference = "Stop", PowerShell
+# turns every one of those lines into a terminating NativeCommandError, and
+# inside the GUI installer's runspace (no console for stderr to land on)
+# that kills the whole install on a command that actually succeeded.
+#
+# So route native tools through here. stderr is folded into the captured
+# output as plain text, and success is judged by the exit code, which is
+# the only thing that carries any meaning.
+# ---------------------------------------------------------------------------
+function Invoke-Native {
+  param(
+    [Parameter(Mandatory)][string]$Exe,
+    [string[]]$Arguments = @(),
+    [switch]$IgnoreExitCode
+  )
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $out  = & $Exe @Arguments 2>&1 | ForEach-Object { "$_" }
+    $code = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $prev
+  }
+  if (-not $IgnoreExitCode -and $code -ne 0) {
+    $tail = ($out | Select-Object -Last 4) -join " | "
+    throw "$Exe $($Arguments -join ' ') failed (exit $code): $tail"
+  }
+  return $out
+}
+
+# Run a PowerShell script that shells out to native tools of its own (the
+# dotnet bootstrapper, ModernUO's publish.ps1). We cannot wrap their inner
+# calls, so relax the preference across the whole thing; each caller already
+# checks for the artifact it expects afterwards.
+function Invoke-ScriptTolerant {
+  param([Parameter(Mandatory)][scriptblock]$Body)
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try { & $Body } finally { $ErrorActionPreference = $prev }
+}
+
+# ---------------------------------------------------------------------------
 # Step 1 — Pre-flight
 # ---------------------------------------------------------------------------
 function Preflight {
@@ -116,7 +166,7 @@ function BootstrapDotnet {
   Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile $installer
 
   Say "Installing .NET SDK $DotnetVersion into $DotnetRoot..."
-  & $installer -Version $DotnetVersion -InstallDir $DotnetRoot
+  Invoke-ScriptTolerant { & $installer -Version $DotnetVersion -InstallDir $DotnetRoot }
   Remove-Item $installer -Force -ErrorAction SilentlyContinue
 
   $env:PATH = "$DotnetRoot;$env:PATH"
@@ -132,15 +182,35 @@ function FetchModernUO {
   Banner "Fetching ModernUO source"
   if (Test-Path (Join-Path $ModernUODir ".git")) {
     Say "ModernUO already cloned."
+    if (-not $UpdateModernUO) {
+      Say "Leaving it at its current commit (set `$UpdateModernUO = `$true to track upstream)."
+      Ok "ModernUO source at $ModernUODir"
+      return
+    }
     Push-Location $ModernUODir
-    if (Test-Path ".git\shallow") { git fetch --unshallow 2>$null; if ($LASTEXITCODE -ne 0) { git fetch --depth=2147483647 } }
-    git fetch --all --tags
-    git checkout main
-    git pull --ff-only
-    Pop-Location
+    try {
+      if (Test-Path ".git\shallow") {
+        Invoke-Native git @("fetch", "--unshallow") -IgnoreExitCode | Out-Null
+      }
+      # --force because upstream moves tags (build-tool-latest is re-pointed
+      # every release). Without it the whole fetch fails with
+      # "would clobber existing tag" and takes the install down with it.
+      Invoke-Native git @("fetch", "--all", "--tags", "--force") | Out-Null
+      Invoke-Native git @("checkout", "main") | Out-Null
+      Invoke-Native git @("pull", "--ff-only") | Out-Null
+      Ok "Updated to latest main."
+    } catch {
+      # A clone that will not update is not fatal - whatever is on disk still
+      # builds. The usual cause is local edits to tracked files, which is
+      # exactly what the stock-file patches in INTEGRATION-NOTES.txt are.
+      Warn "Could not update the existing ModernUO clone: $($_.Exception.Message)"
+      Warn "Continuing with the checkout already on disk."
+    } finally {
+      Pop-Location
+    }
   } else {
     Say "Cloning ModernUO (full history)..."
-    git clone $ModernUORepo $ModernUODir
+    Invoke-Native git @("clone", $ModernUORepo, $ModernUODir) | Out-Null
   }
   Ok "ModernUO source at $ModernUODir"
 }
@@ -192,7 +262,7 @@ function BuildModernUO {
     return
   }
   Push-Location $ModernUODir
-  & .\publish.ps1 release win x64
+  Invoke-ScriptTolerant { & .\publish.ps1 release win x64 }
   Pop-Location
   if (-not (Test-Path (Join-Path $DistDir "ModernUO.dll"))) { Die "Build produced no ModernUO.dll. Check output above." }
   Ok "Build artifacts at $DistDir"
@@ -328,7 +398,7 @@ function SwapT2AMap {
   if (-not $haveMuls) {
     if ($sevenZip) {
       Say "Extracting T2A map files with 7-Zip..."
-      & $sevenZip.Source x -y "-o$extractDir" $uosaExe @T2AMulFiles | Out-Null
+      Invoke-Native $sevenZip.Source (@("x", "-y", "-o$extractDir", $uosaExe) + $T2AMulFiles) | Out-Null
     } elseif ($extractDir -match '\s') {
       Warn "7-Zip not found and the extract path contains spaces (the silent UOSA installer cannot handle that)."
       Warn "Install 7-Zip from https://www.7-zip.org and re-run, or follow docs/T2A-MAP.md manually. Keeping modern map."

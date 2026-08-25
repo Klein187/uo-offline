@@ -157,9 +157,14 @@ fetch_modernuo() {
       git fetch --unshallow || git fetch --depth=2147483647
     fi
 
-    git fetch --all --tags
-    git checkout main
-    git pull --ff-only
+    # --force because upstream moves tags (build-tool-latest is re-pointed
+    # every release); without it the fetch fails with "would clobber existing
+    # tag". None of this is fatal - a clone that will not update still builds,
+    # and local edits to tracked files (the stock-file patches in
+    # INTEGRATION-NOTES.txt) are the usual reason a pull refuses.
+    git fetch --all --tags --force || warn "git fetch failed; using the checkout on disk."
+    git checkout main               || warn "git checkout main failed; using the current branch."
+    git pull --ff-only              || warn "git pull failed; using the checkout on disk." 
   else
     say "Cloning ModernUO (full history)..."
     git clone "${MODERNUO_REPO}" "${MODERNUO_DIR}"
