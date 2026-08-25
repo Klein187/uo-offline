@@ -58,7 +58,13 @@ The installer does the whole job: it builds ModernUO with the PlayerBots compile
 2. Unzip it anywhere. You'll get a folder named `uo-offline-main`.
 3. Open that folder and **double-click `install.bat`**.
 
-That's it. A graphical installer opens, shows you what's about to happen, lets you toggle the T2A map art and Razor, then works through a live checklist. Nothing else to install first, no Windows settings to change — it fetches .NET, git and the game data itself, and none of it needs admin rights. If you'd rather use a plain console, run `powershell -ExecutionPolicy Bypass -File install.ps1` instead. Both do the same steps.
+That's it. A graphical installer opens, shows you what's about to happen, lets you toggle the T2A map art and Razor, and lets you pick where it installs (**Change...** next to the folder, or type a path). Then it works through a live checklist. Nothing else to install first, no Windows settings to change — it fetches .NET, git and the game data itself, and none of it needs admin rights.
+
+It defaults to `%USERPROFILE%\uo-modernuo` and needs about **6 GB**. Any drive is fine, so a second disk works if your C: is tight. From the console version, pass the path instead:
+
+```
+powershell -ExecutionPolicy Bypass -File install.ps1 -InstallPath "D:\Games\UO Offline"
+``` If you'd rather use a plain console, run `powershell -ExecutionPolicy Bypass -File install.ps1` instead. Both do the same steps.
 
 Two things to expect while it runs:
 
@@ -86,6 +92,12 @@ chmod +x install.sh
 ```
 
 No git? On the GitHub page click **Code**, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod` and `./install.sh`.
+
+It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
+
+```
+./install.sh --install-root /mnt/games/uo-offline
+```
 
 ### Updates
 

@@ -25,16 +25,14 @@
 # installer (install-gui.ps1) dot-sources this file as its engine and
 # invokes the steps itself.
 # =========================================================================
-param([switch]$NoRun)
+param([switch]$NoRun, [string]$InstallPath)
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # ---------------------------------------------------------------------------
 # Paths and URLs
 # ---------------------------------------------------------------------------
-$InstallRoot   = Join-Path $env:USERPROFILE "uo-modernuo"
 $ModernUORepo  = "https://github.com/modernuo/ModernUO.git"
-$GitDir        = Join-Path $InstallRoot "git"
 $MinGitReleaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 
 # Updating an ALREADY-CLONED ModernUO is opt-in. A checkout that has built
@@ -42,24 +40,17 @@ $MinGitReleaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/l
 # engine changes and turn a working shard into one that will not compile.
 # Fresh installs always clone. Set to $true to track upstream on re-runs.
 $UpdateModernUO = $false
-$ModernUODir   = Join-Path $InstallRoot "ModernUO"
-$DistDir       = Join-Path $ModernUODir "Distribution"
-$CfgDir        = Join-Path $DistDir "Configuration"
-$SpawnersDir   = Join-Path $DistDir "Spawners\uoclassic"
 
-$ClassicUODir  = Join-Path $InstallRoot "ClassicUO"
 $ClassicUOReleaseUrl = "https://api.github.com/repos/ClassicUO/ClassicUO/releases"
 
 # Razor (Community Edition) — the classic UO assistant, loaded into
 # ClassicUO as a plugin so clicking Play opens the game with Razor attached.
 # $InstallRazor = $false to skip.
 $InstallRazor   = $true
-$RazorDir       = Join-Path $InstallRoot "Razor"
 $RazorReleaseUrl = "https://api.github.com/repos/markdwags/Razor/releases/latest"
 
 $UODataUrl     = "https://mirror.ashkantra.de/fullclients/7.0.23.1.exe"
 $UODataVersion = "7.0.23.1"
-$UODataDir     = Join-Path $InstallRoot "UOData\$UODataVersion"
 
 $SpawnMapUrl   = "https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/master/Distro/Data/Nerun's%20Distro/Spawns/uoclassic/UOClassic.map"
 
@@ -70,11 +61,51 @@ $SpawnMapUrl   = "https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/mas
 # to keep modern map art. See docs/T2A-MAP.md.
 $InstallT2AMap   = $true
 $T2AInstallerUrl = "https://download.uosecondage.com/UOSA_Client_Setup.exe"
-$T2ASrcDir       = Join-Path $InstallRoot "t2a-src"
 $T2AMulFiles     = @("map0.mul", "statics0.mul", "staidx0.mul")
 
 $DotnetRoot    = Join-Path $env:USERPROFILE ".dotnet"
 $DotnetVersion = "10.0.201"
+
+# ---------------------------------------------------------------------------
+# Where everything goes.
+#
+# Every other path hangs off $InstallRoot, so changing it means recomputing
+# the lot. Set-InstallRoot does that in one place: the console installer
+# calls it from -InstallPath, and the GUI calls it when you pick a folder.
+# Nothing else should assign $InstallRoot directly.
+# ---------------------------------------------------------------------------
+function Set-InstallRoot {
+  param([Parameter(Mandatory)][string]$Path)
+
+  # Expand %VARS%, make it absolute, and drop any trailing slash so the
+  # Join-Paths below cannot produce a doubled separator.
+  $Path = [Environment]::ExpandEnvironmentVariables($Path).Trim()
+  $Path = $Path.TrimEnd([char]92, [char]47)
+  if (-not [System.IO.Path]::IsPathRooted($Path)) {
+    $Path = Join-Path (Get-Location).Path $Path
+  }
+
+  # [IO.Path]::Combine, not Join-Path: Join-Path resolves PSDrives and throws
+  # "Cannot find drive" for a path on a disk that has nothing on it yet,
+  # which is a perfectly reasonable thing for someone to choose.
+  $script:InstallRoot  = $Path
+  $script:GitDir       = [IO.Path]::Combine($Path, "git")
+  $script:ModernUODir  = [IO.Path]::Combine($Path, "ModernUO")
+  $script:DistDir      = [IO.Path]::Combine($script:ModernUODir, "Distribution")
+  $script:CfgDir       = [IO.Path]::Combine($script:DistDir, "Configuration")
+  $script:SpawnersDir  = [IO.Path]::Combine($script:DistDir, "Spawners", "uoclassic")
+  $script:ClassicUODir = [IO.Path]::Combine($Path, "ClassicUO")
+  $script:RazorDir     = [IO.Path]::Combine($Path, "Razor")
+  $script:UODataDir    = [IO.Path]::Combine($Path, "UOData", $UODataVersion)
+  $script:T2ASrcDir    = [IO.Path]::Combine($Path, "t2a-src")
+}
+
+# The default is the same place it has always been.
+if ($InstallPath) {
+  Set-InstallRoot $InstallPath
+} else {
+  Set-InstallRoot (Join-Path $env:USERPROFILE "uo-modernuo")
+}
 
 # Config defaults
 $ExpansionId   = 1
@@ -144,7 +175,37 @@ function Invoke-ScriptTolerant {
 # ---------------------------------------------------------------------------
 function Preflight {
   Banner "Pre-flight checks"
-  New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
+
+  # The install root can be anywhere the user likes, so sanity-check it here
+  # rather than letting it fail four steps later with a confusing message.
+  $root = [IO.Path]::GetPathRoot($InstallRoot)
+  if (-not $root -or -not (Test-Path $root)) {
+    Die "The drive for '$InstallRoot' does not exist. Pick a folder on a drive that is plugged in."
+  }
+
+  try {
+    New-Item -ItemType Directory -Force -Path $InstallRoot -ErrorAction Stop | Out-Null
+  } catch {
+    Die "Cannot create '$InstallRoot': $($_.Exception.Message). Pick a folder you can write to."
+  }
+
+  # Prove we can actually write there. Program Files and drive roots look
+  # writable until you try, because Windows only refuses on the write.
+  $probe = [IO.Path]::Combine($InstallRoot, ".write-test")
+  try {
+    Set-Content -Path $probe -Value "ok" -ErrorAction Stop
+    Remove-Item $probe -Force -ErrorAction SilentlyContinue
+  } catch {
+    Die "'$InstallRoot' is not writable. Pick a folder in your user area, not Program Files."
+  }
+
+  # The T2A map swap shells out to an NSIS installer whose /D= switch cannot
+  # take a quoted path, so a space breaks it unless 7-Zip is available.
+  if ($InstallRoot -match [char]32 -and -not (Get-Command 7z -ErrorAction SilentlyContinue)) {
+    Warn "Install path contains a space and 7-Zip is not installed."
+    Warn "The T2A map art step may be skipped. A path without spaces avoids it."
+  }
+
   Ok "Install root: $InstallRoot"
 }
 

@@ -128,7 +128,42 @@ $chkRazor.Size = New-Object System.Drawing.Size(690, 24)
 $chkRazor.Font = $fontBody; $chkRazor.ForeColor = $colText
 $optBox.Controls.Add($chkRazor)
 
-$panelWelcome.Controls.Add((NewLabel "Installs to:  $InstallRootLabel" 42 500 500 22 $fontBody $colDim))
+$panelWelcome.Controls.Add((NewLabel "Installs to:" 42 501 78 22 $fontBody $colDim))
+
+# Editable on purpose: Change... is the easy path, but typing a path directly
+# is quicker if you already know where it goes.
+$txtPath = New-Object System.Windows.Forms.TextBox
+$txtPath.Text = $InstallRootLabel
+$txtPath.Location = New-Object System.Drawing.Point(124, 498)
+$txtPath.Size = New-Object System.Drawing.Size(310, 26)
+$txtPath.Font = $fontBody
+$txtPath.BackColor = $colPanel; $txtPath.ForeColor = $colText
+$txtPath.BorderStyle = "FixedSingle"
+$panelWelcome.Controls.Add($txtPath)
+
+$btnBrowse = New-Object System.Windows.Forms.Button
+$btnBrowse.Text = "Change..."
+$btnBrowse.Location = New-Object System.Drawing.Point(444, 496)
+$btnBrowse.Size = New-Object System.Drawing.Size(100, 30)
+$btnBrowse.Font = $fontBody
+$btnBrowse.BackColor = $colPanel; $btnBrowse.ForeColor = $colText; $btnBrowse.FlatStyle = "Flat"
+$btnBrowse.Add_Click({
+    $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+    $dlg.Description = "Choose where to install UO Offline. Needs about 6 GB free."
+    if (Test-Path $txtPath.Text) { $dlg.SelectedPath = $txtPath.Text }
+    if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        # A folder picker returns the folder you clicked, so put our own
+        # folder inside it - otherwise picking D:\Games would scatter
+        # ModernUO, ClassicUO, Razor and 3 GB of game data across it.
+        $chosen = $dlg.SelectedPath
+        if ((Split-Path -Leaf $chosen) -ne "uo-modernuo") {
+            $chosen = [IO.Path]::Combine($chosen, "uo-modernuo")
+        }
+        $txtPath.Text = $chosen
+    }
+    $dlg.Dispose()
+})
+$panelWelcome.Controls.Add($btnBrowse)
 
 $btnInstall = New-Object System.Windows.Forms.Button
 $btnInstall.Text = "Install"
@@ -263,19 +298,21 @@ $form.Controls.Add($panelDone)
 $script:ps = $null
 $script:rs = $null
 
-function StartWorker($optT2A, $optRazor) {
+function StartWorker($optT2A, $optRazor, $installPath) {
     $script:rs = [runspacefactory]::CreateRunspace()
     $script:rs.Open()
     $script:rs.SessionStateProxy.SetVariable('sync',       $sync)
     $script:rs.SessionStateProxy.SetVariable('EnginePath', $EnginePath)
     $script:rs.SessionStateProxy.SetVariable('OptT2A',     $optT2A)
     $script:rs.SessionStateProxy.SetVariable('OptRazor',   $optRazor)
+    $script:rs.SessionStateProxy.SetVariable('InstallChoice', $installPath)
 
     $script:ps = [powershell]::Create()
     $script:ps.Runspace = $script:rs
     [void]$script:ps.AddScript({
         try {
             . $EnginePath -NoRun
+            if ($InstallChoice) { Set-InstallRoot $InstallChoice }
             $InstallT2AMap = $OptT2A
             $InstallRazor  = $OptRazor
 
@@ -348,7 +385,14 @@ $timer.Add_Tick({
 $btnInstall.Add_Click({
     $panelWelcome.Visible = $false
     $panelProgress.Visible = $true
-    StartWorker $chkT2A.Checked $chkRazor.Checked
+    $chosenPath = $txtPath.Text.Trim()
+    if (-not $chosenPath) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Please choose a folder to install into.", "UO Offline") | Out-Null
+        return
+    }
+    $script:InstallRootLabel = $chosenPath
+    StartWorker $chkT2A.Checked $chkRazor.Checked $chosenPath
     $timer.Start()
 })
 

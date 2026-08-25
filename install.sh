@@ -37,7 +37,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ---------------------------------------------------------------------------
 # Paths and URLs
 # ---------------------------------------------------------------------------
-INSTALL_ROOT="${HOME}/uo-modernuo"
+# Where everything goes. Override it either way:
+#   ./install.sh --install-root /mnt/games/uo-offline
+#   INSTALL_ROOT=/mnt/games/uo-offline ./install.sh
+# Everything below hangs off this, so it has to be settled before they are.
+for _arg_i in $(seq 1 $#); do
+  if [[ "${!_arg_i}" == "--install-root" ]]; then
+    _next=$((_arg_i + 1))
+    INSTALL_ROOT="${!_next:-}"
+  elif [[ "${!_arg_i}" == --install-root=* ]]; then
+    INSTALL_ROOT="${!_arg_i#*=}"
+  fi
+done
+unset _arg_i _next
+
+INSTALL_ROOT="${INSTALL_ROOT:-${HOME}/uo-modernuo}"
+INSTALL_ROOT="${INSTALL_ROOT%/}"
+
+if [[ "${INSTALL_ROOT}" != /* ]]; then
+  INSTALL_ROOT="$(pwd)/${INSTALL_ROOT}"
+fi
 MODERNUO_REPO="https://github.com/modernuo/ModernUO.git"
 MODERNUO_DIR="${INSTALL_ROOT}/ModernUO"
 DIST_DIR="${MODERNUO_DIR}/Distribution"
@@ -102,7 +121,13 @@ preflight() {
   command -v curl   >/dev/null || die "curl is required."
   command -v sudo   >/dev/null || warn "sudo not found — dependency install will fail if deps are missing."
 
-  mkdir -p "${INSTALL_ROOT}"
+  # The install root can be anywhere, so check it here rather than failing
+  # several steps later with a confusing message.
+  mkdir -p "${INSTALL_ROOT}" 2>/dev/null \
+    || die "Cannot create ${INSTALL_ROOT}. Pick a folder you can write to."
+  [[ -w "${INSTALL_ROOT}" ]] \
+    || die "${INSTALL_ROOT} is not writable. Pick a folder you own."
+
   ok "Install root: ${INSTALL_ROOT}"
 }
 
