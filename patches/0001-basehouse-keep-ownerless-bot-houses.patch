@@ -1,0 +1,19 @@
+diff --git a/Projects/UOContent/Multis/Houses/BaseHouse.cs b/Projects/UOContent/Multis/Houses/BaseHouse.cs
+index aea0cb8bc..457f805b7 100644
+--- a/Projects/UOContent/Multis/Houses/BaseHouse.cs
++++ b/Projects/UOContent/Multis/Houses/BaseHouse.cs
+@@ -3253,7 +3253,13 @@ public override void Deserialize(IGenericReader reader)
+                     Timer.StartTimer(RestoreRelocatedEntities);
+                 }
+ 
+-                if (m_Owner == null && Friends.Count == 0 && CoOwners.Count == 0)
++                // Ownerless-house cleanup — but an explicitly ageless house
++                // (RestrictDecay) is ownerless BY DESIGN: the CustomBots
++                // housing system places scenery homesteads with no live
++                // owner mobile. Reaping those on every load undid the
++                // land rush ten seconds after boot.
++                if (m_Owner == null && Friends.Count == 0 && CoOwners.Count == 0 &&
++                    !RestrictDecay)
+                 {
+                     Timer.StartTimer(TimeSpan.FromSeconds(10.0), Delete);
+                 }

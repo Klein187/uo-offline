@@ -926,6 +926,57 @@ install_map_editor() {
 # This runs BEFORE build_modernuo so the bot code is compiled into the same
 # build pass. The bot files live in this repo at ./playerbots/.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Engine patches.
+#
+# Two stock ModernUO files need a small change for the bots to work
+# properly, and they cannot live in CustomBots/ because they ARE engine
+# files. They ship as unified diffs under patches/ and go on with
+# git apply, which every install already has because it clones ModernUO.
+#
+# Never fatal. An upstream that has moved on will refuse a patch, and a
+# shard missing them still runs - it just loses bot housing across
+# restarts. INTEGRATION-NOTES.txt describes both by hand.
+# ---------------------------------------------------------------------------
+apply_engine_patches() {
+  banner "Applying engine patches"
+
+  local patch_dir="${SCRIPT_DIR}/patches"
+  if [[ ! -d "${patch_dir}" ]]; then
+    say "No patches directory; nothing to apply."
+    return 0
+  fi
+
+  shopt -s nullglob
+  local patches=("${patch_dir}"/*.patch)
+  shopt -u nullglob
+
+  if [[ ${#patches[@]} -eq 0 ]]; then
+    say "No patches to apply."
+    return 0
+  fi
+
+  local patch name
+  for patch in "${patches[@]}"; do
+    name="$(basename "${patch}")"
+
+    # Already applied? Reversing it cleanly is the test.
+    if git -C "${MODERNUO_DIR}" apply --reverse --check "${patch}" 2>/dev/null; then
+      ok "${name} (already applied)"
+      continue
+    fi
+
+    if ! git -C "${MODERNUO_DIR}" apply --check "${patch}" 2>/dev/null; then
+      warn "${name} does not apply to this ModernUO checkout - skipping."
+      warn "See INTEGRATION-NOTES.txt if you need it applied by hand."
+      continue
+    fi
+
+    git -C "${MODERNUO_DIR}" apply "${patch}"
+    ok "${name} applied"
+  done
+}
+
 install_playerbots() {
   banner "Installing PlayerBots"
 
@@ -1006,6 +1057,7 @@ main() {
   install_deps
   fetch_modernuo
   bootstrap_dotnet
+  apply_engine_patches
   install_playerbots
   install_map_editor
   build_modernuo

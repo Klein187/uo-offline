@@ -2,9 +2,18 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: two stock ModernUO files need a small patch, and the installer
-does NOT apply them for you. If you deploy the bots onto a fresh ModernUO
-clone, re-apply both by hand or you will hit the bugs described below.
+one exception: two stock ModernUO files need a small patch, because they ARE
+engine files and cannot live in CustomBots/.
+
+Both installers apply these for you now. They ship as unified diffs in
+patches/ and go on with git apply, in the "Patch the engine" step right
+after the ModernUO clone. The step is idempotent (a patch already applied is
+detected and skipped) and never fatal: if upstream has moved on and a patch
+no longer applies, the install warns and carries on, and you can apply it by
+hand from the descriptions below.
+
+If you are deploying the bots onto a ModernUO clone by hand, without the
+installer, apply both yourself.
 
 Stock-file patch required by the housing system (2026-07-05)
 ------------------------------------------------------------

@@ -216,6 +216,47 @@ function FetchModernUO {
 }
 
 # ---------------------------------------------------------------------------
+# Engine patches.
+#
+# Two stock ModernUO files need a small change for the bots to work
+# properly, and they cannot live in CustomBots/ because they ARE engine
+# files. They ship as unified diffs under patches/ and go on with
+# git apply, which every install already has because it clones ModernUO.
+#
+# Never fatal. An upstream that has moved on will refuse a patch, and a
+# shard missing them still runs - it just loses bot housing across
+# restarts. INTEGRATION-NOTES.txt describes both by hand.
+# ---------------------------------------------------------------------------
+function ApplyEnginePatches {
+  Banner "Applying engine patches"
+
+  $patchDir = Join-Path $ScriptDir "patches"
+  if (-not (Test-Path $patchDir)) { Say "No patches directory; nothing to apply."; return }
+
+  $patches = Get-ChildItem -Path $patchDir -Filter "*.patch" | Sort-Object Name
+  if ($patches.Count -eq 0) { Say "No patches to apply."; return }
+
+  foreach ($patch in $patches) {
+    $name = $patch.Name
+    $path = $patch.FullName
+
+    # Already applied? Reversing it cleanly is the test.
+    Invoke-Native git @("-C", $ModernUODir, "apply", "--reverse", "--check", $path) -IgnoreExitCode | Out-Null
+    if ($LASTEXITCODE -eq 0) { Ok "$name (already applied)"; continue }
+
+    Invoke-Native git @("-C", $ModernUODir, "apply", "--check", $path) -IgnoreExitCode | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Warn "$name does not apply to this ModernUO checkout - skipping."
+      Warn "See INTEGRATION-NOTES.txt if you need it applied by hand."
+      continue
+    }
+
+    Invoke-Native git @("-C", $ModernUODir, "apply", $path) | Out-Null
+    Ok "$name applied"
+  }
+}
+
+# ---------------------------------------------------------------------------
 # Step 4 — Deploy PlayerBots into the ModernUO source tree (BEFORE build)
 # ---------------------------------------------------------------------------
 function InstallPlayerBots {
@@ -918,6 +959,7 @@ $script:InstallSteps = @(
   @{ Name = "Check requirements";           Run = { Preflight } },
   @{ Name = "Install .NET (no admin)";      Run = { BootstrapDotnet } },
   @{ Name = "Download the ModernUO server"; Run = { FetchModernUO } },
+  @{ Name = "Patch the engine";            Run = { ApplyEnginePatches } },
   @{ Name = "Add the PlayerBots";           Run = { InstallPlayerBots } },
   @{ Name = "Build the server";             Run = { BuildModernUO } },
   @{ Name = "Set Felucca to summer";        Run = { FixFeluccaSeason } },
