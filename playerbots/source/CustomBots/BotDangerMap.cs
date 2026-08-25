@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using Server;
+using Server.Collections;
 using Server.Commands;
 
 namespace Server.CustomBots
@@ -221,6 +222,14 @@ namespace Server.CustomBots
 
             // Travelers in earshot scatter: fresh trips rolled under the
             // new danger weights naturally point somewhere else.
+            //
+            // Collect first, act after. Assigning Behavior runs OnAttached
+            // immediately, and a fresh Traveler can move the bot out of the
+            // sector we are still enumerating -- which threw
+            // "Collection was modified after the enumerator was instantiated"
+            // and took the whole server down. It only became a reliable crash
+            // once the population doubled, but the bug was always there.
+            using var scatter = PooledRefList<PlayerBot>.Create();
             foreach (var n in witness.Map.GetMobilesInRange(witness.Location, ScatterRange))
             {
                 if (n is PlayerBot civ && civ != red && civ.Alive &&
@@ -228,13 +237,24 @@ namespace Server.CustomBots
                     !BotPartyManager.IsInParty(civ) &&
                     Utility.RandomDouble() < 0.6)
                 {
-                    var flee = ChatLibrary.PickRandom("combat_flee");
-                    if (!string.IsNullOrEmpty(flee) && Utility.RandomDouble() < 0.4)
-                    {
-                        civ.Say(flee);
-                    }
-                    civ.Behavior = new TravelerBehavior();
+                    scatter.Add(civ);
                 }
+            }
+
+            for (var i = 0; i < scatter.Count; i++)
+            {
+                var civ = scatter[i];
+                if (civ.Deleted || !civ.Alive)
+                {
+                    continue;
+                }
+
+                var flee = ChatLibrary.PickRandom("combat_flee");
+                if (!string.IsNullOrEmpty(flee) && Utility.RandomDouble() < 0.4)
+                {
+                    civ.Say(flee);
+                }
+                civ.Behavior = new TravelerBehavior();
             }
         }
     }
