@@ -34,6 +34,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 # ---------------------------------------------------------------------------
 $InstallRoot   = Join-Path $env:USERPROFILE "uo-modernuo"
 $ModernUORepo  = "https://github.com/modernuo/ModernUO.git"
+$GitDir        = Join-Path $InstallRoot "git"
+$MinGitReleaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 
 # Updating an ALREADY-CLONED ModernUO is opt-in. A checkout that has built
 # once is known-good; pulling upstream mid-install can drag in months of
@@ -142,11 +144,65 @@ function Invoke-ScriptTolerant {
 # ---------------------------------------------------------------------------
 function Preflight {
   Banner "Pre-flight checks"
-  if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Die "git is required. Install Git for Windows from https://git-scm.com/download/win and re-run."
-  }
   New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
   Ok "Install root: $InstallRoot"
+}
+
+# ---------------------------------------------------------------------------
+# git.
+#
+# The installer needs git to clone ModernUO, and it used to just stop if you
+# did not have it - which is most people, because git is a developer tool and
+# this is a game. So fetch MinGit, the portable Git for Windows build made
+# for exactly this: a zip, no installer, no admin, no PATH pollution beyond
+# this session. A real git already on PATH is preferred and left alone.
+# ---------------------------------------------------------------------------
+function BootstrapGit {
+  Banner "Checking for git"
+
+  if (Get-Command git -ErrorAction SilentlyContinue) {
+    Ok "git already installed: $((Get-Command git).Source)"
+    return
+  }
+
+  $gitCmd = Join-Path $GitDir "cmd"
+  if (Test-Path (Join-Path $gitCmd "git.exe")) {
+    $env:PATH = "$gitCmd;$env:PATH"
+    Ok "Using the portable git from a previous run: $gitCmd"
+    return
+  }
+
+  Say "git not found. Downloading MinGit (portable, ~37 MB, no admin needed)..."
+
+  $arch = if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') { "arm64" } else { "64-bit" }
+
+  try {
+    $rel = Invoke-RestMethod -Uri $MinGitReleaseUrl -Headers @{ "User-Agent" = "uo-offline-installer" } -TimeoutSec 30
+    $asset = $rel.assets |
+      Where-Object { $_.name -like "MinGit-*-$arch.zip" -and $_.name -notlike "*busybox*" } |
+      Select-Object -First 1
+  } catch {
+    $asset = $null
+  }
+
+  if (-not $asset) {
+    Die "Could not find a MinGit download. Install Git for Windows from https://git-scm.com/download/win and re-run."
+  }
+
+  $tmpZip = Join-Path $InstallRoot ".mingit.zip"
+  Say "Downloading $($asset.name)..."
+  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpZip
+
+  New-Item -ItemType Directory -Force -Path $GitDir | Out-Null
+  Expand-Archive -Path $tmpZip -DestinationPath $GitDir -Force
+  Remove-Item $tmpZip -Force -ErrorAction SilentlyContinue
+
+  if (-not (Test-Path (Join-Path $gitCmd "git.exe"))) {
+    Die "MinGit unpacked but git.exe is missing. Install Git for Windows from https://git-scm.com/download/win and re-run."
+  }
+
+  $env:PATH = "$gitCmd;$env:PATH"
+  Ok "Portable git ready: $(& git --version)"
 }
 
 # ---------------------------------------------------------------------------
@@ -984,6 +1040,7 @@ $InstallRoot\POPULATE-WORLD.txt (same as the Linux version).
 # ---------------------------------------------------------------------------
 $script:InstallSteps = @(
   @{ Name = "Check requirements";           Run = { Preflight } },
+  @{ Name = "Install git (no admin)";      Run = { BootstrapGit } },
   @{ Name = "Install .NET (no admin)";      Run = { BootstrapDotnet } },
   @{ Name = "Download the ModernUO server"; Run = { FetchModernUO } },
   @{ Name = "Patch the engine";            Run = { ApplyEnginePatches } },

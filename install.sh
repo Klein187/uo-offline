@@ -99,7 +99,6 @@ preflight() {
   [[ "$(uname -s)" == "Linux" ]] || die "Linux-only installer."
   [[ "${EUID}" -ne 0 ]]         || die "Run as your normal user, not root. sudo will be invoked when needed."
 
-  command -v git    >/dev/null || die "git is required."
   command -v curl   >/dev/null || die "curl is required."
   command -v sudo   >/dev/null || warn "sudo not found — dependency install will fail if deps are missing."
 
@@ -118,7 +117,7 @@ install_deps() {
     sudo apt-get update -y
     sudo apt-get install -y \
       libicu-dev libdeflate-dev zstd libargon2-dev liburing-dev \
-      libgdiplus p7zip-full unzip build-essential
+      libgdiplus p7zip-full unzip build-essential git
   elif command -v pacman >/dev/null; then
     say "Arch-family distro detected. Using pacman."
     if [[ -f /etc/os-release ]] && grep -qi steamos /etc/os-release; then
@@ -130,14 +129,16 @@ install_deps() {
     fi
     sudo pacman -S --needed --noconfirm \
       icu libdeflate zstd argon2 liburing \
-      libgdiplus p7zip unzip base-devel
+      libgdiplus p7zip unzip base-devel git
   elif command -v dnf >/dev/null; then
     say "Fedora-family distro detected. Using dnf."
     sudo dnf install -y libicu libdeflate-devel zstd libargon2-devel \
-      liburing-devel libgdiplus p7zip unzip @development-tools
+      liburing-devel libgdiplus p7zip unzip @development-tools git
   else
-    die "Unsupported package manager. Install manually: libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
+    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
   fi
+
+  command -v git >/dev/null || die "git is still missing after the dependency step. Install git and re-run."
 
   ok "Dependencies installed."
 }
