@@ -84,6 +84,14 @@ UO_DATA_DIR="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}"
 # the .map format directly.
 SPAWN_MAP_URL="https://raw.githubusercontent.com/Nerun/runuo-nerun-distro/master/Distro/Data/Nerun's%20Distro/Spawns/uoclassic/UOClassic.map"
 
+# Both EA-mirror installers below are RAR5 self-extracting .exe files. Debian
+# and derivatives ship a DFSG-stripped 7-Zip/p7zip with no RAR decoder, so we
+# fetch Igor Pavlov's official static build instead of relying on the distro
+# package (see find_or_download_uo_data / swap_t2a_map).
+SEVENZIP_URL="https://7-zip.org/a/7z2602-linux-x64.tar.xz"
+TOOLS_DIR="${INSTALL_ROOT}/tools"
+SEVENZIP=""
+
 # Genuine T2A-era Felucca map art (intact Magincia, pre-destruction world),
 # pulled from the official UO Second Age (client 5.0.8.3) distribution. The
 # 7.0.23.1 data above ships modern map art with 15+ years of EA world edits;
@@ -115,6 +123,27 @@ say()    { printf '\033[0;36m--> %s\033[0m\n' "$*"; }
 ok()     { printf '\033[0;32m[OK]\033[0m %s\n' "$*"; }
 warn()   { printf '\033[0;33m[WARN]\033[0m %s\n' "$*" >&2; }
 die()    { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Portable 7-Zip (RAR5 support the distro package doesn't have)
+# ---------------------------------------------------------------------------
+ensure_7z() {
+  [[ -n "${SEVENZIP}" ]] && return 0
+
+  local bin="${TOOLS_DIR}/7zzs"
+  if [[ ! -x "${bin}" ]]; then
+    mkdir -p "${TOOLS_DIR}"
+    say "Fetching a portable 7-Zip (official static build; needed to unpack the RAR5-based EA installers)..."
+    local tmp_tar="${TOOLS_DIR}/7z.tar.xz"
+    curl -fsSL -o "${tmp_tar}" "${SEVENZIP_URL}" || { rm -f "${tmp_tar}"; return 1; }
+    tar -xf "${tmp_tar}" -C "${TOOLS_DIR}" 7zzs || { rm -f "${tmp_tar}"; return 1; }
+    rm -f "${tmp_tar}"
+    chmod +x "${bin}"
+  fi
+
+  "${bin}" i >/dev/null 2>&1 || return 1
+  SEVENZIP="${bin}"
+}
 
 # ---------------------------------------------------------------------------
 # Step 1 — Pre-flight checks
@@ -149,7 +178,7 @@ install_deps() {
     sudo apt-get update -y
     sudo apt-get install -y \
       libicu-dev libdeflate-dev zstd libargon2-dev liburing-dev \
-      libgdiplus p7zip-full unzip build-essential git
+      libgdiplus unzip build-essential git
   elif command -v pacman >/dev/null; then
     say "Arch-family distro detected. Using pacman."
     if [[ -f /etc/os-release ]] && grep -qi steamos /etc/os-release; then
@@ -161,13 +190,13 @@ install_deps() {
     fi
     sudo pacman -S --needed --noconfirm \
       icu libdeflate zstd argon2 liburing \
-      libgdiplus p7zip unzip base-devel git
+      libgdiplus unzip base-devel git
   elif command -v dnf >/dev/null; then
     say "Fedora-family distro detected. Using dnf."
     sudo dnf install -y libicu libdeflate-devel zstd libargon2-devel \
-      liburing-devel libgdiplus p7zip unzip @development-tools git
+      liburing-devel libgdiplus unzip @development-tools git
   else
-    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
+    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, unzip."
   fi
 
   command -v git >/dev/null || die "git is still missing after the dependency step. Install git and re-run."
@@ -358,8 +387,10 @@ find_or_download_uo_data() {
   for pattern in "${candidates[@]}"; do
     for c in ${pattern}; do
       [[ -d "${c}" ]] || continue
-      # Only accept folders that contain the required .mul files.
-      if [[ -f "${c}/art.mul" ]] && [[ -f "${c}/map0.mul" ]]; then
+      # Only accept folders that contain the required .mul files, and
+      # non-empty ones — a prior failed/interrupted extraction can leave
+      # zero-byte stubs behind that would otherwise look "found".
+      if [[ -s "${c}/art.mul" ]] && [[ -s "${c}/map0.mul" ]]; then
         UO_DATA="${c}"
         ok "Found UO data: ${UO_DATA}"
         return
@@ -372,7 +403,7 @@ find_or_download_uo_data() {
   warn "Source: ${UO_DATA_URL} (~929 MB, third-party mirror, EA-copyrighted content)."
   echo ""
 
-  command -v 7z >/dev/null || die "7z not found. Install p7zip first (it should have been installed by the dependency step)."
+  ensure_7z || die "Could not obtain a working 7-Zip. Check your network connection and try again."
 
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
@@ -392,18 +423,19 @@ find_or_download_uo_data() {
   mkdir -p "${UO_DATA_DIR}"
   # The installer extracts to a nested folder; -y auto-yes, -o sets output.
   # Discard 7z's per-file output; we want a clean log.
-  7z x -y "-o${INSTALL_ROOT}/UOData" "${exe_path}" >/dev/null
+  "${SEVENZIP}" x -y "-o${INSTALL_ROOT}/UOData" "${exe_path}" >/dev/null
 
   # The 7z extract creates ${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}/ with
-  # the .mul files. Verify.
-  if [[ ! -f "${UO_DATA_DIR}/art.mul" ]] || [[ ! -f "${UO_DATA_DIR}/map0.mul" ]]; then
+  # the .mul files. Verify they're actually there, not zero-byte stubs left
+  # by a prior failed/interrupted extraction.
+  if [[ ! -s "${UO_DATA_DIR}/art.mul" ]] || [[ ! -s "${UO_DATA_DIR}/map0.mul" ]]; then
     # Maybe the extract put files at a different path. Search.
     local found
-    found="$(find "${INSTALL_ROOT}/UOData" -maxdepth 3 -name "art.mul" -print -quit 2>/dev/null)"
+    found="$(find "${INSTALL_ROOT}/UOData" -maxdepth 3 -name "art.mul" -size +0 -print -quit 2>/dev/null)"
     if [[ -n "${found}" ]]; then
       UO_DATA_DIR="$(dirname "${found}")"
     else
-      die "Extraction succeeded but no art.mul found under ${INSTALL_ROOT}/UOData."
+      die "Extraction failed: no non-empty art.mul found under ${INSTALL_ROOT}/UOData. The archive may be truncated — delete ${exe_path} and re-run."
     fi
   fi
 
@@ -435,7 +467,7 @@ swap_t2a_map() {
     return
   fi
 
-  command -v 7z >/dev/null || { warn "7z not found; skipping T2A map swap (install p7zip and re-run)."; return; }
+  ensure_7z || { warn "Could not obtain 7-Zip; skipping T2A map swap."; return; }
 
   # 1. Obtain the UOSA installer (cached so re-runs don't re-download ~349 MB).
   mkdir -p "${T2A_SRC_DIR}"
@@ -453,7 +485,7 @@ swap_t2a_map() {
   local extract_dir="${T2A_SRC_DIR}/uosa-install"
   mkdir -p "${extract_dir}"
   say "Extracting T2A map files with 7z..."
-  7z x -y "-o${extract_dir}" "${uosa_exe}" map0.mul statics0.mul staidx0.mul >/dev/null || true
+  "${SEVENZIP}" x -y "-o${extract_dir}" "${uosa_exe}" map0.mul statics0.mul staidx0.mul >/dev/null || true
 
   # Locate them (the NSIS layout may nest the files).
   local missing=0 f src
@@ -585,7 +617,8 @@ write_modernuo_config() {
     "serverList.autoDetect": "false",
     "serverListing.name": "${SHARD_NAME}",
     "serverListing.serverName": "${SHARD_NAME}",
-    "accountHandler.enableAutoAccountCreation": "True"
+    "accountHandler.enableAutoAccountCreation": "True",
+    "pathfinding.prebakeMaps": "false"
   }
 }
 EOF
