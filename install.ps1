@@ -414,13 +414,25 @@ function FindOrDownloadUOData {
     Invoke-WebRequest -Uri $UODataUrl -OutFile $exePath -Headers $headers
   } else { Say "Installer already at $exePath." }
 
-  # It's a native Windows installer/self-extractor. It extracts relative to
-  # the working directory, so run it FROM the UOData dir to land the files
-  # in a predictable place. If a setup window appears, install to the
-  # default location and click through it.
+  # It is a WinRAR self-extracting archive, which takes silent switches:
+  # -s2 suppresses its window, -y answers its prompts, -d sets the target.
+  # Try that first so the whole install can run start to finish without
+  # anyone sitting in front of it. The target is quoted because a Windows
+  # user name containing a space would otherwise split the argument.
   New-Item -ItemType Directory -Force -Path $UODataDir | Out-Null
-  Say "Running the UO data installer. If a setup window appears, click through it (default location is fine)."
-  Start-Process -FilePath $exePath -WorkingDirectory $UODataDir -Wait
+  Say "Extracting the UO data (a few minutes; no window should appear)..."
+  Start-Process -FilePath $exePath -ArgumentList "-s2 -y `"-d$UODataDir`"" -Wait
+
+  $extracted = Get-ChildItem -Path (Join-Path $InstallRoot "UOData") -Recurse `
+    -Filter "art.mul" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+  if (-not $extracted) {
+    # Older or different builds of the self-extractor may not take those
+    # switches. Fall back to running it the way a person would.
+    Warn "Silent extraction produced nothing; running the installer interactively."
+    Say "If a setup window appears, click through it (the default location is fine)."
+    Start-Process -FilePath $exePath -WorkingDirectory $UODataDir -Wait
+  }
 
   # Locate art.mul. Check the candidates, the UOData dir, AND the script
   # folder (some builds of this installer extract next to where it was
@@ -631,7 +643,9 @@ function WriteModernUOConfig {
     "autosave.saveDelay": "00:05:00",
     "serverList.address": "127.0.0.1",
     "serverList.autoDetect": "false",
-    "serverListing.name": "$ShardName"
+    "serverListing.name": "$ShardName",
+    "serverListing.serverName": "$ShardName",
+    "accountHandler.enableAutoAccountCreation": "True"
   }
 }
 "@ | Set-Content (Join-Path $CfgDir "modernuo.json")
@@ -873,10 +887,23 @@ function PortOpen {
   } catch { return `$false }
 }
 
+# First launch has no accounts yet, and ModernUO asks on the console whether
+# to create the owner account. That question cannot be answered through a
+# redirected stdin - the server treats redirected input as headless and
+# refuses to read it - so the only way is for you to answer it. Show a normal
+# window the first time instead of the usual minimized one.
+`$firstRun = -not (Test-Path (Join-Path `$dist "Saves\Accounts\Accounts.bin"))
+
 if (PortOpen) {
   Write-Host "Server already running - launching the game."
-} else {
-  Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist -WindowStyle Minimized | Out-Null
+} elseif (`$firstRun) {
+  Write-Host ""
+  Write-Host "First launch - the server window will ask you two things:" -ForegroundColor Yellow
+  Write-Host "  1. Create the owner account now? Answer  y" -ForegroundColor Yellow
+  Write-Host "  2. Username and password. admin / admin is fine, it is your own machine." -ForegroundColor Yellow
+  Write-Host "The game starts once the server finishes loading." -ForegroundColor Yellow
+  Write-Host ""
+  Start-Process -FilePath `$dotnet -ArgumentList "ModernUO.dll" -WorkingDirectory `$dist | Out-Null
   Write-Host "Starting server, waiting for it to listen on 2593..."
   `$ready = `$false
   for (`$i = 0; `$i -lt 120; `$i++) {

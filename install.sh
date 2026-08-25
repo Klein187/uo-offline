@@ -550,7 +550,9 @@ write_modernuo_config() {
     "autosave.saveDelay": "00:05:00",
     "serverList.address": "127.0.0.1",
     "serverList.autoDetect": "false",
-    "serverListing.name": "${SHARD_NAME}"
+    "serverListing.name": "${SHARD_NAME}",
+    "serverListing.serverName": "${SHARD_NAME}",
+    "accountHandler.enableAutoAccountCreation": "True"
   }
 }
 EOF
