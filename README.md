@@ -60,6 +60,8 @@ The installer does the whole job: it builds ModernUO with the PlayerBots compile
 
 That's it. A graphical installer opens, shows you what's about to happen, lets you toggle the T2A map art and Razor, and lets you pick where it installs (**Change...** next to the folder, or type a path). Then it works through a live checklist. Nothing else to install first, no Windows settings to change — it fetches .NET, git and the game data itself, and none of it needs admin rights.
 
+The git it fetches is MinGit, a portable build that lives inside the install folder. It doesn't install anything system-wide and doesn't touch your PATH, so it can't interfere with a git you already use. If you have git already, it uses yours and leaves it alone.
+
 It defaults to `%USERPROFILE%\uo-modernuo` and needs about **6 GB**. Any drive is fine, so a second disk works if your C: is tight. From the console version, pass the path instead:
 
 ```
