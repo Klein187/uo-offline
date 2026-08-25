@@ -585,7 +585,8 @@ write_modernuo_config() {
     "serverList.autoDetect": "false",
     "serverListing.name": "${SHARD_NAME}",
     "serverListing.serverName": "${SHARD_NAME}",
-    "accountHandler.enableAutoAccountCreation": "True"
+    "accountHandler.enableAutoAccountCreation": "True",
+    "pathfinding.prebakeMaps": "True"
   }
 }
 EOF

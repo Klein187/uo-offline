@@ -125,7 +125,9 @@ The world starts empty. To fill it:
 
 **1.** Type `[GmPanel` to open the GM panel and click **★ First Time Setup**. That one button lays down decor, signs, teleporters, moongates, town criers, the monster and vendor spawners, and the whole player bot population — town and road bots plus the reds — then saves. It is safe to run again later.
 
-**2.** That's all. The Lifecycle system takes over from there. Bank-sitters become shoppers and adventurers, travelers walk the roads, and bots step through moongates to other cities.
+**2.** That's all. The Lifecycle system takes over from there.
+
+The very first start takes a few minutes longer than later ones: it builds the world and bakes the pathfinding cache the bots use. That happens once. After that the server is up in seconds. Bank-sitters become shoppers and adventurers, travelers walk the roads, and bots step through moongates to other cities.
 
 ### Play as a normal (non-GM) character
 

@@ -885,7 +885,8 @@ function WriteModernUOConfig {
     "serverList.autoDetect": "false",
     "serverListing.name": "$ShardName",
     "serverListing.serverName": "$ShardName",
-    "accountHandler.enableAutoAccountCreation": "True"
+    "accountHandler.enableAutoAccountCreation": "True",
+    "pathfinding.prebakeMaps": "True"
   }
 }
 "@ | Set-Content (Join-Path $CfgDir "modernuo.json")
@@ -1248,6 +1249,8 @@ if (PortOpen) {
       "First launch. A server window is about to open and ask you two things:" + [Environment]::NewLine + [Environment]::NewLine +
       "  1. Create the owner account now?  Answer  y" + [Environment]::NewLine +
       "  2. A username and password.  admin / admin is fine - it is your own machine." + [Environment]::NewLine + [Environment]::NewLine +
+      "Then it builds the world and bakes the pathfinding cache the bots use." + [Environment]::NewLine +
+      "That part is a one-off and takes a few minutes. Later starts are quick." + [Environment]::NewLine + [Environment]::NewLine +
       "The game starts by itself once the server has finished loading.",
       "UO Offline - first launch") | Out-Null
 
@@ -1271,7 +1274,7 @@ if (PortOpen) {
 
   # First launch builds the world from scratch, which takes far longer than a
   # normal boot, so do not hold both to the same clock.
-  `$limit = if (`$firstRun) { 600 } else { 180 }
+  `$limit = if (`$firstRun) { 1200 } else { 180 }
   Write-Host "Starting server, waiting up to `$limit s for it to listen on 2593..."
 
   `$ready = `$false
