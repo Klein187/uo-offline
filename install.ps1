@@ -233,7 +233,26 @@ function BootstrapGit {
     return
   }
 
-  Say "git not found. Downloading MinGit (portable, ~37 MB, no admin needed)..."
+  if (-not (Install-PortableGit)) {
+    Die "Could not install a portable git. Install Git for Windows from https://git-scm.com/download/win and re-run."
+  }
+}
+
+# Fetch MinGit and put it on PATH for this install. Returns $true on success.
+# Split out from BootstrapGit because it is also the recovery path when a git
+# that IS installed turns out to be broken - see FetchModernUO.
+function Install-PortableGit {
+  $gitCmd = [IO.Path]::Combine($GitDir, "cmd")
+  if (Test-Path ([IO.Path]::Combine($gitCmd, "git.exe"))) {
+    $env:PATH = "$gitCmd;$env:PATH"
+    return $true
+  }
+
+  Say "Downloading MinGit (portable, ~37 MB, no admin needed)..."
+
+  # Callable from anywhere, including the clone-failure recovery path, so do
+  # not assume Preflight has already made the install root.
+  New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
 
   $arch = if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') { "arm64" } else { "64-bit" }
 
@@ -247,10 +266,11 @@ function BootstrapGit {
   }
 
   if (-not $asset) {
-    Die "Could not find a MinGit download. Install Git for Windows from https://git-scm.com/download/win and re-run."
+    Warn "Could not find a MinGit download."
+    return $false
   }
 
-  $tmpZip = Join-Path $InstallRoot ".mingit.zip"
+  $tmpZip = [IO.Path]::Combine($InstallRoot, ".mingit.zip")
   Say "Downloading $($asset.name)..."
   Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpZip
 
@@ -258,12 +278,14 @@ function BootstrapGit {
   Expand-Archive -Path $tmpZip -DestinationPath $GitDir -Force
   Remove-Item $tmpZip -Force -ErrorAction SilentlyContinue
 
-  if (-not (Test-Path (Join-Path $gitCmd "git.exe"))) {
-    Die "MinGit unpacked but git.exe is missing. Install Git for Windows from https://git-scm.com/download/win and re-run."
+  if (-not (Test-Path ([IO.Path]::Combine($gitCmd, "git.exe")))) {
+    Warn "MinGit unpacked but git.exe is missing."
+    return $false
   }
 
   $env:PATH = "$gitCmd;$env:PATH"
   Ok "Portable git ready: $(& git --version)"
+  return $true
 }
 
 # ---------------------------------------------------------------------------
@@ -327,7 +349,36 @@ function FetchModernUO {
     }
   } else {
     Say "Cloning ModernUO (full history)..."
-    Invoke-Native git @("clone", $ModernUORepo, $ModernUODir) | Out-Null
+    try {
+      Invoke-Native git @("clone", $ModernUORepo, $ModernUODir) | Out-Null
+    } catch {
+      # A git that is INSTALLED can still be unable to clone - a broken
+      # certificate bundle in Git for Windows is the one people actually hit
+      # ("error adding trust anchors from file: .../ca-bundle.crt"). Having
+      # git was making things worse than not having it, because we would
+      # never reach for the portable one. MinGit carries its own bundle, so
+      # try it before giving up.
+      $usingPortable = (Get-Command git -ErrorAction SilentlyContinue).Source -like "$GitDir*"
+      if ($usingPortable) { throw }
+
+      # If the server answered us, or DNS failed outright, git is fine and a
+      # different git will not help - do not pull 37 MB to prove it.
+      if ($_.Exception.Message -match "Repository not found|Authentication failed|could not resolve host|Permission denied|remote: ") {
+        throw
+      }
+
+      Warn "git could not clone: $($_.Exception.Message)"
+      Warn "The installed git may be broken. Trying a portable one instead."
+
+      if (-not (Install-PortableGit)) { throw }
+
+      # A half-made directory from the failed attempt would block the retry.
+      if (Test-Path $ModernUODir) {
+        Remove-Item $ModernUODir -Recurse -Force -ErrorAction SilentlyContinue
+      }
+      Invoke-Native git @("clone", $ModernUORepo, $ModernUODir) | Out-Null
+      Ok "Cloned with the portable git."
+    }
   }
   Ok "ModernUO source at $ModernUODir"
 }
