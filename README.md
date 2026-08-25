@@ -64,7 +64,9 @@ It defaults to `%USERPROFILE%\uo-modernuo` and needs about **6 GB**. Any drive i
 
 ```
 powershell -ExecutionPolicy Bypass -File install.ps1 -InstallPath "D:\Games\UO Offline"
-``` If you'd rather use a plain console, run `powershell -ExecutionPolicy Bypass -File install.ps1` instead. Both do the same steps.
+```
+
+That console version runs exactly the same steps as the graphical one. Leave off `-InstallPath` to use the default location.
 
 Two things to expect while it runs:
 
