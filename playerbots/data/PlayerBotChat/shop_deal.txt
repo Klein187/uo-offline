@@ -1,0 +1,8 @@
+# shop_deal.txt — the seller accepts a player's offer. {price}.
+
+deal
+done. {price}
+fine, {price}
+sold
+aight, {price}
+ok {price}

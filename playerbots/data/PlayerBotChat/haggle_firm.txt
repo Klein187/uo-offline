@@ -1,0 +1,8 @@
+# haggle_firm.txt — a stubborn seller. {price}.
+
+no lowballs. {price}
+{price}. take it or leave it
+im not desperate. {price}
+lol no. {price}
+{price} or nothing
+ill sit on it. {price}

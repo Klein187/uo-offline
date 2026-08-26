@@ -1,0 +1,7 @@
+# shop_firm.txt — a stubborn seller countering a player. {price}.
+
+no lowballs. {price}
+{price}. take it or leave it
+im not in a hurry. {price}
+lol. {price}
+{price} or nothing m8

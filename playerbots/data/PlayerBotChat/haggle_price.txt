@@ -1,0 +1,8 @@
+# haggle_price.txt — the seller names its number. {price}.
+
+{price}
+{price} gp
+{price} for it
+askin {price}
+{price}, its worth more
+{price} and its yours

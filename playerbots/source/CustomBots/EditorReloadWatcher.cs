@@ -49,6 +49,8 @@ namespace Server.CustomBots
         private static readonly string PKsAck = Live("pks_ack.json");
         private static readonly string ThuntReq = Live("thunt_request.txt");
         private static readonly string ThuntAck = Live("thunt_ack.json");
+        private static readonly string ShopReq = Live("shop_request.txt");
+        private static readonly string ShopAck = Live("shop_ack.json");
         private static readonly string SosReq = Live("sos_request.txt");
         private static readonly string SosAck = Live("sos_ack.json");
         private static readonly string TameReq = Live("tame_request.txt");
@@ -89,6 +91,7 @@ namespace Server.CustomBots
         private static long _lastLiveMap = -1;
         private static long _lastPKs = -1;
         private static long _lastThunt = -1;
+        private static long _lastShop = -1;
         private static long _lastSos = -1;
         private static long _lastTame = -1;
         private static long _lastHouses = -1;
@@ -116,6 +119,7 @@ namespace Server.CustomBots
             _lastLiveMap = ReadLiveMapRequest(out _) ?? 0;
             _lastPKs = ReadToken(PKsReq) ?? 0;
             _lastThunt = ReadToken(ThuntReq) ?? 0;
+            _lastShop = ReadToken(ShopReq) ?? 0;
             _lastSos = ReadToken(SosReq) ?? 0;
             _lastTame = ReadToken(TameReq) ?? 0;
             _lastHouses = ReadHousesRequest(out _, out _) ?? 0;
@@ -223,6 +227,13 @@ namespace Server.CustomBots
             {
                 _lastThunt = thuntTok.Value;
                 DoTestThunt(thuntTok.Value);
+            }
+
+            var shopTok = ReadToken(ShopReq);
+            if (shopTok != null && shopTok.Value != _lastShop)
+            {
+                _lastShop = shopTok.Value;
+                DoTestShop(shopTok.Value);
             }
 
             var sosTok = ReadToken(SosReq);
@@ -811,6 +822,67 @@ namespace Server.CustomBots
             try { started = BotTreasureHunts.TryStartHunt(force: true); }
             catch (Exception ex) { Console.WriteLine($"[EditorReload] thunt: {ex.Message}"); }
             WriteAck(ThuntAck, $"{{\"token\":{token},\"started\":{(started ? "true" : "false")}}}");
+        }
+
+        // shop_request.txt: stock every hawker that has nothing, then force
+        // one bot-to-bot sale. The ack reports what is on the shelves, so a
+        // headless run can check the whole chain without a client:
+        //   stocked  = hawkers holding real goods after the pass
+        //   sale     = a buyer actually set off toward a seller
+        // Watch the console for [shop] lines to see the haggle play out.
+        private static void DoTestShop(long token)
+        {
+            int stocked = 0;
+            bool sale = false;
+            string sample = "";
+
+            try
+            {
+                foreach (var m in World.Mobiles.Values)
+                {
+                    if (m is not PlayerBot bot || bot.Deleted || !bot.Alive)
+                    {
+                        continue;
+                    }
+                    if (bot.Behavior is not BankSitterBehavior
+                        { Role: BankSitterBehavior.BankRole.Hawker })
+                    {
+                        continue;
+                    }
+
+                    var stock = BotShop.Stock(bot);
+                    if (stock == null)
+                    {
+                        continue;
+                    }
+
+                    stocked++;
+                    if (sample.Length == 0)
+                    {
+                        sample = $"{bot.Name}: {stock.Noun} @ {stock.Asking}";
+                    }
+
+                    if (!sale)
+                    {
+                        sale = BotShopDeal.TryStart(bot, b =>
+                            b is { Deleted: false, Alive: true, LoggingOut: false } &&
+                            b.Combatant == null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] shop: {ex.Message}");
+            }
+
+            Console.WriteLine(
+                $"[EditorReload] shop: {stocked} hawker(s) stocked, " +
+                $"sale started: {sale}{(sample.Length > 0 ? $" (e.g. {sample})" : "")}");
+
+            WriteAck(ShopAck,
+                $"{{\"token\":{token},\"stocked\":{stocked}," +
+                $"\"sale\":{(sale ? "true" : "false")}," +
+                $"\"holding\":{BotShop.StockedCount}}}");
         }
 
         // sos_request.txt: force a fisherman to reel in an SOS bottle �

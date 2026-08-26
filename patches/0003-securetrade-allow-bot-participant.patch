@@ -1,0 +1,105 @@
+diff --git a/Projects/Server/SecureTrade.cs b/Projects/Server/SecureTrade.cs
+index b01653047..703a44149 100644
+--- a/Projects/Server/SecureTrade.cs
++++ b/Projects/Server/SecureTrade.cs
+@@ -29,22 +29,31 @@ public SecureTrade(Mobile from, Mobile to)
+         From = new SecureTradeInfo(this, from, new SecureTradeContainer(this));
+         To = new SecureTradeInfo(this, to, new SecureTradeContainer(this));
+ 
++        // PLAYERBOTS PATCH: a participant may have no NetState.
++        //
++        // Stock assumes both sides of a trade are connected clients and
++        // dereferences NetState directly. A PlayerBot is a real
++        // PlayerMobile with no connection, so every one of these threw.
++        // Null-conditional throughout: the bot simply receives no
++        // packets, which is correct — there is no client to draw the
++        // window for. Everything else about the trade (containers,
++        // accept flags, item transfer) works unchanged.
+         var from704565 = from.NetState?.NewSecureTrading == true;
+         var to704565 = to.NetState?.NewSecureTrading == true;
+ 
+-        from.NetState.SendMobileStatus(from, to);
+-        from.NetState.SendUpdateSecureTrade(From.Container, false, false);
+-        from.NetState.SendSecureTradeEquip(To.Container, to);
++        from.NetState?.SendMobileStatus(from, to);
++        from.NetState?.SendUpdateSecureTrade(From.Container, false, false);
++        from.NetState?.SendSecureTradeEquip(To.Container, to);
+ 
+-        from.NetState.SendUpdateSecureTrade(From.Container, false, false);
+-        from.NetState.SendSecureTradeEquip(From.Container, from);
++        from.NetState?.SendUpdateSecureTrade(From.Container, false, false);
++        from.NetState?.SendSecureTradeEquip(From.Container, from);
+ 
+-        from.NetState.SendDisplaySecureTrade(to, From.Container, To.Container, to.Name);
+-        from.NetState.SendUpdateSecureTrade(From.Container, false, false);
++        from.NetState?.SendDisplaySecureTrade(to, From.Container, To.Container, to.Name);
++        from.NetState?.SendUpdateSecureTrade(From.Container, false, false);
+ 
+         if (from.Account != null && from704565)
+         {
+-            from.NetState.SendUpdateSecureTrade(
++            from.NetState?.SendUpdateSecureTrade(
+                 From.Container,
+                 TradeFlag.UpdateLedger,
+                 from.Account.TotalGold,
+@@ -52,19 +61,19 @@ public SecureTrade(Mobile from, Mobile to)
+             );
+         }
+ 
+-        to.NetState.SendMobileStatus(to, from);
+-        to.NetState.SendUpdateSecureTrade(To.Container, false, false);
+-        to.NetState.SendSecureTradeEquip(From.Container, from);
++        to.NetState?.SendMobileStatus(to, from);
++        to.NetState?.SendUpdateSecureTrade(To.Container, false, false);
++        to.NetState?.SendSecureTradeEquip(From.Container, from);
+ 
+-        to.NetState.SendUpdateSecureTrade(To.Container, false, false);
+-        to.NetState.SendSecureTradeEquip(To.Container, to);
++        to.NetState?.SendUpdateSecureTrade(To.Container, false, false);
++        to.NetState?.SendSecureTradeEquip(To.Container, to);
+ 
+-        to.NetState.SendDisplaySecureTrade(from, To.Container, From.Container, from.Name);
+-        to.NetState.SendUpdateSecureTrade(To.Container, false, false);
++        to.NetState?.SendDisplaySecureTrade(from, To.Container, From.Container, from.Name);
++        to.NetState?.SendUpdateSecureTrade(To.Container, false, false);
+ 
+         if (to.Account != null && to704565)
+         {
+-            to.NetState.SendUpdateSecureTrade(
++            to.NetState?.SendUpdateSecureTrade(
+                 To.Container,
+                 TradeFlag.UpdateLedger,
+                 to.Account.TotalGold,
+@@ -140,8 +149,8 @@ public void Close()
+             return;
+         }
+ 
+-        From.Mobile.NetState.SendCloseSecureTrade(From.Container);
+-        To.Mobile.NetState.SendCloseSecureTrade(To.Container);
++        From.Mobile.NetState?.SendCloseSecureTrade(From.Container); // PLAYERBOTS PATCH: may be a bot
++        To.Mobile.NetState?.SendCloseSecureTrade(To.Container);     // PLAYERBOTS PATCH: may be a bot
+ 
+         Valid = false;
+ 
+@@ -266,8 +275,8 @@ public void Update()
+                 From.Accepted = false;
+                 To.Accepted = false;
+ 
+-                From.Mobile.NetState.SendUpdateSecureTrade(From.Container, From.Accepted, To.Accepted);
+-                To.Mobile.NetState.SendUpdateSecureTrade(To.Container, To.Accepted, From.Accepted);
++                From.Mobile.NetState?.SendUpdateSecureTrade(From.Container, From.Accepted, To.Accepted); // PLAYERBOTS PATCH
++                To.Mobile.NetState?.SendUpdateSecureTrade(To.Container, To.Accepted, From.Accepted);     // PLAYERBOTS PATCH
+ 
+                 return;
+             }
+@@ -325,8 +334,8 @@ public void Update()
+         }
+         else if (!From.IsDisposed && !To.IsDisposed)
+         {
+-            From.Mobile.NetState.SendUpdateSecureTrade(From.Container, From.Accepted, To.Accepted);
+-            To.Mobile.NetState.SendUpdateSecureTrade(To.Container, To.Accepted, From.Accepted);
++            From.Mobile.NetState?.SendUpdateSecureTrade(From.Container, From.Accepted, To.Accepted); // PLAYERBOTS PATCH
++            To.Mobile.NetState?.SendUpdateSecureTrade(To.Container, To.Accepted, From.Accepted);     // PLAYERBOTS PATCH
+         }
+     }
+ 

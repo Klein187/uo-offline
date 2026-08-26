@@ -182,9 +182,11 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Real deaths and corpse runs.** Novices misjudge fights and sometimes die, and retreat thresholds scale with experience. Then the most famous thing in UO happens: the ghost haunts its corpse moaning OoOoOo, walks to a healer or shrine, resurrects in a death robe, and runs back hoping the loot is still there. It self-loots the vanilla way, or wails "WHO LOOTED MY CORPSE" if the corpse rotted.
 
-**PKs and region danger.** Reds run the era's murderer builds at Master and Grandmaster strength, in gangs that converge on victims, ambush dungeon entrances, and bandage and chug pots mid-fight. Murders heat up a danger map, and hot places empty of foot traffic. A civilian who spots a red screams "RED AT {PLACE}!!" and nearby travelers scatter.
+**PKs and region danger.** Reds run the era's murderer builds at Master and Grandmaster strength, in gangs that converge on victims, ambush dungeon entrances, and bandage and chug pots mid-fight. Murders heat up a danger map, and hot places empty of foot traffic. A civilian who spots a red screams "RED AT {PLACE}!!" and nearby travelers scatter. If the red is standing in a guarded town, someone yells for the guards instead, and T2A guards do not negotiate.
 
 **A visible economy.** Lumberjacks and Miners work 40 real wilderness sites, fill their packs with actual logs and ore, and haul the load to town. The matching crafter pays real gold from its own purse, and the raw haul becomes that crafter's ingots or boards. If no buyer is around, the bank takes it. Adventurers buy finished pieces off the shelf ("how much for a katana" then "800 gold" then "ty"), and the katana and the coin really change packs.
+
+**Hawkers sell what they actually have.** A bank hawker carries one real item and its WTS line is built from it, so "WTS GM halberd 5k" means there is a GM halberd in that pack and 5k buys it. Stock runs from reagent lots and exceptional plate up to vanq weapons and house deeds. Ask a price, haggle it down, and drag the gold onto them — the real trade window opens with the goods already on their side. Other bots shop too: one will cross the bank floor, argue over the number, and walk off with it.
 
 **Duels outside the bank.** Two fighters call a challenge, trade a "gl", walk ten tiles clear of the crowd, and fight to low health but never to the death. Then they close with "gf" while the loser demands a rematch or blames lag. Legal in town, as it was.
 
@@ -192,7 +194,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Supply runs.** Bows eat arrows, casts eat reagents, bandages get used up, and nothing refills invisibly. When a bot runs low it leaves what it's doing and goes shopping: the bowyer for arrows, the provisioner for bandages, the mage shop for reagents and scrolls, or its own bank box. The purchase happens on arrival, visibly, for gold.
 
-**Permanent bank crowds.** Every bank keeps five people standing around: regulars talking trade, hawkers spamming WTS, statues who went afk an hour ago, someone casting curse on himself over and over to raise resist (real spells, real reagents, refilled from the bank box when the pouch runs dry), someone hiding, and someone training stealth. Individuals die and get replaced, but the crowd never goes away.
+**Permanent bank crowds.** Every bank keeps five people standing around: regulars talking trade, hawkers spamming WTS for goods they are really holding, statues who went afk an hour ago, someone casting curse on himself over and over to raise resist (real spells, real reagents, refilled from the bank box when the pouch runs dry), someone hiding, and someone training stealth. Individuals die and get replaced, but the crowd never goes away.
 
 **Guild convoys and war bands.** Guildmates muster and walk road trips together ("guild trip to trinsic, who walks with me?"), fight as a group when the road bites back, and split up on arrival. Order and Chaos squads patrol to faction spots and set intercept courses on enemy patrols. When shields meet, nearby faction-mates get drafted in, up to 4v4.
 

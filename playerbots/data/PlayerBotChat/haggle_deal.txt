@@ -1,0 +1,9 @@
+# haggle_deal.txt — the seller takes it. {price}.
+
+deal
+done. {price}
+fine, {price}
+sold
+aight {price}
+ok deal
+yea ok

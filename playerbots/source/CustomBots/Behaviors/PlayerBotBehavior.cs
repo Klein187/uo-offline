@@ -105,6 +105,29 @@ namespace Server.CustomBots
         //   2. Gossip about a real recent journal event (~20%).
         //   3. Ambient line from this behavior's categories.
         // -------------------------------------------------------------------
+        // A line the caller already composed, through the same gates a
+        // random ambient line goes through: cooldown, audience, chance.
+        // The hawker uses it to shout its REAL stock instead of drawing a
+        // random claim out of a file.
+        protected bool TrySpeakLine(PlayerBot bot, string line, double chance = 1.0)
+        {
+            if (bot == null || bot.Deleted || bot.Map == null || bot.Map == Map.Internal ||
+                string.IsNullOrEmpty(line))
+            {
+                return false;
+            }
+
+            if (Core.Now < _nextChatAllowed || Utility.RandomDouble() > chance ||
+                !IsPlayerNearby(bot))
+            {
+                return false;
+            }
+
+            SpeakLine(bot, line);
+            _nextChatAllowed = Core.Now + RandomCooldown();
+            return true;
+        }
+
         protected bool TrySpeak(PlayerBot bot)
         {
             if (bot == null || bot.Deleted || bot.Map == null || bot.Map == Map.Internal)

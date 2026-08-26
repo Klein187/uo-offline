@@ -1,0 +1,15 @@
+# wts_offer.txt — the hawker's pitch, built from the item actually in its pack.
+# {item} = the real goods, {price} = the real asking price.
+
+WTS {item} {price}
+WTS {item} {price} pm me
+WTS {item}, {price}
+WTS {item} - {price}
+selling {item} {price}
+{item} for sale, {price}
+WTS {item} {price} obo
+got {item}, {price}
+WTS {item}. {price} firm
+anyone need {item}? {price}
+WTS {item} {price} pm offers
+selling a {item}, {price}, no lowballs

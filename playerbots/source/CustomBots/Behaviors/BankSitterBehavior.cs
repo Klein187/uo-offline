@@ -82,11 +82,15 @@ namespace Server.CustomBots
             // bank_actions are short ("bank", "withdraw 1000") so they land
             // hard; WTS/WTB are the meat; LFG appears here because banks
             // were historically where you'd find groups.
+            // No "wts" here on purpose. A regular is holding nothing, and
+            // a WTS from a bot with an empty pack is the lie this whole
+            // system exists to stop telling. Selling belongs to the Hawker
+            // role below, which shouts its REAL stock. WTB stays — wanting
+            // to buy promises nothing.
             ChatCategories = new[]
             {
                 "small_talk",
                 "bank_actions",
-                "wts",
                 "wtb",
                 "lfg"
             };
@@ -184,10 +188,13 @@ namespace Server.CustomBots
             {
                 case BankRole.Hawker:
                     // A seller talks SHOP, loudly and often — nothing else.
-                    ChatCategories  = new[] { "wts", "wtb" };
+                    // The WTS half comes from BotShop (the real item in the
+                    // pack), so only WTB is left in the category list.
+                    ChatCategories  = new[] { "wtb" };
                     ChatChance      = 0.55;
                     MinChatCooldown = TimeSpan.FromSeconds(10);
                     MaxChatCooldown = TimeSpan.FromSeconds(25);
+                    BotShop.Stock(bot);
                     break;
 
                 case BankRole.Afk:
@@ -289,6 +296,25 @@ namespace Server.CustomBots
         // ---- Regular + Hawker: the talking crowd ----
         private void TickTalker(PlayerBot bot)
         {
+            // A hawker leads with what it is actually holding. The line is
+            // built from the item in its pack, so "WTS GM halberd 5k" means
+            // there is a GM halberd in there and 5k buys it. A hawker that
+            // sold out (or got looted) restocks and carries on.
+            if (Role == BankRole.Hawker)
+            {
+                var stock = BotShop.StockOf(bot) ?? BotShop.Stock(bot);
+                if (stock != null && TrySpeakLine(bot, BotShop.WtsLine(stock), 0.62))
+                {
+                    FaceNearestPerson(bot);
+                    if (Utility.RandomDouble() < 0.40)
+                    {
+                        bot.Animate(33, 5, 1, true, false, 0);
+                    }
+                    WalkBackIfShoved(bot);
+                    return;
+                }
+            }
+
             // Speak first; chatter is the whole point — and you talk TO
             // someone: face the nearest person when a line lands, instead
             // of announcing WTS to a wall.
@@ -559,6 +585,16 @@ namespace Server.CustomBots
         // tick toward home until we're there.
         private void WalkBackIfShoved(PlayerBot bot)
         {
+            // A buyer crossing the bank floor to close a deal is not a
+            // bot that got shoved. Without this the two pullers fight:
+            // BotShopDeal steps it toward the seller, this drags it back
+            // to its chair, and it jitters in place until the walk times
+            // out and the sale dies.
+            if (BotShopDeal.IsDealing(bot))
+            {
+                return;
+            }
+
             var dx = bot.Location.X - Home.X;
             var dy = bot.Location.Y - Home.Y;
             if (dx == 0 && dy == 0)
