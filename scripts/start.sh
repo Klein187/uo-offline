@@ -110,9 +110,18 @@ else
     #
     # Previous versions of this script sent all answers after a fixed
     # sleep, which caused them to land on the wrong prompts (the leading
-    # "y" got captured as the shard name). The robust fix: watch the log
-    # file for each prompt's distinctive text and send the matching reply
-    # only after we see it.
+    # "y" got captured as the shard name). We watch the log for each
+    # prompt's text and reply only after we see it.
+    #
+    # But the answers have to arrive down a TERMINAL, not a pipe.
+    # ModernUO sets Core.Headless from Console.IsInputRedirected, and
+    # ConsoleInputHandler.ReadLine THROWS when headless -- the throw is
+    # not caught, so the server kills itself the moment it asks the
+    # question. Piping the answers in is the one thing that guarantees
+    # they can never be read. That is why this runs under script(1),
+    # which puts the server on a pseudo-terminal: stdin is a tty, the
+    # prompts wait like they would for a person, and we still get the
+    # output in the log.
     # ---------------------------------------------------------------------
     say "First launch: running ModernUO setup wizard and creating owner account."
     say "This takes 30-60 seconds while the world saves are generated."
@@ -126,7 +135,17 @@ else
     # Truncate log so we don't match prompts from a previous failed run.
     : > "${LOGFILE}"
 
-    nohup dotnet ModernUO.dll <&9 >"${LOGFILE}" 2>&1 &
+    if command -v script >/dev/null 2>&1; then
+      # -q quiet, -e return the child's status, -f flush after every write
+      # so the prompt reaches the log before we look for it.
+      nohup script -qefc "dotnet ModernUO.dll" /dev/null <&9 >"${LOGFILE}" 2>&1 &
+    else
+      # No script(1) (util-linux). The wizard cannot be driven without a
+      # tty, so run it plainly; it will ask on the console and the
+      # manual-fallback message below explains what to do.
+      warn "script(1) not found - the setup wizard needs it to answer the prompts."
+      nohup dotnet ModernUO.dll >"${LOGFILE}" 2>&1 &
+    fi
     SERVER_PID=$!
     echo "${SERVER_PID}" > "${PIDFILE}"
 
@@ -184,7 +203,20 @@ else
       rm -f "${MARKER}"
     else
       warn "Did not see 'Owner account created' confirmation in log."
-      warn "Leaving the first-launch marker in place; check ${LOGFILE} to see what went wrong."
+      warn ""
+      warn "Create it by hand instead - this takes a minute and only happens once:"
+      warn ""
+      warn "    cd ${DIST_DIR}"
+      warn "    dotnet ModernUO.dll"
+      warn ""
+      warn "Answer 'y' when it asks about the owner account, then give it a"
+      warn "username and password (admin / admin is fine on your own machine)."
+      warn "Wait for 'Listening: 127.0.0.1:2593', then press Ctrl+C to stop it."
+      warn "After that:"
+      warn ""
+      warn "    rm -f ${MARKER}"
+      warn ""
+      warn "and start the game normally. Full log: ${LOGFILE}"
     fi
   else
     say "Starting ModernUO server..."
