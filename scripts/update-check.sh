@@ -64,19 +64,28 @@ REMOTE_SHA="$(printf '%s' "${HEAD_JSON}" \
 # Up to date. Say nothing at all.
 [[ "${REMOTE_SHA}" != "${LOCAL_SHA}" ]] || exit 0
 
+# -------------------------------------------------------------------------
+# Only offer a straight fast-forward. A custom build can have a different
+# SHA while already containing main, or can have local commits alongside new
+# upstream work. Replacing either with main would silently discard those
+# changes. Comparing against the exact SHA fetched above also keeps the
+# changelog and the archive we eventually run tied to one immutable commit.
+# -------------------------------------------------------------------------
+CMP_JSON="$(curl -fsSL --max-time "${TIMEOUT}" -H "${UA}" \
+  "${API}/compare/${LOCAL_SHA}...${REMOTE_SHA}" 2>/dev/null)"
+[[ -n "${CMP_JSON}" ]] || exit 0
+
+CMP_STATUS="$(json_field status "${CMP_JSON}")"
+[[ "${CMP_STATUS}" == "ahead" ]] || exit 0
+
 # The player already said "skip" to exactly this version.
 if [[ -f "${SKIP}" ]] && [[ "$(tr -d '[:space:]' < "${SKIP}")" == "${REMOTE_SHA}" ]]; then
   exit 0
 fi
 
-# -------------------------------------------------------------------------
-# What does the update contain? python3 when it is available because it
-# parses the json properly; the grep path is the fallback for a box that
-# does not have it. Either way, a failure here downgrades to a generic
-# line rather than dropping the whole check.
-# -------------------------------------------------------------------------
-CMP_JSON="$(curl -fsSL --max-time "${TIMEOUT}" -H "${UA}" \
-  "${API}/compare/${LOCAL_SHA}...${BRANCH}" 2>/dev/null)"
+# What does the confirmed fast-forward contain? python3 when it is available
+# because it parses the json properly; grep remains the dependency-free
+# fallback. Failure to format the changelog only changes the displayed text.
 
 CHANGELOG=""
 if [[ -n "${CMP_JSON}" ]]; then
@@ -187,9 +196,9 @@ fi
 [[ "${CHOICE}" == "update" ]] || exit 0
 
 # -------------------------------------------------------------------------
-# Update: fetch the branch zip and hand off to its installer. The installer
-# knows how to deploy and rebuild and is safe to re-run, so there is no
-# separate update path to maintain.
+# Update: fetch the exact commit the player just reviewed and hand off to its
+# installer. Never fetch the moving branch name here: it may advance between
+# the check and the click, making the code run differ from the changelog.
 # -------------------------------------------------------------------------
 command -v unzip >/dev/null 2>&1 || exit 0
 
@@ -197,7 +206,7 @@ WORK="$(mktemp -d 2>/dev/null)" || exit 0
 ZIP="${WORK}/source.zip"
 
 if ! curl -fL --max-time 300 -o "${ZIP}" \
-     "https://github.com/${REPO}/archive/${BRANCH}.zip" 2>/dev/null; then
+     "https://github.com/${REPO}/archive/${REMOTE_SHA}.zip" 2>/dev/null; then
   rm -rf "${WORK}"
   exit 0
 fi

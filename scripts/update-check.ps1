@@ -71,8 +71,24 @@ try {
         -Headers $headers -TimeoutSec $TimeoutSec
     $remoteSha = $head.sha
 
-    if ([string]::IsNullOrWhiteSpace($remoteSha) -or $remoteSha -eq $localSha) {
+    if ([string]::IsNullOrWhiteSpace($remoteSha) -or
+        $remoteSha -notmatch '^[0-9a-f]{40}$' -or
+        $remoteSha -eq $localSha) {
         # Up to date. Say nothing at all.
+        Emit "continue"
+        return
+    }
+
+    # Only offer a straight fast-forward. A custom build can have a different
+    # SHA while already containing main, or can have local commits alongside
+    # new upstream work. Replacing either with main would silently discard
+    # those changes. Use the exact SHA fetched above so the comparison,
+    # changelog and eventual download all describe the same commit.
+    $cmp = Invoke-RestMethod `
+        -Uri "https://api.github.com/repos/$repo/compare/$localSha...$remoteSha" `
+        -Headers $headers -TimeoutSec $TimeoutSec
+
+    if ($cmp.status -ne "ahead") {
         Emit "continue"
         return
     }
@@ -86,27 +102,16 @@ try {
         }
     }
 
-    # What does the update actually contain? The compare endpoint gives the
-    # commits between what is installed and what is on the branch. If it
-    # fails (a force-push can orphan the local sha, for one), fall back to
-    # a generic message rather than dropping the whole check.
+    # What does the confirmed fast-forward contain?
     $lines = @()
-    $count = 0
-    try {
-        $cmp = Invoke-RestMethod `
-            -Uri "https://api.github.com/repos/$repo/compare/$localSha...$branch" `
-            -Headers $headers -TimeoutSec $TimeoutSec
-        $count = $cmp.ahead_by
-        foreach ($c in $cmp.commits) {
-            # First line of the commit message is the summary.
-            $subject = ($c.commit.message -split "`n")[0].Trim()
-            if ($subject) { $lines += "  - $subject" }
-        }
-        # Newest first reads better in a changelog.
-        [array]::Reverse($lines)
-    } catch {
-        $lines = @()
+    $count = $cmp.ahead_by
+    foreach ($c in $cmp.commits) {
+        # First line of the commit message is the summary.
+        $subject = ($c.commit.message -split "`n")[0].Trim()
+        if ($subject) { $lines += "  - $subject" }
     }
+    # Newest first reads better in a changelog.
+    [array]::Reverse($lines)
 
     if ($lines.Count -eq 0) {
         $lines = @("  - A new version is available on GitHub.")
@@ -190,15 +195,16 @@ try {
     }
 
     # ---------------------------------------------------------------------
-    # Update: fetch the branch zip and hand off to its installer. The
-    # installer is the thing that knows how to deploy and rebuild, and it
-    # is safe to re-run, so there is no separate update path to maintain.
+    # Update: fetch the exact commit the player just reviewed and hand off to
+    # its installer. Never fetch the moving branch name here: it may advance
+    # between the check and the click, making the code run differ from the
+    # changelog.
     # ---------------------------------------------------------------------
     $work = Join-Path $env:TEMP ("uo-offline-update-" + [Guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Force -Path $work | Out-Null
     $zip = Join-Path $work "source.zip"
 
-    Invoke-WebRequest -Uri "https://github.com/$repo/archive/$branch.zip" `
+    Invoke-WebRequest -Uri "https://github.com/$repo/archive/$remoteSha.zip" `
         -OutFile $zip -Headers $headers
 
     Expand-Archive -Path $zip -DestinationPath $work -Force
