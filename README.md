@@ -113,7 +113,7 @@ single prompt listing what changed, and you can update, play anyway, or skip
 that version for good. If you are up to date, or offline, or GitHub is having a
 bad day, it says nothing at all and the game just starts. Updating re-runs the
 installer, which rebuilds the server with the new bots and keeps your world,
-characters and accounts.
+characters, accounts, server configuration and client settings.
 
 </details>
 

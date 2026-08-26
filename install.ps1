@@ -106,6 +106,14 @@ function Set-InstallRoot {
   $script:T2ASrcDir    = [IO.Path]::Combine($Path, "t2a-src")
   $script:MapDir       = [IO.Path]::Combine($Path, "map-editor")
   $script:PythonDir    = [IO.Path]::Combine($Path, "python")
+
+  # Capture this before the installer writes its version stamp or the build
+  # populates Configuration. Existing account data also identifies installs
+  # made before version stamps were introduced.
+  $stamp = [IO.Path]::Combine($Path, "uo-offline-version.json")
+  $accounts = [IO.Path]::Combine($script:DistDir, "Saves", "Accounts", "Accounts.bin")
+  $script:ExistingInstall = (Test-Path $stamp) -or
+    ((Test-Path $accounts) -and (Get-Item $accounts).Length -gt 0)
 }
 
 # The default is the same place it has always been.
@@ -896,7 +904,11 @@ function WriteModernUOConfig {
   New-Item -ItemType Directory -Force -Path $CfgDir | Out-Null
   $uoData = $script:UOData.Replace([char]92,[char]47)
 
-  @"
+  $modernUOJson = Join-Path $CfgDir "modernuo.json"
+  if ($script:ExistingInstall -and (Test-Path $modernUOJson)) {
+    Say "Keeping existing modernuo.json."
+  } else {
+    @"
 {
   "assemblyDirectories": ["./Assemblies"],
   "dataDirectories": ["$uoData"],
@@ -913,13 +925,18 @@ function WriteModernUOConfig {
     "pathfinding.prebakeMaps": "True"
   }
 }
-"@ | Set-Content (Join-Path $CfgDir "modernuo.json")
-  Ok "Wrote modernuo.json"
+"@ | Set-Content $modernUOJson
+    Ok "Wrote modernuo.json"
+  }
 
   # The full schema, matching install.sh. An abbreviated file used to go
   # here, which left most flags to chance and set ContextMenus off while
   # setting ExpansionT2A on - the same bit, contradicting itself.
-  @"
+  $expansionJson = Join-Path $CfgDir "expansion.json"
+  if ($script:ExistingInstall -and (Test-Path $expansionJson)) {
+    Say "Keeping existing expansion.json."
+  } else {
+    @"
 {
   "Id": $ExpansionId,
   "ClientFlags": "None",
@@ -998,8 +1015,9 @@ function WriteModernUOConfig {
     "TerMur": false
   }
 }
-"@ | Set-Content (Join-Path $CfgDir "expansion.json")
-  Ok "Wrote expansion.json (T2A, Felucca-only)"
+"@ | Set-Content $expansionJson
+    Ok "Wrote expansion.json (T2A, Felucca-only)"
+  }
 
   # The Young player system is a UO:R-era feature that did not exist in T2A.
   # Left on, young characters also get a Trammel-only public moongate list,
@@ -1007,7 +1025,11 @@ function WriteModernUOConfig {
   # city moongates silently do nothing for every non-staff player.
   $FlagsDir = Join-Path $CfgDir "FeatureFlags"
   New-Item -ItemType Directory -Force -Path $FlagsDir | Out-Null
-  @"
+  $flagsJson = Join-Path $FlagsDir "flags.json"
+  if ($script:ExistingInstall -and (Test-Path $flagsJson)) {
+    Say "Keeping existing FeatureFlags/flags.json."
+  } else {
+    @"
 [
   {
     "Key": "young_player_system",
@@ -1019,8 +1041,9 @@ function WriteModernUOConfig {
     "LastModifiedBy": "T2A ruleset"
   }
 ]
-"@ | Set-Content (Join-Path $FlagsDir "flags.json")
-  Ok "Wrote FeatureFlags/flags.json (Young player system off - not a T2A feature)"
+"@ | Set-Content $flagsJson
+    Ok "Wrote FeatureFlags/flags.json (Young player system off - not a T2A feature)"
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -1045,6 +1068,11 @@ function WriteClassicUOSettings {
   # save_password + auto_login: clicking the desktop shortcut goes straight
   # into the shard (the first login auto-creates the admin account).
   foreach ($t in $targets) {
+    $settingsJson = Join-Path $t "settings.json"
+    if ($script:ExistingInstall -and (Test-Path $settingsJson)) {
+      Say "Keeping existing $settingsJson."
+      continue
+    }
     @"
 {
   "username": "$OwnerUser",
@@ -1061,7 +1089,7 @@ function WriteClassicUOSettings {
   "auto_login": true,
   "plugins": $plugins
 }
-"@ | Set-Content (Join-Path $t "settings.json")
+"@ | Set-Content $settingsJson
     Ok "Wrote $t\settings.json"
   }
   if ($plugins -ne "[]") { Ok "Razor wired in as a ClassicUO plugin." }

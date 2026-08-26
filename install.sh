@@ -70,6 +70,16 @@ DIST_DIR="${MODERNUO_DIR}/Distribution"
 CFG_DIR="${DIST_DIR}/Configuration"
 SPAWNERS_DIR="${DIST_DIR}/Spawners/uoclassic"
 
+# Capture this before the installer writes a version stamp or creates build
+# output. ModernUO's publish step can populate Configuration even on a fresh
+# install, so checking for config files later cannot distinguish defaults from
+# settings that belong to an existing shard.
+EXISTING_INSTALL=0
+if [[ -f "${INSTALL_ROOT}/uo-offline-version.json" ]] \
+   || [[ -s "${DIST_DIR}/Saves/Accounts/Accounts.bin" ]]; then
+  EXISTING_INSTALL=1
+fi
+
 CLASSICUO_DIR="${INSTALL_ROOT}/ClassicUO"
 CLASSICUO_RELEASE_URL="https://api.github.com/repos/ClassicUO/ClassicUO/releases"
 
@@ -681,8 +691,13 @@ write_modernuo_config() {
 
   mkdir -p "${CFG_DIR}"
 
-  # modernuo.json — server runtime config.
-  cat > "${CFG_DIR}/modernuo.json" <<EOF
+  # modernuo.json — server runtime config. On updates it may contain custom
+  # listeners, save intervals, account policy and other settings the installer
+  # does not own, so never replace an existing shard's copy.
+  if [[ "${EXISTING_INSTALL}" == "1" ]] && [[ -f "${CFG_DIR}/modernuo.json" ]]; then
+    say "Keeping existing modernuo.json."
+  else
+    cat > "${CFG_DIR}/modernuo.json" <<EOF
 {
   "assemblyDirectories": ["./Assemblies"],
   "dataDirectories": ["${UO_DATA}"],
@@ -700,11 +715,15 @@ write_modernuo_config() {
   }
 }
 EOF
-  ok "Wrote modernuo.json"
+    ok "Wrote modernuo.json"
+  fi
 
   # expansion.json — the REAL schema, capitalized keys, all flags spelled out.
   # T2A gets Felucca map only, ExpansionT2A flag on, LiveAccount on.
-  cat > "${CFG_DIR}/expansion.json" <<EOF
+  if [[ "${EXISTING_INSTALL}" == "1" ]] && [[ -f "${CFG_DIR}/expansion.json" ]]; then
+    say "Keeping existing expansion.json."
+  else
+    cat > "${CFG_DIR}/expansion.json" <<EOF
 {
   "Id": ${EXPANSION_ID},
   "ClientFlags": "None",
@@ -784,7 +803,8 @@ EOF
   }
 }
 EOF
-  ok "Wrote expansion.json (T2A, Felucca-only)"
+    ok "Wrote expansion.json (T2A, Felucca-only)"
+  fi
 
   # FeatureFlags/flags.json - the Young player system is a UO:R-era feature
   # that did not exist in T2A. Left on, young characters also get a
@@ -792,7 +812,11 @@ EOF
   # Felucca-only shard and makes the city moongates silently do nothing for
   # every non-staff player.
   mkdir -p "${CFG_DIR}/FeatureFlags"
-  cat > "${CFG_DIR}/FeatureFlags/flags.json" <<'EOF'
+  if [[ "${EXISTING_INSTALL}" == "1" ]] \
+     && [[ -f "${CFG_DIR}/FeatureFlags/flags.json" ]]; then
+    say "Keeping existing FeatureFlags/flags.json."
+  else
+    cat > "${CFG_DIR}/FeatureFlags/flags.json" <<'EOF'
 [
   {
     "Key": "young_player_system",
@@ -805,7 +829,8 @@ EOF
   }
 ]
 EOF
-  ok "Wrote FeatureFlags/flags.json (Young player system off - not a T2A feature)"
+    ok "Wrote FeatureFlags/flags.json (Young player system off - not a T2A feature)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -824,6 +849,10 @@ write_classicuo_settings() {
   fi
 
   for target in "${cfg_targets[@]}"; do
+    if [[ "${EXISTING_INSTALL}" == "1" ]] && [[ -f "${target}/settings.json" ]]; then
+      say "Keeping existing ${target}/settings.json."
+      continue
+    fi
     cat > "${target}/settings.json" <<EOF
 {
   "username": "${OWNER_USER}",
@@ -928,8 +957,18 @@ EOF
 # Step 12 — Mark for first-launch wizard
 # ---------------------------------------------------------------------------
 arm_first_launch() {
-  touch "${INSTALL_ROOT}/.needs-owner-account"
-  ok "Owner account will be created on first launch: ${OWNER_USER} / ${OWNER_PASS}"
+  local accounts="${DIST_DIR}/Saves/Accounts/Accounts.bin"
+  local marker="${INSTALL_ROOT}/.needs-owner-account"
+
+  if [[ -s "${accounts}" ]]; then
+    # A completed owner/account save is authoritative. An update must not send
+    # an existing shard back through the interactive first-launch wizard.
+    rm -f "${marker}"
+    say "Existing accounts found; first-launch wizard remains disabled."
+  else
+    touch "${marker}"
+    ok "Owner account will be created on first launch: ${OWNER_USER} / ${OWNER_PASS}"
+  fi
 }
 
 # ---------------------------------------------------------------------------
