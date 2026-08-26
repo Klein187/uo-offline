@@ -45,7 +45,7 @@ Newest first.
 
 </details>
 
-<details open>
+<details>
 <summary><b>Install</b></summary>
 
 <br>
