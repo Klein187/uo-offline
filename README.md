@@ -13,6 +13,9 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Buccaneer's Den is the reds' town.** A crowd of bots used to collect at its moongate, stand about, and leave. Bucc's Den is an island, and from that gate a bot can walk to 27 of the shard's 4,013 waypoints and 9 of its 480 destinations, so whoever gated in rolled somewhere it couldn't reach, gave up and left again. A wandering gate hop landed there roughly one time in eight, so the queue never emptied. It works the way it did in the era now: honest folk stay off the island, murderers never touch a public moongate at all (every one of them stands in a guarded town, so a red steps out of it and dies where it lands), and Bucc's Den is the only bank reds use because it's the only one with no guards over it. The standing crowd at that bank is murderers instead of bank sitters, and there are red spawns at the bank and the docks. Sailing over there is a bad idea, which is the point of the place.
+- **Reds turn up on their own.** Drawn red spawns get placed when the server starts, so an update that adds them just has them. No `[GeneratePKs` to remember.
+- **Buccaneer's Den got built out.** The island has a bank, a healer, a forge, a smith, a carpenter, a tailor and two provisioners, every one with arrival points, so reds can live there instead of it being a name on the map. Shard-wide that's 480 places bots walk to with 456 arrival points between them: the spots that let a bot stop at a counter or a doorstep instead of grinding against the nearest wall.
 - **Bots open doors.** Walk a bot into a closed door and it opens, the same way the client's auto-open-doors setting has always worked for players. Before this they only opened doors during stuck-recovery, so a bot that walked into a dungeon room or the Britain bank stayed shut in there until a rescue timer fired. Locked doors still stay locked, and house doors still run their own access checks.
 - **One button sets up the world.** The GM panel's WORLD tab was a 3x3 grid of setup commands that always got run in the same order anyway. It is now a single **First Time Setup** button, and it also places the PKs, which the old Run All never did.
 - **Twice as many bots.** The world population target went from 800 to 1600, and the reds scale with it. Dial it back live with `[SetBotPopulation` if your machine complains.
@@ -329,7 +332,7 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 |---|---|
 | Britain | Magincia (markers only) |
 | Trinsic | Nujel'm (markers only) |
-| Vesper | Buccaneer's Den (markers only) |
+| Vesper | Buccaneer's Den (town built, no painted area yet) |
 | Minoc | Occlo |
 | Yew | |
 | Moonglow | |
