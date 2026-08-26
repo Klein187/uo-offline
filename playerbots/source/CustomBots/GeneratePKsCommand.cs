@@ -38,6 +38,9 @@ namespace Server.CustomBots
 
         private const int BoundsRadius = 14;
 
+        // How close a spawner has to be to count as "this spawn is already placed".
+        private const int ExistingSearchRange = 8;
+
         public static void Configure()
         {
             CommandSystem.Register("GeneratePKs", AccessLevel.Administrator, OnCommand);
@@ -77,6 +80,112 @@ namespace Server.CustomBots
         // command and the editor bridge (pks_request.txt) so headless
         // sessions can arm the roads too. Does NOT clear first — callers
         // decide (both current callers clear before placing).
+        // The name a spawn's spawner carries, and how we recognise one that
+        // is already in the world.
+        private static string SpawnerNameFor(PKSpawnDef s) => $"PK Spawner ({s.Name})";
+
+        // Place one drawn spawn. Returns how many reds it will hold.
+        private static int PlaceOne(PKSpawnDef s, Map map)
+        {
+            // Bounds hug the hunt polygon so bots spawn inside their leash;
+            // a poly-less spawn falls back to a small box.
+            Rectangle3D bounds;
+            if (s.Hunt != null && s.Hunt.Length >= 3)
+            {
+                int minX = int.MaxValue, minY = int.MaxValue;
+                int maxX = int.MinValue, maxY = int.MinValue;
+                foreach (var p in s.Hunt)
+                {
+                    minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
+                    minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
+                }
+                bounds = new Rectangle3D(
+                    new Point3D(minX, minY, s.Location.Z - 20),
+                    new Point3D(maxX, maxY, s.Location.Z + 40));
+            }
+            else
+            {
+                int r = BoundsRadius;
+                bounds = new Rectangle3D(
+                    new Point3D(s.Location.X - r, s.Location.Y - r, s.Location.Z - 5),
+                    new Point3D(s.Location.X + r, s.Location.Y + r, s.Location.Z + 20));
+            }
+
+            // Reds scale with the town population rather than on their own
+            // dial in the data file -- see PKDensityMultiplier.
+            var amount = Math.Max(1, s.Amount * BotPopulation.PKDensityMultiplier);
+
+            var spawner = new PlayerBotSpawner("PK", amount, MinDelay, MaxDelay)
+            {
+                Name = SpawnerNameFor(s),
+            };
+            spawner.SpawnBounds = bounds;
+            spawner.MoveToWorld(s.Location, map);
+            spawner.Respawn();
+
+            return amount;
+        }
+
+        // ---------------------------------------------------------------
+        // Boot-time top-up.
+        //
+        // An update that adds red spawns should just have them, the same way
+        // the bank crowds appear, rather than waiting for someone to know
+        // that [GeneratePKs exists. So on every boot, any drawn spawn with
+        // no spawner in the world gets one.
+        //
+        // Additive only: it never clears and never touches a spawn that is
+        // already placed, so it cannot disturb a world that is already set
+        // up, and it costs nothing on a boot where everything is present.
+        // ---------------------------------------------------------------
+        public static void Initialize()
+        {
+            Timer.DelayCall(TimeSpan.FromSeconds(14), EnsureAll);
+        }
+
+        private static void EnsureAll()
+        {
+            var defs = PKSpawnData.Load();
+            if (defs.Count == 0)
+            {
+                return; // nothing drawn; synthesising is [GeneratePKs' job
+            }
+
+            var map = Map.Felucca;
+            int placed = 0, reds = 0;
+
+            Console.WriteLine($"[pk] checking {defs.Count} drawn spawn(s) against the world...");
+
+            foreach (var s in defs)
+            {
+                var wanted = SpawnerNameFor(s);
+
+                var exists = false;
+                foreach (var sp in map.GetItemsInRange<PlayerBotSpawner>(s.Location, ExistingSearchRange))
+                {
+                    if (!sp.Deleted && string.Equals(sp.Name, wanted, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (exists)
+                {
+                    continue;
+                }
+
+                reds += PlaceOne(s, map);
+                placed++;
+                Console.WriteLine($"[pk] added missing spawn '{s.Name}' at ({s.Location.X},{s.Location.Y})");
+            }
+
+            if (placed > 0)
+            {
+                Console.WriteLine($"[pk] {placed} new red spawn(s) placed from pk_spawns.json (~{reds} reds).");
+            }
+        }
+
         public static (int placed, int totalPKs) PlaceDefault()
         {
             var defs = PKSpawnData.Load();
@@ -104,44 +213,8 @@ namespace Server.CustomBots
 
             foreach (var s in defs)
             {
-                // Bounds hug the hunt polygon so bots spawn inside their
-                // leash; a poly-less spawn falls back to a small box.
-                Rectangle3D bounds;
-                if (s.Hunt != null && s.Hunt.Length >= 3)
-                {
-                    int minX = int.MaxValue, minY = int.MaxValue;
-                    int maxX = int.MinValue, maxY = int.MinValue;
-                    foreach (var p in s.Hunt)
-                    {
-                        minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
-                        minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
-                    }
-                    bounds = new Rectangle3D(
-                        new Point3D(minX, minY, s.Location.Z - 20),
-                        new Point3D(maxX, maxY, s.Location.Z + 40));
-                }
-                else
-                {
-                    int r = BoundsRadius;
-                    bounds = new Rectangle3D(
-                        new Point3D(s.Location.X - r, s.Location.Y - r, s.Location.Z - 5),
-                        new Point3D(s.Location.X + r, s.Location.Y + r, s.Location.Z + 20));
-                }
-
-                // Reds scale with the town population rather than on their
-                // own dial in the data file -- see PKDensityMultiplier.
-                var amount = Math.Max(1, s.Amount * BotPopulation.PKDensityMultiplier);
-
-                var spawner = new PlayerBotSpawner("PK", amount, MinDelay, MaxDelay)
-                {
-                    Name = $"PK Spawner ({s.Name})",
-                };
-                spawner.SpawnBounds = bounds;
-                spawner.MoveToWorld(s.Location, map);
-                spawner.Respawn();
-
+                totalPKs += PlaceOne(s, map);
                 placed++;
-                totalPKs += amount;
             }
             return (placed, totalPKs);
         }

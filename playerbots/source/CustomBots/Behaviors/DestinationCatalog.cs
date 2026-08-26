@@ -226,6 +226,22 @@ namespace Server.CustomBots
                     w *= BotDangerMap.Multiplier(d);
                 }
 
+                // Buccaneer's Den is the reds' town, and it is an island with
+                // almost nothing on it - a blue who rolls it can only gate in,
+                // fail to walk anywhere, and gate out again. See RedTerritory.
+                if (RedTerritory.ShouldAvoid(bot, d))
+                {
+                    w = 0;
+                }
+
+                // A red banking in a guarded town is a red being executed at
+                // the bank door. Buccaneer's Den is the only one without
+                // guards, so it is the only one they use.
+                if (d.Type == DestinationType.Bank && !RedTerritory.MayBankAt(bot, d))
+                {
+                    w = 0;
+                }
+
                 if (w < 0) w = 0;
                 weights[i] = w;
                 total += w;
