@@ -87,13 +87,42 @@ try:
     data = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
-subjects = []
+# Subject on the bullet, the commit body indented under it. A change
+# worth explaining carries its explanation in the body, and that is
+# the part the player wants; the subject alone says what changed and
+# nothing about what it means. Capped so one chatty commit cannot
+# fill the whole box.
+entries = []
 for c in data.get("commits", []):
-    line = c.get("commit", {}).get("message", "").split("\n")[0].strip()
-    if line:
-        subjects.append(line)
-subjects.reverse()
-print("\n".join("  - " + s for s in subjects))
+    raw = c.get("commit", {}).get("message", "")
+    parts = raw.replace("\r", "").split("\n")
+    subject = parts[0].strip()
+    if not subject:
+        continue
+    block = ["  - " + subject]
+    shown = 0
+    for line in parts[1:]:
+        if shown >= 8:
+            break
+        text = line.strip()
+        if not text:
+            if shown and block[-1] != "":
+                block.append("")
+            continue
+        # Trailers are bookkeeping, not news. The player does not need
+        # Co-Authored-By on a "what is in this update" screen.
+        low = text.lower()
+        if low.startswith(("co-authored-by:", "signed-off-by:", "claude-session:",
+                           "reviewed-by:", "refs:", "fixes:", "closes:",
+                           "http://", "https://", "generated with")):
+            continue
+        block.append("      " + text)
+        shown += 1
+    if shown:
+        block.append("")
+    entries.append("\n".join(block))
+entries.reverse()
+print("\n".join(entries))
 ' 2>/dev/null)"
   else
     # No python3. Slice out just the "commits" array first - the compare
