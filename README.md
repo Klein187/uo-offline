@@ -80,6 +80,9 @@ Two things to expect while it runs:
 
 ### Linux / Steam Deck
 
+The installer supports Debian/Ubuntu, Arch/SteamOS, Fedora, and openSUSE
+Tumbleweed (via `zypper`).
+
 **Steam Deck only:** in Desktop Mode, run these once so you can install things. The first `passwd` sets a sudo password if you've never set one.
 
 ```

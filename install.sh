@@ -3,7 +3,7 @@
 # UO Offline (ModernUO edition) — Installer
 #
 # What this does:
-#   1. Installs Linux prerequisites (Debian/Ubuntu/SteamOS/Fedora).
+#   1. Installs Linux prerequisites (Debian/Ubuntu/SteamOS/Fedora/openSUSE).
 #   2. Clones ModernUO and bootstraps .NET 10 per-user.
 #   3. Deploys the PlayerBots source files into the ModernUO source tree.
 #   4. Builds ModernUO (including the bots) for Linux x64.
@@ -162,12 +162,19 @@ install_deps() {
     sudo pacman -S --needed --noconfirm \
       icu libdeflate zstd argon2 liburing \
       libgdiplus p7zip unzip base-devel git
+  elif command -v zypper >/dev/null; then
+    say "openSUSE-family distro detected. Using zypper."
+    sudo zypper --non-interactive refresh
+    sudo zypper --non-interactive install --no-recommends \
+      libicu-devel libdeflate-devel libzstd-devel argon2-devel \
+      liburing-devel libgdiplus0 7zip unzip \
+      patterns-devel-base-devel_basis git
   elif command -v dnf >/dev/null; then
     say "Fedora-family distro detected. Using dnf."
     sudo dnf install -y libicu libdeflate-devel zstd libargon2-devel \
       liburing-devel libgdiplus p7zip unzip @development-tools git
   else
-    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
+    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, 7zip, unzip."
   fi
 
   command -v git >/dev/null || die "git is still missing after the dependency step. Install git and re-run."
