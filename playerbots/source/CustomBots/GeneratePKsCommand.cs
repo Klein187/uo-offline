@@ -154,8 +154,6 @@ namespace Server.CustomBots
             var map = Map.Felucca;
             int placed = 0, reds = 0;
 
-            Console.WriteLine($"[pk] checking {defs.Count} drawn spawn(s) against the world...");
-
             foreach (var s in defs)
             {
                 var wanted = SpawnerNameFor(s);
