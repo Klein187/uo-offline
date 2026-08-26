@@ -337,6 +337,56 @@ fix_felucca_season() {
 # ---------------------------------------------------------------------------
 # Step 6 — UO game data: detect existing, or auto-download
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Is this folder actually a usable UO data set?
+#
+# Checking that a couple of files merely EXIST is not enough, and tiledata.mul
+# is the reason. The server picks that file's record layout from its size
+# alone: a truncated 3.1 MB file looks to it like an intact 1.6 MB one, so it
+# reads the smaller layout, runs off the end, and dies with
+#
+#   System.IO.EndOfStreamException at Server.TileData.Load()
+#
+# on first launch. The install "succeeds", the player clicks the icon, and
+# gets a .NET stack trace. Catching it here costs one stat per file.
+#
+# Sizes are floors, not exact matches, so a legitimately different client
+# build still passes. tiledata.mul's floor is the server's own 7.0.0 bracket.
+# Returns 0 if the folder is usable, 1 otherwise (reason on stderr).
+# ---------------------------------------------------------------------------
+uo_data_problem() {
+  local dir="$1"
+  local spec name min actual
+
+  for spec in \
+    "tiledata.mul:1644544" \
+    "art.mul:10000000"    \
+    "artidx.mul:100000"   \
+    "map0.mul:50000000"   \
+    "statics0.mul:1000000" \
+    "staidx0.mul:500000"  \
+    "hues.mul:100000"     \
+    "radarcol.mul:100000"
+  do
+    name="${spec%%:*}"
+    min="${spec##*:}"
+
+    if [[ ! -f "${dir}/${name}" ]]; then
+      printf '%s is missing' "${name}"
+      return 1
+    fi
+
+    actual="$(stat -c%s "${dir}/${name}" 2>/dev/null || echo 0)"
+    if [[ "${actual}" -lt "${min}" ]]; then
+      printf '%s is only %s bytes (expected at least %s) - the file is truncated' \
+        "${name}" "${actual}" "${min}"
+      return 1
+    fi
+  done
+
+  return 0
+}
+
 find_or_download_uo_data() {
   banner "Locating UO game data"
 
@@ -358,11 +408,18 @@ find_or_download_uo_data() {
   for pattern in "${candidates[@]}"; do
     for c in ${pattern}; do
       [[ -d "${c}" ]] || continue
-      # Only accept folders that contain the required .mul files.
+      # Only accept folders that hold a COMPLETE data set. A half-copied
+      # or half-extracted folder used to be adopted here on the strength of
+      # two files existing, and then killed the server at first launch.
       if [[ -f "${c}/art.mul" ]] && [[ -f "${c}/map0.mul" ]]; then
-        UO_DATA="${c}"
-        ok "Found UO data: ${UO_DATA}"
-        return
+        local why
+        if why="$(uo_data_problem "${c}")"; then
+          UO_DATA="${c}"
+          ok "Found UO data: ${UO_DATA}"
+          return
+        fi
+        warn "Ignoring incomplete UO data at ${c}"
+        warn "  ${why}"
       fi
     done
   done
@@ -408,6 +465,18 @@ find_or_download_uo_data() {
   fi
 
   UO_DATA="${UO_DATA_DIR}"
+
+  # Verify the extract before trusting it. A download that ended early, or a
+  # disk that filled up mid-extract, leaves a folder that passes the old
+  # art.mul/map0.mul check and then fails at first launch.
+  local why
+  if ! why="$(uo_data_problem "${UO_DATA}")"; then
+    warn "The extracted UO data is not complete:"
+    warn "  ${why}"
+    warn "Keeping ${exe_path} so this can be retried without downloading again."
+    die "UO data extraction is incomplete. Delete ${INSTALL_ROOT}/UOData and re-run this installer."
+  fi
+
   ok "UO data extracted to: ${UO_DATA}"
 
   # Keep or delete the installer .exe? Deleting saves 1GB.
