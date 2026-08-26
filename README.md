@@ -100,11 +100,30 @@ chmod +x install.sh
 
 No git? On the GitHub page click **Code**, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod` and `./install.sh`.
 
+**Keep the folder you ran it from.** It is how you update later. `install.sh` reads the bots, the map tools and the launcher scripts from the folder around it, so it only works from inside a clone or an unzipped copy — not on its own.
+
 It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
 
 ```
 ./install.sh --install-root /mnt/games/uo-offline
 ```
+
+Two things to expect while it runs:
+
+- **The game data is a 929 MB download.** Let it finish. An interrupted download used to leave a folder of empty files that only failed later, at launch; the installer now catches that and stops, but starting clean beats restarting halfway.
+- **First launch takes 30-60 seconds** while the world is generated and the `admin` account is created. That is normal, not a hang. After that it opens straight into the game.
+
+To update by hand, from the folder you installed from:
+
+```
+cd uo-offline
+git pull
+./install.sh
+```
+
+Re-running it is safe. It skips whatever is already done and keeps your world, characters and accounts. On a ZIP install there is nothing to `git pull`, so download the ZIP again and run `./install.sh` from the new folder.
+
+If the game does not start, `~/uo-modernuo/launch.log` says why, and `~/uo-modernuo/modernuo.log` is the server's own log. If the game data ever downloads badly, delete `~/uo-modernuo/UOData` and run the installer again.
 
 ### Updates
 
