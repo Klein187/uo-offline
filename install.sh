@@ -567,6 +567,21 @@ install_classicuo() {
 # Step 9 — Write configs (using the correct schemas we learned the hard way)
 # ---------------------------------------------------------------------------
 write_modernuo_config() {
+  # Keep a shard name that is already set. ClassicUO stores each player's
+  # audio, video, interface and macros under the server's name, so renaming
+  # the shard makes all of it look wiped. Only a fresh install gets ours.
+  RESOLVED_SHARD_NAME="${SHARD_NAME}"
+  local _cfg="${CFG_DIR}/modernuo.json"
+  if [[ -f "${_cfg}" ]]; then
+    local _prev
+    _prev="$(grep -oE '"serverListing\.serverName"[[:space:]]*:[[:space:]]*"[^"]*"' "${_cfg}" \
+      | head -n1 | sed -E 's/.*"([^"]*)"[[:space:]]*$/\1/')"
+    if [[ -n "${_prev}" ]]; then
+      RESOLVED_SHARD_NAME="${_prev}"
+      say "Keeping this install's existing shard name: ${_prev}"
+    fi
+  fi
+
   banner "Writing ModernUO configuration"
 
   mkdir -p "${CFG_DIR}"
@@ -583,8 +598,8 @@ write_modernuo_config() {
     "autosave.saveDelay": "00:05:00",
     "serverList.address": "127.0.0.1",
     "serverList.autoDetect": "false",
-    "serverListing.name": "${SHARD_NAME}",
-    "serverListing.serverName": "${SHARD_NAME}",
+    "serverListing.name": "${RESOLVED_SHARD_NAME}",
+    "serverListing.serverName": "${RESOLVED_SHARD_NAME}",
     "accountHandler.enableAutoAccountCreation": "True",
     "pathfinding.prebakeMaps": "True"
   }
