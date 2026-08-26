@@ -22,7 +22,9 @@
 # =========================================================================
 set -uo pipefail
 
-INSTALL_ROOT="${HOME}/uo-modernuo"
+# install.sh copies this script INTO the install root, so our own
+# directory is the install root - including a custom location.
+INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST_DIR="${INSTALL_ROOT}/ModernUO/Distribution"
 
 [[ -d "${INSTALL_ROOT}" ]] || { echo "No install found at ${INSTALL_ROOT}"; exit 1; }

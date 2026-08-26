@@ -8,7 +8,9 @@
 # =========================================================================
 set -uo pipefail
 
-INSTALL_ROOT="${HOME}/uo-modernuo"
+# install.sh copies this script INTO the install root, so our own
+# directory is the install root - including a custom location.
+INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIDFILE="${INSTALL_ROOT}/modernuo.pid"
 
 # Close the client first — no save needed.
