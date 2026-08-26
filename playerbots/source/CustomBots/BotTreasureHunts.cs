@@ -28,6 +28,7 @@ using Server;
 using Server.Commands;
 using Server.Items;
 using Server.Mobiles;
+using Server.Regions;
 
 namespace Server.CustomBots
 {
@@ -40,6 +41,12 @@ namespace Server.CustomBots
         private const int MinSiteSpacing  = 110;
         private const int MaxSites        = 24;
         private const int DungeonSpaceX   = 5000;
+
+        // Clearance from the nearest guarded region. The guardians erupt
+        // within 3 tiles of the hunter and the fight drifts from there,
+        // so a site that merely touches the town line still spills into
+        // it. Half a screen of margin keeps the whole brawl outside.
+        private const int GuardedClearance = 24;
 
         private static List<BotDestination> _generated;
 
@@ -69,11 +76,28 @@ namespace Server.CustomBots
             }
 
             var picked = new List<WaypointNode>();
+            int inTown = 0;
             foreach (var node in graph.AllNodes)
             {
                 var loc = node.Location;
                 if (loc.X >= DungeonSpaceX)
                 {
+                    continue;
+                }
+
+                // A dig site must be WILDERNESS, and the city-distance
+                // test below is a poor judge of that: it measures to
+                // vendor and bank POINTS, but a town is far bigger than
+                // the spread of its shops. Britain's region runs 324x279
+                // tiles, so a node 66 tiles clear of every cataloged
+                // shop still sat in the fields of east Britain — liches
+                // rising in the street, and the town guard cutting down
+                // every outlaw the wilderness picker sent out there to
+                // hide. Ask the regions themselves; they are the
+                // authority on where a town ends.
+                if (NearGuardedRegion(loc, Map.Felucca, GuardedClearance))
+                {
+                    inTown++;
                     continue;
                 }
 
@@ -128,7 +152,9 @@ namespace Server.CustomBots
             }
 
             DestinationCatalog.RegisterSynthetic(_generated);
-            Console.WriteLine($"[TreasureSites] registered {_generated.Count} dig site(s).");
+            Console.WriteLine(
+                $"[TreasureSites] registered {_generated.Count} dig site(s) " +
+                $"({inTown} node(s) skipped for standing in or beside a guarded region).");
         }
 
         public static void OnCatalogReloaded()
@@ -137,6 +163,39 @@ namespace Server.CustomBots
             {
                 DestinationCatalog.RegisterSynthetic(_generated);
             }
+        }
+
+        // True when the point, or anything within `clearance` tiles of it,
+        // stands in a guarded region. Sampling the eight compass points at
+        // the clearance radius is a cheap stand-in for a real distance-to-
+        // rect test and is plenty for a filter that only has to reject
+        // candidates — a rejected node just costs us one of the hundreds
+        // still on the list.
+        private static bool NearGuardedRegion(Point3D loc, Map map, int clearance)
+        {
+            if (map == null || map == Map.Internal)
+            {
+                return false;
+            }
+
+            if (clearance < 1)
+            {
+                clearance = 1;
+            }
+
+            for (int dx = -clearance; dx <= clearance; dx += clearance)
+            {
+                for (int dy = -clearance; dy <= clearance; dy += clearance)
+                {
+                    var p = new Point3D(loc.X + dx, loc.Y + dy, loc.Z);
+                    if (Region.Find(p, map).GetRegion<GuardedRegion>() != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public static BotDestination PickRandom()
@@ -657,18 +716,62 @@ namespace Server.CustomBots
             base.OnDetached(bot);
 
             // Never leak the spawned pack: whatever ends this behavior
-            // (payout, retreat, death, lifecycle), guardians that are not
-            // mid-fight with someone ELSE sink back into the ground.
+            // (payout, retreat, death, lifecycle), the guardians sink back
+            // into the ground.
+            //
+            // The old test spared anything mid-fight with someone ELSE,
+            // which sounds polite and is how liches piled up. A guardian
+            // that has been alive for a minute has almost always retargeted
+            // — onto another bot, onto a town guard, onto whoever wandered
+            // past — so in a crowded place the sparing clause matched every
+            // single one and the cleanup deleted nothing. Only a REAL
+            // player's fight is worth leaving standing; that one someone
+            // chose to pick.
             foreach (var g in _guardians)
             {
-                if (g != null && !g.Deleted && g.Alive &&
-                    (g.Combatant == null || g.Combatant == bot))
+                if (g == null || g.Deleted || !g.Alive)
                 {
-                    g.PlaySound(0x1FB);
-                    g.Delete();
+                    continue;
                 }
+
+                if (g.Combatant is PlayerMobile human && human is not PlayerBot &&
+                    human.Alive && !human.Deleted)
+                {
+                    // Spared, not forgiven. If the player breaks off — walks
+                    // away, dies, logs out — nobody is left holding a
+                    // reference to this thing, so it gets its own leash.
+                    SinkLater(g);
+                    continue;
+                }
+
+                g.PlaySound(0x1FB);
+                g.Delete();
             }
             _guardians.Clear();
+        }
+
+        // A guardian handed off to a real player's fight still belongs to
+        // nobody once that fight ends. Check back every so often and sink
+        // it as soon as it is no longer someone's problem.
+        private static void SinkLater(BaseCreature guardian)
+        {
+            Timer.DelayCall(TimeSpan.FromMinutes(3), () =>
+            {
+                if (guardian == null || guardian.Deleted || !guardian.Alive)
+                {
+                    return;
+                }
+
+                if (guardian.Combatant is PlayerMobile human &&
+                    human is not PlayerBot && human.Alive && !human.Deleted)
+                {
+                    SinkLater(guardian); // still swinging at someone real
+                    return;
+                }
+
+                guardian.PlaySound(0x1FB);
+                guardian.Delete();
+            });
         }
     }
 }
