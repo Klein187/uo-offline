@@ -407,34 +407,109 @@ uo_data_problem() {
 #   unrar  the non-free original, if the user already has it
 #   7z     p7zip; kept last because it is the one that cannot do this
 unpack_uo_exe() {
-  local exe="$1" dest="$2" tool
+  local exe="$1" dest="$2" tool rc=1
 
-  for tool in unar 7zz unrar 7z; do
+  # Pass 1: the tools that can find the payload behind the SFX stub on
+  # their own. unrar and official 7-Zip both scan for it; unar does not,
+  # and answers "Couldn't recognize the archive format".
+  for tool in unrar 7zz 7z unar; do
     command -v "${tool}" >/dev/null || continue
-
     say "Extracting with ${tool}..."
-    case "${tool}" in
-      # -D stops unar wrapping everything in an extra folder named after the
-      # archive; the payload already carries its own version folder.
-      unar)  unar -q -f -D -o "${dest}" "${exe}" >/dev/null 2>&1 || true ;;
-      unrar) unrar x -y -inul "${exe}" "${dest}/" >/dev/null 2>&1 || true ;;
-      *)     "${tool}" x -y "-o${dest}" "${exe}" >/dev/null 2>&1 || true ;;
-    esac
-
-    if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
-      ok "Extracted with ${tool}."
-      return 0
-    fi
-    warn "${tool} did not produce the data files; trying the next extractor."
+    run_extractor "${tool}" "${exe}" "${dest}" && { rc=0; break; }
+    warn "${tool} could not read it directly."
   done
 
-  warn "None of the available extractors could unpack ${exe}."
-  warn "It is a WinRAR (RAR5) self-extracting archive, and p7zip cannot read RAR."
-  warn "Install one that can, then re-run this script:"
-  warn "    Debian/Ubuntu:  sudo apt install unar"
-  warn "    Fedora:         sudo dnf install unar"
-  warn "    Arch/SteamOS:   sudo pacman -S unarchiver"
+  # Pass 2: strip the stub and hand the tools a plain .rar. The payload is
+  # a complete standalone archive -- it runs from its signature to the last
+  # byte of the file with an end-of-archive record and nothing after it --
+  # so everything that speaks RAR5 takes it, unar included.
+  if [[ "${rc}" -ne 0 ]]; then
+    local off rar="${exe%.exe}.rar"
+    off="$(rar_payload_offset "${exe}")"
+    if [[ -n "${off}" ]]; then
+      say "Stripping the self-extractor stub (payload at byte ${off})..."
+      if tail -c "+$((off + 1))" "${exe}" > "${rar}"; then
+        for tool in unar unrar 7zz 7z; do
+          command -v "${tool}" >/dev/null || continue
+          say "Extracting with ${tool}..."
+          run_extractor "${tool}" "${rar}" "${dest}" && { rc=0; break; }
+          warn "${tool} could not read the stripped archive either."
+        done
+      fi
+      rm -f "${rar}"
+    else
+      warn "No RAR5 payload found inside ${exe}; the download may be damaged."
+    fi
+  fi
+
+  if [[ "${rc}" -eq 0 ]]; then
+    return 0
+  fi
+
+  warn "Could not unpack ${exe}."
+  warn "It is a WinRAR (RAR5) self-extracting archive. p7zip cannot read RAR"
+  warn "at all, and unar cannot see past the stub. Install one that can and"
+  warn "re-run this script:"
+  warn "    Debian/Ubuntu:  sudo apt install unrar     (or: 7zip)"
+  warn "    Fedora:         sudo dnf install unrar     (or: p7zip-plugins)"
+  warn "    Arch/SteamOS:   sudo pacman -S unrar"
   return 1
+}
+
+# One extraction attempt. Judged by whether the data files actually appeared,
+# never by the exit code -- 7z "succeeds" while failing every file with
+# "Unsupported Method", which is how this went unnoticed in the first place.
+run_extractor() {
+  local tool="$1" archive="$2" dest="$3"
+
+  case "${tool}" in
+    # -D stops unar wrapping everything in a folder named after the archive;
+    # the payload already carries its own version folder.
+    unar)  unar -q -f -D -o "${dest}" "${archive}" >/dev/null 2>&1 || true ;;
+    unrar) unrar x -y -inul "${archive}" "${dest}/" >/dev/null 2>&1 || true ;;
+    *)     "${tool}" x -y "-o${dest}" "${archive}" >/dev/null 2>&1 || true ;;
+  esac
+
+  if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
+    ok "Extracted with ${tool}."
+    return 0
+  fi
+  return 1
+}
+
+# Byte offset of the RAR5 signature inside the self-extractor, or empty.
+# python3 when it is there (the script already leans on it elsewhere),
+# otherwise GNU grep, which handles binary input with -a.
+rar_payload_offset() {
+  local exe="$1" off=""
+
+  if command -v python3 >/dev/null 2>&1; then
+    off="$(python3 - "${exe}" <<'PYEOF' 2>/dev/null
+import sys
+sig = b"Rar!\x1a\x07\x01\x00"
+pos, prev, base = -1, b"", 0
+with open(sys.argv[1], "rb") as f:
+    while True:
+        chunk = f.read(8 << 20)
+        if not chunk:
+            break
+        buf = prev + chunk
+        i = buf.find(sig)
+        if i >= 0:
+            pos = base - len(prev) + i
+            break
+        prev = buf[-16:]
+        base += len(chunk)
+print(pos if pos >= 0 else "")
+PYEOF
+)"
+  fi
+
+  if [[ -z "${off}" ]]; then
+    off="$(LC_ALL=C grep -abo -P '\x52\x61\x72\x21\x1a\x07\x01\x00' "${exe}" 2>/dev/null            | head -1 | cut -d: -f1)"
+  fi
+
+  [[ "${off}" =~ ^[0-9]+$ ]] && printf '%s' "${off}"
 }
 
 find_or_download_uo_data() {
@@ -486,9 +561,12 @@ find_or_download_uo_data() {
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
 
-  # ~929 MB down, ~1.5 GB extracted. Running out of disk half way through is
-  # how a folder full of 0-byte .mul files gets made in the first place.
-  local need_mb=2600 free_mb
+  # ~929 MB down, ~1.5 GB extracted, plus room for one more copy of the
+  # payload: extractors that cannot see past the self-extractor stub need
+  # it stripped into a plain .rar first (see unpack_uo_exe), and that is a
+  # second ~929 MB file until the extract finishes. Running out of disk
+  # half way through is how a folder full of 0-byte .mul files gets made.
+  local need_mb=3600 free_mb
   free_mb="$(df -Pm "${INSTALL_ROOT}" 2>/dev/null | awk 'NR==2 {print $4}')"
   if [[ -n "${free_mb:-}" ]] && [[ "${free_mb}" -lt "${need_mb}" ]]; then
     die "Not enough disk space for the UO client: ${free_mb} MB free, ${need_mb} MB needed."
