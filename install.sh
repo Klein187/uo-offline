@@ -149,7 +149,7 @@ install_deps() {
     sudo apt-get update -y
     sudo apt-get install -y \
       libicu-dev libdeflate-dev zstd libargon2-dev liburing-dev \
-      libgdiplus p7zip-full unzip build-essential git
+      libgdiplus p7zip-full unar unzip build-essential git
   elif command -v pacman >/dev/null; then
     say "Arch-family distro detected. Using pacman."
     if [[ -f /etc/os-release ]] && grep -qi steamos /etc/os-release; then
@@ -161,13 +161,13 @@ install_deps() {
     fi
     sudo pacman -S --needed --noconfirm \
       icu libdeflate zstd argon2 liburing \
-      libgdiplus p7zip unzip base-devel git
+      libgdiplus p7zip unarchiver unzip base-devel git
   elif command -v dnf >/dev/null; then
     say "Fedora-family distro detected. Using dnf."
     sudo dnf install -y libicu libdeflate-devel zstd libargon2-devel \
-      liburing-devel libgdiplus p7zip unzip @development-tools git
+      liburing-devel libgdiplus p7zip unar unzip @development-tools git
   else
-    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
+    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unar, unzip."
   fi
 
   command -v git >/dev/null || die "git is still missing after the dependency step. Install git and re-run."
@@ -387,6 +387,56 @@ uo_data_problem() {
   return 0
 }
 
+# Unpack the UO Classic full-client installer.
+#
+# The file is named .exe and the old code fed it to 7z, which is wrong in a
+# way that looks almost right: it is a WinRAR self-extracting archive with a
+# RAR5 payload -- the RAR5 signature sits about 1.1 MB into it. 7-Zip
+# parses the RAR container well enough to LIST every entry, so the extract
+# appears to start, and then fails every single file with "Unsupported
+# Method". The RAR algorithm is non-free, so Debian and Ubuntu strip the
+# decoder out of p7zip-full and ship it separately as p7zip-rar -- and even
+# with that installed, p7zip's Rar handler only ever did RAR4. The Windows
+# installer never hit this: it runs the SFX's own WinRAR stub with -s2 -y -d.
+#
+# So: try the extractors that can genuinely do RAR5, best first, and judge
+# each by whether art.mul actually appeared rather than by its exit code.
+#
+#   unar   free-licensed, reads RAR5, in the main repos everywhere
+#   7zz    official 7-Zip build (the "7zip" package), reads RAR5
+#   unrar  the non-free original, if the user already has it
+#   7z     p7zip; kept last because it is the one that cannot do this
+unpack_uo_exe() {
+  local exe="$1" dest="$2" tool
+
+  for tool in unar 7zz unrar 7z; do
+    command -v "${tool}" >/dev/null || continue
+
+    say "Extracting with ${tool}..."
+    case "${tool}" in
+      # -D stops unar wrapping everything in an extra folder named after the
+      # archive; the payload already carries its own version folder.
+      unar)  unar -q -f -D -o "${dest}" "${exe}" >/dev/null 2>&1 || true ;;
+      unrar) unrar x -y -inul "${exe}" "${dest}/" >/dev/null 2>&1 || true ;;
+      *)     "${tool}" x -y "-o${dest}" "${exe}" >/dev/null 2>&1 || true ;;
+    esac
+
+    if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
+      ok "Extracted with ${tool}."
+      return 0
+    fi
+    warn "${tool} did not produce the data files; trying the next extractor."
+  done
+
+  warn "None of the available extractors could unpack ${exe}."
+  warn "It is a WinRAR (RAR5) self-extracting archive, and p7zip cannot read RAR."
+  warn "Install one that can, then re-run this script:"
+  warn "    Debian/Ubuntu:  sudo apt install unar"
+  warn "    Fedora:         sudo dnf install unar"
+  warn "    Arch/SteamOS:   sudo pacman -S unarchiver"
+  return 1
+}
+
 find_or_download_uo_data() {
   banner "Locating UO game data"
 
@@ -429,7 +479,9 @@ find_or_download_uo_data() {
   warn "Source: ${UO_DATA_URL} (~929 MB, third-party mirror, EA-copyrighted content)."
   echo ""
 
-  command -v 7z >/dev/null || die "7z not found. Install p7zip first (it should have been installed by the dependency step)."
+  # NOT a 7z archive, whatever the extension suggests: the UO Classic full
+  # client is a WinRAR SFX with a RAR5 payload. See unpack_uo_exe.
+  command -v unar >/dev/null || command -v 7zz >/dev/null || command -v unrar >/dev/null || command -v 7z >/dev/null || die "No archive extractor found. Install unar (Debian/Ubuntu/Fedora) or unarchiver (Arch)."
 
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
@@ -471,11 +523,8 @@ find_or_download_uo_data() {
     fi
   fi
 
-  say "Extracting with 7z..."
   mkdir -p "${UO_DATA_DIR}"
-  # The installer extracts to a nested folder; -y auto-yes, -o sets output.
-  # Discard 7z's per-file output; we want a clean log.
-  7z x -y "-o${INSTALL_ROOT}/UOData" "${exe_path}" >/dev/null
+  unpack_uo_exe "${exe_path}" "${INSTALL_ROOT}/UOData" || die "Could not extract ${exe_path}. See the messages above."
 
   # The 7z extract creates ${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}/ with
   # the .mul files. Verify.
