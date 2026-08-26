@@ -434,15 +434,41 @@ find_or_download_uo_data() {
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
 
-  if [[ ! -f "${exe_path}" ]]; then
-    say "Downloading (this can take 5-15 minutes)..."
-    # The mirror 403's on default wget User-Agent. curl with a real one is fine.
-    curl -fL --progress-bar \
-      -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
-      -o "${exe_path}" \
-      "${UO_DATA_URL}"
-  else
+  # ~929 MB down, ~1.5 GB extracted. Running out of disk half way through is
+  # how a folder full of 0-byte .mul files gets made in the first place.
+  local need_mb=2600 free_mb
+  free_mb="$(df -Pm "${INSTALL_ROOT}" 2>/dev/null | awk 'NR==2 {print $4}')"
+  if [[ -n "${free_mb:-}" ]] && [[ "${free_mb}" -lt "${need_mb}" ]]; then
+    die "Not enough disk space for the UO client: ${free_mb} MB free, ${need_mb} MB needed."
+  fi
+
+  # A part-downloaded .exe left by an interrupted run used to be reused on
+  # the strength of existing. 7z then unpacks the file table without the
+  # data behind it, which is a folder of 0-byte .mul files and a server that
+  # dies on tiledata.mul at first launch. Judge the file by its size.
+  local min_exe=900000000 have=0
+  local ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+
+  if [[ -f "${exe_path}" ]]; then
+    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+  fi
+
+  if [[ "${have}" -ge "${min_exe}" ]]; then
     say "Installer already at ${exe_path}, skipping download."
+  else
+    if [[ "${have}" -gt 0 ]]; then
+      warn "The download at ${exe_path} is incomplete (${have} bytes). Resuming it."
+    else
+      say "Downloading (this can take 5-15 minutes)..."
+    fi
+    # The mirror 403's on default wget User-Agent. curl with a real one is
+    # fine. -C - resumes rather than starting the 929 MB over again.
+    curl -fL --progress-bar -C - -A "${ua}" -o "${exe_path}" "${UO_DATA_URL}"
+
+    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+    if [[ "${have}" -lt "${min_exe}" ]]; then
+      die "The UO client download finished at ${have} bytes, short of the expected ~929 MB. Delete ${exe_path} and re-run."
+    fi
   fi
 
   say "Extracting with 7z..."
