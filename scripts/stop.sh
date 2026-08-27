@@ -8,15 +8,24 @@
 # =========================================================================
 set -uo pipefail
 
-INSTALL_ROOT="${HOME}/uo-modernuo"
+INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIDFILE="${INSTALL_ROOT}/modernuo.pid"
+
+is_modernuo_pid() {
+  local pid="$1"
+  local command_line
+  [[ "${pid}" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "${pid}" 2>/dev/null || return 1
+  command_line="$(ps -p "${pid}" -o command= 2>/dev/null)"
+  [[ "${command_line}" == *"ModernUO.dll"* ]]
+}
 
 # Close the client first — no save needed.
 if pkill -f "ClassicUO" 2>/dev/null; then
   echo "ClassicUO stopped."
 fi
 
-if [[ -f "${PIDFILE}" ]] && kill -0 "$(cat "${PIDFILE}")" 2>/dev/null; then
+if [[ -f "${PIDFILE}" ]] && is_modernuo_pid "$(cat "${PIDFILE}")"; then
   pid="$(cat "${PIDFILE}")"
   echo "Sending SIGTERM to ModernUO (pid ${pid}) to save and exit..."
   kill -TERM "${pid}"
@@ -32,16 +41,10 @@ if [[ -f "${PIDFILE}" ]] && kill -0 "$(cat "${PIDFILE}")" 2>/dev/null; then
   done
 
   echo "Server did not stop within 30s. Forcing kill — world state may be lost." >&2
-  kill -9 "${pid}" 2>/dev/null || true
+  is_modernuo_pid "${pid}" && kill -9 "${pid}" 2>/dev/null || true
   rm -f "${PIDFILE}"
 else
-  # Fallback: kill any stray dotnet ModernUO process.
-  if pgrep -f "ModernUO.dll" >/dev/null; then
-    echo "Found orphan ModernUO process. Sending SIGTERM..."
-    pkill -TERM -f "ModernUO.dll" || true
-    sleep 5
-    pkill -9 -f "ModernUO.dll" 2>/dev/null || true
-  fi
+  echo "No owned ModernUO process found; refusing to kill an unrelated server." >&2
 fi
 
 echo "Done."

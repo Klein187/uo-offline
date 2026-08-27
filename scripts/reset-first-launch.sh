@@ -22,20 +22,33 @@
 # =========================================================================
 set -uo pipefail
 
-INSTALL_ROOT="${HOME}/uo-modernuo"
+INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST_DIR="${INSTALL_ROOT}/ModernUO/Distribution"
+
+is_modernuo_pid() {
+  local pid="$1"
+  local command_line
+  [[ "${pid}" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "${pid}" 2>/dev/null || return 1
+  command_line="$(ps -p "${pid}" -o command= 2>/dev/null)"
+  [[ "${command_line}" == *"ModernUO.dll"* ]]
+}
 
 [[ -d "${INSTALL_ROOT}" ]] || { echo "No install found at ${INSTALL_ROOT}"; exit 1; }
 
 # Stop the server if it's running.
 if [[ -f "${INSTALL_ROOT}/modernuo.pid" ]] \
-   && kill -0 "$(cat "${INSTALL_ROOT}/modernuo.pid")" 2>/dev/null; then
+   && is_modernuo_pid "$(cat "${INSTALL_ROOT}/modernuo.pid")"; then
+  pid="$(cat "${INSTALL_ROOT}/modernuo.pid")"
   echo "Stopping running server..."
-  kill -TERM "$(cat "${INSTALL_ROOT}/modernuo.pid")" 2>/dev/null || true
+  kill -TERM "${pid}" 2>/dev/null || true
   sleep 5
-  kill -9 "$(cat "${INSTALL_ROOT}/modernuo.pid")" 2>/dev/null || true
+  is_modernuo_pid "${pid}" && kill -9 "${pid}" 2>/dev/null || true
 fi
-pkill -9 -f ModernUO.dll 2>/dev/null || true
+if pgrep -f ModernUO.dll >/dev/null 2>&1; then
+  echo "A ModernUO process is still running; refusing to wipe world saves." >&2
+  exit 1
+fi
 
 echo "Wiping world saves..."
 rm -rf "${DIST_DIR}/Saves"
@@ -52,8 +65,8 @@ touch "${INSTALL_ROOT}/.needs-owner-account"
 
 echo ""
 echo "Done. Next: run the server to redo first launch:"
-echo "       ~/uo-modernuo/start.sh"
+echo "       ${INSTALL_ROOT}/start.sh"
 echo ""
 echo "After your character is created, re-run the [-commands listed in:"
-echo "       ~/uo-modernuo/POPULATE-WORLD.txt"
+echo "       ${INSTALL_ROOT}/POPULATE-WORLD.txt"
 echo "to repopulate the world."

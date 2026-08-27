@@ -1,6 +1,6 @@
 # UO Offline
 
-A single-player Ultima Online shard that runs entirely on your own machine. Works on **Windows, Linux, and the Steam Deck**. One installer sets everything up, and after it finishes you never need the internet again.
+A single-player Ultima Online shard that runs entirely on your own machine. Works on **Windows, Linux, macOS (Apple Silicon), and the Steam Deck**. One installer sets everything up, and after it finishes you never need the internet again.
 
 The point of it is the PlayerBots. The world is full of bots that fight, shop, bank, ride, travel the roads, crawl dungeons, join guilds, run war bands, gossip about things that actually happened, answer you when you talk to them, and log off for dinner. It plays like a busy 1999 shard instead of an empty map.
 
@@ -102,6 +102,37 @@ It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
 ```
 ./install.sh --install-root /mnt/games/uo-offline
 ```
+
+### macOS (Apple Silicon: M1 / M2 / M3 / M4)
+
+You need [Homebrew](https://brew.sh) first. If you don't have it, paste the one
+line from that page into Terminal and let it finish.
+
+Then open Terminal and run:
+
+```
+git clone https://github.com/Klein187/uo-offline.git
+cd uo-offline
+chmod +x install-osx-silicon.sh
+./install-osx-silicon.sh
+```
+
+No git? On the GitHub page click **Code**, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod` and `./install-osx-silicon.sh`.
+
+It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
+
+```
+./install-osx-silicon.sh --install-root "/Volumes/Games/UO Offline"
+```
+
+The server is built natively for Apple Silicon. The ClassicUO client is still an
+Intel build, so the installer turns on Rosetta 2 if it isn't already — macOS may
+ask you to confirm that once.
+
+When it's done you get a **UO Offline** icon on your Desktop. Double-click it to
+play. The first launch takes a few minutes longer than later ones: the server
+pre-bakes the pathfinding cache for the whole map before it accepts a
+connection, and that only happens once.
 
 ### Updates
 
