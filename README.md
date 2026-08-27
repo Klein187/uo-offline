@@ -53,7 +53,7 @@ Newest first.
 
 <br>
 
-The installer does the whole job: it builds ModernUO with the PlayerBots compiled in, sets up .NET, downloads ClassicUO, Razor, and the UO Classic game data (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A configs, and makes a launcher. It takes 15-25 minutes. Re-running it is safe, since it skips anything already done.
+The installer does the whole job: it builds ModernUO with the PlayerBots compiled in, sets up .NET, downloads ClassicUO and the UO Classic game data (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A configs, and makes a launcher. **Razor is Windows-only** — the Linux and macOS installers do not bundle it, for the reasons given in each section below. It takes 15-25 minutes. Re-running it is safe, since it skips anything already done.
 
 ### Windows (easiest)
 
@@ -108,6 +108,30 @@ It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
 ./install.sh --install-root /mnt/games/uo-offline
 ```
 
+Two things to expect while it runs:
+
+- **The game data is a 929 MB download.** Let it finish. An interrupted download used to leave a folder of empty files that only failed later, at launch; the installer now catches that and stops, but starting clean beats restarting halfway.
+- **First launch takes 30-60 seconds** while the world is generated and the `admin` account is created. That is normal, not a hang. After that it opens straight into the game.
+
+To update by hand, from the folder you installed from:
+
+```
+cd uo-offline
+git pull
+./install.sh
+```
+
+Re-running it is safe. It skips whatever is already done and keeps your world, characters and accounts. On a ZIP install there is nothing to `git pull`, so download the ZIP again and run `./install.sh` from the new folder.
+
+If the game does not start, `~/uo-modernuo/launch.log` says why, and `~/uo-modernuo/modernuo.log` is the server's own log. If the game data ever downloads badly, delete `~/uo-modernuo/UOData` and run the installer again.
+
+**Razor is not included.** Razor is a Windows application, and this installer
+does not bundle it on Linux. It can be made to run under Mono —
+[razorce.com documents that separately](https://www.razorce.com/install/linux/) —
+but you would be setting it up yourself. ClassicUO's own macros and hotkeys
+cover most of what people use Razor for day to day.
+
+
 ### macOS (Apple Silicon: M1 / M2 / M3 / M4)
 
 You need [Homebrew](https://brew.sh) first. If you don't have it, paste the one
@@ -138,22 +162,14 @@ When it's done you get a **UO Offline** icon on your Desktop. Double-click it to
 play. The first launch takes a few minutes longer than later ones: the server
 pre-bakes the pathfinding cache for the whole map before it accepts a
 connection, and that only happens once.
-Two things to expect while it runs:
 
-- **The game data is a 929 MB download.** Let it finish. An interrupted download used to leave a folder of empty files that only failed later, at launch; the installer now catches that and stops, but starting clean beats restarting halfway.
-- **First launch takes 30-60 seconds** while the world is generated and the `admin` account is created. That is normal, not a hang. After that it opens straight into the game.
+**Razor is not included, and cannot currently work here.** Razor is a WinForms
+application. Mono's WinForms on macOS runs on the Carbon driver, which was never
+ported to 64-bit, so ClassicUO loads the plugin and the assembly load fails —
+the client warns `very few parts of Windows.Forms will work properly, or at all`.
+Upstream ships Windows and Linux builds only; there is no macOS build. Use
+ClassicUO's own macros and hotkeys instead.
 
-To update by hand, from the folder you installed from:
-
-```
-cd uo-offline
-git pull
-./install.sh
-```
-
-Re-running it is safe. It skips whatever is already done and keeps your world, characters and accounts. On a ZIP install there is nothing to `git pull`, so download the ZIP again and run `./install.sh` from the new folder.
-
-If the game does not start, `~/uo-modernuo/launch.log` says why, and `~/uo-modernuo/modernuo.log` is the server's own log. If the game data ever downloads badly, delete `~/uo-modernuo/UOData` and run the installer again.
 
 ### Updates
 
@@ -171,7 +187,9 @@ characters and accounts.
 
 <br>
 
-Double-click the **UO Offline** desktop icon. It starts the server, opens the game with Razor attached, and logs you in as `admin` (the account is created on first login). Make a character and pick any starting city. Razor's window comes up alongside the game — set up macros there, or minimize it and forget about it.
+Double-click the **UO Offline** desktop icon. It starts the server, opens the game, and logs you in as `admin` (the account is created on first login). Make a character and pick any starting city.
+
+**On Windows** the game opens with Razor attached, and Razor's window comes up alongside it — set up macros there, or minimize it and forget about it. **On Linux and macOS there is no Razor**; use ClassicUO's built-in macros and hotkeys instead.
 
 The world starts empty. To fill it:
 
