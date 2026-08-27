@@ -183,6 +183,11 @@ fetch_modernuo() {
 
   if [[ -d "${MODERNUO_DIR}/.git" ]]; then
     say "ModernUO already cloned."
+    # Engine patches are needed only while compiling. Older installer runs
+    # left them as tracked worktree changes, which can block checkout/pull.
+    # Remove them only when HEAD/index is still unpatched and the worktree can
+    # reverse the patch cleanly; unrelated user edits are left in place.
+    remove_engine_patches
     cd "${MODERNUO_DIR}"
 
     if [[ -f .git/shallow ]]; then
@@ -192,9 +197,9 @@ fetch_modernuo() {
 
     # --force because upstream moves tags (build-tool-latest is re-pointed
     # every release); without it the fetch fails with "would clobber existing
-    # tag". None of this is fatal - a clone that will not update still builds,
-    # and local edits to tracked files (the stock-file patches in
-    # INTEGRATION-NOTES.txt) are the usual reason a pull refuses.
+    # tag". None of this is fatal - a clone that will not update still builds.
+    # Installer-owned engine patches were removed above, but an unrelated user
+    # edit to a tracked file can still make checkout or pull refuse safely.
     git fetch --all --tags --force || warn "git fetch failed; using the checkout on disk."
     git checkout main               || warn "git checkout main failed; using the current branch."
     git pull --ff-only              || warn "git pull failed; using the checkout on disk." 
@@ -1286,6 +1291,29 @@ apply_engine_patches() {
   done
 }
 
+remove_engine_patches() {
+  local patch_dir="${SCRIPT_DIR}/patches"
+  [[ -d "${MODERNUO_DIR}/.git" && -d "${patch_dir}" ]] || return 0
+
+  shopt -s nullglob
+  local patches=("${patch_dir}"/*.patch)
+  shopt -u nullglob
+
+  local patch name
+  for patch in "${patches[@]}"; do
+    name="$(basename "${patch}")"
+
+    # --cached checks the unmodified index, while the second check examines
+    # the worktree. Together they prove this is a local application of the
+    # patch, not the same change already incorporated upstream.
+    if git -C "${MODERNUO_DIR}" apply --cached --check "${patch}" 2>/dev/null \
+       && git -C "${MODERNUO_DIR}" apply --reverse --check "${patch}" 2>/dev/null; then
+      git -C "${MODERNUO_DIR}" apply --reverse "${patch}"
+      ok "${name} removed from the source checkout (compiled output is unchanged)"
+    fi
+  done
+}
+
 install_playerbots() {
   banner "Installing PlayerBots"
 
@@ -1367,9 +1395,13 @@ main() {
   fetch_modernuo
   bootstrap_dotnet
   apply_engine_patches
+  # Always make a best-effort cleanup if a later install step exits early.
+  trap remove_engine_patches EXIT
   install_playerbots
   install_map_editor
   build_modernuo
+  remove_engine_patches
+  trap - EXIT
   fix_felucca_season
   find_or_download_uo_data
   swap_t2a_map

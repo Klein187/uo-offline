@@ -329,6 +329,10 @@ function FetchModernUO {
   Banner "Fetching ModernUO source"
   if (Test-Path (Join-Path $ModernUODir ".git")) {
     Say "ModernUO already cloned."
+    # Patches are compile-time inputs. Older runs left them as tracked local
+    # changes, which can block checkout/pull. Exact installer-owned diffs are
+    # safe to remove; unrelated user edits to the same files are preserved.
+    RemoveEnginePatches
     if (-not $UpdateModernUO) {
       Say "Leaving it at its current commit (set `$UpdateModernUO = `$true to track upstream)."
       Ok "ModernUO source at $ModernUODir"
@@ -348,8 +352,8 @@ function FetchModernUO {
       Ok "Updated to latest main."
     } catch {
       # A clone that will not update is not fatal - whatever is on disk still
-      # builds. The usual cause is local edits to tracked files, which is
-      # exactly what the stock-file patches in INTEGRATION-NOTES.txt are.
+      # builds. Installer-owned patches were removed above, but an unrelated
+      # user edit to a tracked file can still make checkout or pull refuse.
       Warn "Could not update the existing ModernUO clone: $($_.Exception.Message)"
       Warn "Continuing with the checkout already on disk."
     } finally {
@@ -432,6 +436,25 @@ function ApplyEnginePatches {
   }
 }
 
+function RemoveEnginePatches {
+  $patchDir = Join-Path $ScriptDir "patches"
+  if (-not (Test-Path (Join-Path $ModernUODir ".git")) -or -not (Test-Path $patchDir)) { return }
+
+  foreach ($patch in (Get-ChildItem -Path $patchDir -Filter "*.patch" | Sort-Object Name)) {
+    # The index must accept the forward patch and the worktree must accept its
+    # reverse. This avoids removing a matching change already in upstream.
+    Invoke-Native git @("-C", $ModernUODir, "apply", "--cached", "--check", $patch.FullName) -IgnoreExitCode | Out-Null
+    $indexIsUnpatched = ($LASTEXITCODE -eq 0)
+    Invoke-Native git @("-C", $ModernUODir, "apply", "--reverse", "--check", $patch.FullName) -IgnoreExitCode | Out-Null
+    $worktreeHasPatch = ($LASTEXITCODE -eq 0)
+
+    if ($indexIsUnpatched -and $worktreeHasPatch) {
+      Invoke-Native git @("-C", $ModernUODir, "apply", "--reverse", $patch.FullName) | Out-Null
+      Ok "$($patch.Name) removed from the source checkout (compiled output is unchanged)"
+    }
+  }
+}
+
 # ---------------------------------------------------------------------------
 # Step 4 — Deploy PlayerBots into the ModernUO source tree (BEFORE build)
 # ---------------------------------------------------------------------------
@@ -476,6 +499,7 @@ function BuildModernUO {
 
   if (Test-Path (Join-Path $DistDir "ModernUO.dll")) {
     Say "ModernUO already built. Skipping (delete Distribution\ModernUO.dll to force rebuild)."
+    RemoveEnginePatches
     return
   }
   # publish.ps1 sets its own $ErrorActionPreference = "Stop", so a failing
@@ -508,6 +532,7 @@ function BuildModernUO {
     }
   } finally {
     Pop-Location
+    RemoveEnginePatches
   }
   if (-not (Test-Path (Join-Path $DistDir "ModernUO.dll"))) { Die "Build produced no ModernUO.dll. Check output above." }
   Ok "Build artifacts at $DistDir"
