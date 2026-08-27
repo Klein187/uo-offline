@@ -1,0 +1,9 @@
+# haggle_offer.txt — the buyer names a lower one. {price}.
+
+{price}?
+ill give u {price}
+{price} is all i got
+how bout {price}
+{price}
+ill do {price}
+can u do {price}

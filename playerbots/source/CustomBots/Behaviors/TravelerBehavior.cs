@@ -225,7 +225,10 @@ namespace Server.CustomBots
             switch (type)
             {
                 case DestinationType.Bank:
-                    return new[] { "bank_actions", "wts", "wtb", "small_talk" };
+                    // "wts" dropped: a bot stopping at a bank is holding
+                    // nothing to sell. Only a stocked hawker advertises
+                    // now, and it does it from its pack (see BotShop).
+                    return new[] { "bank_actions", "wtb", "small_talk" };
                 case DestinationType.Tavern:
                 case DestinationType.Inn:
                     return new[] { "small_talk", "lfg" };
@@ -552,8 +555,16 @@ namespace Server.CustomBots
         }
 
         // Somewhere wild on the bot's own landmass � the outlaw's rescue
-        // target and last-resort destination (gather spots and dig sites
-        // are always rural by construction).
+        // target and last-resort destination.
+        //
+        // "Dig sites are rural by construction" was an assumption, not a
+        // fact: the generator's city test measured to shop POINTS, and one
+        // site came out in the fields of east Britain. Every outlaw that
+        // picked it walked into a guarded region, where a T2A town guard
+        // does not negotiate. TreasureSites now rejects anything within
+        // reach of a guarded region, which is what makes this pool safe �
+        // if that filter ever loosens, this picker starts feeding the
+        // guards again.
         private BotDestination PickWildRescueSpot(PlayerBot bot)
         {
             var graph = WaypointRegistry.Graph;
@@ -2287,10 +2298,19 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // visibly. No-op when nothing is needed.
             BotSupplies.TryRestockAtArrival(bot, _destType);
 
-            // A dig site is only ever a destination because the treasure-
-            // hunt manager sent this bot here (weight 0 in the roll) —
-            // start digging.
-            if (_destType == DestinationType.TreasureSite)
+            // A dig site is a destination for two different reasons, and
+            // only one of them ends in a shovel.
+            //
+            // The treasure-hunt manager sends a hunter here holding a map
+            // (weight 0 in the roll, so nobody arrives by accident) — that
+            // one digs. But PickWildRescueSpot ALSO hands out dig sites as
+            // hideouts to town-avoiding outlaws, and a blanket handoff put
+            // every one of those on a shovel too: a full guardian pack per
+            // arrival, outside the manager's cadence and its cap of two.
+            // Six hunts landed on one site inside seven minutes that way.
+            // The map in the pack is what tells the two apart.
+            if (_destType == DestinationType.TreasureSite &&
+                BotTreasureHunts.FindCarriedMap(bot) != null)
             {
                 targetBehavior  = "TreasureHunter";
                 chance          = 1.0;

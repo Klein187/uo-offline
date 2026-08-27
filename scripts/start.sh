@@ -11,7 +11,10 @@
 # =========================================================================
 set -uo pipefail
 
-INSTALL_ROOT="${HOME}/uo-modernuo"
+# install.sh copies this script INTO the install root, so our own
+# directory is the install root - including when the player chose a
+# custom location. Hardcoding ~/uo-modernuo broke every such install.
+INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST_DIR="${INSTALL_ROOT}/ModernUO/Distribution"
 PIDFILE="${INSTALL_ROOT}/modernuo.pid"
 LOGFILE="${INSTALL_ROOT}/modernuo.log"
@@ -31,9 +34,31 @@ DOTNET_ROOT="${HOME}/.dotnet"
 export DOTNET_ROOT
 export PATH="${DOTNET_ROOT}:${PATH}"
 
-say()  { printf '\033[0;36m--> %s\033[0m\n' "$*"; }
-warn() { printf '\033[0;33m[WARN]\033[0m %s\n' "$*" >&2; }
-die()  { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
+LAUNCHLOG="${INSTALL_ROOT}/launch.log"
+: > "${LAUNCHLOG}" 2>/dev/null || true
+
+log_line() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*" >> "${LAUNCHLOG}" 2>/dev/null || true; }
+
+# A launch failure the player can actually read. The desktop icon runs with
+# Terminal=false, so without this a failed start is indistinguishable from
+# the icon doing nothing at all.
+gui_error() {
+  local msg="$1"
+  local full="${msg}
+
+Full details: ${LAUNCHLOG}"
+  if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    if command -v zenity >/dev/null 2>&1; then
+      zenity --error --title="UO Offline" --no-wrap --text="${full}" >/dev/null 2>&1 &
+    elif command -v kdialog >/dev/null 2>&1; then
+      kdialog --title "UO Offline" --error "${full}" >/dev/null 2>&1 &
+    fi
+  fi
+}
+
+say()  { printf '\033[0;36m--> %s\033[0m\n' "$*"; log_line "--> $*"; }
+warn() { printf '\033[0;33m[WARN]\033[0m %s\n' "$*" >&2; log_line "[WARN] $*"; }
+die()  { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; log_line "[ERROR] $*"; gui_error "$*"; exit 1; }
 
 [[ -f "${DIST_DIR}/ModernUO.dll" ]] || die "ModernUO not built. Run install.sh first."
 
@@ -85,9 +110,18 @@ else
     #
     # Previous versions of this script sent all answers after a fixed
     # sleep, which caused them to land on the wrong prompts (the leading
-    # "y" got captured as the shard name). The robust fix: watch the log
-    # file for each prompt's distinctive text and send the matching reply
-    # only after we see it.
+    # "y" got captured as the shard name). We watch the log for each
+    # prompt's text and reply only after we see it.
+    #
+    # But the answers have to arrive down a TERMINAL, not a pipe.
+    # ModernUO sets Core.Headless from Console.IsInputRedirected, and
+    # ConsoleInputHandler.ReadLine THROWS when headless -- the throw is
+    # not caught, so the server kills itself the moment it asks the
+    # question. Piping the answers in is the one thing that guarantees
+    # they can never be read. That is why this runs under script(1),
+    # which puts the server on a pseudo-terminal: stdin is a tty, the
+    # prompts wait like they would for a person, and we still get the
+    # output in the log.
     # ---------------------------------------------------------------------
     say "First launch: running ModernUO setup wizard and creating owner account."
     say "This takes 30-60 seconds while the world saves are generated."
@@ -101,7 +135,17 @@ else
     # Truncate log so we don't match prompts from a previous failed run.
     : > "${LOGFILE}"
 
-    nohup dotnet ModernUO.dll <&9 >"${LOGFILE}" 2>&1 &
+    if command -v script >/dev/null 2>&1; then
+      # -q quiet, -e return the child's status, -f flush after every write
+      # so the prompt reaches the log before we look for it.
+      nohup script -qefc "dotnet ModernUO.dll" /dev/null <&9 >"${LOGFILE}" 2>&1 &
+    else
+      # No script(1) (util-linux). The wizard cannot be driven without a
+      # tty, so run it plainly; it will ask on the console and the
+      # manual-fallback message below explains what to do.
+      warn "script(1) not found - the setup wizard needs it to answer the prompts."
+      nohup dotnet ModernUO.dll >"${LOGFILE}" 2>&1 &
+    fi
     SERVER_PID=$!
     echo "${SERVER_PID}" > "${PIDFILE}"
 
@@ -159,7 +203,24 @@ else
       rm -f "${MARKER}"
     else
       warn "Did not see 'Owner account created' confirmation in log."
-      warn "Leaving the first-launch marker in place; check ${LOGFILE} to see what went wrong."
+      warn ""
+      warn "Create it by hand instead - this takes a minute and only happens once:"
+      warn ""
+      warn "    cd ${DIST_DIR}"
+      warn "    ${DOTNET_ROOT}/dotnet ModernUO.dll"
+      warn ""
+      warn "(The full path matters: .NET is installed privately under"
+      warn "${DOTNET_ROOT} and is not on your PATH, so a bare 'dotnet' will"
+      warn "say command not found. Do NOT apt install dotnet - you have it.)"
+      warn ""
+      warn "Answer 'y' when it asks about the owner account, then give it a"
+      warn "username and password (admin / admin is fine on your own machine)."
+      warn "Wait for 'Listening: 127.0.0.1:2593', then press Ctrl+C to stop it."
+      warn "After that:"
+      warn ""
+      warn "    rm -f ${MARKER}"
+      warn ""
+      warn "and start the game normally. Full log: ${LOGFILE}"
     fi
   else
     say "Starting ModernUO server..."
@@ -186,6 +247,12 @@ else
   if ! ss -tln 2>/dev/null | grep -q ":${LISTEN_PORT} "; then
     warn "Server didn't start listening within 60s. Check ${LOGFILE}"
     warn "Leaving it running; it may still come up."
+    log_line "--- last 40 lines of ${LOGFILE} ---"
+    tail -n 40 "${LOGFILE}" >> "${LAUNCHLOG}" 2>/dev/null || true
+    gui_error "The server did not finish starting within 60 seconds.
+
+The game will still try to open. If it cannot connect, the reason is in:
+${LOGFILE}"
   fi
 fi
 
@@ -254,6 +321,12 @@ if [[ -z "${CLASSICUO_BIN}" ]] || [[ ! -x "${CLASSICUO_BIN}" ]]; then
   warn "ClassicUO binary not found under ${CLASSICUO_DIR}."
   warn "Server is running on 127.0.0.1:${LISTEN_PORT}. Launch your client manually."
   warn "Run ${INSTALL_ROOT}/stop.sh when you're done to save and shut down the server."
+  gui_error "The game client (ClassicUO) is missing.
+
+Looked in: ${CLASSICUO_DIR}
+
+The server itself started and is running on 127.0.0.1:${LISTEN_PORT}.
+Re-running install.sh will fetch the client again."
   exit 0
 fi
 
@@ -303,7 +376,29 @@ cd "$(dirname "${CLASSICUO_BIN}")"
 
 # Run in the foreground and wait. When the client window closes, the
 # process exits and the EXIT trap above shuts down the server.
-"./$(basename "${CLASSICUO_BIN}")"
+#
+# Its output is teed into launch.log: a client that dies on startup (missing
+# system library, unreadable UO data) otherwise leaves nothing behind at all
+# when the desktop icon launched it.
+CLIENT_START="$(date +%s)"
+"./$(basename "${CLASSICUO_BIN}")" 2>&1 | tee -a "${LAUNCHLOG}"
+CLIENT_RC="${PIPESTATUS[0]}"
+CLIENT_RAN="$(( $(date +%s) - CLIENT_START ))"
+
+if [[ "${CLIENT_RC}" -ne 0 ]]; then
+  warn "ClassicUO exited with code ${CLIENT_RC} after ${CLIENT_RAN}s."
+  gui_error "The game client closed straight away (exit code ${CLIENT_RC}).
+
+This is usually a missing system library or a UO data folder the client
+cannot read. The client's own error output is at the end of:
+${LAUNCHLOG}"
+elif [[ "${CLIENT_RAN}" -lt 5 ]]; then
+  warn "ClassicUO exited cleanly after only ${CLIENT_RAN}s."
+  gui_error "The game client opened and closed again after ${CLIENT_RAN} seconds.
+
+Its output is at the end of:
+${LAUNCHLOG}"
+fi
 
 # Explicit exit so the trap fires cleanly with a known status.
 exit 0

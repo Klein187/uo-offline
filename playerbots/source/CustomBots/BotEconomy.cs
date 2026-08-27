@@ -226,41 +226,39 @@ namespace Server.CustomBots
 
         // -------------------------------------------------------------------
         // WTS DEAL — a bank broadcast actually concludes.
+        //
+        // It used to be four lines of dialogue and nothing else: neither
+        // bot moved, no item existed, no coin changed hands. Now the
+        // seller is holding real stock (BotShop), a buyer with real money
+        // walks over, they haggle over the real numbers, and the goods and
+        // the gold actually move. BotShopDeal owns the state machine.
         // -------------------------------------------------------------------
         private static bool TryWtsScene()
         {
+            // More than a couple of these running at once turns a bank
+            // into a trading floor. Two is a busy day.
+            if (BotShopDeal.ActiveCount >= 2)
+            {
+                return false;
+            }
+
             foreach (var m in World.Mobiles.Values)
             {
                 if (m is not PlayerBot seller ||
                     seller.Behavior is not BankSitterBehavior ||
-                    !IsSceneReady(seller))
+                    !IsSceneReady(seller) ||
+                    !BotShop.HasStock(seller))
                 {
                     continue;
                 }
 
-                foreach (var n in seller.Map.GetMobilesInRange(seller.Location, 10))
+                if (BotShopDeal.TryStart(seller, IsSceneReady))
                 {
-                    if (n is PlayerBot buyer && buyer != seller &&
-                        IsSceneReady(buyer) &&
-                        buyer.Behavior is BankSitterBehavior or IdleBehavior)
-                    {
-                        PlayWtsDeal(seller, buyer);
-                        return true;
-                    }
+                    SetCooldown(seller);
+                    return true;
                 }
             }
             return false;
-        }
-
-        private static void PlayWtsDeal(PlayerBot seller, PlayerBot buyer)
-        {
-            SetCooldown(seller, buyer);
-            Console.WriteLine($"[economy] {seller.Name} closes a WTS deal with {buyer.Name} at ({seller.X},{seller.Y})");
-            BotScene.Play(
-                (0.0, seller, ChatLibrary.PickRandom("wts")),
-                (3.0, buyer,  BotScene.Pick("trade_accept")),
-                (2.5, buyer,  "ty"),
-                (1.5, seller, BotScene.Pick("trade_close")));
         }
 
         // -------------------------------------------------------------------

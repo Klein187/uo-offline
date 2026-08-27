@@ -1998,91 +1998,16 @@ namespace Server.CustomBots
         // Solution: search loaded assemblies for the type, then try ctors
         // in order: () -> (int) -> (int hue). Returns null on failure.
         // -------------------------------------------------------------------
-        private static Type FindType(string fullName)
-        {
-            // First try the direct lookup (works if type is in calling asm).
-            var t = Type.GetType(fullName);
-            if (t != null) return t;
+        // Both live in BotItemFactory now — the hawker's sale stock needs
+        // exactly this, traps and all, and one copy of the Amount-vs-hue
+        // rule is the only safe number of copies to have.
+        private static Type FindType(string fullName) => BotItemFactory.FindType(fullName);
 
-            // Walk every loaded assembly looking for the type.
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try
-                {
-                    t = asm.GetType(fullName, false);
-                    if (t != null) return t;
-                }
-                catch
-                {
-                    // Some assemblies throw on GetType for various reasons;
-                    // skip them and try the next.
-                }
-            }
-            return null;
-        }
+        private static Item TryNewItem(string typeName) =>
+            BotItemFactory.Create(typeName);
 
-        private static Item TryNewItem(string typeName)
-        {
-            try
-            {
-                var t = FindType(typeName);
-                if (t == null) return null;
-
-                // Prefer a true parameterless ctor if present.
-                var ctor0 = t.GetConstructor(Type.EmptyTypes);
-                if (ctor0 != null) return ctor0.Invoke(null) as Item;
-
-                // Fall back to the single-int ctor — but that int means
-                // AMOUNT on stackables (Gold, Bandage, Kindling...) and
-                // HUE elsewhere. Passing 0 to an amount-ctor trips the
-                // engine's "Item.Amount <= 0" error on EVERY construction
-                // (the storm of ERR lines at each spawn wave). Inspect the
-                // parameter's name and pass a value that's safe for what
-                // it actually is.
-                var ctorInt = t.GetConstructor(new[] { typeof(int) });
-                if (ctorInt != null)
-                {
-                    bool isAmount = string.Equals(
-                        ctorInt.GetParameters()[0].Name, "amount",
-                        StringComparison.OrdinalIgnoreCase);
-                    return ctorInt.Invoke(new object[] { isAmount ? 1 : 0 }) as Item;
-                }
-
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static Item TryNewItem(string typeName, int hueArg)
-        {
-            try
-            {
-                var t = FindType(typeName);
-                if (t == null) return null;
-
-                // Prefer (int) ctor since we have a hue to pass.
-                var ctorInt = t.GetConstructor(new[] { typeof(int) });
-                if (ctorInt != null) return ctorInt.Invoke(new object[] { hueArg }) as Item;
-
-                // Fall back to parameterless ctor and set hue afterward.
-                var ctor0 = t.GetConstructor(Type.EmptyTypes);
-                if (ctor0 != null)
-                {
-                    var inst = ctor0.Invoke(null) as Item;
-                    if (inst != null && hueArg != 0) inst.Hue = hueArg;
-                    return inst;
-                }
-
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        private static Item TryNewItem(string typeName, int hueArg) =>
+            BotItemFactory.Create(typeName, hueArg);
 
         private static void Add(PlayerBot bot, Item item, int hue)
         {

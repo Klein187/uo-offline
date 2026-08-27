@@ -13,6 +13,9 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Buccaneer's Den is the reds' town.** A crowd of bots used to collect at its moongate, stand about, and leave. Bucc's Den is an island, and from that gate a bot can walk to 27 of the shard's 4,013 waypoints and 9 of its 480 destinations, so whoever gated in rolled somewhere it couldn't reach, gave up and left again. A wandering gate hop landed there roughly one time in eight, so the queue never emptied. It works the way it did in the era now: honest folk stay off the island, murderers never touch a public moongate at all (every one of them stands in a guarded town, so a red steps out of it and dies where it lands), and Bucc's Den is the only bank reds use because it's the only one with no guards over it. The standing crowd at that bank is murderers instead of bank sitters, and there are red spawns at the bank and the docks. Sailing over there is a bad idea, which is the point of the place.
+- **Reds turn up on their own.** Drawn red spawns get placed when the server starts, so an update that adds them just has them. No `[GeneratePKs` to remember.
+- **Buccaneer's Den got built out.** The island has a bank, a healer, a forge, a smith, a carpenter, a tailor and two provisioners, every one with arrival points, so reds can live there instead of it being a name on the map. Shard-wide that's 480 places bots walk to with 456 arrival points between them: the spots that let a bot stop at a counter or a doorstep instead of grinding against the nearest wall.
 - **Bots open doors.** Walk a bot into a closed door and it opens, the same way the client's auto-open-doors setting has always worked for players. Before this they only opened doors during stuck-recovery, so a bot that walked into a dungeon room or the Britain bank stayed shut in there until a rescue timer fired. Locked doors still stay locked, and house doors still run their own access checks.
 - **One button sets up the world.** The GM panel's WORLD tab was a 3x3 grid of setup commands that always got run in the same order anyway. It is now a single **First Time Setup** button, and it also places the PKs, which the old Run All never did.
 - **Twice as many bots.** The world population target went from 800 to 1600, and the reds scale with it. Dial it back live with `[SetBotPopulation` if your machine complains.
@@ -45,7 +48,7 @@ Newest first.
 
 </details>
 
-<details open>
+<details>
 <summary><b>Install</b></summary>
 
 <br>
@@ -97,6 +100,8 @@ chmod +x install.sh
 
 No git? On the GitHub page click **Code**, **Download ZIP**, unzip it, then `cd uo-offline-main` and run the same `chmod` and `./install.sh`.
 
+**Keep the folder you ran it from.** It is how you update later. `install.sh` reads the bots, the map tools and the launcher scripts from the folder around it, so it only works from inside a clone or an unzipped copy — not on its own.
+
 It installs to `~/uo-modernuo` and needs about 6 GB. To put it somewhere else:
 
 ```
@@ -133,6 +138,22 @@ When it's done you get a **UO Offline** icon on your Desktop. Double-click it to
 play. The first launch takes a few minutes longer than later ones: the server
 pre-bakes the pathfinding cache for the whole map before it accepts a
 connection, and that only happens once.
+Two things to expect while it runs:
+
+- **The game data is a 929 MB download.** Let it finish. An interrupted download used to leave a folder of empty files that only failed later, at launch; the installer now catches that and stops, but starting clean beats restarting halfway.
+- **First launch takes 30-60 seconds** while the world is generated and the `admin` account is created. That is normal, not a hang. After that it opens straight into the game.
+
+To update by hand, from the folder you installed from:
+
+```
+cd uo-offline
+git pull
+./install.sh
+```
+
+Re-running it is safe. It skips whatever is already done and keeps your world, characters and accounts. On a ZIP install there is nothing to `git pull`, so download the ZIP again and run `./install.sh` from the new folder.
+
+If the game does not start, `~/uo-modernuo/launch.log` says why, and `~/uo-modernuo/modernuo.log` is the server's own log. If the game data ever downloads badly, delete `~/uo-modernuo/UOData` and run the installer again.
 
 ### Updates
 
@@ -191,9 +212,11 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Real deaths and corpse runs.** Novices misjudge fights and sometimes die, and retreat thresholds scale with experience. Then the most famous thing in UO happens: the ghost haunts its corpse moaning OoOoOo, walks to a healer or shrine, resurrects in a death robe, and runs back hoping the loot is still there. It self-loots the vanilla way, or wails "WHO LOOTED MY CORPSE" if the corpse rotted.
 
-**PKs and region danger.** Reds run the era's murderer builds at Master and Grandmaster strength, in gangs that converge on victims, ambush dungeon entrances, and bandage and chug pots mid-fight. Murders heat up a danger map, and hot places empty of foot traffic. A civilian who spots a red screams "RED AT {PLACE}!!" and nearby travelers scatter.
+**PKs and region danger.** Reds run the era's murderer builds at Master and Grandmaster strength, in gangs that converge on victims, ambush dungeon entrances, and bandage and chug pots mid-fight. Murders heat up a danger map, and hot places empty of foot traffic. A civilian who spots a red screams "RED AT {PLACE}!!" and nearby travelers scatter. If the red is standing in a guarded town, someone yells for the guards instead, and T2A guards do not negotiate.
 
 **A visible economy.** Lumberjacks and Miners work 40 real wilderness sites, fill their packs with actual logs and ore, and haul the load to town. The matching crafter pays real gold from its own purse, and the raw haul becomes that crafter's ingots or boards. If no buyer is around, the bank takes it. Adventurers buy finished pieces off the shelf ("how much for a katana" then "800 gold" then "ty"), and the katana and the coin really change packs.
+
+**Hawkers sell what they actually have.** A bank hawker carries one real item and its WTS line is built from it, so "WTS GM halberd 5k" means there is a GM halberd in that pack and 5k buys it. Stock runs from reagent lots and exceptional plate up to vanq weapons and house deeds. Ask a price, haggle it down, and drag the gold onto them — the real trade window opens with the goods already on their side. Other bots shop too: one will cross the bank floor, argue over the number, and walk off with it.
 
 **Duels outside the bank.** Two fighters call a challenge, trade a "gl", walk ten tiles clear of the crowd, and fight to low health but never to the death. Then they close with "gf" while the loser demands a rematch or blames lag. Legal in town, as it was.
 
@@ -201,7 +224,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Supply runs.** Bows eat arrows, casts eat reagents, bandages get used up, and nothing refills invisibly. When a bot runs low it leaves what it's doing and goes shopping: the bowyer for arrows, the provisioner for bandages, the mage shop for reagents and scrolls, or its own bank box. The purchase happens on arrival, visibly, for gold.
 
-**Permanent bank crowds.** Every bank keeps five people standing around: regulars talking trade, hawkers spamming WTS, statues who went afk an hour ago, someone casting curse on himself over and over to raise resist (real spells, real reagents, refilled from the bank box when the pouch runs dry), someone hiding, and someone training stealth. Individuals die and get replaced, but the crowd never goes away.
+**Permanent bank crowds.** Every bank keeps five people standing around: regulars talking trade, hawkers spamming WTS for goods they are really holding, statues who went afk an hour ago, someone casting curse on himself over and over to raise resist (real spells, real reagents, refilled from the bank box when the pouch runs dry), someone hiding, and someone training stealth. Individuals die and get replaced, but the crowd never goes away.
 
 **Guild convoys and war bands.** Guildmates muster and walk road trips together ("guild trip to trinsic, who walks with me?"), fight as a group when the road bites back, and split up on arrival. Order and Chaos squads patrol to faction spots and set intercept courses on enemy patrols. When shields meet, nearby faction-mates get drafted in, up to 4v4.
 
@@ -360,7 +383,7 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 |---|---|
 | Britain | Magincia (markers only) |
 | Trinsic | Nujel'm (markers only) |
-| Vesper | Buccaneer's Den (markers only) |
+| Vesper | Buccaneer's Den (town built, no painted area yet) |
 | Minoc | Occlo |
 | Yew | |
 | Moonglow | |

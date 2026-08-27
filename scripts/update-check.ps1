@@ -98,9 +98,37 @@ try {
             -Headers $headers -TimeoutSec $TimeoutSec
         $count = $cmp.ahead_by
         foreach ($c in $cmp.commits) {
-            # First line of the commit message is the summary.
-            $subject = ($c.commit.message -split "`n")[0].Trim()
-            if ($subject) { $lines += "  - $subject" }
+            # First line is the summary. Anything after the blank line is
+            # the explanation, and for a change worth explaining that is
+            # the part the player actually wants -- a bare subject like
+            # "hawkers sell real goods" says what changed and nothing
+            # about what it means at the bank. Indented under the bullet,
+            # capped so one chatty commit cannot fill the whole box.
+            $msg = $c.commit.message -replace "`r`n", "`n"
+            $parts = $msg -split "`n"
+            $subject = $parts[0].Trim()
+            if (-not $subject) { continue }
+
+            $entry = @("  - $subject")
+            $shown = 0
+            for ($i = 1; $i -lt $parts.Count -and $shown -lt 8; $i++) {
+                $line = $parts[$i].TrimEnd()
+                if (-not $line.Trim()) {
+                    # Keep one blank line between paragraphs, never a run.
+                    if ($shown -gt 0 -and $entry[-1] -ne "") { $entry += "" }
+                    continue
+                }
+                # Trailers are bookkeeping, not news. The player does not
+                # need Co-Authored-By on a "what's in this update" screen.
+                if ($line -match '^\s*(Co-Authored-By|Signed-off-by|Claude-Session|Reviewed-by|Refs|Fixes|Closes)\s*:' -or
+                    $line -match '^\s*(https?://|Generated with)') { continue }
+                $entry += "      $($line.Trim())"
+                $shown++
+            }
+            # Commits are joined newest-first below, so each entry is one
+            # block; a trailing blank keeps them from running together.
+            if ($shown -gt 0) { $entry += "" }
+            $lines += ($entry -join "`r`n")
         }
         # Newest first reads better in a changelog.
         [array]::Reverse($lines)

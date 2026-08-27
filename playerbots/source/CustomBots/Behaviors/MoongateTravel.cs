@@ -72,17 +72,33 @@ namespace Server.CustomBots
             if (bot == null || bot.Deleted || !bot.Alive) return false;
             if (bot.Map == null || bot.Map == Map.Internal) return false;
 
+            // Every public moongate stands in a guarded town. A red that
+            // steps out of one is killed on arrival, so they never take them.
+            if (!RedTerritory.MayUseMoongates(bot)) return false;
+
             var gates = AllMoongates();
 
             // Need at least one gate that ISN'T the one we're standing on.
             var others = new List<BotDestination>();
             foreach (var g in gates)
             {
-                if (!string.Equals(g.Name, fromMoongateName,
+                if (string.Equals(g.Name, fromMoongateName,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    others.Add(g);
+                    continue;
                 }
+
+                // Don't send honest folk to the pirate town. Without this a
+                // wandering hop lands there about one time in eight, and
+                // since nothing on the island is walkable-to, every arrival
+                // turns straight round - which is what grew the crowd on
+                // that moongate.
+                if (RedTerritory.ShouldAvoid(bot, g))
+                {
+                    continue;
+                }
+
+                others.Add(g);
             }
             if (others.Count == 0) return false;
 

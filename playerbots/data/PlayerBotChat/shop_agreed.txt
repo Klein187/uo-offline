@@ -1,0 +1,6 @@
+# shop_agreed.txt — player asks again after already settling. {price}.
+
+{price} like i said
+still {price}
+{price}. we said that
+{price} m8

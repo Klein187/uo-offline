@@ -1,0 +1,10 @@
+# haggle_ask.txt — a bot buyer opens with the goods it heard about. {item}.
+
+how much for the {item}
+how much {item}
+hm for the {item}
+whats the {item} going for
+still got that {item}?
+price on the {item}?
+u still selling the {item}
+how much u want for {item}

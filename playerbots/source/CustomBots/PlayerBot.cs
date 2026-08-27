@@ -757,6 +757,17 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // OpenTrade — a bot can be the other half of a real trade window.
+        //
+        // Stock bails here when either side has no NetState, which for a
+        // bot is always. A hawker holding stock takes the drag instead and
+        // runs the sale; everything else falls through to stock behaviour
+        // (which declines, and the dropped item bounces back).
+        // -------------------------------------------------------------------
+        public override bool OpenTrade(Mobile from, Item offer = null) =>
+            BotTradeWindow.TryOpen(this, from, offer) || base.OpenTrade(from, offer);
+
+        // -------------------------------------------------------------------
         // OnDeath — record the death in the shard's event journal so bank
         // gossip can retell it. A murder by a red is bigger news than a
         // dungeon death, so it gets its own event type.

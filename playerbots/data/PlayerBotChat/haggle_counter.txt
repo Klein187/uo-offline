@@ -1,0 +1,9 @@
+# haggle_counter.txt — the seller moves, but not all the way. {price}.
+
+{price} is as low as i go
+cant do that. {price}
+meet me at {price}
+{price} and we're done
+{price}, cmon
+make it {price}
+nah. {price}

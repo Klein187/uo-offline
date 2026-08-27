@@ -144,6 +144,19 @@ namespace Server.CustomBots
 
             var lower = e.Speech.Trim().ToLowerInvariant();
 
+            // 0. Shop talk, before anything else. A hawker holding real
+            // stock and a player standing in front of it asking a price is
+            // the most specific thing that can be happening, and it must
+            // beat the name-mention branch — "ulric how much for the
+            // halberd" is a question about a halberd, not a roll call.
+            if (!Claimed(speaker, lower) && dist <= BotShopTalk.TalkRange &&
+                BotShopTalk.Handle(bot, speaker, lower, dist))
+            {
+                Claim(speaker, lower);
+                SetCooldown(bot, TimeSpan.FromSeconds(6));
+                return;
+            }
+
             // 1. My name? That always gets a turn and an answer — even if
             // someone else already piped up, and even mid-cooldown (its
             // own short guard applies instead). A name + group ask

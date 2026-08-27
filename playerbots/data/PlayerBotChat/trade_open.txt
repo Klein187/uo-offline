@@ -1,0 +1,8 @@
+# trade_open.txt — the seller puts the goods on the table. {item} {price}.
+
+{price} for the {item}
+theres the {item}. {price}
+{price}
+put the gold in
+{price} and its yours
+go ahead, {price}

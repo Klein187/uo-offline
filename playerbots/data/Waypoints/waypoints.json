@@ -1,5 +1,5 @@
 {
-  "_comment": "Waypoint graph for bot navigation. Each node connects to nearby nodes (≤38 tiles for PathFollower's A* to handle, with 32-tile soft limit for safety). Edges are made bidirectional automatically. After editing, run [ReloadWaypoints in-game. Coords were captured via [where in-game; Z values are critical — don't change them unless you re-verify the location. | dungeon cleanup 20260823-185850: merged 519 co-located/tight nodes, deleted 22 zero-degree nodes, dropped 1 over-cap edges and 8 self-edges; dungeon-internal edges symmetrised.",
+  "_comment": "Waypoint graph for bot navigation. Each node connects to nearby nodes (\u226438 tiles for PathFollower's A* to handle, with 32-tile soft limit for safety). Edges are made bidirectional automatically. After editing, run [ReloadWaypoints in-game. Coords were captured via [where in-game; Z values are critical \u2014 don't change them unless you re-verify the location. | dungeon cleanup 20260823-185850: merged 519 co-located/tight nodes, deleted 22 zero-degree nodes, dropped 1 over-cap edges and 8 self-edges; dungeon-internal edges symmetrised.",
   "Waypoints": [
     {
       "Name": "Britain Bank",
@@ -101,7 +101,7 @@
     },
     {
       "Name": "Sewer Entrance",
-      "_note": "Sewer entrance — likely teleports to Britain Sewers",
+      "_note": "Sewer entrance \u2014 likely teleports to Britain Sewers",
       "X": 1514,
       "Y": 1650,
       "Z": 20,
@@ -416,7 +416,7 @@
     },
     {
       "Name": "Britain Forge 3",
-      "_note": "Z=30 — raised forge area",
+      "_note": "Z=30 \u2014 raised forge area",
       "X": 1434,
       "Y": 1573,
       "Z": 30,
@@ -459,7 +459,7 @@
     },
     {
       "Name": "Road To Graveyard 1",
-      "_note": "Z=35 — raised path north of the forge toward the graveyard",
+      "_note": "Z=35 \u2014 raised path north of the forge toward the graveyard",
       "X": 1431,
       "Y": 1531,
       "Z": 35,
@@ -12836,8 +12836,7 @@
         "WP 1066",
         "WP 1072",
         "WP 1073",
-        "WP 1075",
-        "WP 1077"
+        "WP 1075"
       ]
     },
     {
@@ -12846,31 +12845,24 @@
       "Y": 1149,
       "Z": 0,
       "Connects": [
-        "WP 1074",
-        "WP 1076",
-        "WP 1077"
+        "WP 1074"
       ]
     },
     {
       "Name": "WP 1076",
       "X": 4404,
-      "Y": 1148,
+      "Y": 1136,
       "Z": 0,
       "Connects": [
-        "WP 1075",
         "WP 1132"
       ]
     },
     {
       "Name": "WP 1077",
-      "X": 4411,
-      "Y": 1169,
+      "X": 4405,
+      "Y": 1172,
       "Z": 0,
-      "Connects": [
-        "WP 1074",
-        "WP 1075",
-        "WP 1078"
-      ]
+      "Connects": []
     },
     {
       "Name": "WP 1078",
@@ -12878,7 +12870,6 @@
       "Y": 1170,
       "Z": 0,
       "Connects": [
-        "WP 1077",
         "WP 1079",
         "WP 1081"
       ]
@@ -12947,7 +12938,8 @@
         "WP 1082",
         "WP 1083",
         "WP 1085",
-        "WP 1131"
+        "WP 1131",
+        "Verity Dock Trail 3"
       ]
     },
     {
@@ -13438,22 +13430,20 @@
     {
       "Name": "WP 1132",
       "X": 4404,
-      "Y": 1124,
+      "Y": 1117,
       "Z": 0,
       "Connects": [
         "WP 1076",
-        "WP 1133",
         "WP 1134"
       ]
     },
     {
       "Name": "WP 1133",
       "X": 4424,
-      "Y": 1125,
+      "Y": 1124,
       "Z": 0,
       "Connects": [
-        "WP 1071",
-        "WP 1132"
+        "WP 1071"
       ]
     },
     {
@@ -13622,7 +13612,7 @@
     },
     {
       "Name": "WP 1149",
-      "X": 4453,
+      "X": 4457,
       "Y": 1074,
       "Z": 0,
       "Connects": [
@@ -13751,8 +13741,8 @@
     },
     {
       "Name": "WP 1162",
-      "X": 4545,
-      "Y": 880,
+      "X": 4548,
+      "Y": 885,
       "Z": 20,
       "Connects": [
         "Verity Dock Trail 20",
@@ -17274,17 +17264,15 @@
       "Y": 1247,
       "Z": 0,
       "Connects": [
-        "Moonglow Road 1",
-        "Moonglow Road 3"
+        "Moonglow Road 1"
       ]
     },
     {
       "Name": "Moonglow Road 3",
-      "X": 4467,
-      "Y": 1219,
+      "X": 4462,
+      "Y": 1204,
       "Z": 0,
       "Connects": [
-        "Moonglow Road 2",
         "Moonglow Road 4"
       ]
     },
@@ -17300,8 +17288,8 @@
     },
     {
       "Name": "Moonglow Road 8",
-      "X": 4473,
-      "Y": 1176,
+      "X": 4465,
+      "Y": 1180,
       "Z": 0,
       "Connects": [
         "Moonglow Road 9",
@@ -17311,7 +17299,7 @@
     {
       "Name": "Moonglow Road 9",
       "X": 4472,
-      "Y": 1175,
+      "Y": 1180,
       "Z": 0,
       "Connects": [
         "Moonglow Road 8"
@@ -17377,7 +17365,7 @@
     },
     {
       "Name": "Humility Trail 1",
-      "X": 4132,
+      "X": 4134,
       "Y": 3692,
       "Z": 0,
       "Connects": [
@@ -37334,11 +37322,12 @@
     },
     {
       "Name": "Verity Dock Trail 3",
-      "X": 4467,
-      "Y": 1219,
+      "X": 4465,
+      "Y": 1217,
       "Z": 0,
       "Connects": [
-        "Verity Dock Trail 2"
+        "Verity Dock Trail 2",
+        "Moonglow Road 3"
       ]
     },
     {
@@ -37413,9 +37402,9 @@
     },
     {
       "Name": "Verity Dock Trail 15",
-      "X": 4499,
-      "Y": 948,
-      "Z": 0,
+      "X": 4508,
+      "Y": 956,
+      "Z": 10,
       "Connects": [
         "Verity Dock Trail 14",
         "Verity Dock Trail 16"
@@ -37423,8 +37412,8 @@
     },
     {
       "Name": "Verity Dock Trail 16",
-      "X": 4504,
-      "Y": 943,
+      "X": 4513,
+      "Y": 944,
       "Z": 0,
       "Connects": [
         "Verity Dock Trail 15",
@@ -37433,9 +37422,9 @@
     },
     {
       "Name": "Verity Dock Trail 17",
-      "X": 4511,
-      "Y": 916,
-      "Z": 0,
+      "X": 4519,
+      "Y": 919,
+      "Z": 10,
       "Connects": [
         "Verity Dock Trail 16",
         "Verity Dock Trail 18"
@@ -37443,9 +37432,9 @@
     },
     {
       "Name": "Verity Dock Trail 18",
-      "X": 4521,
-      "Y": 906,
-      "Z": 0,
+      "X": 4527,
+      "Y": 908,
+      "Z": 20,
       "Connects": [
         "Verity Dock Trail 17",
         "Verity Dock Trail 19"
@@ -37453,9 +37442,9 @@
     },
     {
       "Name": "Verity Dock Trail 19",
-      "X": 4536,
-      "Y": 888,
-      "Z": 0,
+      "X": 4532,
+      "Y": 885,
+      "Z": 20,
       "Connects": [
         "Verity Dock Trail 18",
         "Verity Dock Trail 20"
@@ -37463,42 +37452,12 @@
     },
     {
       "Name": "Verity Dock Trail 20",
-      "X": 4548,
-      "Y": 876,
-      "Z": 0,
+      "X": 4547,
+      "Y": 878,
+      "Z": 20,
       "Connects": [
         "Verity Dock Trail 19",
-        "Verity Dock Trail 21",
         "WP 1162"
-      ]
-    },
-    {
-      "Name": "Verity Dock Trail 21",
-      "X": 4558,
-      "Y": 863,
-      "Z": 0,
-      "Connects": [
-        "Verity Dock Trail 20",
-        "Verity Dock Trail 22"
-      ]
-    },
-    {
-      "Name": "Verity Dock Trail 22",
-      "X": 4558,
-      "Y": 853,
-      "Z": 0,
-      "Connects": [
-        "Verity Dock Trail 21",
-        "Verity Dock Trail 23"
-      ]
-    },
-    {
-      "Name": "Verity Dock Trail 23",
-      "X": 4552,
-      "Y": 847,
-      "Z": 0,
-      "Connects": [
-        "Verity Dock Trail 22"
       ]
     },
     {
@@ -40760,6 +40719,77 @@
       "Z": 44,
       "Connects": [
         "WP 1408"
+      ]
+    },
+    {
+      "Name": "WP 1308",
+      "X": 3690,
+      "Y": 2528,
+      "Z": 0,
+      "Connects": [
+        "WP 1050"
+      ]
+    },
+    {
+      "Name": "WP 1410",
+      "X": 3707,
+      "Y": 2523,
+      "Z": 0,
+      "Connects": [
+        "WP 1308"
+      ]
+    },
+    {
+      "Name": "WP 1411",
+      "X": 3713,
+      "Y": 2497,
+      "Z": 0,
+      "Connects": [
+        "WP 1410",
+        "WP 1051"
+      ]
+    },
+    {
+      "Name": "WP 1412",
+      "X": 4414,
+      "Y": 1171,
+      "Z": 0,
+      "Connects": [
+        "WP 1077",
+        "WP 1075",
+        "WP 1074",
+        "WP 1078"
+      ]
+    },
+    {
+      "Name": "WP 1413",
+      "X": 4404,
+      "Y": 1147,
+      "Z": 0,
+      "Connects": [
+        "WP 1075",
+        "WP 1076",
+        "WP 1132"
+      ]
+    },
+    {
+      "Name": "WP 1414",
+      "X": 4412,
+      "Y": 1124,
+      "Z": 0,
+      "Connects": [
+        "WP 1132",
+        "WP 1133"
+      ]
+    },
+    {
+      "Name": "WP 1415",
+      "X": 4417,
+      "Y": 1099,
+      "Z": 0,
+      "Connects": [
+        "WP 1070",
+        "WP 1134"
       ]
     }
   ]

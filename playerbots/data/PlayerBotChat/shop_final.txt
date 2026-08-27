@@ -1,0 +1,7 @@
+# shop_final.txt — the seller's last word to a player. {price}.
+
+{price}. final
+{price} thats it
+last offer {price}
+{price} or im done haggling
+im done. {price}

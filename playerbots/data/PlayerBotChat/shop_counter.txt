@@ -1,0 +1,9 @@
+# shop_counter.txt — countering a player's offer. {price}.
+
+{price} is as low as i go
+cant do that. {price}
+meet me at {price}
+{price} and its yours
+make it {price}
+nah. {price}
+{price}, cmon its worth it

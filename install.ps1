@@ -868,6 +868,30 @@ function InstallRazor {
 # Step 9 — ModernUO config
 # ---------------------------------------------------------------------------
 function WriteModernUOConfig {
+  # Keep a shard name that is already set.
+  #
+  # ClassicUO keeps each player's audio, video, interface and macros in
+  # Data/Profiles/<account>/<SERVER NAME>/<character>. Rename the shard and
+  # the client looks in a folder that does not exist, builds a fresh one from
+  # defaults, and it looks for all the world like the update wiped their
+  # settings. Nothing is lost, but it is lost as far as they can tell.
+  #
+  # So only a fresh install gets our name. An install that already has one
+  # keeps it, which still suppresses the shard-name prompt.
+  $script:ResolvedShardName = $ShardName
+  $existingCfg = [IO.Path]::Combine($CfgDir, "modernuo.json")
+  if (Test-Path $existingCfg) {
+    try {
+      $prevName = (Get-Content $existingCfg -Raw | ConvertFrom-Json).settings.'serverListing.serverName'
+      if ($prevName) {
+        $script:ResolvedShardName = $prevName
+        Say "Keeping this install's existing shard name: $prevName"
+      }
+    } catch {
+      Warn "Could not read the existing modernuo.json; using the default shard name."
+    }
+  }
+
   Banner "Writing ModernUO configuration"
   New-Item -ItemType Directory -Force -Path $CfgDir | Out-Null
   $uoData = $script:UOData.Replace([char]92,[char]47)
@@ -883,8 +907,8 @@ function WriteModernUOConfig {
     "autosave.saveDelay": "00:05:00",
     "serverList.address": "127.0.0.1",
     "serverList.autoDetect": "false",
-    "serverListing.name": "$ShardName",
-    "serverListing.serverName": "$ShardName",
+    "serverListing.name": "$($script:ResolvedShardName)",
+    "serverListing.serverName": "$($script:ResolvedShardName)",
     "accountHandler.enableAutoAccountCreation": "True",
     "pathfinding.prebakeMaps": "True"
   }
@@ -1030,7 +1054,7 @@ function WriteClassicUOSettings {
   "ultimaonlinedirectory": "$uoData",
   "clientversion": "$UODataVersion",
   "lastservernum": 1,
-  "last_server_name": "$ShardName",
+  "last_server_name": "$(if ($script:ResolvedShardName) { $script:ResolvedShardName } else { $ShardName })",
   "fps": 60,
   "encryption": 0,
   "save_password": true,

@@ -1,0 +1,8 @@
+# shop_paynow.txt — where to put the money. {price} {item}.
+
+drop the gold on me
+{price}, drop it on me
+drop {price} on me
+gold on me and its urs
+drop the coin on me m8
+{price} on me, ill hand it over

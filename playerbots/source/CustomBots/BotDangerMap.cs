@@ -23,6 +23,8 @@ using System.Collections.Generic;
 using Server;
 using Server.Collections;
 using Server.Commands;
+using Server.Mobiles;
+using Server.Regions;
 
 namespace Server.CustomBots
 {
@@ -147,9 +149,24 @@ namespace Server.CustomBots
         // One alarm per red per window — the same red isn't "spotted"
         // every fifteen seconds forever.
         private static readonly TimeSpan RedCooldown = TimeSpan.FromMinutes(6);
+        // Yelling for the guards is a separate, much shorter beat. The
+        // shout above is news that travels; this is a thing you do RIGHT
+        // NOW because there is a murderer standing in the street, and if
+        // he lives through the first call you do it again.
+        private static readonly TimeSpan GuardCallCooldown = TimeSpan.FromSeconds(45);
 
         private static Timer _timer;
         private static readonly Dictionary<Serial, DateTime> _alerted = new();
+        private static readonly Dictionary<Serial, DateTime> _guardsCalled = new();
+
+        // Collected during the sweep, acted on after it closes. Calling the
+        // guards SPAWNS a guard, and spawning a mobile inside a walk of
+        // World.Mobiles throws "Collection was modified" and takes the
+        // whole server down with it — the same trap RaiseAlarm's scatter
+        // list documents a few lines below, which this walked straight
+        // into. Reused rather than reallocated; the tick is every 15s.
+        private static readonly List<(PlayerBot red, PlayerBot witness, bool alarm, bool guards)>
+            _pending = new();
 
         public static void Configure()
         {
@@ -166,11 +183,27 @@ namespace Server.CustomBots
             foreach (var m in World.Mobiles.Values)
             {
                 if (m is not PlayerBot red || red.Deleted || !red.Alive ||
-                    red.Behavior is not PKBehavior)
+                    red.Map == null || red.Map == Map.Internal)
                 {
                     continue;
                 }
-                if (_alerted.TryGetValue(red.Serial, out var until) && Core.Now < until)
+
+                // A red is a red whether or not it is running the PK brain.
+                // This used to test PKBehavior alone, so a murderer walking
+                // through on an ordinary Traveler trip drew no reaction at
+                // all — which is exactly the case that put reds in the
+                // middle of town with nobody saying a word.
+                if (red.Behavior is not PKBehavior && !red.Murderer)
+                {
+                    continue;
+                }
+
+                bool alarmDue =
+                    !_alerted.TryGetValue(red.Serial, out var until) || Core.Now >= until;
+                bool guardsDue = red.Murderer &&
+                    (!_guardsCalled.TryGetValue(red.Serial, out var quiet) || Core.Now >= quiet);
+
+                if (!alarmDue && !guardsDue)
                 {
                     continue;
                 }
@@ -193,13 +226,76 @@ namespace Server.CustomBots
                     continue;
                 }
 
-                if (_alerted.Count > 1000)
-                {
-                    _alerted.Clear();
-                }
-                _alerted[red.Serial] = Core.Now + RedCooldown;
-                RaiseAlarm(witness, red);
+                _pending.Add((red, witness, alarmDue, guardsDue));
             }
+
+            // Out of the enumeration — now it is safe to make things happen.
+            for (var i = 0; i < _pending.Count; i++)
+            {
+                var (red, witness, alarmDue, guardsDue) = _pending[i];
+
+                if (red.Deleted || !red.Alive || witness.Deleted || !witness.Alive)
+                {
+                    continue; // the world moved while we were deciding
+                }
+
+                // Guards first. Shouting the news is what you do after
+                // you've done something about it.
+                if (guardsDue && TryCallGuards(witness, red))
+                {
+                    if (_guardsCalled.Count > 1000)
+                    {
+                        _guardsCalled.Clear();
+                    }
+                    _guardsCalled[red.Serial] = Core.Now + GuardCallCooldown;
+                }
+
+                if (alarmDue)
+                {
+                    if (_alerted.Count > 1000)
+                    {
+                        _alerted.Clear();
+                    }
+                    _alerted[red.Serial] = Core.Now + RedCooldown;
+                    RaiseAlarm(witness, red);
+                }
+            }
+
+            _pending.Clear();
+        }
+
+        // The oldest reflex in the game: a murderer walks into town and
+        // somebody yells for the guards.
+        //
+        // The shout has to be backed by a direct CallGuards. The vanilla
+        // "guards" keyword lives in GuardedRegion.OnSpeech, and keywords
+        // are parsed out of the CLIENT's speech packet — a Mobile.Say from
+        // server code carries none, so a bot can holler the word all day
+        // and nothing happens. Hence: say the line for the people watching,
+        // then call the region directly for the effect.
+        private static bool TryCallGuards(PlayerBot witness, PlayerBot red)
+        {
+            var region = red.Region.GetRegion<GuardedRegion>();
+            if (region == null || region.IsDisabled() || !region.IsGuardCandidate(red))
+            {
+                return false;
+            }
+
+            // The witness has to be under the same protection it is
+            // invoking. Somebody safely outside the town line watching a
+            // red stand inside it doesn't get to call the watch.
+            if (witness.Region.GetRegion<GuardedRegion>() != region)
+            {
+                return false;
+            }
+
+            var line = ChatLibrary.PickRandom("guards_call");
+            witness.Say(string.IsNullOrEmpty(line) ? "GUARDS!!" : line);
+            region.CallGuards(red.Location);
+
+            Console.WriteLine(
+                $"[pk] {witness.Name} called the guards on {red.Name} in {region.Name}!");
+            return true;
         }
 
         private static void RaiseAlarm(PlayerBot witness, PlayerBot red)

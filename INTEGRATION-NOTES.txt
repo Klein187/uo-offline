@@ -2,8 +2,8 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: two stock ModernUO files need a small patch, because they ARE
-engine files and cannot live in CustomBots/.
+one exception: three stock ModernUO files need a small patch, because they
+ARE engine files and cannot live in CustomBots/.
 
 Both installers apply these for you now. They ship as unified diffs in
 patches/ and go on with git apply, in the "Patch the engine" step right
@@ -13,7 +13,7 @@ no longer applies, the install warns and carries on, and you can apply it by
 hand from the descriptions below.
 
 If you are deploying the bots onto a ModernUO clone by hand, without the
-installer, apply both yourself.
+installer, apply them yourself.
 
 Stock-file patch required by the housing system (2026-07-05)
 ------------------------------------------------------------
@@ -33,6 +33,32 @@ rush on every boot. One-line patch in:
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or
 bot houses will vanish on the first restart.
+
+Stock-file patch: let a bot be one side of a trade window (2026-08-26)
+----------------------------------------------------------------------
+CustomBots/BotTradeWindow.cs lets a player buy from a bank hawker the way
+players always bought from each other: drag gold onto them and the real
+secure trade window opens, with the bot holding up its half.
+
+Stock ModernUO assumes both sides of a trade are connected clients and
+dereferences NetState without checking. A PlayerBot is a real PlayerMobile
+with no connection, so the trade constructor threw on the first send.
+Patch in:
+
+  Projects/Server/SecureTrade.cs
+
+  Every from.NetState.X / to.NetState.X becomes from.NetState?.X — in the
+  constructor, in Close(), and in both Update() branches. A participant
+  with no client simply receives no packets, which is correct: there is
+  no window to draw. Containers, accept flags and item transfer are
+  untouched, so a player-to-player trade behaves exactly as before.
+
+Nothing else was needed. Mobile.OpenTrade is virtual, so PlayerBot
+overrides it rather than being patched, and the trade is registered on
+the player's own NetState.Trades list.
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or
+dragging gold onto a hawker does nothing at all.
 
 Stock-file patch: public moongates for young players (2026-08-23)
 -----------------------------------------------------------------

@@ -1,0 +1,7 @@
+# shop_stock.txt — player asks what's on offer. {item} {price}.
+
+{item}, {price}
+got {item}. {price}
+just the {item}, {price}
+{item} for {price}
+{item}. {price} obo

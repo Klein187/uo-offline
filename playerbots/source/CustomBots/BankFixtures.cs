@@ -18,6 +18,7 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using Server;
 
 namespace Server.CustomBots
@@ -54,6 +55,50 @@ namespace Server.CustomBots
             Timer.DelayCall(TimeSpan.FromSeconds(12), EnsureAll);
         }
 
+        // Remove a blue bank crowd from a bank that should not have one.
+        // Deleting the spawner alone is not enough: its sitters are
+        // lifecycle-exempt, so nothing would ever move them on.
+        private static void ClearBlueCrowd(Map map, Point3D spot, string bankName)
+        {
+            var spawners = new List<FixedRoleBotSpawner>();
+            foreach (var s in map.GetItemsInRange<FixedRoleBotSpawner>(spot, ExistingSearchRange))
+            {
+                if (!s.Deleted &&
+                    string.Equals(s.BehaviorName, "BankSitter", StringComparison.OrdinalIgnoreCase))
+                {
+                    spawners.Add(s);
+                }
+            }
+
+            var sitters = new List<PlayerBot>();
+            foreach (var m in map.GetMobilesInRange<PlayerBot>(spot, ExistingSearchRange))
+            {
+                if (!m.Deleted && m.Behavior is BankSitterBehavior)
+                {
+                    sitters.Add(m);
+                }
+            }
+
+            if (spawners.Count == 0 && sitters.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var s in spawners)
+            {
+                s.Delete();
+            }
+
+            foreach (var m in sitters)
+            {
+                m.Delete();
+            }
+
+            Console.WriteLine(
+                $"[fixtures] cleared the blue crowd from '{bankName}' " +
+                $"({spawners.Count} spawner(s), {sitters.Count} sitter(s)) — reds only there");
+        }
+
         private static void EnsureAll()
         {
             if (!Enabled)
@@ -73,11 +118,25 @@ namespace Server.CustomBots
 
                 var spot = d.ArrivalPoint ?? d.Location;
 
+                // Buccaneer's Den is the reds' town and its bank is the only
+                // one they can use - every other one has guards over it. So
+                // the standing crowd there is murderers, not bank sitters.
+                var role = RedTerritory.Contains(spot) ? "PK" : "BankSitter";
+
+                // A shard that ran before this rule has a blue crowd sitting
+                // in the pirate town. Clear it out: the spawner, and the
+                // lifecycle-exempt sitters it made, which nothing else will
+                // ever tidy up.
+                if (role == "PK")
+                {
+                    ClearBlueCrowd(map, spot, d.Name);
+                }
+
                 bool exists = false;
                 foreach (var s in map.GetItemsInRange<FixedRoleBotSpawner>(spot, ExistingSearchRange))
                 {
                     if (!s.Deleted &&
-                        string.Equals(s.BehaviorName, "BankSitter",
+                        string.Equals(s.BehaviorName, role,
                             StringComparison.OrdinalIgnoreCase))
                     {
                         exists = true;
@@ -100,7 +159,7 @@ namespace Server.CustomBots
                 }
 
                 var spawner = new FixedRoleBotSpawner(
-                    "BankSitter", SittersPerBank, RespawnMin, RespawnMax)
+                    role, SittersPerBank, RespawnMin, RespawnMax)
                 {
                     HomeRange = SpawnSpread,
                 };
@@ -109,7 +168,7 @@ namespace Server.CustomBots
                 placed++;
                 Console.WriteLine(
                     $"[fixtures] permanent bank crowd placed at '{d.Name}' " +
-                    $"({spot.X},{spot.Y}) — {SittersPerBank} sitters");
+                    $"({spot.X},{spot.Y}) — {SittersPerBank} × {role}");
             }
 
             if (placed > 0)

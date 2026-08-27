@@ -61,7 +61,9 @@ namespace Server.CustomBots
                     _statusLine = "at the stables";
                     break;
                 case DestinationType.Tavern:
-                    ChatCategories = new[] { "small_talk", "lfg", "wts" };
+                    // "wts" dropped — see BotShop: selling is for bots
+                    // that actually have the goods on them.
+                    ChatCategories = new[] { "small_talk", "lfg", "wtb" };
                     _statusLine = "drinking at the tavern";
                     break;
                 case DestinationType.Shrine:

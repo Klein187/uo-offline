@@ -1,0 +1,8 @@
+# shop_price.txt — player asks the price. {price}.
+
+{price}
+{price} gp
+askin {price}
+{price} for it
+{price}, its clean
+{price}. good deal honestly

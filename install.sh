@@ -149,7 +149,7 @@ install_deps() {
     sudo apt-get update -y
     sudo apt-get install -y \
       libicu-dev libdeflate-dev zstd libargon2-dev liburing-dev \
-      libgdiplus p7zip-full unzip build-essential git
+      libgdiplus p7zip-full unar unzip build-essential git
   elif command -v pacman >/dev/null; then
     say "Arch-family distro detected. Using pacman."
     if [[ -f /etc/os-release ]] && grep -qi steamos /etc/os-release; then
@@ -161,13 +161,13 @@ install_deps() {
     fi
     sudo pacman -S --needed --noconfirm \
       icu libdeflate zstd argon2 liburing \
-      libgdiplus p7zip unzip base-devel git
+      libgdiplus p7zip unarchiver unzip base-devel git
   elif command -v dnf >/dev/null; then
     say "Fedora-family distro detected. Using dnf."
     sudo dnf install -y libicu libdeflate-devel zstd libargon2-devel \
-      liburing-devel libgdiplus p7zip unzip @development-tools git
+      liburing-devel libgdiplus p7zip unar unzip @development-tools git
   else
-    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unzip."
+    die "Unsupported package manager. Install manually: git, libicu, libdeflate, zstd, libargon2, liburing, p7zip, unar, unzip."
   fi
 
   command -v git >/dev/null || die "git is still missing after the dependency step. Install git and re-run."
@@ -337,6 +337,181 @@ fix_felucca_season() {
 # ---------------------------------------------------------------------------
 # Step 6 — UO game data: detect existing, or auto-download
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Is this folder actually a usable UO data set?
+#
+# Checking that a couple of files merely EXIST is not enough, and tiledata.mul
+# is the reason. The server picks that file's record layout from its size
+# alone: a truncated 3.1 MB file looks to it like an intact 1.6 MB one, so it
+# reads the smaller layout, runs off the end, and dies with
+#
+#   System.IO.EndOfStreamException at Server.TileData.Load()
+#
+# on first launch. The install "succeeds", the player clicks the icon, and
+# gets a .NET stack trace. Catching it here costs one stat per file.
+#
+# Sizes are floors, not exact matches, so a legitimately different client
+# build still passes. tiledata.mul's floor is the server's own 7.0.0 bracket.
+# Returns 0 if the folder is usable, 1 otherwise (reason on stderr).
+# ---------------------------------------------------------------------------
+uo_data_problem() {
+  local dir="$1"
+  local spec name min actual
+
+  for spec in \
+    "tiledata.mul:1644544" \
+    "art.mul:10000000"    \
+    "artidx.mul:100000"   \
+    "map0.mul:50000000"   \
+    "statics0.mul:1000000" \
+    "staidx0.mul:500000"  \
+    "hues.mul:100000"     \
+    "radarcol.mul:100000"
+  do
+    name="${spec%%:*}"
+    min="${spec##*:}"
+
+    if [[ ! -f "${dir}/${name}" ]]; then
+      printf '%s is missing' "${name}"
+      return 1
+    fi
+
+    actual="$(stat -c%s "${dir}/${name}" 2>/dev/null || echo 0)"
+    if [[ "${actual}" -lt "${min}" ]]; then
+      printf '%s is only %s bytes (expected at least %s) - the file is truncated' \
+        "${name}" "${actual}" "${min}"
+      return 1
+    fi
+  done
+
+  return 0
+}
+
+# Unpack the UO Classic full-client installer.
+#
+# The file is named .exe and the old code fed it to 7z, which is wrong in a
+# way that looks almost right: it is a WinRAR self-extracting archive with a
+# RAR5 payload -- the RAR5 signature sits about 1.1 MB into it. 7-Zip
+# parses the RAR container well enough to LIST every entry, so the extract
+# appears to start, and then fails every single file with "Unsupported
+# Method". The RAR algorithm is non-free, so Debian and Ubuntu strip the
+# decoder out of p7zip-full and ship it separately as p7zip-rar -- and even
+# with that installed, p7zip's Rar handler only ever did RAR4. The Windows
+# installer never hit this: it runs the SFX's own WinRAR stub with -s2 -y -d.
+#
+# So: try the extractors that can genuinely do RAR5, best first, and judge
+# each by whether art.mul actually appeared rather than by its exit code.
+#
+#   unar   free-licensed, reads RAR5, in the main repos everywhere
+#   7zz    official 7-Zip build (the "7zip" package), reads RAR5
+#   unrar  the non-free original, if the user already has it
+#   7z     p7zip; kept last because it is the one that cannot do this
+unpack_uo_exe() {
+  local exe="$1" dest="$2" tool rc=1
+
+  # Pass 1: the tools that can find the payload behind the SFX stub on
+  # their own. unrar and official 7-Zip both scan for it; unar does not,
+  # and answers "Couldn't recognize the archive format".
+  for tool in unrar 7zz 7z unar; do
+    command -v "${tool}" >/dev/null || continue
+    say "Extracting with ${tool}..."
+    run_extractor "${tool}" "${exe}" "${dest}" && { rc=0; break; }
+    warn "${tool} could not read it directly."
+  done
+
+  # Pass 2: strip the stub and hand the tools a plain .rar. The payload is
+  # a complete standalone archive -- it runs from its signature to the last
+  # byte of the file with an end-of-archive record and nothing after it --
+  # so everything that speaks RAR5 takes it, unar included.
+  if [[ "${rc}" -ne 0 ]]; then
+    local off rar="${exe%.exe}.rar"
+    off="$(rar_payload_offset "${exe}")"
+    if [[ -n "${off}" ]]; then
+      say "Stripping the self-extractor stub (payload at byte ${off})..."
+      if tail -c "+$((off + 1))" "${exe}" > "${rar}"; then
+        for tool in unar unrar 7zz 7z; do
+          command -v "${tool}" >/dev/null || continue
+          say "Extracting with ${tool}..."
+          run_extractor "${tool}" "${rar}" "${dest}" && { rc=0; break; }
+          warn "${tool} could not read the stripped archive either."
+        done
+      fi
+      rm -f "${rar}"
+    else
+      warn "No RAR5 payload found inside ${exe}; the download may be damaged."
+    fi
+  fi
+
+  if [[ "${rc}" -eq 0 ]]; then
+    return 0
+  fi
+
+  warn "Could not unpack ${exe}."
+  warn "It is a WinRAR (RAR5) self-extracting archive. p7zip cannot read RAR"
+  warn "at all, and unar cannot see past the stub. Install one that can and"
+  warn "re-run this script:"
+  warn "    Debian/Ubuntu:  sudo apt install unrar     (or: 7zip)"
+  warn "    Fedora:         sudo dnf install unrar     (or: p7zip-plugins)"
+  warn "    Arch/SteamOS:   sudo pacman -S unrar"
+  return 1
+}
+
+# One extraction attempt. Judged by whether the data files actually appeared,
+# never by the exit code -- 7z "succeeds" while failing every file with
+# "Unsupported Method", which is how this went unnoticed in the first place.
+run_extractor() {
+  local tool="$1" archive="$2" dest="$3"
+
+  case "${tool}" in
+    # -D stops unar wrapping everything in a folder named after the archive;
+    # the payload already carries its own version folder.
+    unar)  unar -q -f -D -o "${dest}" "${archive}" >/dev/null 2>&1 || true ;;
+    unrar) unrar x -y -inul "${archive}" "${dest}/" >/dev/null 2>&1 || true ;;
+    *)     "${tool}" x -y "-o${dest}" "${archive}" >/dev/null 2>&1 || true ;;
+  esac
+
+  if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
+    ok "Extracted with ${tool}."
+    return 0
+  fi
+  return 1
+}
+
+# Byte offset of the RAR5 signature inside the self-extractor, or empty.
+# python3 when it is there (the script already leans on it elsewhere),
+# otherwise GNU grep, which handles binary input with -a.
+rar_payload_offset() {
+  local exe="$1" off=""
+
+  if command -v python3 >/dev/null 2>&1; then
+    off="$(python3 - "${exe}" <<'PYEOF' 2>/dev/null
+import sys
+sig = b"Rar!\x1a\x07\x01\x00"
+pos, prev, base = -1, b"", 0
+with open(sys.argv[1], "rb") as f:
+    while True:
+        chunk = f.read(8 << 20)
+        if not chunk:
+            break
+        buf = prev + chunk
+        i = buf.find(sig)
+        if i >= 0:
+            pos = base - len(prev) + i
+            break
+        prev = buf[-16:]
+        base += len(chunk)
+print(pos if pos >= 0 else "")
+PYEOF
+)"
+  fi
+
+  if [[ -z "${off}" ]]; then
+    off="$(LC_ALL=C grep -abo -P '\x52\x61\x72\x21\x1a\x07\x01\x00' "${exe}" 2>/dev/null            | head -1 | cut -d: -f1)"
+  fi
+
+  [[ "${off}" =~ ^[0-9]+$ ]] && printf '%s' "${off}"
+}
+
 find_or_download_uo_data() {
   banner "Locating UO game data"
 
@@ -358,11 +533,18 @@ find_or_download_uo_data() {
   for pattern in "${candidates[@]}"; do
     for c in ${pattern}; do
       [[ -d "${c}" ]] || continue
-      # Only accept folders that contain the required .mul files.
+      # Only accept folders that hold a COMPLETE data set. A half-copied
+      # or half-extracted folder used to be adopted here on the strength of
+      # two files existing, and then killed the server at first launch.
       if [[ -f "${c}/art.mul" ]] && [[ -f "${c}/map0.mul" ]]; then
-        UO_DATA="${c}"
-        ok "Found UO data: ${UO_DATA}"
-        return
+        local why
+        if why="$(uo_data_problem "${c}")"; then
+          UO_DATA="${c}"
+          ok "Found UO data: ${UO_DATA}"
+          return
+        fi
+        warn "Ignoring incomplete UO data at ${c}"
+        warn "  ${why}"
       fi
     done
   done
@@ -372,27 +554,55 @@ find_or_download_uo_data() {
   warn "Source: ${UO_DATA_URL} (~929 MB, third-party mirror, EA-copyrighted content)."
   echo ""
 
-  command -v 7z >/dev/null || die "7z not found. Install p7zip first (it should have been installed by the dependency step)."
+  # NOT a 7z archive, whatever the extension suggests: the UO Classic full
+  # client is a WinRAR SFX with a RAR5 payload. See unpack_uo_exe.
+  command -v unar >/dev/null || command -v 7zz >/dev/null || command -v unrar >/dev/null || command -v 7z >/dev/null || die "No archive extractor found. Install unar (Debian/Ubuntu/Fedora) or unarchiver (Arch)."
 
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
 
-  if [[ ! -f "${exe_path}" ]]; then
-    say "Downloading (this can take 5-15 minutes)..."
-    # The mirror 403's on default wget User-Agent. curl with a real one is fine.
-    curl -fL --progress-bar \
-      -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
-      -o "${exe_path}" \
-      "${UO_DATA_URL}"
-  else
-    say "Installer already at ${exe_path}, skipping download."
+  # ~929 MB down, ~1.5 GB extracted, plus room for one more copy of the
+  # payload: extractors that cannot see past the self-extractor stub need
+  # it stripped into a plain .rar first (see unpack_uo_exe), and that is a
+  # second ~929 MB file until the extract finishes. Running out of disk
+  # half way through is how a folder full of 0-byte .mul files gets made.
+  local need_mb=3600 free_mb
+  free_mb="$(df -Pm "${INSTALL_ROOT}" 2>/dev/null | awk 'NR==2 {print $4}')"
+  if [[ -n "${free_mb:-}" ]] && [[ "${free_mb}" -lt "${need_mb}" ]]; then
+    die "Not enough disk space for the UO client: ${free_mb} MB free, ${need_mb} MB needed."
   fi
 
-  say "Extracting with 7z..."
+  # A part-downloaded .exe left by an interrupted run used to be reused on
+  # the strength of existing. 7z then unpacks the file table without the
+  # data behind it, which is a folder of 0-byte .mul files and a server that
+  # dies on tiledata.mul at first launch. Judge the file by its size.
+  local min_exe=900000000 have=0
+  local ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+
+  if [[ -f "${exe_path}" ]]; then
+    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+  fi
+
+  if [[ "${have}" -ge "${min_exe}" ]]; then
+    say "Installer already at ${exe_path}, skipping download."
+  else
+    if [[ "${have}" -gt 0 ]]; then
+      warn "The download at ${exe_path} is incomplete (${have} bytes). Resuming it."
+    else
+      say "Downloading (this can take 5-15 minutes)..."
+    fi
+    # The mirror 403's on default wget User-Agent. curl with a real one is
+    # fine. -C - resumes rather than starting the 929 MB over again.
+    curl -fL --progress-bar -C - -A "${ua}" -o "${exe_path}" "${UO_DATA_URL}"
+
+    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+    if [[ "${have}" -lt "${min_exe}" ]]; then
+      die "The UO client download finished at ${have} bytes, short of the expected ~929 MB. Delete ${exe_path} and re-run."
+    fi
+  fi
+
   mkdir -p "${UO_DATA_DIR}"
-  # The installer extracts to a nested folder; -y auto-yes, -o sets output.
-  # Discard 7z's per-file output; we want a clean log.
-  7z x -y "-o${INSTALL_ROOT}/UOData" "${exe_path}" >/dev/null
+  unpack_uo_exe "${exe_path}" "${INSTALL_ROOT}/UOData" || die "Could not extract ${exe_path}. See the messages above."
 
   # The 7z extract creates ${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}/ with
   # the .mul files. Verify.
@@ -408,6 +618,18 @@ find_or_download_uo_data() {
   fi
 
   UO_DATA="${UO_DATA_DIR}"
+
+  # Verify the extract before trusting it. A download that ended early, or a
+  # disk that filled up mid-extract, leaves a folder that passes the old
+  # art.mul/map0.mul check and then fails at first launch.
+  local why
+  if ! why="$(uo_data_problem "${UO_DATA}")"; then
+    warn "The extracted UO data is not complete:"
+    warn "  ${why}"
+    warn "Keeping ${exe_path} so this can be retried without downloading again."
+    die "UO data extraction is incomplete. Delete ${INSTALL_ROOT}/UOData and re-run this installer."
+  fi
+
   ok "UO data extracted to: ${UO_DATA}"
 
   # Keep or delete the installer .exe? Deleting saves 1GB.
@@ -567,6 +789,21 @@ install_classicuo() {
 # Step 9 — Write configs (using the correct schemas we learned the hard way)
 # ---------------------------------------------------------------------------
 write_modernuo_config() {
+  # Keep a shard name that is already set. ClassicUO stores each player's
+  # audio, video, interface and macros under the server's name, so renaming
+  # the shard makes all of it look wiped. Only a fresh install gets ours.
+  RESOLVED_SHARD_NAME="${SHARD_NAME}"
+  local _cfg="${CFG_DIR}/modernuo.json"
+  if [[ -f "${_cfg}" ]]; then
+    local _prev
+    _prev="$(grep -oE '"serverListing\.serverName"[[:space:]]*:[[:space:]]*"[^"]*"' "${_cfg}" \
+      | head -n1 | sed -E 's/.*"([^"]*)"[[:space:]]*$/\1/')"
+    if [[ -n "${_prev}" ]]; then
+      RESOLVED_SHARD_NAME="${_prev}"
+      say "Keeping this install's existing shard name: ${_prev}"
+    fi
+  fi
+
   banner "Writing ModernUO configuration"
 
   mkdir -p "${CFG_DIR}"
@@ -583,8 +820,8 @@ write_modernuo_config() {
     "autosave.saveDelay": "00:05:00",
     "serverList.address": "127.0.0.1",
     "serverList.autoDetect": "false",
-    "serverListing.name": "${SHARD_NAME}",
-    "serverListing.serverName": "${SHARD_NAME}",
+    "serverListing.name": "${RESOLVED_SHARD_NAME}",
+    "serverListing.serverName": "${RESOLVED_SHARD_NAME}",
     "accountHandler.enableAutoAccountCreation": "True",
     "pathfinding.prebakeMaps": "True"
   }

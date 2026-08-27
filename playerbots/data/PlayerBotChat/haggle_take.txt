@@ -1,0 +1,8 @@
+# haggle_take.txt — the buyer takes it. {price}.
+
+ill take it
+deal
+k done
+sold, gimme
+ok
+ill take it at {price}
