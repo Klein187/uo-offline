@@ -137,8 +137,7 @@ namespace Server.CustomBots
             // talking to this seller.
             bool engaged = agreed > 0 || BotShop.HasSession(stock, speaker.Serial);
 
-            if (MatchesAny(lower, StrongAccepts) ||
-                (engaged && MatchesAny(lower, WeakAccepts)))
+            if (ReadsAsAccept(lower, engaged))
             {
                 int price = agreed > 0 ? agreed : stock.Asking;
                 BotShop.Agree(stock, speaker.Serial, price);
@@ -146,8 +145,7 @@ namespace Server.CustomBots
                 return true;
             }
 
-            if (MatchesAny(lower, StrongRejects) ||
-                (engaged && MatchesAny(lower, WeakRejects)))
+            if (ReadsAsReject(lower, engaged))
             {
                 Reply(bot, speaker, "shop_nodeal", stock, stock.Asking);
                 return true;
@@ -164,6 +162,19 @@ namespace Server.CustomBots
 
             return false;
         }
+
+        // Does this read as "yes, sold" / "no thanks"? `engaged` is whether
+        // this player is already mid-conversation with this seller: the
+        // vague words ("ok", "sure", "no") only count once they are, or a
+        // hawker swallows every "sure" said anywhere near a bank.
+        //
+        // Public and pure so the phrase rules can be tested without
+        // standing a hawker up at a bank.
+        public static bool ReadsAsAccept(string lower, bool engaged) =>
+            MatchesAny(lower, StrongAccepts) || (engaged && MatchesAny(lower, WeakAccepts));
+
+        public static bool ReadsAsReject(string lower, bool engaged) =>
+            MatchesAny(lower, StrongRejects) || (engaged && MatchesAny(lower, WeakRejects));
 
         // -----------------------------------------------------------------
         private static bool Offer(PlayerBot bot, Mobile speaker, ShopStock stock, int offer)
@@ -377,6 +388,17 @@ namespace Server.CustomBots
 
         private static bool MatchesAny(string lower, string[] phrases)
         {
+            // Punctuation directly after a phrase used to hide it from every
+            // test below, because each one wants a space where the message
+            // carries on. "deal!", "sold!", "ok." and "deal, drop it on me"
+            // were all silently ignored, and those are the normal ways to
+            // type it. Normalised HERE rather than at the call sites so no
+            // future one can forget.
+            //
+            // Price parsing deliberately does not get this: it would read
+            // "1,200" as two numbers.
+            lower = BotAppraisal.Spaced(lower);
+
             foreach (var p in phrases)
             {
                 if (lower == p || lower.StartsWith(p + " ", StringComparison.Ordinal) ||

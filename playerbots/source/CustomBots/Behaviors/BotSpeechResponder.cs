@@ -431,8 +431,13 @@ namespace Server.CustomBots
             return false;
         }
 
-        private static bool IsJoinPhrase(string lower)
+        // Answering a recruiting shout. Space-bounded like the shop matcher,
+        // and it had the same hole: "me!" and "im in!" and "sure." are how
+        // people actually answer, and all three were being ignored.
+        public static bool IsJoinPhrase(string lower)
         {
+            lower = BotAppraisal.Spaced(lower);
+
             foreach (var p in JoinPhrases)
             {
                 if (lower == p || lower.StartsWith(p + " ") || lower.EndsWith(" " + p))

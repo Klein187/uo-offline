@@ -156,7 +156,7 @@ namespace Server.CustomBots
             high = 0;
             asking = 0;
 
-            if (string.IsNullOrEmpty(lower) || !MatchesAny(BotAppraisal.Spaced(lower), SellShouts))
+            if (string.IsNullOrEmpty(lower) || !MatchesAny(lower, SellShouts))
             {
                 return false;
             }
@@ -467,17 +467,13 @@ namespace Server.CustomBots
                 return false;
             }
 
-            // Phrase matching gets the punctuation taken out ("ok, deal");
-            // the price parser does NOT, or "1,200" reads as two numbers.
-            var words = BotAppraisal.Spaced(lower);
-
-            if (MatchesAny(words, Accepts))
+            if (MatchesAny(lower, Accepts))
             {
                 offer.Shake(offer._standing);
                 return true;
             }
 
-            if (MatchesAny(words, Rejects))
+            if (MatchesAny(lower, Rejects))
             {
                 offer.Say("haggle_walkaway", 0);
                 offer.End();
@@ -889,8 +885,12 @@ namespace Server.CustomBots
                 : lower.Replace(first, "", StringComparison.Ordinal).Trim(' ', ',');
         }
 
+        // See the note in BotShopTalk.MatchesAny: normalising inside the
+        // helper is what stops this hole reopening at a new call site.
         private static bool MatchesAny(string lower, string[] phrases)
         {
+            lower = BotAppraisal.Spaced(lower);
+
             foreach (var p in phrases)
             {
                 if (lower == p || lower.StartsWith(p + " ", StringComparison.Ordinal) ||

@@ -158,15 +158,15 @@ namespace Server.CustomBots
                 return false;
             }
 
-            var words = BotAppraisal.Spaced(lower);
-
-            if (MatchesAny(words, StrongHave))
+            if (MatchesAny(lower, StrongHave))
             {
                 return true;
             }
 
-            return BotAppraisal.Mentions(BotAppraisal.ExpandSlang(words), noun) &&
-                   MatchesAny(words, WeakHave);
+            // Mentions matches on letter boundaries, so it never had the
+            // punctuation hole the phrase matcher did.
+            return BotAppraisal.Mentions(BotAppraisal.ExpandSlang(lower), noun) &&
+                   MatchesAny(lower, WeakHave);
         }
 
         // Unambiguous: nobody says these to someone they are not selling to.
@@ -244,8 +244,11 @@ namespace Server.CustomBots
                 : lower.Replace(first, "", StringComparison.Ordinal).Trim(' ', ',');
         }
 
+        // See the note in BotShopTalk.MatchesAny.
         private static bool MatchesAny(string lower, string[] phrases)
         {
+            lower = BotAppraisal.Spaced(lower);
+
             foreach (var p in phrases)
             {
                 if (lower == p || lower.StartsWith(p + " ", StringComparison.Ordinal) ||
