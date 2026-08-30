@@ -24,6 +24,8 @@
 # =========================================================================
 set -uo pipefail
 
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/share/dotnet:${HOME}/.dotnet:${PATH}"
+
 INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="${INSTALL_ROOT}/uo-offline-version.json"
 SKIP="${INSTALL_ROOT}/uo-offline-skipped.txt"

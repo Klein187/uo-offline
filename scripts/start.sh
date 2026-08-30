@@ -27,12 +27,20 @@ LISTEN_PORT=2593
 # ClassicUO lives inside our install root, alongside the server.
 CLASSICUO_DIR="${INSTALL_ROOT}/ClassicUO"
 
-# .NET was installed per-user by install.sh into ~/.dotnet/. Make dotnet
-# reachable here so we don't depend on the user's shell rc files having
-# been re-sourced since install.
-DOTNET_ROOT="${HOME}/.dotnet"
-export DOTNET_ROOT
-export PATH="${DOTNET_ROOT}:${PATH}"
+# Ensure standard binary and runtime directories are in PATH across macOS and Linux
+# (crucial when launched from GUI desktop shortcuts where PATH is minimal).
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/share/dotnet:${HOME}/.dotnet:${PATH}"
+
+# Resolve DOTNET_ROOT dynamically if not explicitly set
+if [[ -z "${DOTNET_ROOT:-}" ]] || [[ ! -x "${DOTNET_ROOT}/dotnet" ]]; then
+  for candidate in "${HOME}/.dotnet" "/usr/local/share/dotnet" "/opt/homebrew/opt/dotnet" "/opt/homebrew"; do
+    if [[ -x "${candidate}/dotnet" ]]; then
+      DOTNET_ROOT="${candidate}"
+      break
+    fi
+  done
+  export DOTNET_ROOT="${DOTNET_ROOT:-${HOME}/.dotnet}"
+fi
 
 LAUNCHLOG="${INSTALL_ROOT}/launch.log"
 : > "${LAUNCHLOG}" 2>/dev/null || true
@@ -349,13 +357,16 @@ sync_client_version() {
   say "Updating ClassicUO clientversion: ${current} → ${detected}"
   if command -v python3 >/dev/null 2>&1; then
     python3 -c '
-import sys, re
+import sys, json
 path, ver = sys.argv[1], sys.argv[2]
-with open(path, "r", encoding="utf-8") as f:
-    c = f.read()
-c = re.sub(r"(\"clientversion\"\s*:\s*\")[^\"]*(\")", r"\g<1>" + ver + r"\2", c)
-with open(path, "w", encoding="utf-8") as f:
-    f.write(c)
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    data["clientversion"] = ver
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+except Exception:
+    pass
 ' "${settings_file}" "${detected}"
   else
     sed -i.bak -E "s/(\"clientversion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\1${detected}\2/" "${settings_file}" 2>/dev/null \

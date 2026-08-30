@@ -1279,6 +1279,7 @@ EOF
 
     cat > "${app_dir}/Contents/MacOS/uo-offline" <<EOF
 #!/usr/bin/env bash
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/share/dotnet:\${HOME}/.dotnet:\${PATH}"
 exec "${INSTALL_ROOT}/start.sh"
 EOF
     chmod +x "${app_dir}/Contents/MacOS/uo-offline"
