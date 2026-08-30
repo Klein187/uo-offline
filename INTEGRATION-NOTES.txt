@@ -2,7 +2,7 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: four stock ModernUO files need a small patch, because they
+one exception: five stock ModernUO files need a small patch, because they
 ARE engine files and cannot live in CustomBots/.
 
 Both installers apply these for you now. They ship as unified diffs in
@@ -138,3 +138,38 @@ someone walking beside it.
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or
 horses go lame on long rides for no reason.
+
+Stock-file patch: T2A travel rules in Felucca dungeons (2026-08-30)
+-------------------------------------------------------------------
+You could not mark a rune inside a Felucca dungeon, and the message you
+got back was "Thy spell doth not appear to work..." -- which reads like a
+fizzle, not a rules block. Nor could you recall or gate in or out of one.
+
+That is stock ModernUO, and it is not a bug there: it is the later-era
+Felucca ruleset, where magical travel in dungeons was shut off. It is
+wrong for a T2A shard. In 1998-99 dungeon runes were ordinary kit and
+recalling out of Deceit with a full pack was normal play. Patch in:
+
+  Projects/UOContent/Spells/Base/SpellHelper.cs
+
+  The Dungeons(Fel) column of the m_Rules travel table is now true for
+  Recall From, Recall To, Gate From, Gate To and Mark In. Nothing else in
+  the table changes.
+
+What stays blocked, on purpose:
+
+  - The Lost Lands (the T2A(Fel) column, x 5120-6144 / y 2304-4096). No
+    recall, gate or mark there. That restriction is period-correct -- the
+    Lost Lands were meant to be reached through the passages, not by rune.
+
+  - Wind, both facets. Also period-correct.
+
+  - Khaldun. It sits in the dungeon map block and reads as a Felucca
+    dungeon, but it has its own column in the table and stays false. It is
+    not T2A content.
+
+The table is a hardcoded bool[,] with a "TODO: Move to configuration" on
+it upstream, so there is no setting to flip -- it has to be a patch.
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or
+dungeon runes cannot be made.

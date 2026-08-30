@@ -1,0 +1,49 @@
+diff --git a/Projects/UOContent/Spells/Base/SpellHelper.cs b/Projects/UOContent/Spells/Base/SpellHelper.cs
+index dc7e22f80..9d5f9d0ed 100644
+--- a/Projects/UOContent/Spells/Base/SpellHelper.cs
++++ b/Projects/UOContent/Spells/Base/SpellHelper.cs
+@@ -104,32 +104,39 @@ public static class SpellHelper
+         };
+ 
+         // TODO: Move to configuration
++        //
++        // T2A ruleset: the Dungeons(Fel) column is TRUE for recall, gate and mark.
++        // Blocking magical travel in Felucca dungeons is a later-era Felucca rule;
++        // in 1998-99 dungeon runes were ordinary kit, and recalling out of Deceit
++        // with a full pack was normal play. The Lost Lands (T2A(Fel)) and Wind
++        // columns stay false -- those restrictions ARE period-correct. Khaldun is
++        // its own column and stays blocked: it is not T2A content.
+         private static readonly bool[,] m_Rules =
+         {
+             /* T2A(Fel), Khaldun, Ilshenar, Wind(Tram), Wind(Fel), Dungeons(Fel), Solen(Tram), Solen(Fel), CrystalCave(Malas), Gauntlet(Malas), Gauntlet(Ferry), SafeZone, Stronghold, ChampionSpawn, Dungeons(Tokuno[Malas]), LampRoom(Doom), GuardianRoom(Doom), Heartwood, MLDungeons */
+             /* Recall From */
+             {
+-                false, false, true, true, false, false, true, false, false, false, false, true, true, false, true, false,
++                false, false, true, true, false, true, true, false, false, false, false, true, true, false, true, false,
+                 false, false, false
+             },
+             /* Recall To */
+             {
+-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
++                false, false, false, false, false, true, false, false, false, false, false, false, false, false, false,
+                 false, false, false, false
+             },
+             /* Gate From */
+             {
+-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
++                false, false, false, false, false, true, false, false, false, false, false, false, false, false, false,
+                 false, false, false, false
+             },
+             /* Gate To */
+             {
+-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
++                false, false, false, false, false, true, false, false, false, false, false, false, false, false, false,
+                 false, false, false, false
+             },
+             /* Mark In */
+             {
+-                false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
++                false, false, false, false, false, true, false, false, false, false, false, false, false, false, false,
+                 false, false, false, false
+             },
+             /* Tele From */
