@@ -1,0 +1,78 @@
+diff --git a/Projects/UOContent/Misc/StaminaSystem.cs b/Projects/UOContent/Misc/StaminaSystem.cs
+index fcd5d46b0..d82aebd62 100644
+--- a/Projects/UOContent/Misc/StaminaSystem.cs
++++ b/Projects/UOContent/Misc/StaminaSystem.cs
+@@ -3,6 +3,7 @@
+ using System.Runtime.CompilerServices;
+ using System.Runtime.InteropServices;
+ using ModernUO.CodeGeneratedEvents;
++using Server.Items;
+ using Server.Logging;
+ using Server.Mobiles;
+ using Server.Spells.Ninjitsu;
+@@ -49,7 +50,11 @@ public static void Configure()
+         BaseOverweightLoss = ServerConfiguration.GetOrUpdateSetting("stamina.baseOverweightLoss", 5);
+         AdditionalLossWhenBelow = ServerConfiguration.GetOrUpdateSetting("stamina.additionalLossWhenBelow", 0.10);
+         EnableMountStamina = ServerConfiguration.GetOrUpdateSetting("stamina.enableMountStamina", true);
+-        UseMountStaminaOnlyWhenOverloaded = ServerConfiguration.GetSetting("stamina.useMountStaminaOnlyWhenOverloaded", Core.SA);
++        // A horse tires from the load it is hauling, not from being ridden. Left at the
++        // upstream default this is only true from SA on, which leaves an earlier-era
++        // shard with a mount that goes lame after an hour of running while carrying
++        // nothing. Default it on; set the key to false for stock behaviour.
++        UseMountStaminaOnlyWhenOverloaded = ServerConfiguration.GetSetting("stamina.useMountStaminaOnlyWhenOverloaded", true);
+         GlobalEtherealMountStamina = ServerConfiguration.GetSetting("stamina.globalEtherealMountStamina", Core.ML);
+     }
+ 
+@@ -304,7 +309,9 @@ public static void EventSink_Movement(MovementEventArgs e)
+ 
+         if (EnableMountStamina && from.Mount != null)
+         {
+-            ProcessMountMovement(from.Mount, overweight, e);
++            // What the mount is actually hauling: an overweight rider, plus anything the
++            // pack beasts in the train behind it are carrying beyond their own capacity.
++            ProcessMountMovement(from.Mount, Math.Max(overweight, 0) + GetPackTrainOverweight(from), e);
+         }
+         else
+         {
+@@ -413,6 +420,41 @@ private static void ProcessMountMovement(IMount mount, int overweight, MovementE
+         }
+     }
+ 
++    // A pack beast carries in a StrongBackpack, which BaseCreature.DisplayWeight already
++    // treats as the mark of a pack animal. The beast itself is never "overweight" in stock:
++    // BaseCreature inherits Mobile.MaxWeight, which is int.MaxValue. Give it the same
++    // Str-derived capacity a player gets, so a laden pack train reads as a real load.
++    public static int GetPackCapacity(Mobile beast) => 40 + (int)(3.5 * beast.Str);
++
++    public static int GetPackOverweight(Mobile beast)
++    {
++        if (beast?.Backpack is not StrongBackpack pack)
++        {
++            return 0;
++        }
++
++        return Math.Max(0, pack.TotalWeight - GetPackCapacity(beast));
++    }
++
++    // The mount's own pack (a beetle) plus every pack beast the rider has out with them.
++    public static int GetPackTrainOverweight(Mobile from)
++    {
++        var total = GetPackOverweight(from.Mount as Mobile);
++
++        if (from is PlayerMobile { AllFollowers: not null } pm)
++        {
++            foreach (var follower in pm.AllFollowers)
++            {
++                if (!ReferenceEquals(follower, from.Mount))
++                {
++                    total += GetPackOverweight(follower);
++                }
++            }
++        }
++
++        return total;
++    }
++
+     public static int GetStamLoss(Mobile from, int overWeight, bool running)
+     {
+         var loss = BaseOverweightLoss + overWeight / StonesPerOverweightLoss;

@@ -2,7 +2,7 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: three stock ModernUO files need a small patch, because they
+one exception: four stock ModernUO files need a small patch, because they
 ARE engine files and cannot live in CustomBots/.
 
 Both installers apply these for you now. They ship as unified diffs in
@@ -102,3 +102,39 @@ expansion config). Startup confirms it with:
 
 The moongate patch above is kept regardless -- it is the safety net for
 any ruleset that filters a player's facet list down to nothing.
+
+Stock-file patch: mounts only tire under load (2026-08-29)
+-----------------------------------------------------------
+Stock ModernUO charges a mount one step of fatigue for every step the
+rider runs, laden or not. At 3840 steps that is roughly an hour of
+riding before "Your mount is too fatigued to move" -- on a horse that is
+carrying nothing. Upstream turns that off with a setting, but only from
+Stratics Age on (stamina.useMountStaminaOnlyWhenOverloaded defaults to
+Core.SA), so a T2A shard gets the old behaviour. Patch in:
+
+  Projects/UOContent/Misc/StaminaSystem.cs
+
+  1. The setting now defaults to true instead of Core.SA. A horse tires
+     from the load it hauls, not from being ridden. Put
+     "stamina.useMountStaminaOnlyWhenOverloaded": "false" in
+     Configuration/modernuo.json for stock behaviour.
+
+  2. Fatigue now counts the pack train as load, not just the rider.
+     GetPackTrainOverweight() adds the mount's own pack (a beetle) plus
+     every pack beast out with the rider, and EventSink_Movement folds
+     that into the overweight figure passed to ProcessMountMovement.
+
+     A beast is over its capacity at 40 + 3.5 * Str stones, the same
+     formula players use -- BaseCreature inherits Mobile.MaxWeight,
+     which is int.MaxValue, so nothing in stock ever reports a laden
+     pack animal as heavy. A pack horse (Str 44-120) hauls 194-460
+     stones free; past that the mount starts tiring. Only beasts with a
+     StrongBackpack count, which is the engine's own test for a pack
+     animal (BaseCreature.DisplayWeight).
+
+The unmounted case is untouched: a player on foot still loses stamina
+for their own weight only, and an overloaded pack horse does not tire
+someone walking beside it.
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or
+horses go lame on long rides for no reason.
