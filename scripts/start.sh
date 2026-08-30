@@ -236,47 +236,49 @@ else:
     fi
 
     # Step 3: account-creation prompt → answer "y".
-    if wait_for_log_line "create the owner account" 30; then
+    if wait_for_log_line "create the owner account" 20; then
       say "Account-creation prompt detected → answering y."
       printf 'y\n' >&9
-    fi
 
-    # Step 4: username prompt.
-    if wait_for_log_line "Input Username" 15; then
-      say "Username prompt detected → ${OWNER_USER}."
-      printf '%s\n' "${OWNER_USER}" >&9
-    fi
+      # Step 4: username prompt.
+      if wait_for_log_line "Input Username" 15; then
+        say "Username prompt detected → ${OWNER_USER}."
+        printf '%s\n' "${OWNER_USER}" >&9
+      fi
 
-    # Step 5: password prompt.
-    if wait_for_log_line "Input Password" 15; then
-      say "Password prompt detected → (hidden)."
-      printf '%s\n' "${OWNER_PASS}" >&9
-    fi
+      # Step 5: password prompt.
+      if wait_for_log_line "Input Password" 15; then
+        say "Password prompt detected → (hidden)."
+        printf '%s\n' "${OWNER_PASS}" >&9
+      fi
 
-    # Wait for account creation confirmation before clearing the marker.
-    if wait_for_log_line "Owner account created" 15; then
-      say "Owner account created."
-      rm -f "${MARKER}"
+      # Wait for account creation confirmation before clearing the marker.
+      if wait_for_log_line "Owner account created" 15; then
+        say "Owner account created."
+        rm -f "${MARKER}"
+      else
+        warn "Did not see 'Owner account created' confirmation in log."
+        warn ""
+        warn "Create it by hand instead - this takes a minute and only happens once:"
+        warn ""
+        warn "    cd ${DIST_DIR}"
+        warn "    ${DOTNET_ROOT}/dotnet ModernUO.dll"
+        warn ""
+        warn "(The full path matters: .NET is installed privately under"
+        warn "${DOTNET_ROOT} and is not on your PATH, so a bare 'dotnet' will"
+        warn "say command not found. Do NOT apt install dotnet - you have it.)"
+        warn ""
+        warn "Answer 'y' when it asks about the owner account, then give it a"
+        warn "username and password (admin / admin is fine on your own machine)."
+        warn "Wait for 'Listening: 127.0.0.1:2593', then press Ctrl+C to stop it."
+        warn "After that:"
+        warn ""
+        warn "    rm -f ${MARKER}"
+        warn ""
+        warn "and start the game normally. Full log: ${LOGFILE}"
+      fi
     else
-      warn "Did not see 'Owner account created' confirmation in log."
-      warn ""
-      warn "Create it by hand instead - this takes a minute and only happens once:"
-      warn ""
-      warn "    cd ${DIST_DIR}"
-      warn "    ${DOTNET_ROOT}/dotnet ModernUO.dll"
-      warn ""
-      warn "(The full path matters: .NET is installed privately under"
-      warn "${DOTNET_ROOT} and is not on your PATH, so a bare 'dotnet' will"
-      warn "say command not found. Do NOT apt install dotnet - you have it.)"
-      warn ""
-      warn "Answer 'y' when it asks about the owner account, then give it a"
-      warn "username and password (admin / admin is fine on your own machine)."
-      warn "Wait for 'Listening: 127.0.0.1:2593', then press Ctrl+C to stop it."
-      warn "After that:"
-      warn ""
-      warn "    rm -f ${MARKER}"
-      warn ""
-      warn "and start the game normally. Full log: ${LOGFILE}"
+      rm -f "${MARKER}"
     fi
   else
     say "Starting ModernUO server..."

@@ -1185,6 +1185,11 @@ EOF
 # Step 12 — Mark for first-launch wizard
 # ---------------------------------------------------------------------------
 arm_first_launch() {
+  if [[ -f "${SERVER_DIR}/Saves/Accounts/accounts.json" ]] || [[ -d "${SERVER_DIR}/Saves/Accounts" && -n "$(ls -A "${SERVER_DIR}/Saves/Accounts" 2>/dev/null)" ]]; then
+    rm -f "${INSTALL_ROOT}/.needs-owner-account"
+    ok "Existing accounts detected; preserving owner account."
+    return
+  fi
   touch "${INSTALL_ROOT}/.needs-owner-account"
   ok "Owner account will be created on first launch: ${OWNER_USER} / ${OWNER_PASS}"
 }
