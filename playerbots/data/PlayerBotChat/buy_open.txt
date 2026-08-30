@@ -1,0 +1,7 @@
+# buy_open.txt — the trade window opens, bot's coin already on the table. {item} {price}.
+
+{price}, its all there
+gold is on my side
+{price} for the {item}
+theres the coin
+{price}, count it

@@ -1,0 +1,9 @@
+# buy_balk.txt — the goods are not what was agreed. {item} {price}.
+
+thats not worth {price}
+hey thats not what u said
+{item}? no thanks
+thats not the deal m8
+nice try
+that aint worth {price} sry
+no way, thats junk

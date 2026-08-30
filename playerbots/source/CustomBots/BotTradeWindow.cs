@@ -19,6 +19,13 @@
 //
 // The price is whatever was agreed by talking (BotSpeechResponder), or
 // the asking price if the player never haggled and just paid up.
+//
+// The same window runs the other direction. A player who shouts WTS at the
+// bank and haggles a bot up (BotBuyOffer) hands the goods over the same
+// way: drag the item onto the bot, and the window opens with the bot's
+// gold already counted out on its side. The only extra step selling adds
+// is the appraisal — the bot shook on a description, so it looks at what
+// actually landed on the table before it pays for it.
 // =========================================================================
 
 using System;
@@ -58,19 +65,26 @@ namespace Server.CustomBots
                 return false;
             }
 
+            // Goods, not coin: the player is selling. A bot only takes
+            // that from someone it has actually shaken hands with — this
+            // is the payoff of a WTS shout it walked over for.
+            if (offer is not Gold)
+            {
+                if (BotBuyOffer.AgreedPriceFor(bot, from) > 0)
+                {
+                    return TryOpenSale(bot, from, offer);
+                }
+
+                // Otherwise it goes straight back with a word, which is a
+                // great deal more courtesy than most 1999 players managed.
+                Decline(bot, ChatLibrary.PickRandom("trade_not_buying") ?? "not buying, sry");
+                return false;
+            }
+
             var stock = BotShop.StockOf(bot);
             if (stock == null)
             {
                 Decline(bot, "nothing to sell sry");
-                return false;
-            }
-
-            // Bots sell; they don't buy off the street. Anything but coin
-            // gets handed straight back with a word, which is a great deal
-            // more courtesy than most 1999 players managed.
-            if (offer is not Gold)
-            {
-                Decline(bot, ChatLibrary.PickRandom("trade_not_buying") ?? "not buying, sry");
                 return false;
             }
 
@@ -126,6 +140,177 @@ namespace Server.CustomBots
 
             Watch(trade, bot, from, stock.Noun, price, item.Serial, Core.Now + WindowTimeout);
             return true;
+        }
+
+        // -----------------------------------------------------------------
+        // The player is the seller. The bot shook on a price for something
+        // it had only heard described, so this is where it finally looks at
+        // the goods — and where a bot that agreed 3k for a GM halberd
+        // refuses to hand it over for a rusty dagger.
+        // -----------------------------------------------------------------
+        private static bool TryOpenSale(PlayerBot bot, Mobile from, Item goods)
+        {
+            int price = BotBuyOffer.AgreedPriceFor(bot, from);
+            var noun = BotBuyOffer.NounFor(bot, from) ?? BotAppraisal.NameFor(goods);
+
+            // More goods onto a table that is already set: no second
+            // payment, the agreed number stands. Same as the buy side
+            // taking extra coin without renegotiating.
+            var existing = from.NetState.FindTradeContainer(bot);
+            if (existing != null)
+            {
+                existing.DropItem(goods);
+                return true;
+            }
+
+            if (BotBuyOffer.Balks(bot, from, goods, price))
+            {
+                var balk = ChatLibrary.PickRandom("buy_balk");
+                Decline(bot, string.IsNullOrEmpty(balk)
+                    ? $"thats not worth {BotShop.Coin(price)} m8"
+                    : balk
+                        .Replace("{item}", BotAppraisal.NameFor(goods), StringComparison.Ordinal)
+                        .Replace("{price}", BotShop.Coin(price), StringComparison.Ordinal));
+
+                Console.WriteLine(
+                    $"[buy] {bot.Name} BALKED at {from.Name}'s {BotAppraisal.NameFor(goods)} " +
+                    $"(agreed {price}gp, worth {BotAppraisal.Value(goods)}gp)");
+
+                BotBuyOffer.Close(bot, from);
+                return false;
+            }
+
+            // The purse is checked at the till, not at the handshake — the
+            // bot may have spent it since.
+            if (!CrafterStock.SpendGold(bot, price))
+            {
+                Decline(bot, ChatLibrary.PickRandom("haggle_broke") ?? "im short sry");
+                BotBuyOffer.Close(bot, from);
+                return false;
+            }
+
+            var coin = new Gold(price);
+
+            // From = the player (the one with a client), To = the bot.
+            var trade = new SecureTrade(from, bot);
+            from.NetState.Trades.Add(trade);
+
+            trade.From.Container.DropItem(goods);
+
+            if (!trade.To.Container.TryDropItem(bot, coin, sendFullMessage: false))
+            {
+                trade.Cancel();
+                bot.AddToBackpack(coin);
+                return false;
+            }
+
+            var opener = ChatLibrary.PickRandom("buy_open", "trade_open");
+            BotScene.Deliver(bot, string.IsNullOrEmpty(opener)
+                ? $"{BotShop.Coin(price)} for the {noun}"
+                : opener
+                    .Replace("{item}", noun, StringComparison.Ordinal)
+                    .Replace("{price}", BotShop.Coin(price), StringComparison.Ordinal));
+
+            Console.WriteLine(
+                $"[buy] {from.Name} opened a sale to {bot.Name}: {noun} at {price}gp");
+
+            WatchSale(trade, bot, from, noun, price, goods.Serial, Core.Now + WindowTimeout);
+            return true;
+        }
+
+        // The bot's half, once per tick: the goods have to be on the
+        // player's side before it ticks its box. Polling for the same
+        // reason the buy side polls — every add or remove runs ClearChecks,
+        // and there is no event in that path we own.
+        private static void WatchSale(SecureTrade trade, PlayerBot bot, Mobile seller,
+            string noun, int price, Serial goodsSerial, DateTime expiresAt)
+        {
+            Timer.DelayCall(WatchInterval, () =>
+            {
+                if (trade == null)
+                {
+                    return;
+                }
+
+                if (!trade.Valid)
+                {
+                    SettleSale(bot, seller, noun, price, goodsSerial);
+                    return;
+                }
+
+                bool botIsFrom = trade.From.Mobile == bot;
+                var botSide = botIsFrom ? trade.From : trade.To;
+                var sellerSide = botIsFrom ? trade.To : trade.From;
+
+                if (bot.Deleted || !bot.Alive || seller.Deleted || !seller.Alive ||
+                    bot.Map != seller.Map || !seller.InRange(bot.Location, MaxTradeRange) ||
+                    Core.Now > expiresAt)
+                {
+                    var off = ChatLibrary.PickRandom("trade_cancel");
+                    if (!string.IsNullOrEmpty(off) && bot.Alive && !bot.Deleted)
+                    {
+                        BotScene.Deliver(bot, off);
+                    }
+
+                    // Cancel hands every side's items back to its owner, so
+                    // the bot's coin returns to its pack on its own.
+                    trade.Cancel();
+                    return;
+                }
+
+                bool goodsOnTable = false;
+                foreach (var i in sellerSide.Container.Items)
+                {
+                    if (i.Serial == goodsSerial)
+                    {
+                        goodsOnTable = true;
+                        break;
+                    }
+                }
+
+                bool happy = goodsOnTable && CountGold(botSide) >= price;
+
+                if (botSide.Accepted != happy)
+                {
+                    botSide.Accepted = happy;
+                    trade.Update();
+
+                    if (!trade.Valid)
+                    {
+                        SettleSale(bot, seller, noun, price, goodsSerial);
+                        return;
+                    }
+                }
+
+                WatchSale(trade, bot, seller, noun, price, goodsSerial, expiresAt);
+            });
+        }
+
+        // Did the goods actually change hands? The engine has already moved
+        // everything, so the honest test is where the item ended up.
+        private static void SettleSale(PlayerBot bot, Mobile seller, string noun, int price,
+            Serial goodsSerial)
+        {
+            var item = World.FindItem(goodsSerial);
+            bool bought = item != null && !item.Deleted && item.RootParent == bot;
+
+            BotBuyOffer.Close(bot, seller);
+
+            if (!bought)
+            {
+                Console.WriteLine(
+                    $"[buy] {bot.Name}'s purchase of {noun} from {seller.Name} fell through");
+                return;
+            }
+
+            var line = ChatLibrary.PickRandom("trade_close");
+            if (!string.IsNullOrEmpty(line) && bot.Alive && !bot.Deleted)
+            {
+                BotScene.Deliver(bot, line);
+            }
+
+            BotEventJournal.Record("sale", seller.Name, bot.Name, bot.Location, bot.Map);
+            Console.WriteLine($"[buy] {bot.Name} BOUGHT {noun} from {seller.Name} for {price}gp");
         }
 
         private static void Decline(PlayerBot bot, string line)

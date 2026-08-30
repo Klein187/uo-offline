@@ -11,6 +11,11 @@
 //   - say anything in its face     → sometimes "what" / "hm?" — and
 //     sometimes it just ignores you, which is also exactly what a real
 //     player did
+//   - shout WTS across the bank    → a bot with coin walks over to haggle
+//     for it (BotBuyOffer), which is the one branch that deliberately
+//     reaches past talking range, because shouting is the point
+//   - answer a bot's own WTB shout → "i have one" starts the same
+//     negotiation from the other end (BotWantAd)
 //
 // Hard rules: only REAL players trigger it (a PlayerBot speaker never
 // does — no bot-to-bot echo loops), per-bot cooldowns stop farming, the
@@ -137,6 +142,43 @@ namespace Server.CustomBots
             }
 
             int dist = Cheby(bot.Location, speaker.Location);
+
+            // -1. The player is SELLING. A WTS shout is meant to carry
+            // across the bank floor, which is further than anyone talks, so
+            // it gets looked at before the talking-range gate below.
+            if (dist <= BotBuyOffer.ShoutRange)
+            {
+                var shout = e.Speech.Trim().ToLowerInvariant();
+
+                if (!Claimed(speaker, shout))
+                {
+                    // Mid-haggle with this player already? Then their words
+                    // belong to that negotiation and nothing else.
+                    if (BotBuyOffer.HandleSpeech(bot, speaker, shout, dist))
+                    {
+                        Claim(speaker, shout);
+                        SetCooldown(bot, TimeSpan.FromSeconds(6));
+                        return;
+                    }
+
+                    // "i have one" — answering this bot's own WTB shout.
+                    if (BotWantAd.Answered(bot, speaker, shout, dist))
+                    {
+                        Claim(speaker, shout);
+                        SetCooldown(bot, TimeSpan.FromSeconds(20));
+                        return;
+                    }
+
+                    // "WTS GM halberd 5k" — one bot crosses the floor.
+                    if (BotBuyOffer.Notice(bot, speaker, shout, dist))
+                    {
+                        Claim(speaker, shout);
+                        SetCooldown(bot, TimeSpan.FromSeconds(20));
+                        return;
+                    }
+                }
+            }
+
             if (dist > NameRange)
             {
                 return;

@@ -1,0 +1,10 @@
+# buy_counter.txt — the bot counters the player's price. {price} {item}.
+
+{price}?
+i can do {price}
+{price} is what i got
+ill go {price}
+how bout {price}
+{price}, thats fair
+meet me at {price}
+{price} and its a deal

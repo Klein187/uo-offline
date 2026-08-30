@@ -1,0 +1,12 @@
+# buy_notice.txt — answering a player's WTS shout, on the way over. {item}.
+
+what {item}?
+ill have a look at that {item}
+{item}? hang on
+lemme see the {item}
+im interested in the {item}
+whats the {item} like
+still got that {item}?
+i might want that {item}
+one sec, coming over
+hold up, i want that

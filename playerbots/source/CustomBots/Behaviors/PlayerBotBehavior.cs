@@ -322,6 +322,11 @@ namespace Server.CustomBots
             // Mobile.Say uses bot.SpeechHue automatically. The hue was set
             // on the bot when it was constructed and persists across saves.
             bot.Say(line);
+
+            // "WTB GM hally" used to promise nothing. Every spoken line
+            // funnels through here, so this is where one becomes a standing
+            // want a player can answer with "i have one".
+            BotWantAd.Posted(bot, line);
         }
 
         protected bool IsPlayerNearby(PlayerBot bot)

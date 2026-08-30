@@ -1,0 +1,8 @@
+# buy_paynow.txt — where to put the goods. {item} {price}.
+
+drop it on me
+drop the {item} on me
+hand it over and its {price}
+put it on me m8
+drop it on me and ill pay
+{price} ready, drop it

@@ -1,0 +1,8 @@
+# buy_final.txt — the bot's last number, take it or leave it. {price}.
+
+{price} is my max
+thats all i got, {price}
+{price} or i pass
+cant go past {price}
+{price}, final
+{price} is it m8

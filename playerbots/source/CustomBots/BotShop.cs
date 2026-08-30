@@ -120,7 +120,9 @@ namespace Server.CustomBots
         // deliberately heavy, because most of what anyone ever hawked was
         // a pile of regs, and a tower is supposed to turn heads.
         // -----------------------------------------------------------------
-        private static readonly Goods[] Table =
+        // Internal, not private: BotAppraisal reads these rows to value an
+        // item a PLAYER is selling. Same prices in both directions.
+        internal static readonly Goods[] Table =
         {
             // ---- Bulk: the daily grind ----
             new() { Type = "Server.Items.BlackPearl",   Noun = "black pearl",   Kind = GoodsKind.Bulk, Weight = 55, MinAmount = 40,  MaxAmount = 200, MinPrice = 120, MaxPrice = 900 },
