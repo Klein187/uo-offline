@@ -47,12 +47,30 @@ gui_error() {
   local full="${msg}
 
 Full details: ${LAUNCHLOG}"
-  if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    if command -v osascript >/dev/null 2>&1; then
+      local escaped_full="${full//\"/\\\"}"
+      osascript -e "display dialog \"${escaped_full}\" with title \"UO Offline\" buttons {\"OK\"} default button \"OK\" with icon stop" >/dev/null 2>&1 &
+    fi
+  elif [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
     if command -v zenity >/dev/null 2>&1; then
       zenity --error --title="UO Offline" --no-wrap --text="${full}" >/dev/null 2>&1 &
     elif command -v kdialog >/dev/null 2>&1; then
       kdialog --title "UO Offline" --error "${full}" >/dev/null 2>&1 &
     fi
+  fi
+}
+
+is_port_listening() {
+  local port="$1"
+  if command -v ss >/dev/null 2>&1; then
+    ss -tln 2>/dev/null | grep -q ":${port} "
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"${port}" -sTCP:LISTEN -n -P >/dev/null 2>&1
+  elif command -v nc >/dev/null 2>&1; then
+    nc -z 127.0.0.1 "${port}" 2>/dev/null
+  else
+    netstat -an 2>/dev/null | grep -i listen | grep -q "[.:]${port}[[:space:]]"
   fi
 }
 
@@ -118,10 +136,9 @@ else
     # ConsoleInputHandler.ReadLine THROWS when headless -- the throw is
     # not caught, so the server kills itself the moment it asks the
     # question. Piping the answers in is the one thing that guarantees
-    # they can never be read. That is why this runs under script(1),
-    # which puts the server on a pseudo-terminal: stdin is a tty, the
-    # prompts wait like they would for a person, and we still get the
-    # output in the log.
+    # they can never be read. That is why this runs under a pseudo-terminal:
+    # stdin is a tty, the prompts wait like they would for a person, and
+    # we still get the output in the log.
     # ---------------------------------------------------------------------
     say "First launch: running ModernUO setup wizard and creating owner account."
     say "This takes 30-60 seconds while the world saves are generated."
@@ -135,16 +152,55 @@ else
     # Truncate log so we don't match prompts from a previous failed run.
     : > "${LOGFILE}"
 
-    if command -v script >/dev/null 2>&1; then
-      # -q quiet, -e return the child's status, -f flush after every write
-      # so the prompt reaches the log before we look for it.
-      nohup script -qefc "dotnet ModernUO.dll" /dev/null <&9 >"${LOGFILE}" 2>&1 &
+    if [[ "$(uname -s)" == "Darwin" ]] || ! command -v script >/dev/null 2>&1 || ! script -V 2>&1 | grep -q "util-linux"; then
+      if command -v python3 >/dev/null 2>&1; then
+        nohup python3 -c '
+import pty, os, sys, select
+master, slave = pty.openpty()
+pid = os.fork()
+if pid == 0:
+    os.close(master)
+    os.setsid()
+    os.dup2(slave, 0)
+    os.dup2(slave, 1)
+    os.dup2(slave, 2)
+    if slave > 2:
+        os.close(slave)
+    os.execvp(sys.argv[1], sys.argv[1:])
+else:
+    os.close(slave)
+    while True:
+        try:
+            r, _, _ = select.select([sys.stdin.fileno(), master], [], [])
+        except (ValueError, OSError):
+            break
+        if sys.stdin.fileno() in r:
+            try:
+                data = os.read(sys.stdin.fileno(), 1024)
+                if data:
+                    os.write(master, data)
+            except OSError:
+                pass
+        if master in r:
+            try:
+                data = os.read(master, 1024)
+                if not data:
+                    break
+                sys.stdout.buffer.write(data)
+                sys.stdout.buffer.flush()
+            except OSError:
+                break
+    os.close(master)
+    _, status = os.waitpid(pid, 0)
+    sys.exit(os.WEXITSTATUS(status) if os.WIFEXITED(status) else 0)
+' dotnet ModernUO.dll <&9 >"${LOGFILE}" 2>&1 &
+      else
+        warn "python3 not found - running dotnet directly; setup wizard may need terminal interaction."
+        nohup dotnet ModernUO.dll >"${LOGFILE}" 2>&1 &
+      fi
     else
-      # No script(1) (util-linux). The wizard cannot be driven without a
-      # tty, so run it plainly; it will ask on the console and the
-      # manual-fallback message below explains what to do.
-      warn "script(1) not found - the setup wizard needs it to answer the prompts."
-      nohup dotnet ModernUO.dll >"${LOGFILE}" 2>&1 &
+      # util-linux script on Linux
+      nohup script -qefc "dotnet ModernUO.dll" /dev/null <&9 >"${LOGFILE}" 2>&1 &
     fi
     SERVER_PID=$!
     echo "${SERVER_PID}" > "${PIDFILE}"
@@ -173,8 +229,8 @@ else
       return 1
     }
 
-    # Step 1: shard-name prompt → accept default.
-    if wait_for_log_line "name of your shard" 30; then
+    # Step 1: shard-name prompt → accept default (if asked).
+    if wait_for_log_line "name of your shard" 5; then
       say "Shard-name prompt detected → accepting default name."
       printf '\n' >&9
     fi
@@ -230,11 +286,11 @@ else
     echo "${SERVER_PID}" > "${PIDFILE}"
   fi
 
-  # Wait for the listener to come up. Up to 60 seconds — first launch with
-  # world generation is slower than subsequent ones.
+  # Wait for the listener to come up. Up to 180 seconds — first launch with
+  # world generation and path baking is slower than subsequent ones.
   say "Waiting for server to listen on port ${LISTEN_PORT}..."
-  for i in $(seq 1 60); do
-    if ss -tln 2>/dev/null | grep -q ":${LISTEN_PORT} "; then
+  for i in $(seq 1 180); do
+    if is_port_listening "${LISTEN_PORT}"; then
       say "Server is up (took ${i}s)."
       break
     fi
@@ -244,12 +300,12 @@ else
     sleep 1
   done
 
-  if ! ss -tln 2>/dev/null | grep -q ":${LISTEN_PORT} "; then
-    warn "Server didn't start listening within 60s. Check ${LOGFILE}"
+  if ! is_port_listening "${LISTEN_PORT}"; then
+    warn "Server didn't start listening within 180s. Check ${LOGFILE}"
     warn "Leaving it running; it may still come up."
     log_line "--- last 40 lines of ${LOGFILE} ---"
     tail -n 40 "${LOGFILE}" >> "${LAUNCHLOG}" 2>/dev/null || true
-    gui_error "The server did not finish starting within 60 seconds.
+    gui_error "The server did not finish starting within 180 seconds.
 
 The game will still try to open. If it cannot connect, the reason is in:
 ${LOGFILE}"
@@ -289,7 +345,21 @@ sync_client_version() {
   fi
 
   say "Updating ClassicUO clientversion: ${current} → ${detected}"
-  sed -i -E "s/(\"clientversion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\1${detected}\2/" "${settings_file}"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c '
+import sys, re
+path, ver = sys.argv[1], sys.argv[2]
+with open(path, "r", encoding="utf-8") as f:
+    c = f.read()
+c = re.sub(r"(\"clientversion\"\s*:\s*\")[^\"]*(\")", r"\g<1>" + ver + r"\2", c)
+with open(path, "w", encoding="utf-8") as f:
+    f.write(c)
+' "${settings_file}" "${detected}"
+  else
+    sed -i.bak -E "s/(\"clientversion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\1${detected}\2/" "${settings_file}" 2>/dev/null \
+      || sed -i -E "s/(\"clientversion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\1${detected}\2/" "${settings_file}"
+    rm -f "${settings_file}.bak"
+  fi
 }
 sync_client_version
 
@@ -309,7 +379,7 @@ if [[ -f "${INSTALL_ROOT}/.classicuo-bin-path" ]]; then
 fi
 
 if [[ -z "${CLASSICUO_BIN}" ]] || [[ ! -x "${CLASSICUO_BIN}" ]]; then
-  for name in ClassicUO ClassicUO.bin.x86_64 cuo; do
+  for name in ClassicUO ClassicUO.bin.osx ClassicUO.bin.x86_64 cuo; do
     if [[ -x "${CLASSICUO_DIR}/${name}" ]]; then
       CLASSICUO_BIN="${CLASSICUO_DIR}/${name}"
       break

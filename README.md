@@ -1,6 +1,6 @@
 # UO Offline
 
-A single-player Ultima Online shard that runs entirely on your own machine. Works on **Windows, Linux, and the Steam Deck**. One installer sets everything up, and after it finishes you never need the internet again.
+A single-player Ultima Online shard that runs entirely on your own machine. Works on **Windows, macOS, Linux, and the Steam Deck**. One installer sets everything up, and after it finishes you never need the internet again.
 
 The point of it is the PlayerBots. The world is full of bots that fight, shop, bank, ride, travel the roads, crawl dungeons, join guilds, run war bands, gossip about things that actually happened, answer you when you talk to them, and log off for dinner. It plays like a busy 1999 shard instead of an empty map.
 
@@ -83,6 +83,22 @@ Two things to expect while it runs:
 
 - A **UO Classic setup window** may pop up while the game data downloads. Install to the default location and click through it. The installer carries on by itself afterwards.
 - When it's done, click **Play Now**, or use the **UO Offline** desktop shortcut any time after. One click starts the server, opens the game with Razor attached, and logs you into the shard. Don't run `start.ps1` directly — Windows blocks unsigned scripts, and the shortcut works around that for you.
+
+### macOS
+
+1. Make sure you have **[Homebrew](https://brew.sh)** installed:
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+2. Clone and run `install.sh`:
+   ```bash
+   git clone https://github.com/Klein187/uo-offline.git
+   cd uo-offline
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+The installer automatically installs native dependencies (`unar`, `sevenzip`, `mono-libgdiplus`, `zlib`), bootstraps .NET, builds ModernUO for your Mac architecture (Apple Silicon `arm64` or Intel `x64`), downloads the macOS ClassicUO client, fetches the game assets and T2A map, and creates a **`UO Offline.app`** application bundle in your `~/Applications` folder and on your Desktop.
 
 ### Linux / Steam Deck
 
@@ -279,11 +295,11 @@ The installer sets it up for you — it's one of the tick-boxes on the first scr
 # Windows — double-click the "UO Map Editor" desktop icon
 #           (or run map-editor\uo-map.bat inside your install folder)
 
-# Linux / Steam Deck
+# Linux / macOS / Steam Deck
 ~/uo-modernuo/map-editor/uo-map-launch.sh     # serves on http://localhost:8777
 ```
 
-Skip it at install time with `--no-map-editor` on Linux, or by unticking the box on Windows.
+Skip it at install time with `--no-map-editor` on Linux/macOS, or by unticking the box on Windows.
 
 It draws the full Felucca map with your waypoints, destinations, zones, and spawns on top, read live from the shard's JSON on every refresh. In EDIT mode you can:
 

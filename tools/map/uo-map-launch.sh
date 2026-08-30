@@ -18,4 +18,8 @@ if ! curl -s -o /dev/null --max-time 1 "$URL"; then
     done
 fi
 
-xdg-open "$URL"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    open "$URL"
+elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$URL"
+fi
