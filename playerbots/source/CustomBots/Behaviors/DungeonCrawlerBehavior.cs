@@ -877,7 +877,7 @@ namespace Server.CustomBots
             if (PadCheck(bot)) return;
 
             _padFollower ??= new PathFollower(bot, _padTile);
-            _padFollower.Follow(false, 0);
+            _padFollower.Follow(0);
 
             // The teleporter fires DURING the move (OnMoveOver) — check
             // again right away so the landing resolves this beat.

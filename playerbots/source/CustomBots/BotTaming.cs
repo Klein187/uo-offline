@@ -350,6 +350,9 @@ namespace Server.CustomBots
         private DateTime _nextAttempt;
         private int _attemptsLeft;
         private PathFollower _follower;
+        // Read per step by the follower's Mover, so a stalk that closes to
+        // a walk stops being animated as a run.
+        private bool _stalkRun;
 
         // Close enough to start sweet-talking.
         private const int TameRange = 4;
@@ -412,12 +415,15 @@ namespace Server.CustomBots
                 // the MOBILE, so the path tracks it as it grazes). Raw
                 // directional stepping stalled on every tree line — four
                 // stalks, four timeouts, zero tames on the first soak.
-                _follower ??= new PathFollower(bot, quarry);
-                bool run = dist > 10;
-                _follower.Follow(run, TameRange);
+                _follower ??= new PathFollower(bot, quarry)
+                {
+                    Mover = BotPathing.Paced(bot, () => _stalkRun)
+                };
+                _stalkRun = dist > 10;
+                _follower.Follow(TameRange);
                 if (!bot.InRange(quarry.Location, TameRange))
                 {
-                    _follower.Follow(run, TameRange);
+                    _follower.Follow(TameRange);
                 }
                 return;
             }

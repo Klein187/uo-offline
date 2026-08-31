@@ -73,10 +73,11 @@ MODERNUO_REPO="https://github.com/modernuo/ModernUO.git"
 # so the bots could stop compiling on a day nothing here changed. That is
 # exactly what happened on 2026-08-30: upstream dropped the `run` parameter
 # from PathFollower.Follow, and every install started failing the build with
-# CS1501. Moving the pin is a deliberate step: bump the sha, build, fix what
+# CS1501. The bots have since been updated for that API and the pin sits on
+# it. Moving the pin is a deliberate step: bump the sha, build, fix what
 # the API change broke, play it, then release. Empty means track main, which
 # is the old behaviour and the old lottery.
-MODERNUO_COMMIT="e7f85d404d52e0def1fb342b3dc185894a57017d"
+MODERNUO_COMMIT="e07416902afebad3affbbdc1fbbf8c4a097df4d9"
 MODERNUO_DIR="${INSTALL_ROOT}/ModernUO"
 DIST_DIR="${MODERNUO_DIR}/Distribution"
 CFG_DIR="${DIST_DIR}/Configuration"

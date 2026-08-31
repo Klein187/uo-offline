@@ -161,7 +161,7 @@ namespace Server.CustomBots
                 return;
             }
 
-            _walk.Follow(false, DealRange);
+            _walk.Follow(DealRange);
             Timer.DelayCall(TimeSpan.FromSeconds(StepInterval), Step);
         }
 
