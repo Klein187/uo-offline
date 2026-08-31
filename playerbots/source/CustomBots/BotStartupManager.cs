@@ -54,6 +54,10 @@ namespace Server.CustomBots
                 return;
             }
 
+            // The pirate town has no watch. Asserted before any bot rolls a
+            // destination, because who may go where is built on it.
+            RedTerritory.EnsureUnguarded();
+
             // Synthetic wilderness gather spots must exist before any
             // gatherer bot rolls its first destination. (Idempotent;
             // GatherSpots.Initialize also runs it, order unspecified.)

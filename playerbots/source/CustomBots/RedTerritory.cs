@@ -18,6 +18,7 @@
 // place, which is the point.
 // =========================================================================
 
+using System;
 using System.Collections.Generic;
 using Server;
 using Server.Regions;
@@ -102,7 +103,14 @@ namespace Server.CustomBots
                 return cached;
             }
 
-            var guarded = Region.Find(p, map).IsPartOf<GuardedRegion>();
+            // IsPartOf<GuardedRegion> is NOT the question. TownRegion derives
+            // from GuardedRegion, so every town answers yes to it — including
+            // Buccaneer's Den, which is a town whose guards are switched off.
+            // Asking the wrong question would have driven reds out of the one
+            // town that is theirs. What matters is whether the guards there
+            // actually turn out.
+            var region = Region.Find(p, map).GetRegion<GuardedRegion>();
+            var guarded = region != null && !region.IsDisabled();
             _guardedCache[p] = guarded;
             return guarded;
         }
@@ -113,6 +121,39 @@ namespace Server.CustomBots
         // Cleared when the destination catalog reloads, so an edited arrival
         // point is not answered from a stale entry.
         public static void ClearCache() => _guardedCache.Clear();
+
+        // Buccaneer's Den has no watch. That is the whole idea of the place:
+        // in the era it is where murderers went BECAUSE the guards were not
+        // looking, and every rule above is built on it.
+        //
+        // regions.json already ships GuardsDisabled for it, and nothing in
+        // the code summons guards into a disabled region -- but the flag is
+        // one [toggleguards away from being flipped in game, and a flip
+        // survives in the save. Assert it at boot so the pirate town cannot
+        // quietly acquire a watch.
+        public static void EnsureUnguarded()
+        {
+            var anchor = new Point3D(2706, 2163, 0);
+            var region = Region.Find(anchor, Map.Felucca)?.GetRegion<GuardedRegion>();
+
+            if (region == null)
+            {
+                Console.WriteLine(
+                    "[RedTerritory] no region at Buccaneer's Den — guards not asserted.");
+                return;
+            }
+
+            if (region.GuardsDisabled)
+            {
+                return;
+            }
+
+            region.GuardsDisabled = true;
+            ClearCache();
+            Console.WriteLine(
+                $"[RedTerritory] guards were ENABLED in '{region.Name}' — switched off " +
+                $"(the pirate town has no watch).");
+        }
 
         // THE question any trip should ask before setting out: can this bot
         // go here and still be alive when it arrives? Covers both rules —
