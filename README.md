@@ -13,6 +13,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Installs stopped failing at "Building ModernUO".** The installer cloned the engine at whatever its newest commit happened to be, so a change upstream could break the build on a day nothing here changed. On August 30 one did, and new installs died with `error CS1501` partway through. The engine version is pinned to the commit this release was tested against now, and re-running the installer moves an already-broken copy back onto it.
 - **Dungeon runes work.** Marking a rune inside a dungeon failed with "Thy spell doth not appear to work...", which reads like a fizzle rather than a rule, and recall and gate would not take you in or out either. That is the later Felucca ruleset, not T2A, where dungeon runes were ordinary kit and recalling out of Deceit with a full pack was normal play. Marking, recall and gate all work in Felucca dungeons now, though the Lost Lands and Wind stay closed to magical travel because that part is period-correct.
 - **The bots hear you when you type normally.** Saying "deal!" or "sold!" or "ok." to a hawker did nothing, and neither did answering a group shout with "me!". The phrase matching wanted a space after the phrase, so any punctuation stuck to the end of it hid the whole line. Accepting a price, turning one down, and answering an LFG shout all work with the punctuation people actually type now.
 - **Answer the bots who are buying.** The bank crowd has always shouted "WTB GM hally" and "WTB regs", and it never meant anything. Now it does. Say "i have one", "i got one" or "i have a halberd" and whoever shouted it walks over and haggles for it, same as any other trade. Name your price in the same breath if you like: "i have one 5k". Only bots carrying enough coin to back the shout can be answered, so the ones you can deal with are always good for it.
@@ -61,6 +62,8 @@ Newest first.
 <br>
 
 The installer does the whole job: it builds ModernUO with the PlayerBots compiled in, sets up .NET, downloads ClassicUO, Razor, and the UO Classic game data (or uses an existing install if it finds one), grabs Nerun's spawn map, writes the T2A configs, and makes a launcher. It takes 15-25 minutes. Re-running it is safe, since it skips anything already done.
+
+It builds against a pinned version of the ModernUO engine, the exact commit this release was tested with, so what you get does not depend on what upstream changed that day. If you have an older copy whose build fails, re-running the installer moves it back onto the pinned version.
 
 ### Windows (easiest)
 

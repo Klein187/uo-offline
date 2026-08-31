@@ -35,10 +35,23 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $ModernUORepo  = "https://github.com/modernuo/ModernUO.git"
 $MinGitReleaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 
-# Updating an ALREADY-CLONED ModernUO is opt-in. A checkout that has built
-# once is known-good; pulling upstream mid-install can drag in months of
-# engine changes and turn a working shard into one that will not compile.
-# Fresh installs always clone. Set to $true to track upstream on re-runs.
+# The ModernUO commit this release is built and tested against.
+#
+# ModernUO's main moves daily and its engine API moves with it. Cloning main
+# unpinned meant a fresh install got whatever HEAD happened to be that hour,
+# so the bots could stop compiling on a day nothing here changed. That is
+# exactly what happened on 2026-08-30: upstream dropped the `run` parameter
+# from PathFollower.Follow, and every install started failing the build with
+# CS1501 while this machine, three commits behind, was fine.
+#
+# So the version is pinned. Moving it is a deliberate step: bump the sha,
+# build, fix whatever the API change broke, play it, then release. Set it to
+# "" to track main instead, which is the old behaviour and the old lottery.
+$ModernUOCommit = "e7f85d404d52e0def1fb342b3dc185894a57017d"
+
+# Only consulted when $ModernUOCommit is "". A checkout that has built once is
+# known-good; pulling upstream mid-install can drag in months of engine
+# changes and turn a working shard into one that will not compile.
 $UpdateModernUO = $false
 
 $ClassicUOReleaseUrl = "https://api.github.com/repos/ClassicUO/ClassicUO/releases"
@@ -329,6 +342,11 @@ function FetchModernUO {
   Banner "Fetching ModernUO source"
   if (Test-Path (Join-Path $ModernUODir ".git")) {
     Say "ModernUO already cloned."
+    if ($ModernUOCommit) {
+      SetModernUOCommit
+      Ok "ModernUO source at $ModernUODir"
+      return
+    }
     if (-not $UpdateModernUO) {
       Say "Leaving it at its current commit (set `$UpdateModernUO = `$true to track upstream)."
       Ok "ModernUO source at $ModernUODir"
@@ -387,8 +405,45 @@ function FetchModernUO {
       Invoke-Native git @("clone", $ModernUORepo, $ModernUODir) | Out-Null
       Ok "Cloned with the portable git."
     }
+    if ($ModernUOCommit) { SetModernUOCommit }
   }
   Ok "ModernUO source at $ModernUODir"
+}
+
+# Put the checkout on $ModernUOCommit, whatever it is on now.
+#
+# Never fatal, like everything else in this step. The one way this fails in
+# practice is local edits to a tracked file that the target commit also
+# touches -- the stock-file patches are exactly that kind of edit -- and a
+# checkout that will not move still builds whatever is on disk. Say so and
+# carry on rather than taking the whole install down.
+function SetModernUOCommit {
+  Push-Location $ModernUODir
+  try {
+    $head = (Invoke-Native git @("rev-parse", "HEAD") -IgnoreExitCode) -join ""
+    if ($head.Trim() -eq $ModernUOCommit) {
+      Say "Already on the pinned commit $($ModernUOCommit.Substring(0,9))."
+      return
+    }
+
+    # The pinned commit can be older OR newer than what is on disk, and a
+    # shallow or stale clone may not have it at all. Fetch before reaching
+    # for it. --force because upstream re-points the build-tool-latest tag
+    # every release, and without it the fetch fails outright.
+    if (Test-Path ".git\shallow") {
+      Invoke-Native git @("fetch", "--unshallow") -IgnoreExitCode | Out-Null
+    }
+    Invoke-Native git @("fetch", "--all", "--tags", "--force") -IgnoreExitCode | Out-Null
+
+    Invoke-Native git @("checkout", "--detach", $ModernUOCommit) | Out-Null
+    Say "ModernUO pinned to $($ModernUOCommit.Substring(0,9))."
+  } catch {
+    Warn "Could not move the ModernUO clone to $($ModernUOCommit.Substring(0,9)): $($_.Exception.Message)"
+    Warn "Continuing with the checkout already on disk. If the build fails, delete"
+    Warn "the ModernUO folder and re-run to get a clean clone at the pinned commit."
+  } finally {
+    Pop-Location
+  }
 }
 
 # ---------------------------------------------------------------------------

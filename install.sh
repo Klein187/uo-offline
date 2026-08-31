@@ -65,6 +65,18 @@ if [[ "${INSTALL_ROOT}" != /* ]]; then
   INSTALL_ROOT="$(pwd)/${INSTALL_ROOT}"
 fi
 MODERNUO_REPO="https://github.com/modernuo/ModernUO.git"
+
+# The ModernUO commit this release is built and tested against.
+#
+# ModernUO's main moves daily and its engine API moves with it. Cloning main
+# unpinned meant a fresh install got whatever HEAD happened to be that hour,
+# so the bots could stop compiling on a day nothing here changed. That is
+# exactly what happened on 2026-08-30: upstream dropped the `run` parameter
+# from PathFollower.Follow, and every install started failing the build with
+# CS1501. Moving the pin is a deliberate step: bump the sha, build, fix what
+# the API change broke, play it, then release. Empty means track main, which
+# is the old behaviour and the old lottery.
+MODERNUO_COMMIT="e7f85d404d52e0def1fb342b3dc185894a57017d"
 MODERNUO_DIR="${INSTALL_ROOT}/ModernUO"
 DIST_DIR="${MODERNUO_DIR}/Distribution"
 CFG_DIR="${DIST_DIR}/Configuration"
@@ -178,6 +190,28 @@ install_deps() {
 # ---------------------------------------------------------------------------
 # Step 3 — Clone ModernUO (full history, required by Nerdbank.GitVersioning)
 # ---------------------------------------------------------------------------
+# Put the checkout on ${MODERNUO_COMMIT}, whatever it is on now. Run from
+# inside the clone.
+#
+# Never fatal, like everything else in this step. The one way this fails in
+# practice is local edits to a tracked file that the target commit also
+# touches -- the stock-file patches are exactly that kind of edit -- and a
+# checkout that will not move still builds whatever is on disk.
+set_modernuo_commit() {
+  if [[ "$(git rev-parse HEAD 2>/dev/null)" == "${MODERNUO_COMMIT}" ]]; then
+    say "Already on the pinned commit ${MODERNUO_COMMIT:0:9}."
+    return 0
+  fi
+
+  if git checkout --detach "${MODERNUO_COMMIT}"; then
+    say "ModernUO pinned to ${MODERNUO_COMMIT:0:9}."
+  else
+    warn "Could not move the ModernUO clone to ${MODERNUO_COMMIT:0:9}."
+    warn "Continuing with the checkout on disk. If the build fails, delete the"
+    warn "ModernUO folder and re-run to get a clean clone at the pinned commit."
+  fi
+}
+
 fetch_modernuo() {
   banner "Fetching ModernUO source"
 
@@ -196,11 +230,20 @@ fetch_modernuo() {
     # and local edits to tracked files (the stock-file patches in
     # INTEGRATION-NOTES.txt) are the usual reason a pull refuses.
     git fetch --all --tags --force || warn "git fetch failed; using the checkout on disk."
-    git checkout main               || warn "git checkout main failed; using the current branch."
-    git pull --ff-only              || warn "git pull failed; using the checkout on disk." 
+
+    if [[ -n "${MODERNUO_COMMIT}" ]]; then
+      set_modernuo_commit
+    else
+      git checkout main  || warn "git checkout main failed; using the current branch."
+      git pull --ff-only || warn "git pull failed; using the checkout on disk."
+    fi
   else
     say "Cloning ModernUO (full history)..."
     git clone "${MODERNUO_REPO}" "${MODERNUO_DIR}"
+    if [[ -n "${MODERNUO_COMMIT}" ]]; then
+      cd "${MODERNUO_DIR}"
+      set_modernuo_commit
+    fi
   fi
 
   ok "ModernUO source at ${MODERNUO_DIR}"
