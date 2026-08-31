@@ -376,7 +376,7 @@ namespace Server.CustomBots
                     return;
                 }
                 _follower ??= new PathFollower(bot, _walkInGoal);
-                _follower.Follow(range: 1);
+                _follower.Follow(run: false, range: 1);
             });
         }
 

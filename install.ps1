@@ -42,13 +42,12 @@ $MinGitReleaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/l
 # so the bots could stop compiling on a day nothing here changed. That is
 # exactly what happened on 2026-08-30: upstream dropped the `run` parameter
 # from PathFollower.Follow, and every install started failing the build with
-# CS1501 while this machine, three commits behind, was fine. The bots have
-# since been updated for that API and the pin sits on it.
+# CS1501 while this machine, three commits behind, was fine.
 #
 # So the version is pinned. Moving it is a deliberate step: bump the sha,
 # build, fix whatever the API change broke, play it, then release. Set it to
 # "" to track main instead, which is the old behaviour and the old lottery.
-$ModernUOCommit = "e07416902afebad3affbbdc1fbbf8c4a097df4d9"
+$ModernUOCommit = "e7f85d404d52e0def1fb342b3dc185894a57017d"
 
 # Only consulted when $ModernUOCommit is "". A checkout that has built once is
 # known-good; pulling upstream mid-install can drag in months of engine

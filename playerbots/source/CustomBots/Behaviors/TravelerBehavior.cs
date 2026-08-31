@@ -1746,10 +1746,7 @@ namespace Server.CustomBots
                 node.Location.Y + (_legIndex == _plannedPath.Count - 1 ? _finalOffsetY : 0),
                 node.Location.Z
             );
-            _follower = new PathFollower(bot, legTarget)
-            {
-                Mover = BotPathing.Paced(bot, () => _running)
-            };
+            _follower = new PathFollower(bot, legTarget);
             EnsureStepTimer(bot, running);
         }
 
@@ -1823,10 +1820,7 @@ namespace Server.CustomBots
                         driftGoal = new Point3D(portal.CenterX, portal.CenterY, _finalCoord.Value.Z);
                 }
             }
-            _follower = new PathFollower(bot, driftGoal)
-            {
-                Mover = BotPathing.Paced(bot, () => _running)
-            };
+            _follower = new PathFollower(bot, driftGoal);
             EnsureStepTimer(bot, running: false);  // walk into shops, don't run
             Log(bot, $"Drifting toward destination coord ({_driftBestDist} tiles)");
         }
@@ -2584,10 +2578,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         {
             if (!_dungeonEntryWalking || _follower == null)
             {
-                _follower = new PathFollower(bot, _dungeonEntryTile)
-                {
-                    Mover = BotPathing.Paced(bot, () => _running)
-                };
+                _follower = new PathFollower(bot, _dungeonEntryTile);
                 _dungeonEntryWalking = true;
             }
             EnsureStepTimer(bot, running: false);
@@ -3045,7 +3036,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                 }
             }
 
-            bool arrivedLeg = _follower.Follow(followRange);
+            bool arrivedLeg = _follower.Follow(_running, followRange);
 
             // Did that step carry us onto the entrance teleporter? If so the
             // game already moved us inside — convert and stop.

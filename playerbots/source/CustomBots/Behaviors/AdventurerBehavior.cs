@@ -781,17 +781,11 @@ namespace Server.CustomBots
                         _goal = new Point3D(tx, ty, bot.Z);
                     }
                 }
-                _follower = new PathFollower(bot, _goal.Value)
-                {
-                    Mover = BotPathing.Paced(bot, () => _running)
-                };
+                _follower = new PathFollower(bot, _goal.Value);
             }
             else if (_follower == null)
             {
-                _follower = new PathFollower(bot, _goal.Value)
-                {
-                    Mover = BotPathing.Paced(bot, () => _running)
-                };
+                _follower = new PathFollower(bot, _goal.Value);
             }
         }
 
@@ -1691,10 +1685,7 @@ namespace Server.CustomBots
             if (_goal != goal || _follower == null)
             {
                 _goal = goal;
-                _follower = new PathFollower(bot, goal)
-                {
-                    Mover = BotPathing.Paced(bot, () => _running)
-                };
+                _follower = new PathFollower(bot, goal);
             }
             EnsureStepTimer(bot, running);
         }
@@ -2244,7 +2235,7 @@ namespace Server.CustomBots
                 return;
             }
 
-            bool arrived = _follower.Follow(ArrivalRange);
+            bool arrived = _follower.Follow(_running, ArrivalRange);
             if (arrived)
             {
                 // Reached current goal. KEEP _goal set — the decision tick's
