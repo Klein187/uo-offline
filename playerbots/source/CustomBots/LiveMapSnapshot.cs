@@ -161,7 +161,21 @@ namespace Server.CustomBots
         // Returns the number of entities written.
         public static int WriteSnapshot()
         {
-            var ents = new List<Ent>();
+            // Bots are kept apart from everything else on the way in.
+            //
+            // This used to be one list that stopped dead at MaxEntities, and
+            // the world outgrew the cap: roughly 30,000 mobiles on Felucca
+            // against a 12,000 ceiling. World.Mobiles is walked in serial
+            // order, bots are created last so they carry the highest serials,
+            // and the budget was spent on birds and cows long before the loop
+            // reached them. The map showed two bots out of sixteen hundred —
+            // the one thing it exists to show, crowded out by scenery.
+            //
+            // So the bots are never the ones dropped. They fill first and the
+            // cap falls on the wildlife instead, which is what a cap is for.
+            var bots = new List<Ent>();
+            var others = new List<Ent>();
+            int written = 0;
             try
             {
                 foreach (var m in World.Mobiles.Values)
@@ -179,13 +193,25 @@ namespace Server.CustomBots
 
                     ent.x = m.X;
                     ent.y = m.Y;
-                    ents.Add(ent);
-                    if (ents.Count >= MaxEntities)
+
+                    if (ent.k == "Bot")
                     {
-                        break;
+                        bots.Add(ent);
+                    }
+                    else if (others.Count < MaxEntities)
+                    {
+                        others.Add(ent);
                     }
                 }
 
+                var ents = bots;
+                int room = MaxEntities - bots.Count;
+                for (int i = 0; i < others.Count && i < room; i++)
+                {
+                    ents.Add(others[i]);
+                }
+
+                written = ents.Count;
                 var snap = new Snap { map = _map.Name, count = ents.Count, entities = ents };
                 Directory.CreateDirectory(Path.GetDirectoryName(OutPath));
                 // Write to a temp file then move into place so the editor never
@@ -198,7 +224,7 @@ namespace Server.CustomBots
             {
                 Console.WriteLine($"[LiveMap] snapshot error: {ex.Message}");
             }
-            return ents.Count;
+            return written;
         }
 
         private static Ent Classify(Mobile m)
