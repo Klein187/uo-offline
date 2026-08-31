@@ -120,7 +120,60 @@ namespace Server.CustomBots
 
         // Cleared when the destination catalog reloads, so an edited arrival
         // point is not answered from a stale entry.
-        public static void ClearCache() => _guardedCache.Clear();
+        public static void ClearCache()
+        {
+            _guardedCache.Clear();
+            _guardedWaypoints = null;
+        }
+
+        // ---- Routes, not just destinations ------------------------------
+        //
+        // Keeping reds out of guarded towns as DESTINATIONS was only half of
+        // it. The roads run through the towns. A murderer walking from the
+        // Honor trail to the Spirituality shrine — both places it is welcome
+        // — was handed a route reading "... Honor Trail 1, WP 140, trinbank,
+        // WP 138, trin2, trinsicgate ..." and died in Trinsic on the way
+        // past. Same for Vesper on the Sacrifice trail.
+        //
+        // So guarded waypoints are made expensive rather than forbidden. A
+        // detour is taken when one exists, and a road that only runs through
+        // a town is still a road: a hard block would strand reds in pockets
+        // of the graph and hand us the marooning bug instead.
+        private const double GuardedDetourCost = 30.0;
+
+        private static HashSet<string> _guardedWaypoints;
+
+        private static bool IsGuardedWaypoint(string name)
+        {
+            if (_guardedWaypoints == null)
+            {
+                _guardedWaypoints = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var graph = WaypointRegistry.Graph;
+                if (graph != null)
+                {
+                    foreach (var node in graph.AllNodes)
+                    {
+                        if (IsGuardedPlace(node.Location, Map.Felucca))
+                        {
+                            _guardedWaypoints.Add(node.Name);
+                        }
+                    }
+                }
+
+                Console.WriteLine(
+                    $"[RedTerritory] {_guardedWaypoints.Count} waypoints stand under guards; " +
+                    $"murderers route around them.");
+            }
+
+            return _guardedWaypoints.Contains(name);
+        }
+
+        // Hand this to WaypointGraph.FindPath. Null for anyone the guards do
+        // not want, which leaves their routing exactly as it was.
+        public static Func<string, double> RouteCost(PlayerBot bot) =>
+            IsRed(bot)
+                ? static name => IsGuardedWaypoint(name) ? GuardedDetourCost : 1.0
+                : null;
 
         // Buccaneer's Den has no watch. That is the whole idea of the place:
         // in the era it is where murderers went BECAUSE the guards were not

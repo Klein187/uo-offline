@@ -1243,7 +1243,8 @@ namespace Server.CustomBots
                 routeTargetWaypoint = graph.PickRandomName();
             }
 
-            _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
+            _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint,
+                RedTerritory.RouteCost(bot));
 
             // ----- island reroute (WaypointGraph-based) -------------------
             // If FindPath to the destination came back empty, the bot and its
@@ -1290,7 +1291,8 @@ namespace Server.CustomBots
                     if (string.Equals(mg.Name, DestinationName,
                             StringComparison.OrdinalIgnoreCase)) continue;
                     if (string.IsNullOrEmpty(mg.NearestWaypoint)) continue;
-                    var gatePath = graph.FindPath(nearest.Name, mg.NearestWaypoint);
+                    var gatePath = graph.FindPath(nearest.Name, mg.NearestWaypoint,
+                        RedTerritory.RouteCost(bot));
                     if (gatePath == null || gatePath.Count == 0) continue; // unreachable gate
                     int d = Math.Max(Math.Abs(mg.Location.X - bot.X),
                                      Math.Abs(mg.Location.Y - bot.Y));
@@ -1330,7 +1332,8 @@ namespace Server.CustomBots
                     _finalCoord = gateObj != null
                         ? (gateObj.ArrivalPoint ?? gateObj.Location)
                         : (Point3D?)null;
-                    _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
+                    _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint,
+                        RedTerritory.RouteCost(bot));
                 }
                 else if (_planDepth == 0)
                 {
@@ -1432,7 +1435,8 @@ namespace Server.CustomBots
                                            Math.Abs(mg.Location.Y - bot.Y));
                         if (dMe < entryDist)
                         {
-                            var gp = graph.FindPath(nearest.Name, mg.NearestWaypoint);
+                            var gp = graph.FindPath(nearest.Name, mg.NearestWaypoint,
+                                RedTerritory.RouteCost(bot));
                             if (gp != null && gp.Count > 0)
                             {
                                 entryDist = dMe;
@@ -1452,7 +1456,8 @@ namespace Server.CustomBots
                         _destType = DestinationType.Moongate;
                         routeTargetWaypoint = entry.NearestWaypoint;
                         _finalCoord = entry.ArrivalPoint ?? entry.Location;
-                        _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint);
+                        _plannedPath = graph.FindPath(nearest.Name, routeTargetWaypoint,
+                            RedTerritory.RouteCost(bot));
                     }
                 }
             }
@@ -1561,7 +1566,8 @@ namespace Server.CustomBots
 
                 if (wp == null) continue;
 
-                var path = graph.FindPath(fromNode, wp);
+                var path = graph.FindPath(fromNode, wp,
+                    RedTerritory.RouteCost(bot));
                 if (path != null && path.Count > 0)
                 {
                     return cand;

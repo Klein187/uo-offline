@@ -105,7 +105,13 @@ namespace Server.CustomBots
 
         // Standard Dijkstra over the graph. Returns the sequence of node
         // names from `fromName` to `toName`, inclusive. Empty if no path.
-        public List<string> FindPath(string fromName, string toName)
+        // nodeCost multiplies the cost of stepping INTO a node, so a caller
+        // can make a whole class of waypoint expensive without cutting it out
+        // of the graph. Used to route murderers around guarded towns: a
+        // detour is preferred, but a road that only runs through a town is
+        // still a road, and a hard block would strand them.
+        public List<string> FindPath(string fromName, string toName,
+                                     Func<string, double> nodeCost = null)
         {
             var result = new List<string>();
             if (fromName == toName)
@@ -155,6 +161,11 @@ namespace Server.CustomBots
                     if (penalty != null)
                     {
                         edgeCost *= penalty(current, neighborName);
+                    }
+
+                    if (nodeCost != null)
+                    {
+                        edgeCost *= nodeCost(neighborName);
                     }
 
                     double alt = currentDist + edgeCost;
