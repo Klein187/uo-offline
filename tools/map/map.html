@@ -77,6 +77,7 @@
  </div>
  <label style="color:#e8a0a0"><input type="checkbox" id="lPK" checked> PK spawns</label>
  <label style="color:#e07a5f"><input type="checkbox" id="lDigs"> Dig sites</label>
+ <label style="color:#7bbf7e"><input type="checkbox" id="lGather"> Gather spots</label>
  <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
  </details>
 
@@ -228,7 +229,8 @@ function loadData(){
   COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
    `loaded ${new Date().toLocaleTimeString()} — ${DESTS.length} dests, ${WPS.length} wps`;
-  draw();
+  try{draw();}
+  catch(err){document.getElementById("info").textContent="Draw failed: "+err.message;}
  }).catch(e=>{document.getElementById("info").textContent="Data load failed: "+e.message;});
 }
 function resize(){cv.width=innerWidth;cv.height=innerHeight;draw();}
