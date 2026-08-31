@@ -46,7 +46,24 @@ namespace Server.CustomBots
         // within 3 tiles of the hunter and the fight drifts from there,
         // so a site that merely touches the town line still spills into
         // it. Half a screen of margin keeps the whole brawl outside.
-        private const int GuardedClearance = 24;
+        // How far clear of a town line a dig site has to sit.
+        //
+        // 24 was not clearance, it was a rounding error. Dig Site 1 stood 28
+        // tiles off Britain's edge and passed by four: far enough to satisfy
+        // the test, close enough that a murderer digging there is inside the
+        // guard zone the moment the hunt wanders. A treasure hunt is not a
+        // stationary act — you dig, guardians rise, the fight moves.
+        private const int GuardedClearance = 128;
+
+        // Minimum spacing between two dig sites.
+        //
+        // Without it the picker took the first MaxSites candidates in
+        // waypoint-file order, and that order starts around Britain: all 24
+        // sites landed in one pocket, x 1350-1504 by y 1894-2226. A shard of
+        // treasure maps that all point at the same field south of Britain.
+        // Greedy over the same order, so the result stays deterministic
+        // across reboots and a hunt in flight still finds its site.
+        private const int MinSiteSeparation = 250;
 
         private static List<BotDestination> _generated;
 
@@ -126,6 +143,23 @@ namespace Server.CustomBots
                     }
                 }
                 if (crowded)
+                {
+                    continue;
+                }
+
+                // Spread them over the map instead of clustering wherever
+                // the waypoint file happens to start.
+                bool tooClose = false;
+                foreach (var already in picked)
+                {
+                    if (Math.Max(Math.Abs(already.Location.X - loc.X),
+                                 Math.Abs(already.Location.Y - loc.Y)) < MinSiteSeparation)
+                    {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (tooClose)
                 {
                     continue;
                 }
