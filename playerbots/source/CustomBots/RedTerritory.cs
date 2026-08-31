@@ -18,7 +18,9 @@
 // place, which is the point.
 // =========================================================================
 
+using System.Collections.Generic;
 using Server;
+using Server.Regions;
 
 namespace Server.CustomBots
 {
@@ -72,5 +74,52 @@ namespace Server.CustomBots
         // The common question: should this bot avoid this place?
         public static bool ShouldAvoid(PlayerBot bot, BotDestination d) =>
             Contains(d) && !AllowedFor(bot);
+
+        // ---- Guarded towns ----------------------------------------------
+        //
+        // The other half of the same rule, and the one that was missing. A
+        // red inside a guarded region is killed by guards on sight, so every
+        // guarded destination is a death sentence for one. Bots were still
+        // being sent to them: a reagent errand picks the NEAREST vendor, and
+        // the nearest vendor is almost always in a town. The bot died, a
+        // wandering healer stood it back up on the same tile, and the guards
+        // killed it again — thirteen times over for one bot in one evening.
+        //
+        // Region lookup is not free and the destination list is walked on
+        // every errand roll, so the answer is cached. Regions do not move
+        // once the world is up.
+        private static readonly Dictionary<Point3D, bool> _guardedCache = new();
+
+        public static bool IsGuardedPlace(Point3D p, Map map)
+        {
+            if (map == null || map == Map.Internal)
+            {
+                return false;
+            }
+
+            if (_guardedCache.TryGetValue(p, out var cached))
+            {
+                return cached;
+            }
+
+            var guarded = Region.Find(p, map).IsPartOf<GuardedRegion>();
+            _guardedCache[p] = guarded;
+            return guarded;
+        }
+
+        public static bool IsGuardedPlace(BotDestination d, Map map) =>
+            d != null && IsGuardedPlace(d.ArrivalPoint ?? d.Location, map);
+
+        // Cleared when the destination catalog reloads, so an edited arrival
+        // point is not answered from a stale entry.
+        public static void ClearCache() => _guardedCache.Clear();
+
+        // THE question any trip should ask before setting out: can this bot
+        // go here and still be alive when it arrives? Covers both rules —
+        // the pirate town a blue keeps out of, and the guarded towns a red
+        // cannot survive.
+        public static bool MayGoTo(PlayerBot bot, BotDestination d) =>
+            !ShouldAvoid(bot, d) &&
+            (!IsRed(bot) || !IsGuardedPlace(d, bot?.Map));
     }
 }

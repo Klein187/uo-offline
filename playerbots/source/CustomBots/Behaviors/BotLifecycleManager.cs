@@ -109,6 +109,16 @@ namespace Server.CustomBots
                     continue;
                 }
 
+                // A PK keeps its brain. PKBehavior grants 5-20 murder
+                // counts on attach and nothing ever takes them away, so a
+                // lifecycle re-brain would produce a permanent murderer with
+                // a shopkeeper's routine — walking into guarded towns on
+                // errands and dying to the guards on repeat.
+                if (bot.Behavior is PKBehavior)
+                {
+                    continue;
+                }
+
                 // DUNGEON RULE: a bot inside a dungeon is a DungeonCrawler.
                 // A crawler mid-crawl is left alone — its own run timer
                 // decides when to climb out; a lifecycle swap here would

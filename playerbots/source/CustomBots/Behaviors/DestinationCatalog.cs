@@ -226,10 +226,12 @@ namespace Server.CustomBots
                     w *= BotDangerMap.Multiplier(d);
                 }
 
-                // Buccaneer's Den is the reds' town, and it is an island with
-                // almost nothing on it - a blue who rolls it can only gate in,
-                // fail to walk anywhere, and gate out again. See RedTerritory.
-                if (RedTerritory.ShouldAvoid(bot, d))
+                // Two rules, one question. Buccaneer's Den is the reds' town
+                // and an island with almost nothing on it, so a blue who rolls
+                // it can only gate in, fail to walk anywhere and gate out
+                // again. And a guarded town is where a red goes to be killed
+                // by guards. See RedTerritory.
+                if (!RedTerritory.MayGoTo(bot, d))
                 {
                     w = 0;
                 }
@@ -249,7 +251,33 @@ namespace Server.CustomBots
 
             if (total <= 0)
             {
-                // All zero-weight — just uniform random.
+                // Every candidate scored zero. Uniform random over the whole
+                // catalog was the old answer, and it quietly handed back the
+                // places the rules above had just excluded — the one path
+                // that could still walk a red into a guarded town. Roll among
+                // the allowed ones instead, and only fall back to anything at
+                // all when there is genuinely nothing left.
+                int allowed = 0;
+                for (int i = 0; i < snapshot.Length; i++)
+                {
+                    if (RedTerritory.MayGoTo(bot, snapshot[i]))
+                    {
+                        allowed++;
+                    }
+                }
+
+                if (allowed > 0)
+                {
+                    int pick = Utility.Random(allowed);
+                    for (int i = 0; i < snapshot.Length; i++)
+                    {
+                        if (RedTerritory.MayGoTo(bot, snapshot[i]) && pick-- == 0)
+                        {
+                            return snapshot[i];
+                        }
+                    }
+                }
+
                 return snapshot[Utility.Random(snapshot.Length)];
             }
 
@@ -281,6 +309,10 @@ namespace Server.CustomBots
 
         public static int Load()
         {
+            // Arrival points may have moved, so the guarded-region answers
+            // cached against them are no longer trustworthy.
+            RedTerritory.ClearCache();
+
             var path = Path.Combine(Core.BaseDirectory, "Data", "Destinations", "destinations.json");
             if (!File.Exists(path))
             {

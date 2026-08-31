@@ -97,6 +97,38 @@ namespace Server.CustomBots
             bot.Behavior = new GhostBehavior();
         }
 
+        // Nearest place a red can come back that the guards do not watch.
+        // Shrines first (era-correct for a murderer), then any ungarded res
+        // point, then nothing — the caller resurrects in place rather than
+        // leave a ghost standing forever.
+        private static BotDestination NearestRefuge(PlayerBot bot)
+        {
+            BotDestination best = null;
+            int bestDist = int.MaxValue;
+
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (d.Type != DestinationType.Shrine)
+                {
+                    continue;
+                }
+                if (RedTerritory.IsGuardedPlace(d, bot.Map))
+                {
+                    continue;
+                }
+
+                int dist = Math.Max(Math.Abs(d.Location.X - bot.X),
+                                    Math.Abs(d.Location.Y - bot.Y));
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = d;
+                }
+            }
+
+            return best;
+        }
+
         // -------------------------------------------------------------------
         // After the haunt: where does this ghost get resurrected?
         // Returns a destination name to ghost-walk to, or null for a
@@ -118,6 +150,15 @@ namespace Server.CustomBots
             foreach (var d in DestinationCatalog.All)
             {
                 if (d.Type != DestinationType.Healer && d.Type != DestinationType.Shrine)
+                {
+                    continue;
+                }
+
+                // Town healers stand inside guarded towns, so walking a red
+                // ghost to one only feeds it back to the guards. The era
+                // agrees: a murderer's res was the shrines, not the healer
+                // on the corner.
+                if (!RedTerritory.MayGoTo(bot, d))
                 {
                     continue;
                 }
@@ -161,6 +202,28 @@ namespace Server.CustomBots
             if (bot == null || bot.Deleted || bot.Alive)
             {
                 return;
+            }
+
+            // Never stand a murderer back up inside a guarded town. That
+            // res WAS the death loop: guards cut the red down, a wandering
+            // healer put it on its feet on the same tile, the guards cut it
+            // down again — thirteen times for one bot in one evening.
+            //
+            // It is moved to a shrine rather than refused, because this is
+            // also the ten-minute safety net for a wedged ghost and the
+            // death story must never strand a bot. The era lands in the same
+            // place: a murderer's res was the shrines.
+            if (RedTerritory.IsRed(bot) &&
+                RedTerritory.IsGuardedPlace(bot.Location, bot.Map))
+            {
+                var refuge = NearestRefuge(bot);
+                if (refuge != null)
+                {
+                    Console.WriteLine(
+                        $"[death] {bot.Name} is a murderer — no res under the " +
+                        $"guards; carried to '{refuge.Name}'");
+                    bot.MoveToWorld(refuge.ArrivalPoint ?? refuge.Location, bot.Map);
+                }
             }
 
             bot.FixedEffect(0x376A, 10, 16);

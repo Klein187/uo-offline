@@ -1304,6 +1304,14 @@ namespace Server.CustomBots
                 // on its island, so the trip would churn gate-to-gate
                 // forever; a bot that couldn't recall above falls through
                 // to the salvage instead and goes somewhere reachable.
+                // A red cannot step out of a public moongate and live, so
+                // the gate network is not available to carry its trip. Fall
+                // through to the salvage below instead.
+                if (!RedTerritory.MayUseMoongates(bot))
+                {
+                    bestGate = null;
+                }
+
                 if (bestGate != null && !destGateless)
                 {
                     Log(bot, $"Destination '{DestinationName}' unreachable by foot " +
@@ -1363,7 +1371,11 @@ namespace Server.CustomBots
                     // Rescue-teleport to the nearest moongate and let the
                     // gate network carry the trip on; matches the existing
                     // LOST-rescue precedent above.
-                    var rescueGate = AvoidTowns
+                    // Every public moongate stands in a guarded town, so a
+                    // red rescued to one is dead on arrival. AvoidTowns alone
+                    // was not enough: it is set by the PK patrol brain, and a
+                    // bot that is simply a murderer never carries it.
+                    var rescueGate = AvoidTowns || !RedTerritory.MayUseMoongates(bot)
                         ? PickWildRescueSpot(bot)
                         : NearestMoongate(bot);
                     if (rescueGate != null)

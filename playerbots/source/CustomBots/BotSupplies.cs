@@ -200,6 +200,15 @@ namespace Server.CustomBots
                     // banks only serve arrivals that happen anyway.
                     continue;
                 }
+
+                // A red cannot shop in a guarded town — it is killed on the
+                // doorstep. This errand used to pick the NEAREST vendor with
+                // no such test, which is how murderers ended up on reagent
+                // runs into Magincia and died there on a loop.
+                if (!RedTerritory.MayGoTo(bot, d))
+                {
+                    continue;
+                }
                 int dist = Math.Max(Math.Abs(d.Location.X - bot.X),
                                     Math.Abs(d.Location.Y - bot.Y));
 
