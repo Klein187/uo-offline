@@ -918,7 +918,15 @@ namespace Server.CustomBots
             // timer when adjacent, which parked retreat AND self-heal on
             // the 2s decision tick — a toe-to-toe fighter could lose its
             // whole retreat margin in that gap, and never bandaged at all.)
-            if (dist <= 4)
+            // ...and only when the bot can SEE it. TileDist is straight
+            // line, so a monster three tiles away through a dungeon wall
+            // reads as "close" and greedy stepping then walks the bot into
+            // the wall and shuffles it left and right along the wall for as
+            // long as the fight lasts. The door into that room is off to
+            // one side and a greedy step never turns for it. No line of
+            // sight means something is in the way, which is the pathfinder's
+            // job, not the greedy step's.
+            if (dist <= 4 && HasLOS(bot, foe))
             {
                 _goal = null;
                 _follower = null;
@@ -2043,6 +2051,16 @@ namespace Server.CustomBots
                     if (bot.Direction != fd) bot.Direction = fd;
                     return;
                 }
+                // Lost sight of it: it went round a corner, through a door,
+                // or behind a wall. Greedy stepping cannot solve any of
+                // those — it just walks into the obstacle. Hand back to the
+                // decision tick, which paths instead.
+                if (!HasLOS(bot, f))
+                {
+                    _chaseFoe = null;
+                    StopStepTimer();
+                    return;
+                }
                 // Step toward the foe; flow around blockers.
                 var d = bot.GetDirectionTo(f);
                 if (bot.Direction != d) bot.Direction = d;
@@ -2412,6 +2430,9 @@ namespace Server.CustomBots
                 _progressFoe   = foe;
                 _bestFoeDist   = TileDist(bot, foe.Location);
                 _foeProgressAt = Core.Now;
+                _doorTriedFor  = null;
+                _stallAnchor   = bot.Location;
+                _stallSince    = Core.Now;
                 return false;
             }
 
@@ -2422,6 +2443,8 @@ namespace Server.CustomBots
             {
                 _bestFoeDist   = TileDist(bot, foe.Location);
                 _foeProgressAt = Core.Now;
+                _stallAnchor   = bot.Location;
+                _stallSince    = Core.Now;
                 return false;
             }
 
@@ -2434,10 +2457,54 @@ namespace Server.CustomBots
                 return false;
             }
 
+            // Has the bot's own body moved? This deliberately does NOT ask
+            // whether it got nearer the foe. A bot taking the long way round
+            // — out of the corridor, through the door, into the room — spends
+            // most of that trip getting FURTHER from the monster in a
+            // straight line, and judging it on distance would cut off the
+            // exact behaviour the door work exists to allow. Feet, not gap.
+            bool moved = Math.Max(Math.Abs(bot.X - _stallAnchor.X),
+                                  Math.Abs(bot.Y - _stallAnchor.Y)) > StallMoveTiles;
+            if (moved)
+            {
+                _stallAnchor = bot.Location;
+                _stallSince  = Core.Now;
+            }
+
+            // Standing still, out of attack position, and cannot even see the
+            // thing: that is a wall. No point spending the full grace window
+            // on it. With sight, keep the long fuse — the bot may be circling
+            // an obstacle, or the foe may simply be running away.
+            bool pinned = !moved && !HasLOS(bot, foe) &&
+                          Core.Now - _stallSince > BlindStallTimeout;
+
             // No closer than before AND not in attack position. If that's gone
             // on too long the foe is effectively unreachable — give up.
-            if (Core.Now - _foeProgressAt > UnreachableTimeout)
+            if (pinned || Core.Now - _foeProgressAt > UnreachableTimeout)
             {
+                // Unless what is "in the way" is a door. A closed door is not
+                // a walkable tile, so A* finds no route at all, and
+                // PathFollower answers a failed path by stepping straight at
+                // the goal (PathFollower.Follow: `if (!(Enabled &&
+                // m_Path.Success)) d = GetDirectionTo(goal)`). That walks the
+                // bot into the wall BESIDE the door, where it shuffles until
+                // this timeout fires and it gives up on a monster that was
+                // one doorway away. PlayerBot.Move already opens a door it
+                // steps into, the way a player's auto-open does — the bot
+                // just never had a reason to step at the door rather than at
+                // the monster. So give it one, once, before writing the foe
+                // off. Once per foe: a door that will not open (locked, or
+                // not the thing in the way after all) must not restart this
+                // clock forever.
+                if (_doorTriedFor != foe && TryDoorOnTheWay(bot, foe))
+                {
+                    _doorTriedFor  = foe;
+                    _foeProgressAt = Core.Now;
+                    return false;
+                }
+
+                Console.WriteLine(
+                    $"[Bot {bot.Name}] gave up on '{foe.Name}' as unreachable");
                 bot.MarkUnreachable(foe, UnreachableIgnore);
                 AbandonFoe(bot);
                 // A defender that can't reach what it was fighting returns to
@@ -2450,6 +2517,106 @@ namespace Server.CustomBots
             }
 
             return false;
+        }
+
+        // A bot pinned against a wall gives up sooner than one that is
+        // merely slow. Measured: about 15% of bot paths fail, and raising
+        // both the A* node budget and the search window recovered almost
+        // none of them, so those goals really are unreachable. Seven seconds
+        // of walking on the spot in front of a wall is what reads as a
+        // broken bot; three is a bot that tried and moved on.
+        private static readonly TimeSpan BlindStallTimeout = TimeSpan.FromSeconds(3);
+
+        // More than this many tiles from the anchor counts as having moved.
+        private const int StallMoveTiles = 1;
+
+        // Where the bot was when it last made ground, and when.
+        private Point3D _stallAnchor;
+        private DateTime _stallSince;
+
+        // How far to look for a door standing between the bot and its foe.
+        // Wide enough for a dungeon room's entrance from inside the corridor,
+        // narrow enough that it never picks a door in a different part of the
+        // level.
+        private const int DoorSearchRange = 12;
+
+        // The foe a door detour has already been spent on.
+        private Mobile _doorTriedFor;
+
+        // Is there a shut door between the bot and the thing it cannot reach?
+        // If so, head for the door instead of the monster (or just open it,
+        // when already close enough to touch). Returns true when the bot was
+        // given something new to do.
+        private bool TryDoorOnTheWay(PlayerBot bot, Mobile foe)
+        {
+            var map = bot.Map;
+            if (map == null || map == Map.Internal)
+            {
+                return false;
+            }
+
+            int foeDist = TileDist(bot, foe.Location);
+
+            BaseDoor best = null;
+            int bestCost = int.MaxValue;
+
+            foreach (var item in map.GetItemsInRange(bot.Location, DoorSearchRange))
+            {
+                if (item is not BaseDoor door || door.Open || door.Locked)
+                {
+                    continue;
+                }
+
+                // Same floor. A door one level up is not what is in the way.
+                if (Math.Abs(door.Z - bot.Z) > 15)
+                {
+                    continue;
+                }
+
+                // On the way, not behind us: standing closer to the foe than
+                // the bot does.
+                int toFoe = TileDist(foe, door.Location);
+                if (toFoe >= foeDist)
+                {
+                    continue;
+                }
+
+                // Cheapest total detour wins.
+                int cost = TileDist(bot, door.Location) + toFoe;
+                if (cost < bestCost)
+                {
+                    bestCost = cost;
+                    best = door;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            // Close enough to reach past — just open it. The bot stops
+            // ArrivalRange short of anything it walks to, so this has to
+            // cover more than the adjacent tile.
+            if (bot.InRange(best.Location, ArrivalRange + 1) &&
+                DoorHelper.TryOpenNear(bot, ArrivalRange + 1))
+            {
+                Console.WriteLine(
+                    $"[Bot {bot.Name}] opened a door to get at '{foe.Name}'");
+                _goal = null;
+                _follower = null;
+                _chaseFoe = null;
+                return true;
+            }
+
+            // Otherwise walk to it. The door tile itself is not walkable, so
+            // the route ends beside it and the branch above opens it on a
+            // later tick.
+            Console.WriteLine(
+                $"[Bot {bot.Name}] can't reach '{foe.Name}' — going round " +
+                $"via the door at ({best.X},{best.Y})");
+            SetGoal(bot, best.Location, running: true);
+            return true;
         }
 
         // Drop the current fight entirely (combatant + all pursuit state) so

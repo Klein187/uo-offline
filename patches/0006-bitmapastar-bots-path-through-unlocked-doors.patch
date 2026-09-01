@@ -1,0 +1,82 @@
+diff --git a/Projects/UOContent/Engines/Pathing/BitmapAStarAlgorithm.cs b/Projects/UOContent/Engines/Pathing/BitmapAStarAlgorithm.cs
+index 2c830db20..2f8487670 100644
+--- a/Projects/UOContent/Engines/Pathing/BitmapAStarAlgorithm.cs
++++ b/Projects/UOContent/Engines/Pathing/BitmapAStarAlgorithm.cs
+@@ -68,6 +68,7 @@ private struct PathNode
+     // routes — it needs to stay high enough to solve walled-off indoor ones.
+     public int MaxSearchNodes { get; set; } = 1000;
+ 
++
+     private int _xOffset;
+     private int _yOffset;
+ 
+@@ -86,6 +87,11 @@ private struct PathNode
+ 
+     // Per-mobile flags for the dynamic-obstacle pass, derived once in Find rather than per cell.
+     private bool _currentMobileIgnoreDoors;
++
++    // Set for mobiles that may only path through doors they can actually
++    // open. A creature with CanOpenDoors walks through locked ones too, which
++    // is stock behaviour and stays; a bot does not get that.
++    private bool _currentMobileUnlockedDoorsOnly;
+     private bool _currentMobileIgnoreSpellFields;
+     private bool _currentMobileIgnoreMovableImpassables;
+ 
+@@ -143,10 +149,25 @@ public override Direction[] Find(Mobile m, Map map, Point3D start, Point3D goal)
+         {
+             _currentMobileCanSwim = false;
+             _currentMobileCantWalk = false;
+-            _currentMobileIgnoreDoors = false;
++            // A PlayerBot is a PlayerMobile, not a BaseCreature, so it used
++            // to land here and have every closed door treated as solid wall.
++            // Meanwhile PlayerBot.Move opens a door it walks into, exactly
++            // like the client's auto-open. The path said "no route" for a
++            // room the bot could in fact have walked straight into, and
++            // PathFollower answers a failed path by stepping at the goal
++            // regardless — so the bot walked into the wall beside the door
++            // and shuffled there. Every monster with CanOpenDoors could path
++            // through that same door; only the bots could not.
++            _currentMobileIgnoreDoors = m is Server.CustomBots.PlayerBot;
+             _currentMobileIgnoreMovableImpassables = false;
+         }
+ 
++        // A bot may only route through a door it could actually open. The
++        // creature rule above is deliberately left alone: CanOpenDoors has
++        // always meant locked doors as well, and changing that would change
++        // monster behaviour, which is not what this is for.
++        _currentMobileUnlockedDoorsOnly = m is Server.CustomBots.PlayerBot;
++
+         // Dead and spectral mobiles pass through doors too. Mirrors MovementImpl.
+         _currentMobileIgnoreDoors |= !m.Alive || m.Body.BodyID == 0x3DB || m.IsDeadBondedPet;
+         _currentMobileIgnoreSpellFields = m is PlayerMobile && map != Map.Felucca;
+@@ -285,6 +306,7 @@ public override Direction[] Find(Mobile m, Map map, Point3D start, Point3D goal)
+                 _currentMobileCanSwim = false;
+                 _currentMobileCantWalk = false;
+                 _currentMobileIgnoreDoors = false;
++                _currentMobileUnlockedDoorsOnly = false;
+                 _currentMobileIgnoreSpellFields = false;
+                 _currentMobileIgnoreMovableImpassables = false;
+                 return dirs;
+@@ -297,6 +319,7 @@ public override Direction[] Find(Mobile m, Map map, Point3D start, Point3D goal)
+         _currentMobileCanSwim = false;
+         _currentMobileCantWalk = false;
+         _currentMobileIgnoreDoors = false;
++        _currentMobileUnlockedDoorsOnly = false;
+         _currentMobileIgnoreSpellFields = false;
+         _currentMobileIgnoreMovableImpassables = false;
+         return null;
+@@ -470,7 +493,13 @@ private bool IsBlockedByDynamic(Mobile m, Map map, int x, int y, int z)
+             if (_currentMobileIgnoreDoors
+                 && (itemData.Door
+                     || itemId is 0x692 or 0x846 or 0x873
+-                    || itemId >= 0x6F5 && itemId <= 0x6F6))
++                    || itemId >= 0x6F5 && itemId <= 0x6F6)
++                // A locked door is a wall to anything that can only open the
++                // unlocked ones. Costs nothing on the hot path: it is only
++                // reached for a mobile that ignores doors at all, standing on
++                // a cell that actually holds one.
++                && !(_currentMobileUnlockedDoorsOnly
++                     && item is Server.Items.BaseDoor { Locked: true }))
+             {
+                 continue;
+             }

@@ -70,10 +70,15 @@ namespace Server.CustomBots
         }
 
         // Open any closed, unlocked door adjacent to the mobile.
-        public static bool TryOpenAdjacent(Mobile m)
+        public static bool TryOpenAdjacent(Mobile m) => TryOpenNear(m, 1);
+
+        // Same, within a radius. A bot walking to a door stops ArrivalRange
+        // tiles short of it, so "adjacent" is not close enough for anything
+        // that ROUTED to a door on purpose.
+        public static bool TryOpenNear(Mobile m, int range)
         {
             if (m?.Map == null || m.Map == Map.Internal) return false;
-            foreach (var item in m.Map.GetItemsInRange(m.Location, 1))
+            foreach (var item in m.Map.GetItemsInRange(m.Location, range))
             {
                 if (item is Server.Items.BaseDoor d && !d.Open && !d.Locked &&
                     Math.Abs(d.Z - m.Z) <= 15)

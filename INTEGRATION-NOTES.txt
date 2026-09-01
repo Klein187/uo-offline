@@ -2,7 +2,7 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: five stock ModernUO files need a small patch, because they
+one exception: six stock ModernUO files need a small patch, because they
 ARE engine files and cannot live in CustomBots/.
 
 Both installers apply these for you now. They ship as unified diffs in
@@ -173,3 +173,52 @@ it upstream, so there is no setting to flip -- it has to be a patch.
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or
 dungeon runes cannot be made.
+
+Stock-file patch: let bots path through doors (2026-09-01)
+-----------------------------------------------------------
+The pathfinder decided whether a closed door was passable by asking the
+mobile whether it was a door-opening creature:
+
+  Projects/UOContent/Engines/Pathing/BitmapAStarAlgorithm.cs  (~line 143)
+
+    if (m is BaseCreature creature)
+        _currentMobileIgnoreDoors = creature.CanOpenDoors;
+    else
+        _currentMobileIgnoreDoors = false;      <-- every PlayerBot
+
+A PlayerBot is a PlayerMobile, not a BaseCreature, so it landed in the
+else and every closed door was a solid wall to it. PlayerBot.Move has
+always opened a door it walks into, the way the client's auto-open does,
+so the pathfinder and the mover disagreed: A* reported "no route" for a
+room the bot could have walked straight into. PathFollower answers a
+failed path by stepping at the goal anyway, so the bot walked into the
+wall beside the door and shuffled there until the combat code gave up on
+the monster. Every monster in the game could path through that same door.
+Only the bots could not.
+
+The patch sets the flag for PlayerBots, and adds a second flag so a bot
+only routes through doors it could actually open:
+
+    _currentMobileUnlockedDoorsOnly = m is Server.CustomBots.PlayerBot;
+
+    // in the per-cell item test
+    && !(_currentMobileUnlockedDoorsOnly
+         && item is Server.Items.BaseDoor { Locked: true })
+
+The creature rule is deliberately untouched. CanOpenDoors has always meant
+locked doors as well, and changing it would change monster behaviour.
+
+The locked test costs nothing on the hot path: it is only reached for a
+mobile that ignores doors at all, standing on a cell that holds one.
+
+Measured before and after on a live shard: door work (bots routing to or
+opening a door to reach a foe) went up about sixfold, and engagements rose
+roughly 30%. Two things that sound related but are NOT the cause were
+tested and ruled out -- raising pathfinding.maxSearchNodes from 1000 to
+4000 recovered zero extra routes (every budget failure was genuinely
+unreachable), and widening the 38-tile search window to 64 moved the path
+failure rate only 16.3% -> 14.7%, which is not worth the cost. Both were
+reverted.
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or bots
+cannot path into any room whose door is shut.
