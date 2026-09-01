@@ -309,6 +309,11 @@ namespace Server.CustomBots
                 return;
             }
 
+            // "withdraw 5000" is a real UO command, and a bot that says it
+            // at a bank now means it — including trimming the number down
+            // to what is actually in the account before saying it out loud.
+            line = BotBanking.Prepare(bot, line);
+
             // Probabilistic capitalization — sometimes "hail", sometimes "Hail".
             // Don't touch lines that start with non-letters (e.g.
             // "WTS GM hally"). Those should keep their case as written.
@@ -327,6 +332,9 @@ namespace Server.CustomBots
             // funnels through here, so this is where one becomes a standing
             // want a player can answer with "i have one".
             BotWantAd.Posted(bot, line);
+
+            // Same idea, with coins: the words are said, now do the thing.
+            BotBanking.Spoke(bot, line);
         }
 
         protected bool IsPlayerNearby(PlayerBot bot)
