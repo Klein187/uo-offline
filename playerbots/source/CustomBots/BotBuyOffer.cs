@@ -215,9 +215,17 @@ namespace Server.CustomBots
                 return false;
             }
 
+            // Now that the goods have a name, ask the real question. The
+            // kind test above only decided whether to look up.
+            if (!BotWants.Wants(bot, kind, noun))
+            {
+                return false;
+            }
+
             // Money talks, in both directions. A bot that cannot reach the
             // bottom of the band has no business crossing the floor.
-            int purse = CrafterStock.GoldOnHand(bot);
+            // Wealth, not pocket money — see BotBanking.Wealth.
+            int purse = BotBanking.Wealth(bot);
             if (purse < low)
             {
                 return false;
@@ -283,7 +291,7 @@ namespace Server.CustomBots
                 return false;
             }
 
-            int purse = CrafterStock.GoldOnHand(bot);
+            int purse = BotBanking.Wealth(bot);
             if (purse < low)
             {
                 return false;
@@ -335,26 +343,11 @@ namespace Server.CustomBots
 
         // What someone like that would want. Deliberately coarse: this is
         // "would a fencer look up at this", not an inventory system.
-        public static bool Wants(BotClass cls, GoodsKind kind) => cls switch
-        {
-            // The town mule buys anything it thinks it can move on.
-            BotClass.Merchant => true,
-
-            // Casters: reagents, scrolls, and a magic piece worth having.
-            BotClass.Mage or BotClass.Healer or BotClass.Bard or BotClass.Tamer =>
-                kind is GoodsKind.Bulk or GoodsKind.Scroll or GoodsKind.Rare,
-
-            // Fighters: what they swing and what they wear.
-            BotClass.Warrior or BotClass.Fencer or BotClass.Archer or BotClass.Ranger
-                or BotClass.Thief =>
-                kind is GoodsKind.Gear or GoodsKind.Rare or GoodsKind.Bulk,
-
-            BotClass.TreasureHunter =>
-                kind is GoodsKind.Rare or GoodsKind.Scroll or GoodsKind.Bulk,
-
-            // Artisans and gatherers buy materials and nothing else.
-            _ => kind is GoodsKind.Bulk,
-        };
+        // Lives in BotWants now. There were two appetite tables and they
+        // disagreed: this one only knew KINDS, so "a mage wants Bulk" meant
+        // a mage would buy iron ingots and a warrior would buy spider silk.
+        public static bool Wants(BotClass cls, GoodsKind kind) =>
+            BotWants.CouldWant(cls, kind);
 
         private static bool RoomWants(Mobile player, string noun, GoodsKind kind, bool premium)
         {
@@ -623,7 +616,7 @@ namespace Server.CustomBots
 
             // The purse is checked again at the window, but there is no
             // point shaking on money that already isn't there.
-            if (CrafterStock.GoldOnHand(_bot) < price)
+            if (BotBanking.Wealth(_bot) < price)
             {
                 Say("buy_toorich", price);
                 End();
@@ -806,7 +799,7 @@ namespace Server.CustomBots
             {
                 if (m == bot || BotShop.HasStock(m) || !IsShopping(m) || IsBusy(m) ||
                     BotShopDeal.IsDealing(m) || !Wants(m.Class, kind) ||
-                    CrafterStock.GoldOnHand(m) < low)
+                    BotBanking.Wealth(m) < low)
                 {
                     continue;
                 }

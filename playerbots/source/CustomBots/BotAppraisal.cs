@@ -45,6 +45,15 @@ namespace Server.CustomBots
         // scrolls"), so this only covers what it doesn't say.
         private static readonly (string Slang, string Noun)[] Slang =
         {
+            // "WTB regs" is the single most-shouted line at any 1999 bank
+            // and it resolved to nothing, so the most common want on the
+            // shard was the one nobody could answer. Reagents have no one
+            // row, so it lands on the cheapest one and the band covers the
+            // rest; a buyer shouting "regs" is not being precise either.
+            ("regs", "ginseng"),
+            ("reagents", "ginseng"),
+            ("reg", "ginseng"),
+
             ("hally", "halberd"),
             ("halb", "halberd"),
             ("bard", "bardiche"),

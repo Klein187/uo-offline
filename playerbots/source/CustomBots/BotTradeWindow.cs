@@ -181,7 +181,12 @@ namespace Server.CustomBots
             }
 
             // The purse is checked at the till, not at the handshake — the
-            // bot may have spent it since.
+            // bot may have spent it since. Draw on the account first: the
+            // bot qualified to buy on what it OWNS, so this is where owning
+            // has to become carrying. A cover that fails moves nothing and
+            // the sale falls over honestly on the next line.
+            BotBanking.CoverInPack(bot, price);
+
             if (!CrafterStock.SpendGold(bot, price))
             {
                 Decline(bot, ChatLibrary.PickRandom("haggle_broke") ?? "im short sry");

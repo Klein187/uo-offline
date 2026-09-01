@@ -149,6 +149,70 @@ namespace Server.CustomBots
         }
 
         // -------------------------------------------------------------------
+        // What this bot can actually spend: pocket money plus the account.
+        //
+        // Every "can it afford this" test on the shard used to read pack
+        // gold alone, and Settle banks everything above PocketMoney — so a
+        // bot with 40,000 in the bank read as broke. That is why WTB shouts
+        // were never backed and why bot-to-bot deals almost never fired:
+        // the floor on a plain longsword is more walking money than any bot
+        // carries. A player standing at a bank counts their bank balance
+        // when deciding what they can buy, and so should these.
+        // -------------------------------------------------------------------
+        public static int Wealth(PlayerBot bot)
+        {
+            if (bot == null || bot.Deleted)
+            {
+                return 0;
+            }
+
+            try
+            {
+                return PackGold(bot) + Banker.GetBalance(bot);
+            }
+            catch
+            {
+                return PackGold(bot);
+            }
+        }
+
+        // Get `amount` into the pack, pulling the shortfall out of the
+        // account. False means it could not be covered and NOTHING moved,
+        // so a caller can still back out of the deal cleanly.
+        //
+        // Era note: this is a bank withdrawal, and the bots doing it are
+        // standing at a bank — the WTB crowd is BankSitterBehavior by
+        // construction. It is not a licence to conjure coin in a dungeon.
+        public static bool CoverInPack(PlayerBot bot, int amount)
+        {
+            var pack = bot?.Backpack;
+            if (pack?.Deleted != false || amount <= 0)
+            {
+                return false;
+            }
+
+            int have = PackGold(bot);
+            if (have >= amount)
+            {
+                return true;
+            }
+
+            int need = amount - have;
+
+            if (!Banker.Withdraw(bot, need))
+            {
+                return false;
+            }
+
+            pack.DropItem(new Gold(need));
+
+            Console.WriteLine(
+                $"[bank] {bot.Name} drew {need} to cover {amount} " +
+                $"(pack {PackGold(bot)}, account {Banker.GetBalance(bot)})");
+            return true;
+        }
+
+        // -------------------------------------------------------------------
         // Settle — bank everything over walking money. This is the only
         // place a bot's account grows, so every coin in it was carried in.
         // -------------------------------------------------------------------

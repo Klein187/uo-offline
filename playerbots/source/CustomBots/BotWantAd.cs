@@ -59,9 +59,10 @@ namespace Server.CustomBots
         // the stock table knows, from a bot that can cover the cheap end of
         // the band, becomes a want somebody can answer.
         //
-        // Deliberately no class-appetite check, unlike the WTS side: there
-        // a bot is deciding whether to look up at a stranger's shout, here
-        // it has already announced what it wants. The announcement wins.
+        // The announcement no longer wins on its own: it has to be a
+        // thing this class would actually buy, and the bot has to be able
+        // to pay for it. A shout that fails either test stays flavour, so
+        // nothing a bot says is ever contradicted by what it does.
         // -----------------------------------------------------------------
         public static void Posted(PlayerBot bot, string line)
         {
@@ -78,13 +79,25 @@ namespace Server.CustomBots
             }
 
             if (!BotAppraisal.BandForNoun(line.ToLowerInvariant(), out int low, out int high,
-                    out var noun))
+                    out var noun, out var kind))
             {
                 return;
             }
 
-            // Back the claim or it stays flavour.
-            if (CrafterStock.GoldOnHand(bot) < low)
+            // Would this bot really buy it? A mage reading the halberd line
+            // off the list is still just talking. The shout stays flavour,
+            // the same as every WTB used to be — but the ones that fit the
+            // speaker are now offers a person can answer.
+            if (!BotWants.Wants(bot, kind, noun))
+            {
+                return;
+            }
+
+            // Back the claim or it stays flavour. Wealth, not pocket money:
+            // Settle banks everything above walking money, so testing the
+            // pack alone made every bot on the shard look broke and killed
+            // every want worth more than a bag of reagents.
+            if (BotBanking.Wealth(bot) < low)
             {
                 return;
             }

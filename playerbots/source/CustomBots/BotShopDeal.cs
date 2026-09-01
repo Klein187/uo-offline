@@ -84,11 +84,26 @@ namespace Server.CustomBots
                     continue;
                 }
 
+                // Does it want the thing? A warrior buying a bag of spider
+                // silk off the next stool was the old giveaway that none of
+                // this meant anything.
+                if (!BotWants.Wants(buyer, stock.Kind, stock.Noun))
+                {
+                    continue;
+                }
+
                 // Money talks. A buyer that cannot reach the seller's floor
                 // has no business opening its mouth — and this is why the
                 // keeps and towers sit unsold at the bank all day, which is
                 // exactly how it was.
-                int purse = CrafterStock.GoldOnHand(buyer);
+                //
+                // Wealth, not pocket money. Settle banks everything above
+                // walking money, so a bot with a fat account read as broke
+                // and almost no bot-to-bot deal could ever start: the floor
+                // on a plain longsword is more than any bot carries. The
+                // coin is really pulled at the till below, so a buyer that
+                // cannot produce it still backs out honestly.
+                int purse = BotBanking.Wealth(buyer);
                 if (purse < stock.Floor)
                 {
                     continue;
@@ -338,7 +353,13 @@ namespace Server.CustomBots
             }
 
             // Re-check the purse at the till, not at the handshake — the
-            // buyer may have spent it on the walk over.
+            // buyer may have spent it on the walk over. Draw on the account
+            // first if the pack is short: the buyer qualified on what it
+            // owns, so this is where owning it has to become carrying it.
+            // If the money is not really there, CoverInPack moves nothing
+            // and the deal falls over the same way it always did.
+            BotBanking.CoverInPack(_buyer, price);
+
             if (!CrafterStock.SpendGold(_buyer, price))
             {
                 Say(_buyer, "haggle_broke", price);
