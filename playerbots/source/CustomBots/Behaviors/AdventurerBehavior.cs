@@ -816,6 +816,12 @@ namespace Server.CustomBots
         // past does not change that.
         public bool LooksForTrouble => WantsFreshFights;
 
+        // Running for its life right now. StartFlee clears Combatant, which
+        // to anything looking from outside is indistinguishable from a bot
+        // standing idle and free to take a fight. BotGrayWatch has to know
+        // the difference or it hands back the fight the bot just broke off.
+        public bool IsFleeing => _fleeFrom != null && Core.Now < _fleeUntil;
+
         // Patrol legs walk by default; a follower catching up to its
         // party leader overrides this to run.
         protected virtual bool PatrolRuns => false;

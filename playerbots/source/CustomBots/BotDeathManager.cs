@@ -14,10 +14,10 @@
 //            by "a wandering healer" after the haunt (res in place).
 //   RES      Sparkle + sound, death robe, half health.
 //   CORPSE   Then the corpse run: travel back to the death spot hoping
-//   RUN      the loot's still there. Vanilla self-loot (Corpse.Open)
-//            re-equips everything. If the corpse rotted or was looted:
-//            "WHO LOOTED MY CORPSE" — and a fresh kit, because a naked
-//            bot forever is a bug, not a story.
+//   RUN      the loot's still there. ReclaimCorpse takes the gear back
+//            (vanilla self-loot is AOS-only — see the note on it). If the
+//            corpse rotted or was looted: "WHO LOOTED MY CORPSE" — and a
+//            fresh kit, because a naked bot forever is a bug, not a story.
 //
 // The flow spans several behaviors (Ghost → Traveler-as-ghost →
 // CorpseReclaim → back to normal life); this manager holds the shared
@@ -26,6 +26,7 @@
 
 using System;
 using Server;
+using Server.Collections;
 using Server.Items;
 using Server.Mobiles;
 
@@ -344,6 +345,132 @@ namespace Server.CustomBots
 
             bot.Behavior = new CorpseReclaimBehavior();
             return true;
+        }
+
+        // -------------------------------------------------------------------
+        // ReclaimCorpse — take the gear back off the body.
+        //
+        // Corpse.Open(bot, checkSelfLoot: true) is the vanilla "you quickly
+        // gather all of your belongings", and it is an AOS feature twice
+        // over. Corpse.Create only records restore info when Core.AOS, and
+        // Open then skips every item that has none:
+        //
+        //     if (owner.Player && Core.AOS)          // Corpse.Create
+        //         c.SetRestoreInfo(item, item.Location);
+        //
+        //     if (... || !GetRestoreInfo(item, ref loc))   // Corpse.Open
+        //         continue;
+        //
+        // This shard is T2A, so Core.AOS is false and there is never any
+        // restore info. The call walked the bot all the way to its body,
+        // moved nothing at all, set the SelfLooted flag and left it standing
+        // there naked. Vanilla is right about the era — T2A had no gather-
+        // your-belongings, you dragged your things out of the corpse by hand
+        // — but a bot has no hands, and it still logged the reclaim as a
+        // success. A bot that FAILED to reach its corpse got a fresh outfit
+        // out of GiveUpCorpse, so failing was strictly better than
+        // succeeding.
+        //
+        // So: use vanilla where vanilla works, and do the dragging by hand
+        // where it doesn't. Everything movable goes back to the pack, then
+        // the bot wears what it can.
+        // -------------------------------------------------------------------
+        public static void ReclaimCorpse(PlayerBot bot, Corpse corpse)
+        {
+            if (Core.AOS)
+            {
+                corpse.Open(bot, checkSelfLoot: true);
+                return;
+            }
+
+            var pack = bot.Backpack;
+            if (pack == null)
+            {
+                GiveUpCorpse(bot, "no pack to reclaim into");
+                return;
+            }
+
+            // The robe goes first. It holds the OuterTorso layer that the
+            // bot's own chest piece is about to want back.
+            if (bot.FindItemOnLayer(Layer.OuterTorso) is DeathRobe robe)
+            {
+                robe.Delete();
+            }
+
+            // Copy the list before moving anything: pack.AddItem mutates
+            // corpse.Items underneath the loop.
+            using var onBody = PooledRefList<Item>.Create(128);
+            onBody.AddRange(corpse.Items);
+
+            int taken = 0, left = 0;
+
+            for (var i = 0; i < onBody.Count; i++)
+            {
+                var item = onBody[i];
+
+                // Hair and beards are part of how the corpse looks. They are
+                // not loot and the bot must not walk off carrying its own
+                // hair.
+                if (item.Layer is Layer.Hair or Layer.FacialHair)
+                {
+                    continue;
+                }
+
+                if (!item.Movable || pack.CheckHold(bot, item, false, true) != true)
+                {
+                    left++;
+                    continue;
+                }
+
+                pack.AddItem(item);
+                taken++;
+            }
+
+            // Nothing came back — somebody had already emptied it. Same
+            // outcome as a corpse that rotted, so say so and re-kit rather
+            // than walk away naked and call it a success.
+            if (taken == 0)
+            {
+                GiveUpCorpse(bot, left > 0 ? "corpse held nothing it could carry"
+                                           : "corpse was already empty");
+                return;
+            }
+
+            // Dress again out of what the bot was ACTUALLY wearing when it
+            // died. corpse.EquipItems is that record, and using it is the
+            // difference between putting the armour back on and putting the
+            // spellbook in the sword hand: a weapon, a shield and a
+            // spellbook all compete for the same two layers, and "equip
+            // whatever comes out of the pack first" picks between them by
+            // accident. This is the loop ModernUO's own DuelContext.Refresh
+            // uses to hand duellists their kit back, including the
+            // IsChildOf check — an item still lying in the corpse because
+            // the pack was full must not be equipped out of thin air.
+            var worn = corpse.EquipItems;
+            int dressed = 0;
+
+            for (var i = 0; worn != null && i < worn.Count; i++)
+            {
+                var item = worn[i];
+
+                if (item.Movable &&
+                    item.Layer is not Layer.Hair and not Layer.FacialHair &&
+                    item.IsChildOf(pack) &&
+                    bot.EquipItem(item))
+                {
+                    dressed++;
+                }
+            }
+
+            bot.EquipFactionShield(); // allegiance survives a death
+
+            // The worn count is the one that matters. "Took back 92" only
+            // says the pack filled up; a bot standing in its armour is the
+            // thing that was broken.
+            Console.WriteLine(
+                $"[death] {bot.Name} took back {taken} item(s) from their " +
+                $"corpse and put {dressed} back on" +
+                (left > 0 ? $" ({left} left behind)" : ""));
         }
 
         // -------------------------------------------------------------------

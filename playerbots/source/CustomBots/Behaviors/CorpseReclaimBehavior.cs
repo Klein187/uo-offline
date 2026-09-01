@@ -3,10 +3,11 @@
 //
 // The bot is alive again and within ~30 tiles of its corpse. This
 // behavior walks it straight to the body (own fast step timer +
-// PathFollower, same pattern as the teleporter pad-walk) and then
-// SELF-LOOTS via the vanilla flow — Corpse.Open(bot, checkSelfLoot:true)
-// is exactly what double-clicking your own corpse does: everything
-// returns to your pack/layers and the death robe vanishes.
+// PathFollower, same pattern as the teleporter pad-walk) and then hands
+// off to BotDeathManager.ReclaimCorpse, which puts the gear back on.
+//
+// That used to call Corpse.Open(bot, checkSelfLoot: true) directly. On a
+// pre-AOS shard that moves nothing — see the note on ReclaimCorpse.
 //
 // If the corpse decayed or someone emptied it: "WHO LOOTED MY CORPSE",
 // and a fresh kit from EquipmentTable so nobody haunts the roads naked.
@@ -76,7 +77,7 @@ namespace Server.CustomBots
             if (bot.InRange(_corpseLoc, 2))
             {
                 StopStepping();
-                corpse.Open(bot, checkSelfLoot: true);
+                BotDeathManager.ReclaimCorpse(bot, corpse);
 
                 Console.WriteLine($"[death] {bot.Name} reclaimed their corpse at ({_corpseLoc.X},{_corpseLoc.Y})");
                 var line = ChatLibrary.PickRandom("death_reclaim");

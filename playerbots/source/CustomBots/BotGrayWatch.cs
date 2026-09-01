@@ -102,6 +102,24 @@ namespace Server.CustomBots
         // the rest fall out three sweeps after the hall empties.
         private static readonly TimeSpan RedStale = TimeSpan.FromSeconds(45);
 
+        // How long a bot is left alone about a target it broke off from.
+        //
+        // Without this the sweep simply handed the fight back. The bot fled
+        // at low HP, StartFlee cleared its Combatant, and a second later the
+        // sweep found a free bot standing next to a red and drew it again.
+        // It could never actually get away. Observed: Marwina drew on
+        // Farara in Destard, fled at 28hp, was re-drawn, fled at 35, 35, 35,
+        // 12, twelve times in one fight, and died to it. Nothing hid this
+        // for grays only because a gray's flag lapses in 90 seconds; a red's
+        // reason to be hunted never lapses at all.
+        private static readonly TimeSpan ReengageDelay = TimeSpan.FromSeconds(90);
+
+        // (bot, target) -> when that bot may be drawn on that target again.
+        // Per PAIR, not per bot: one that ran from a mage it could not beat
+        // should still defend itself elsewhere, and three bots should still
+        // be able to gang the next red.
+        private static readonly Dictionary<(Mobile, Mobile), DateTime> _brokeOff = new();
+
         // Short: the flag can drop at any moment, and the tick is cheap
         // because it only ever walks the criminals it was told about.
         private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(1);
@@ -190,7 +208,18 @@ namespace Server.CustomBots
         {
             foreach (var (bot, gray) in _engaged)
             {
-                if (bot.Deleted || !bot.Alive || !IsFairGame(gray) ||
+                // The bot is no longer on the target this system gave it.
+                // It fled, or its own behaviour dropped or swapped the
+                // fight. Either way it let go, and letting go has to END the
+                // engagement — this was the whole bug. A fleeing bot keeps
+                // running but stays well inside the range test below, so it
+                // never counted as released, and it never counted as busy
+                // either because StartFlee nulls Combatant. The sweep found
+                // a free bot standing next to a red every single second and
+                // handed the same fight back until it died.
+                var letGo = !bot.Deleted && bot.Alive && bot.Combatant != gray;
+
+                if (letGo || bot.Deleted || !bot.Alive || !IsFairGame(gray) ||
                     gray.Map != bot.Map ||
                     !bot.InRange(gray.Location, SpotRange + 8))
                 {
@@ -202,6 +231,20 @@ namespace Server.CustomBots
             {
                 var bot = _released[i];
                 _engaged.Remove(bot, out var gray);
+
+                // The fight ended with the target still standing and still
+                // worth hitting, so it ended because the BOT stopped: it
+                // fled, it could not reach, it died. That is its decision
+                // and it stands for a while. If the target is dead or blue
+                // or gone there is nothing to stand off from.
+                if (gray?.Deleted == false && gray.Alive && IsFairGame(gray))
+                {
+                    if (_brokeOff.Count > 1000)
+                    {
+                        _brokeOff.Clear();
+                    }
+                    _brokeOff[(bot, gray)] = Core.Now + ReengageDelay;
+                }
 
                 // Only drop the target if it is still the one we set — the
                 // bot may have picked a fight of its own since.
@@ -354,6 +397,20 @@ namespace Server.CustomBots
             }
 
             if (!IsFightingClass(bot.Class) || !bot.CanSee(gray))
+            {
+                return false;
+            }
+
+            // Already tried this one and broke off. Leave it be.
+            if (_brokeOff.TryGetValue((bot, gray), out var until) && Core.Now < until)
+            {
+                return false;
+            }
+
+            // Running for its life. A fleeing bot has no Combatant, so the
+            // check above cannot see it is busy — and handing it a fight
+            // while it runs is how it dies instead of getting away.
+            if (bot.Behavior is AdventurerBehavior { IsFleeing: true })
             {
                 return false;
             }
