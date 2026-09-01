@@ -480,7 +480,7 @@ namespace Server.CustomBots
                 {
                     if (a.ProtectionLevel != ArmorProtectionLevel.Regular)
                     {
-                        sb.Append($"{a.ProtectionLevel:L} ");
+                        sb.Append($"{ProtectionWord(a.ProtectionLevel)} ");
                     }
                     else if (a.Quality == ArmorQuality.Exceptional)
                     {
@@ -511,6 +511,20 @@ namespace Server.CustomBots
             WeaponDamageLevel.Power => "power",
             WeaponDamageLevel.Vanq  => "vanq",
             _                       => "",
+        };
+
+        // Spelled out rather than formatted. "{level:L}" throws
+        // FormatException on an enum — "L" is not one of the format strings
+        // Enum accepts — and it threw inside a bank sitter's very first
+        // stock roll, so a hawker holding armour never finished spawning.
+        private static string ProtectionWord(ArmorProtectionLevel level) => level switch
+        {
+            ArmorProtectionLevel.Defense        => "defense",
+            ArmorProtectionLevel.Guarding       => "guarding",
+            ArmorProtectionLevel.Hardening      => "hardening",
+            ArmorProtectionLevel.Fortification  => "fortification",
+            ArmorProtectionLevel.Invulnerability => "invulnerability",
+            _                                   => "",
         };
 
         // -----------------------------------------------------------------

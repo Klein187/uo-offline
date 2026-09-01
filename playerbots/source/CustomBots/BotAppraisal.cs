@@ -314,7 +314,7 @@ namespace Server.CustomBots
                     DamageWord(w.DamageLevel) + " ",
                 BaseWeapon { Quality: WeaponQuality.Exceptional } => "GM ",
                 BaseArmor a when a.ProtectionLevel != ArmorProtectionLevel.Regular =>
-                    $"{a.ProtectionLevel:L} ",
+                    ProtectionWord(a.ProtectionLevel) + " ",
                 BaseArmor { Quality: ArmorQuality.Exceptional } => "GM ",
                 _ when IsRareHue(item.Hue) => item.Hue == 0x0001 ? "black " : "",
                 _ => "",
@@ -520,6 +520,19 @@ namespace Server.CustomBots
             WeaponDamageLevel.Power => "power",
             WeaponDamageLevel.Vanq  => "vanq",
             _                       => "",
+        };
+
+        // See BotShop.ProtectionWord: "{level:L}" is a FormatException on an
+        // enum, and this copy would have thrown the moment a bot was asked
+        // to name a piece of armour with a protection level on it.
+        private static string ProtectionWord(ArmorProtectionLevel level) => level switch
+        {
+            ArmorProtectionLevel.Defense        => "defense",
+            ArmorProtectionLevel.Guarding       => "guarding",
+            ArmorProtectionLevel.Hardening      => "hardening",
+            ArmorProtectionLevel.Fortification  => "fortification",
+            ArmorProtectionLevel.Invulnerability => "invulnerability",
+            _                                   => "",
         };
 
         // Last resort name: the item's own, lowercased the way a player
