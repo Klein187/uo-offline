@@ -90,6 +90,15 @@ namespace Server.CustomBots
     {
         public int Rounds;
         public int AgreedPrice;      // > 0 once a number is settled
+
+        // The last number the SELLER named out loud — its counter. When a
+        // buyer then says "ok", this is what they are saying ok TO. Without
+        // it, "ok" fell back to the asking price and quietly charged the
+        // buyer the number the haggling had just talked the seller down
+        // from: offer 1k, seller counters, buyer says ok, trade opens at the
+        // full 1500. The buyer has no way to see that until the window is
+        // already up and the bot is refusing to tick its box.
+        public int LastQuote;
         public DateTime LastAt;
         public DateTime AgreedUntil; // a handshake goes stale
     }
@@ -602,6 +611,17 @@ namespace Server.CustomBots
             return s.AgreedPrice > 0 && Core.Now < s.AgreedUntil ? s.AgreedPrice : 0;
         }
 
+        // The last price this seller named to this buyer, if the haggle is
+        // still live. Zero when it has said nothing but its asking price.
+        public static int LastQuoteFor(ShopStock stock, Serial buyer)
+        {
+            if (stock == null || !stock.Sessions.TryGetValue(buyer, out var s))
+            {
+                return 0;
+            }
+            return Core.Now - s.LastAt <= SessionIdle ? s.LastQuote : 0;
+        }
+
         // Lock in a price without a round of haggling — a buyer who just
         // says "ill take it" at the asking price.
         public static void Agree(ShopStock stock, Serial buyer, int price)
@@ -670,9 +690,11 @@ namespace Server.CustomBots
             if (s.Rounds >= 4)
             {
                 counter = stock.Floor;
+                s.LastQuote = counter;
                 return HaggleResult.Refused;
             }
 
+            s.LastQuote = counter;
             return HaggleResult.Countered;
         }
 

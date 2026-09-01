@@ -1,0 +1,20 @@
+# trade_short.txt — the coin on the table does not cover the price.
+#
+# Said when the buyer has put SOMETHING down but not enough, so the bot is
+# standing there with its box unticked. Without this it just refuses in
+# silence and reads as a broken bot.
+#
+# {short} = how much is still missing. {price} = the agreed number.
+# Lines starting with # are comments. Blank lines ignored.
+
+thats not enough
+need {short} more
+{price} was the deal
+still short {short}
+thats short
+i said {price}
+{short} more and its yours
+put the rest in
+not enough m8
+{price}. thats {short} short
+come on, {short} more

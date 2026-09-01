@@ -139,7 +139,17 @@ namespace Server.CustomBots
 
             if (ReadsAsAccept(lower, engaged))
             {
-                int price = agreed > 0 ? agreed : stock.Asking;
+                // "ok" means ok to the last number the SELLER named, which
+                // after any haggling is its counter, not the asking price it
+                // has already come down from. Falling back to Asking here
+                // charged the buyer full price for a deal they had just been
+                // offered cheaper, and the only symptom was the bot standing
+                // at the trade window refusing to accept coin that looked
+                // like exactly what was agreed.
+                int quoted = BotShop.LastQuoteFor(stock, speaker.Serial);
+                int price = agreed > 0 ? agreed
+                          : quoted > 0 ? quoted
+                          : stock.Asking;
                 BotShop.Agree(stock, speaker.Serial, price);
                 Reply(bot, speaker, "shop_paynow", stock, price);
                 return true;

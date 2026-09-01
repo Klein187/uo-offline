@@ -331,7 +331,8 @@ namespace Server.CustomBots
         // three-quarter-second look at a container is nothing.
         // -----------------------------------------------------------------
         private static void Watch(SecureTrade trade, PlayerBot bot, Mobile buyer,
-            string noun, int price, Serial goodsSerial, DateTime expiresAt)
+            string noun, int price, Serial goodsSerial, DateTime expiresAt,
+            int lastCoin = -1)
         {
             Timer.DelayCall(WatchInterval, () =>
             {
@@ -393,7 +394,26 @@ namespace Server.CustomBots
                     }
                 }
 
-                Watch(trade, bot, buyer, noun, price, goodsSerial, expiresAt);
+                // Coin is down but it doesn't cover the price. Say so, and
+                // say the number. A seller that just leaves its box unticked
+                // is indistinguishable from a broken one: the buyer ticks
+                // theirs, nothing happens, and there is nothing on screen to
+                // explain why. Only on a CHANGE, so it answers the buyer
+                // rather than nagging four times a second.
+                if (!happy && goodsOnTable && coin > 0 && coin != lastCoin)
+                {
+                    var short_ = ChatLibrary.PickRandom("trade_short");
+                    if (!string.IsNullOrEmpty(short_))
+                    {
+                        BotScene.Deliver(bot, short_
+                            .Replace("{short}", BotShop.Coin(price - coin),
+                                StringComparison.Ordinal)
+                            .Replace("{price}", BotShop.Coin(price),
+                                StringComparison.Ordinal));
+                    }
+                }
+
+                Watch(trade, bot, buyer, noun, price, goodsSerial, expiresAt, coin);
             });
         }
 
@@ -427,7 +447,9 @@ namespace Server.CustomBots
             {
                 // Back in the pack and still for sale. The stock entry
                 // survives untouched, so it keeps advertising.
-                Console.WriteLine($"[shop] {bot.Name}'s sale of {noun} to {buyer.Name} fell through");
+                Console.WriteLine(
+                    $"[shop] {bot.Name}'s sale of {noun} to {buyer.Name} " +
+                    $"fell through (wanted {price}gp)");
                 return;
             }
 
