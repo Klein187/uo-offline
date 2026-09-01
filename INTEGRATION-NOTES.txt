@@ -2,7 +2,7 @@ Stock-file patches
 ==================
 
 The PlayerBots system lives entirely in Projects/UOContent/CustomBots, with
-one exception: six stock ModernUO files need a small patch, because they
+one exception: seven stock ModernUO files need a small patch, because they
 ARE engine files and cannot live in CustomBots/.
 
 Both installers apply these for you now. They ship as unified diffs in
@@ -222,3 +222,41 @@ reverted.
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or bots
 cannot path into any room whose door is shut.
+
+Stock-file patch: a corpse with no equipment crashed every login (2026-09-01)
+-----------------------------------------------------------------------------
+Logging in hung forever on "entering Britannia". The server was not hung,
+it was dead:
+
+  System.NullReferenceException
+     at CorpsePackets.SendCorpseContent(NetState, Mobile, Corpse)
+     at Corpse.SendInfoTo(NetState, ReadOnlySpan<NetState>)
+     at Mobile.SendEverything()
+     at IncomingAccountPackets.DoLogin(NetState, Mobile)
+
+Patch in:
+
+  Projects/UOContent/Items/Misc/Corpses/CorpsePackets.cs  (~line 78)
+
+  - var list = beheld.EquipItems;
+  + var list = beheld.EquipItems ?? EmptyEquip;
+
+Corpse.EquipItems can be NULL, not merely empty, and this walked it
+without checking. Login sends every corpse in view (Mobile.SendEverything),
+so one such corpse anywhere near where a character stood killed the server
+the instant that character entered the world, and the client sat waiting
+for a world that was never coming.
+
+A freshly made corpse always has a list -- Mobile builds "var equip = new
+List<Item>()" before handing it to the corpse handler -- so a null one has
+been through a save and a load. Nothing in the bots writes that field.
+
+How one came to exist here: before the corpse-reclaim fix earlier the same
+day, bots walked back to their bodies, took nothing (vanilla self-loot is
+AOS-only, see the reclaim notes) and carried on naked. A naked bot dies
+with an empty equip list, and an empty one does not survive the round trip
+as an empty one. The reclaim fix stops new ones being made; corpses already
+in a world save still carry it, and would still have crashed every login.
+
+If deploying playerbots onto a fresh ModernUO clone, re-apply this or a
+single stray corpse can lock everyone out of the shard.

@@ -1,0 +1,27 @@
+diff --git a/Projects/UOContent/Items/Misc/Corpses/CorpsePackets.cs b/Projects/UOContent/Items/Misc/Corpses/CorpsePackets.cs
+index 4a629320d..875834201 100644
+--- a/Projects/UOContent/Items/Misc/Corpses/CorpsePackets.cs
++++ b/Projects/UOContent/Items/Misc/Corpses/CorpsePackets.cs
+@@ -21,6 +21,7 @@ namespace Server.Network;
+ 
+ public static class CorpsePackets
+ {
++    private static readonly System.Collections.Generic.List<Item> EmptyEquip = new();
+     public static void SendCorpseEquip(this NetState ns, Mobile beholder, Corpse beheld)
+     {
+         if (ns.CannotSendPackets())
+@@ -75,7 +76,13 @@ public static void SendCorpseContent(this NetState ns, Mobile beholder, Corpse b
+             return;
+         }
+ 
+-        var list = beheld.EquipItems;
++        // A corpse can hold a NULL equip list, not just an empty one. Login
++        // walks every corpse in view (Mobile.SendEverything), so one such
++        // corpse anywhere near the player took the whole server down the
++        // instant they entered the world -- the client just sits on
++        // "entering Britannia" while the server dies behind it. Nothing here
++        // needs the list to exist; treat missing as empty.
++        var list = beheld.EquipItems ?? EmptyEquip;
+ 
+         var count = list.Count;
+         if (beheld.HairItemId > 0)
