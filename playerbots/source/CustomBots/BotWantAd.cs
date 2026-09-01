@@ -55,6 +55,81 @@ namespace Server.CustomBots
         private static readonly Dictionary<Serial, Want> _wants = new();
 
         // -----------------------------------------------------------------
+        // Before the words leave its mouth: is this a thing this bot would
+        // actually buy, and can it pay?
+        //
+        // A bot that shouts "WTB GM hally" and then will not buy a halberd
+        // is worse than one that never shouted — it is a lie you can walk
+        // up to. So the LINE is chosen to fit the speaker rather than the
+        // want being filtered afterwards: a mage reaching for the halberd
+        // line gets handed a reagent line instead, and then means it.
+        //
+        // Nothing suitable and affordable in the whole list means the bot
+        // says nothing this beat. A bot with no money quietly stops
+        // advertising that it is buying, which is also what people did.
+        //
+        // Same seam as BotBanking.Prepare, which already stops a bot saying
+        // "withdraw 5000" when it has 300.
+        // -----------------------------------------------------------------
+        public static string Prepare(PlayerBot bot, string line)
+        {
+            if (bot == null || string.IsNullOrEmpty(line) || !BotShop.Enabled)
+            {
+                return line;
+            }
+
+            if (!line.StartsWith("wtb", StringComparison.OrdinalIgnoreCase))
+            {
+                return line;
+            }
+
+            if (Suits(bot, line))
+            {
+                return line;
+            }
+
+            var pool = ChatLibrary.LinesIn("wtb");
+            if (pool.Count == 0)
+            {
+                return line;
+            }
+
+            // Start at a random point and take the first that fits, so it
+            // is not always the same bot saying always the same line.
+            int start = Utility.Random(pool.Count);
+            for (var i = 0; i < pool.Count; i++)
+            {
+                var candidate = pool[(start + i) % pool.Count];
+                if (Suits(bot, candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return null; // nothing it could honestly ask for
+        }
+
+        // Would this bot buy what this line asks for, and can it pay?
+        private static bool Suits(PlayerBot bot, string line) =>
+            bot != null && Suits(bot.Class, BotBanking.Wealth(bot), line);
+
+        // The same question without a bot, so it can be tested. The property
+        // that matters is that EVERY class has something in the list it
+        // could honestly shout — a class with nothing to say goes silent on
+        // WTB, which would be a quieter bank rather than a more honest one.
+        public static bool Suits(BotClass cls, int wealth, string line)
+        {
+            if (string.IsNullOrEmpty(line) ||
+                !BotAppraisal.BandForNoun(line.ToLowerInvariant(), out int low, out _,
+                    out var noun, out var kind))
+            {
+                return false;
+            }
+
+            return BotWants.Wants(cls, kind, noun) && wealth >= low;
+        }
+
+        // -----------------------------------------------------------------
         // Every spoken line comes through here. A WTB that names something
         // the stock table knows, from a bot that can cover the cheap end of
         // the band, becomes a want somebody can answer.

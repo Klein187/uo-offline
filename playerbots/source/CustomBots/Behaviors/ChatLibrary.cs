@@ -101,6 +101,15 @@ namespace Server.CustomBots
             return result;
         }
 
+        // Every line in one category, for a caller that has to CHOOSE
+        // rather than take pot luck — BotWantAd picks the WTB line that
+        // suits the speaker instead of saying whatever came up.
+        public static IReadOnlyList<string> LinesIn(string category) =>
+            _loaded && category != null &&
+            _categories.TryGetValue(category, out var list)
+                ? list
+                : Array.Empty<string>();
+
         // -------------------------------------------------------------------
         // PickRandom — pick a line from the union of the given categories.
         // Categories that don't exist or are empty are skipped.

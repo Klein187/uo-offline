@@ -314,6 +314,15 @@ namespace Server.CustomBots
             // to what is actually in the account before saying it out loud.
             line = BotBanking.Prepare(bot, line);
 
+            // Same rule for "WTB GM hally": a bot only asks to buy what it
+            // would really buy and could really pay for. The line is swapped
+            // for one that fits the speaker, or dropped entirely.
+            line = BotWantAd.Prepare(bot, line);
+            if (string.IsNullOrEmpty(line))
+            {
+                return;
+            }
+
             // Probabilistic capitalization — sometimes "hail", sometimes "Hail".
             // Don't touch lines that start with non-letters (e.g.
             // "WTS GM hally"). Those should keep their case as written.
