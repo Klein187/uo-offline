@@ -15,6 +15,11 @@
 //            sighting), heats the place, and nearby travelers scatter
 //            to freshly-rolled destinations.
 //
+// The red being watched for can be YOU. Once a player can earn murder
+// counts off bots (BotMurderReport), a red player walking into Britain
+// has to draw the same street reaction a red bot does, or going red
+// means nothing but the guards.
+//
 //   [BotDanger — show current hot spots
 // =========================================================================
 
@@ -165,7 +170,7 @@ namespace Server.CustomBots
         // whole server down with it — the same trap RaiseAlarm's scatter
         // list documents a few lines below, which this walked straight
         // into. Reused rather than reallocated; the tick is every 15s.
-        private static readonly List<(PlayerBot red, PlayerBot witness, bool alarm, bool guards)>
+        private static readonly List<(Mobile red, PlayerBot witness, bool alarm, bool guards)>
             _pending = new();
 
         public static void Configure()
@@ -180,10 +185,14 @@ namespace Server.CustomBots
                 return;
             }
 
-            foreach (var m in World.Mobiles.Values)
+            foreach (var red in World.Mobiles.Values)
             {
-                if (m is not PlayerBot red || red.Deleted || !red.Alive ||
-                    red.Map == null || red.Map == Map.Internal)
+                // Cheapest filter first: this used to test "is a PlayerBot",
+                // and it still has to throw out every monster and vendor in
+                // the world before doing any real work.
+                if (!red.Player || red.Deleted || !red.Alive ||
+                    red.Map == null || red.Map == Map.Internal ||
+                    red.AccessLevel > AccessLevel.Player)
                 {
                     continue;
                 }
@@ -193,7 +202,19 @@ namespace Server.CustomBots
                 // through on an ordinary Traveler trip drew no reaction at
                 // all — which is exactly the case that put reds in the
                 // middle of town with nobody saying a word.
-                if (red.Behavior is not PKBehavior && !red.Murderer)
+                //
+                // And a red is a red whether or not it is a bot. A real
+                // player with five counts is the murderer this whole system
+                // was written about; it just never looked at one. Monsters
+                // are somebody else's problem — they have their own
+                // notoriety and their own reasons to be feared.
+                var isRed = red switch
+                {
+                    PlayerBot pb => pb.Behavior is PKBehavior || pb.Murderer,
+                    _            => red.Murderer
+                };
+
+                if (!isRed)
                 {
                     continue;
                 }
@@ -215,7 +236,11 @@ namespace Server.CustomBots
                     if (n is PlayerBot civ && civ != red && civ.Alive &&
                         civ.Behavior is not PKBehavior &&
                         civ.Behavior is not GhostBehavior &&
-                        !civ.LoggingOut)
+                        !civ.LoggingOut &&
+                        // Nobody yells about a murderer they cannot see. The
+                        // reds who hide are the ones this matters for, bot
+                        // and player alike.
+                        civ.CanSee(red))
                     {
                         witness = civ;
                         break;
@@ -273,7 +298,7 @@ namespace Server.CustomBots
         // server code carries none, so a bot can holler the word all day
         // and nothing happens. Hence: say the line for the people watching,
         // then call the region directly for the effect.
-        private static bool TryCallGuards(PlayerBot witness, PlayerBot red)
+        private static bool TryCallGuards(PlayerBot witness, Mobile red)
         {
             var region = red.Region.GetRegion<GuardedRegion>();
             if (region == null || region.IsDisabled() || !region.IsGuardCandidate(red))
@@ -298,7 +323,7 @@ namespace Server.CustomBots
             return true;
         }
 
-        private static void RaiseAlarm(PlayerBot witness, PlayerBot red)
+        private static void RaiseAlarm(PlayerBot witness, Mobile red)
         {
             var place = BotEventJournal.PlaceName(witness.Location, witness.Map);
 

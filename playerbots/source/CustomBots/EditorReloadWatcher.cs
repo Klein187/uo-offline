@@ -79,6 +79,19 @@ namespace Server.CustomBots
         // their spawners) and force an immediate respawn, so the roads
         // refill with reds rolled under the current PK templates.
         private static readonly string PKFreshReq = Live("pkfresh_request.txt");
+        // murder_request.txt: "token [n]" — a throwaway REAL player kills n
+        // innocent bots (plus one red as a negative control) and reports
+        // whether the murder counts landed.
+        private static readonly string MurderReq = Live("murder_request.txt");
+        private static readonly string MurderAck = Live("murder_ack.json");
+        // gray_request.txt: "token [linger]" — a throwaway REAL player flags
+        // gray out in the countryside and stands there to see who draws.
+        private static readonly string GrayReq = Live("gray_request.txt");
+        private static readonly string GrayAck = Live("gray_ack.json");
+        // bank_request.txt: "token" — does a bot saying "withdraw 5000" at a
+        // bank actually move 5000 gold?
+        private static readonly string BankReq = Live("bank_request.txt");
+        private static readonly string BankAck = Live("bank_ack.json");
 
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(2);
         private static long _lastReload = -1;
@@ -102,6 +115,9 @@ namespace Server.CustomBots
         private static long _lastPartyTest = -1;
         private static long _lastT2A = -1;
         private static long _lastPKFresh = -1;
+        private static long _lastMurder = -1;
+        private static long _lastGray = -1;
+        private static long _lastBank = -1;
         private static Timer _timer;
 
         // ModernUO calls Initialize() after the world loads — registries and
@@ -130,6 +146,9 @@ namespace Server.CustomBots
             _lastPartyTest = ReadCoordRequest(PartyTestReq, out _) ?? 0;
             _lastT2A = ReadToken(T2AReq) ?? 0;
             _lastPKFresh = ReadToken(PKFreshReq) ?? 0;
+            _lastMurder = ReadCountRequest(MurderReq, out _, out _) ?? 0;
+            _lastGray = ReadLingerRequest(GrayReq, out _) ?? 0;
+            _lastBank = ReadLingerRequest(BankReq, out _) ?? 0;
             _timer = Timer.DelayCall(Interval, Interval, Poll);
         }
 
@@ -297,6 +316,27 @@ namespace Server.CustomBots
             {
                 _lastPKFresh = pkFreshTok.Value;
                 DoPKFresh(pkFreshTok.Value);
+            }
+
+            var murderTok = ReadCountRequest(MurderReq, out var murderCount, out var murderLinger);
+            if (murderTok != null && murderTok.Value != _lastMurder)
+            {
+                _lastMurder = murderTok.Value;
+                DoMurderTest(murderTok.Value, murderCount, murderLinger);
+            }
+
+            var grayTok = ReadLingerRequest(GrayReq, out var grayLinger);
+            if (grayTok != null && grayTok.Value != _lastGray)
+            {
+                _lastGray = grayTok.Value;
+                DoGrayTest(grayTok.Value, grayLinger);
+            }
+
+            var bankTok = ReadLingerRequest(BankReq, out var bankLinger);
+            if (bankTok != null && bankTok.Value != _lastBank)
+            {
+                _lastBank = bankTok.Value;
+                DoBankTest(bankTok.Value, bankLinger);
             }
         }
 
@@ -657,6 +697,138 @@ namespace Server.CustomBots
             {
                 Console.WriteLine($"[EditorReload] say-rig failed: {ex.Message}");
             }
+        }
+
+        // murder_request.txt: "token [n]" — does killing a bot earn a count?
+        private static void DoMurderTest(long token, int count, int linger)
+        {
+            List<string> findings;
+            try
+            {
+                findings = BotMurderTest.Run(count, linger);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] murder test: {ex.Message}");
+                WriteAck(MurderAck, $"{{\"token\":{token},\"error\":\"{ex.Message.Replace("\"", "'")}\"}}");
+                return;
+            }
+            var items = new List<string>();
+            foreach (var f in findings)
+            {
+                items.Add("\"" + f.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+            }
+            WriteAck(MurderAck,
+                $"{{\"token\":{token},\"findings\":[{string.Join(",", items)}]}}");
+        }
+
+        // bank_request.txt: "token" — does the withdraw line move real gold?
+        private static void DoBankTest(long token, int linger)
+        {
+            List<string> findings;
+            try
+            {
+                findings = BotBankTest.Run(linger);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] bank test: {ex.Message}");
+                WriteAck(BankAck, $"{{\"token\":{token},\"error\":\"{ex.Message.Replace("\"", "'")}\"}}");
+                return;
+            }
+            var items = new List<string>();
+            foreach (var f in findings)
+            {
+                items.Add("\"" + f.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+            }
+            WriteAck(BankAck,
+                $"{{\"token\":{token},\"findings\":[{string.Join(",", items)}]}}");
+        }
+
+        // gray_request.txt: "token [linger]" — does flagging gray get you jumped?
+        private static void DoGrayTest(long token, int linger)
+        {
+            List<string> findings;
+            try
+            {
+                findings = BotGrayTest.Run(linger);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EditorReload] gray test: {ex.Message}");
+                WriteAck(GrayAck, $"{{\"token\":{token},\"error\":\"{ex.Message.Replace("\"", "'")}\"}}");
+                return;
+            }
+            var items = new List<string>();
+            foreach (var f in findings)
+            {
+                items.Add("\"" + f.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+            }
+            WriteAck(GrayAck,
+                $"{{\"token\":{token},\"findings\":[{string.Join(",", items)}]}}");
+        }
+
+        // "token [linger]" — token plus an optional seconds argument.
+        private static long? ReadLingerRequest(string path, out int linger)
+        {
+            linger = BotGrayTest.DefaultLinger;
+            try
+            {
+                if (!File.Exists(path))
+                {
+                    return null;
+                }
+                var parts = File.ReadAllText(path).Split(
+                    new[] { ' ', '	' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 1 || !long.TryParse(parts[0], out var t))
+                {
+                    return null;
+                }
+                if (parts.Length > 1 && int.TryParse(parts[1], out var n))
+                {
+                    linger = Math.Clamp(n, 0, 600);
+                }
+                return t;
+            }
+            catch
+            {
+                // file may be mid-write; retry next tick
+            }
+            return null;
+        }
+
+        // "token [n] [linger]" — token plus two optional integer arguments.
+        private static long? ReadCountRequest(string path, out int count, out int linger)
+        {
+            count = 6;
+            linger = BotMurderTest.DefaultLinger;
+            try
+            {
+                if (!File.Exists(path))
+                {
+                    return null;
+                }
+                var parts = File.ReadAllText(path).Split(
+                    new[] { ' ', '	' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 1 || !long.TryParse(parts[0], out var t))
+                {
+                    return null;
+                }
+                if (parts.Length > 1 && int.TryParse(parts[1], out var n))
+                {
+                    count = Math.Clamp(n, 1, 20);
+                }
+                if (parts.Length > 2 && int.TryParse(parts[2], out var l))
+                {
+                    linger = Math.Clamp(l, 0, 600);
+                }
+                return t;
+            }
+            catch
+            {
+                // file may be mid-write; retry next tick
+            }
+            return null;
         }
 
         // padaudit_request.txt: functional teleporter-pad audit � walks a

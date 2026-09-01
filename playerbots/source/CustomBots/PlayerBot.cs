@@ -533,6 +533,16 @@ namespace Server.CustomBots
         // crucially — no guard whack. This is what lets shield wars rage in
         // the middle of Britain while the guards watch, exactly as T2A did.
         // -------------------------------------------------------------------
+        // Flagging gray is news: BotGrayWatch hands nearby bots a reason to
+        // draw. The engine's AggressiveAction event covers a bot that flags
+        // by swinging at somebody; this covers every other route in, a
+        // caught pickpocket being the one that actually happens.
+        public override void CriminalAction(bool message)
+        {
+            base.CriminalAction(message);
+            BotGrayWatch.Note(this);
+        }
+
         public override bool IsHarmfulCriminal(Mobile target)
         {
             if (target is PlayerBot other &&
@@ -789,6 +799,10 @@ namespace Server.CustomBots
                 : "death";
             BotEventJournal.Record(type, this,
                 selfKill ? "" : killer?.Name ?? "");
+
+            // Answer the report-murderer gump we can never be shown, before
+            // base.OnDeath's handler eats the aggressor flags building it.
+            BotMurderReport.OnBotDeath(this);
 
             base.OnDeath(c);
 
