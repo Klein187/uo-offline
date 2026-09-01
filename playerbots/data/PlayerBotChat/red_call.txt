@@ -1,0 +1,25 @@
+# red_call.txt — a bot draws on a murderer.
+#
+# Not the same thing as red_alert.txt. That one is a civilian who has seen
+# a red and wants everyone to know; this is somebody who has decided to do
+# something about it. Said at the moment of drawing, by the first one in.
+# Killing a red is legal and costs nothing, and underground there are no
+# guards coming, so it is on you.
+# Lines starting with # are comments. Blank lines ignored.
+
+hes red
+red! get him
+kill the red
+hes red, take him
+murderer
+free counts
+no guards down here
+hes got counts
+get the red
+red, on him
+hes red boys
+take the red
+hes not blue
+murderer! get him
+hes red, go
+after him

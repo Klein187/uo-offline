@@ -224,17 +224,17 @@ namespace Server.CustomBots
                 bool guardsDue = red.Murderer &&
                     (!_guardsCalled.TryGetValue(red.Serial, out var quiet) || Core.Now >= quiet);
 
-                if (!alarmDue && !guardsDue)
-                {
-                    continue;
-                }
-
-                // A civilian in sight of the red?
+                // A civilian in sight of the red? This used to be skipped
+                // once both cooldowns were running, because all it fed was
+                // the shout. It feeds BotGrayWatch now as well, and that has
+                // to keep hearing about a red for as long as somebody is
+                // standing there — so the look happens every sweep and the
+                // cooldowns are applied further down, to the shouting alone.
                 PlayerBot witness = null;
                 foreach (var n in red.Map.GetMobilesInRange(red.Location, SpotRange))
                 {
                     if (n is PlayerBot civ && civ != red && civ.Alive &&
-                        civ.Behavior is not PKBehavior &&
+                        !RedTerritory.IsRed(civ) &&
                         civ.Behavior is not GhostBehavior &&
                         !civ.LoggingOut &&
                         // Nobody yells about a murderer they cannot see. The
@@ -247,6 +247,20 @@ namespace Server.CustomBots
                     }
                 }
                 if (witness == null)
+                {
+                    continue;
+                }
+
+                // Somebody is here to see him. Shouting and scattering is
+                // the right answer on a road and no answer at all in a
+                // dungeon, where there is no watch to call and nowhere to
+                // scatter to — so the witness also goes to BotGrayWatch,
+                // which works out for itself whether this is a place where
+                // somebody else was going to handle it, and hands the red to
+                // the bots who would actually fight one where nobody was.
+                BotGrayWatch.Note(red);
+
+                if (!alarmDue && !guardsDue)
                 {
                     continue;
                 }

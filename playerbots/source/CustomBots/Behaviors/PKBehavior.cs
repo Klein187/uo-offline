@@ -505,11 +505,21 @@ namespace Server.CustomBots
         // A red only commits to a hunt with a pack (2+ reds) and only when
         // it isn't swamped by blues. This is the "roam in groups, don't
         // suicide into a crowd" rule.
+        //
+        // Underground it is the wrong rule. A road is open and a lone red on
+        // one is a lone red for as long as the fight lasts, which is why he
+        // waits for company. A dungeon red is sitting in his own hall on the
+        // only way through it, which is the whole reason he is there, and
+        // whoever walks in has walked into him — the ambush IS the pack. The
+        // rule held every solo dungeon spawn frozen: a red camped a corridor
+        // among a dozen blues and never once drew, because no second red was
+        // ever going to arrive. The crowd rule below still applies, so he
+        // takes on the ones and twos and lets a war party walk past.
         private void TryBeginPackHunt(PlayerBot bot)
         {
-            if (PackSize(bot) < 2)
+            if (PackSize(bot) < 2 && !DungeonRegistry.IsInDungeon(bot))
             {
-                return; // lone red — prowls, but won't start a fight
+                return; // lone red on the roads — prowls, won't start a fight
             }
             if (BlueCrowd(bot) >= Math.Max(CrowdRetreatCount, PackSize(bot) + 1))
             {
@@ -523,13 +533,20 @@ namespace Server.CustomBots
         }
 
         // Fellow reds within pack range, counting this bot.
+        //
+        // The test is "is this bot red", not "is this bot running the PK
+        // brain". They are usually the same bots and were treated as the
+        // same thing here, which is wrong in both directions: a red who
+        // picked up another brain went uncounted as a packmate, and was
+        // then counted as one of the BLUES below, so one broken bot both
+        // shrank the pack and swelled the crowd it was measured against.
         private static int PackSize(PlayerBot bot)
         {
             int n = 1;
             foreach (var m in bot.GetMobilesInRange(PackRange))
             {
                 if (m != bot && m is PlayerBot other && !other.Deleted &&
-                    other.Alive && other.Behavior is PKBehavior)
+                    other.Alive && RedTerritory.IsRed(other))
                 {
                     n++;
                 }
@@ -549,13 +566,15 @@ namespace Server.CustomBots
                 }
                 if (m is PlayerBot pb)
                 {
-                    if (pb.Behavior is not PKBehavior)
+                    if (!RedTerritory.IsRed(pb))
                     {
                         n++;
                     }
                 }
-                else if (m.Player && m is PlayerMobile)
+                else if (m.Player && m is PlayerMobile && !m.Murderer)
                 {
+                    // A red player is not part of the crowd a red backs off
+                    // from. He has the same problem this bot has.
                     n++;
                 }
             }
@@ -614,7 +633,7 @@ namespace Server.CustomBots
             foreach (var m in bot.GetMobilesInRange(30))
             {
                 if (m is PlayerBot other && other != bot && !other.Deleted &&
-                    other.Alive && other.Behavior is PKBehavior)
+                    other.Alive && RedTerritory.IsRed(other))
                 {
                     int d = (int)bot.GetDistanceToSqrt(other.Location);
                     if (d < bestD)
@@ -1023,8 +1042,13 @@ namespace Server.CustomBots
                 (m is PlayerBot) || (m.Player && m is PlayerMobile);
             if (!isPlayerLike) return false;
 
-            // Never attack another PK — professional courtesy, no infighting.
-            if (m is PlayerBot pb && pb.Behavior is PKBehavior) return false;
+            // Never attack another red BOT — professional courtesy, no
+            // infighting. Asked of the bot's notoriety rather than its
+            // brain, so a red who is running some other routine is still
+            // not prey. Deliberately says nothing about red PLAYERS: a red
+            // player is still hunted, because whether PKs leave a red
+            // player alone is a gameplay call, not a bug fix.
+            if (m is PlayerBot pb && RedTerritory.IsRed(pb)) return false;
 
             // Don't attack a victim standing in a guarded zone — a kill
             // there brings guards down on the PK instantly.

@@ -1,5 +1,5 @@
 // =========================================================================
-// BotGrayWatch.cs — somebody flags gray, somebody goes after them.
+// BotGrayWatch.cs — somebody is fair game, somebody goes after them.
 //
 // A criminal is fair game and always was. Killing one is not a crime, it
 // costs no karma and it earns no murder count, which is exactly why the
@@ -11,13 +11,28 @@
 // This watches for the gray flag on anything player-shaped — a bot or you
 // — and hands the nearest few bots a reason to draw.
 //
-// Nothing here sweeps the world looking for criminals. The flag announces
-// itself three ways, all of them cheap: the engine's AggressiveAction
-// event fires on every harmful act and says whether it was criminal;
-// PlayerBot.CriminalAction reports a bot that flagged some other way; and
-// the handful of actually-connected clients are checked outright, which
-// catches you picking a pocket rather than a fight. Everything after that
-// is a spatial query around a known gray.
+// REDS use the same machinery, for the same reason: killing a murderer is
+// no crime either. It used to hand them straight to BotPKWatch, which does
+// not fight — it yells for the guards. Where the guards turn out that is
+// the whole of the answer and always was. Where they do not, it was the
+// whole of the answer to nothing: a red could stand in a dungeon among a
+// dozen blues and not one of them so much as faced him, because the only
+// system that draws on a player-shaped target refused reds outright and
+// the only system that handles reds was calling a watch that wasn't there.
+// So a red counts as fair game wherever no guard will come, which is the
+// same rule the players used — you jumped reds underground, you left them
+// to the watch in town, and you left them alone in Buccaneer's Den.
+//
+// Nothing here sweeps the world looking for anybody. The gray flag
+// announces itself three ways, all of them cheap: the engine's
+// AggressiveAction event fires on every harmful act and says whether it
+// was criminal; PlayerBot.CriminalAction reports a bot that flagged some
+// other way; and the handful of actually-connected clients are checked
+// outright, which catches you picking a pocket rather than a fight. The
+// reds come in from the one sweep that already existed, BotPKWatch's,
+// which walks the world every fifteen seconds regardless and now says so
+// when it finds one with somebody standing next to it. Everything after
+// that is a spatial query around a known target.
 //
 //   WHO      Fighting classes only. A smith at his forge, a merchant, a
 //            tailor: not their business. Willingness is rolled off the
@@ -44,6 +59,7 @@ using System.Collections.Generic;
 using Server;
 using Server.Mobiles;
 using Server.Network;
+using Server.Regions;
 
 namespace Server.CustomBots
 {
@@ -74,6 +90,17 @@ namespace Server.CustomBots
         // (Mobile.ExpireCriminalDelay). Nobody starts a fight it can't
         // finish inside that, so a fight can't outlive its reason.
         private static readonly TimeSpan StaleFlag = TimeSpan.FromSeconds(90);
+
+        // Nothing about a red expires the way a gray's flag does — the
+        // counts stand for days. What this measures is how long it has been
+        // since anybody was there to see him, and it exists to keep the cost
+        // down: there are getting on for eighty reds alive at once, and
+        // scanning around every one of them every second forever, most of
+        // them alone in a corridor with nobody to draw on them, is a lot of
+        // work to do for nothing. BotPKWatch re-notes a red whenever a
+        // civilian is in sight of him, so the ones with company stay in and
+        // the rest fall out three sweeps after the hall empties.
+        private static readonly TimeSpan RedStale = TimeSpan.FromSeconds(45);
 
         // Short: the flag can drop at any moment, and the tick is cheap
         // because it only ever walks the criminals it was told about.
@@ -116,10 +143,22 @@ namespace Server.CustomBots
         // PlayerBot.CriminalAction, and by the connected-client check.
         public static void Note(Mobile m)
         {
-            if (Enabled && m != null && IsFairGame(m))
+            if (!Enabled || m == null || !IsFairGame(m))
             {
-                _flaggedSince.TryAdd(m, Core.Now);
+                return;
             }
+
+            // A gray's timestamp is the moment of the crime and must not
+            // move: it is what stops a bot starting a fight it cannot
+            // finish before the flag lapses. A red's is the last time he was
+            // seen, so it is refreshed every sweep he is seen on.
+            if (m.Murderer)
+            {
+                _flaggedSince[m] = Core.Now;
+                return;
+            }
+
+            _flaggedSince.TryAdd(m, Core.Now);
         }
 
         private static void OnTick()
@@ -151,8 +190,8 @@ namespace Server.CustomBots
         {
             foreach (var (bot, gray) in _engaged)
             {
-                if (bot.Deleted || !bot.Alive || gray.Deleted || !gray.Alive ||
-                    !gray.Criminal || gray.Map != bot.Map ||
+                if (bot.Deleted || !bot.Alive || !IsFairGame(gray) ||
+                    gray.Map != bot.Map ||
                     !bot.InRange(gray.Location, SpotRange + 8))
                 {
                     _released.Add(bot);
@@ -182,10 +221,14 @@ namespace Server.CustomBots
         {
             foreach (var (gray, since) in _flaggedSince)
             {
-                // Blue again, dead, or gone — and running out of flag counts
-                // as gone. Whoever wanted this one has had their chance;
-                // starting now only ends with the attacker gray instead.
-                if (!IsFairGame(gray) || Core.Now - since >= StaleFlag)
+                // Blue again, dead, or gone — and going stale counts as
+                // gone. For a gray that is the flag running out: whoever
+                // wanted this one has had their chance, and starting now
+                // only ends with the attacker gray instead. For a red it is
+                // nobody having laid eyes on him in a while, which is not a
+                // reason to spare him, only a reason to stop looking.
+                if (!IsFairGame(gray) ||
+                    Core.Now - since >= (gray.Murderer ? RedStale : StaleFlag))
                 {
                     _lapsed.Add(gray);
                     continue;
@@ -214,8 +257,8 @@ namespace Server.CustomBots
             {
                 var (bot, gray, first) = _pending[i];
 
-                if (bot.Deleted || !bot.Alive || gray.Deleted || !gray.Alive ||
-                    !gray.Criminal || bot.Combatant != null)
+                if (bot.Deleted || !bot.Alive || !IsFairGame(gray) ||
+                    bot.Combatant != null)
                 {
                     continue; // the world moved while we were deciding
                 }
@@ -229,7 +272,8 @@ namespace Server.CustomBots
 
                 if (first)
                 {
-                    var line = ChatLibrary.PickRandom("gray_call");
+                    var line = ChatLibrary.PickRandom(
+                        gray.Murderer ? "red_call" : "gray_call");
                     if (!string.IsNullOrEmpty(line) && Utility.RandomDouble() < ShoutChance)
                     {
                         bot.Say(line);
@@ -237,7 +281,8 @@ namespace Server.CustomBots
                 }
 
                 Console.WriteLine(
-                    $"[gray] {bot.Name} drew on {gray.Name} at " +
+                    $"[{(gray.Murderer ? "red" : "gray")}] {bot.Name} drew on " +
+                    $"{gray.Name} at " +
                     $"{BotEventJournal.PlaceName(bot.Location, bot.Map)}");
             }
 
@@ -256,20 +301,39 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         private static bool IsFairGame(Mobile m)
         {
-            if (m.Deleted || !m.Alive || !m.Criminal || !m.Player ||
+            if (m.Deleted || !m.Alive || !m.Player ||
                 m.AccessLevel > AccessLevel.Player || m.Blessed)
             {
                 return false;
             }
 
-            // A red is BotPKWatch's business, and that ends in guards
-            // rather than a brawl.
-            if (m.Murderer)
+            if (m.Map == null || m.Map == Map.Internal)
             {
                 return false;
             }
 
-            return m.Map != null && m.Map != Map.Internal;
+            // A murderer is fair game to anybody, but only where nobody else
+            // is going to deal with him. In a guarded town the watch does it
+            // and a brawl in the street only gets in their way; in
+            // Buccaneer's Den nothing does it, because the place is theirs
+            // and a blue who starts something there gets what he asked for.
+            if (m.Murderer)
+            {
+                return !RedTerritory.Contains(m.Location) && !GuardsWillCome(m);
+            }
+
+            return m.Criminal;
+        }
+
+        // Would the watch turn out for this one where he is standing? Asked
+        // the way BotPKWatch asks it, and for the same reason — a disabled
+        // guard region (Buccaneer's Den) is not a guarded place, and
+        // TownRegion derives from GuardedRegion, so the type alone lies.
+        private static bool GuardsWillCome(Mobile m)
+        {
+            var region = m.Region?.GetRegion<GuardedRegion>();
+            return region != null && !region.IsDisabled() &&
+                   region.IsGuardCandidate(m);
         }
 
         // -------------------------------------------------------------------
@@ -290,6 +354,19 @@ namespace Server.CustomBots
             }
 
             if (!IsFightingClass(bot.Class) || !bot.CanSee(gray))
+            {
+                return false;
+            }
+
+            // A gray is a free kill anyone will take. A murderer is a real
+            // fight, and the bots who take real fights on purpose are the
+            // adventurers and the dungeon crews — excluding one already
+            // walking out with its supplies gone, which is not looking for
+            // trouble and should not be handed any. Everyone else goes on
+            // doing what they already do about reds, which is leave: that is
+            // BotPKWatch's scatter, and it was never the broken part.
+            if (gray.Murderer &&
+                (bot.Behavior is not AdventurerBehavior adv || !adv.LooksForTrouble))
             {
                 return false;
             }

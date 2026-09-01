@@ -390,14 +390,28 @@ namespace Server.CustomBots
                 {
                     return;
                 }
-                bot.Behavior = new DungeonCrawlerBehavior();
+                // A red stays a red. This line used to hand a dungeon death
+                // the crawler brain no matter what the bot was, so a PK who
+                // died once in his own hall came back a monster hunter and
+                // never hunted a player again. He keeps his murder counts
+                // either way, so the result was a permanent murderer running
+                // a civilian's routine. BotLifecycleManager refuses to
+                // re-brain a PK for that exact reason; the death flow was
+                // doing it anyway.
+                bot.Behavior = ResumeBrain(bot, () => new DungeonCrawlerBehavior());
                 return;
             }
 
-            bot.Behavior = bot.PreDeathBehaviorName == "PK"
-                ? BehaviorRegistry.Create("PK")
-                : BehaviorRegistry.Create("Traveler");
+            bot.Behavior = ResumeBrain(bot, () => BehaviorRegistry.Create("Traveler"));
         }
+
+        // What the bot goes back to being. PK first, always; otherwise
+        // whatever this spot in the death flow would normally hand out.
+        private static PlayerBotBehavior ResumeBrain(
+            PlayerBot bot, Func<PlayerBotBehavior> otherwise) =>
+            bot.PreDeathBehaviorName == "PK"
+                ? BehaviorRegistry.Create("PK")
+                : otherwise();
 
         // -------------------------------------------------------------------
         // EvacuateDungeon — move a twice-dead bot to its dungeon's surface
@@ -453,7 +467,11 @@ namespace Server.CustomBots
                 $"[death] {bot.Name} has died {bot.RecentDeaths} times — " +
                 $"leaving {interior.Dungeon} for the surface");
             bot.MoveToWorld(spot, map);
-            bot.Behavior = new TravelerBehavior();
+            // Same rule as ResumeLife: a red leaves the dungeon still a red.
+            // A murderer on a Traveler brain walks into guarded towns on
+            // errands and dies to the guards on repeat. A PK put down at a
+            // dungeon mouth prowls it, which is a thing PKs already do.
+            bot.Behavior = ResumeBrain(bot, () => new TravelerBehavior());
             return true;
         }
     }

@@ -119,6 +119,34 @@ namespace Server.CustomBots
                     continue;
                 }
 
+                // The other half of that rule, and the one that was missing.
+                // Refusing to re-brain a PK only helps if nothing else does
+                // it, and the death flow did: a PK who died inside a dungeon
+                // was handed the crawler brain on reclaim and kept it. He
+                // still had the murder counts, so he was still red, still
+                // killed by guards, and had simply stopped hunting players
+                // for good. The behavior name is saved, so those bots came
+                // back wrong after every restart.
+                //
+                // BotDeathManager.ResumeLife no longer does it. This puts
+                // right the ones already in the save, and catches any future
+                // route that produces the same thing.
+                //
+                // Safe as a blanket rule because nothing else makes a bot
+                // red. Murder counts need a harmful CRIMINAL act, the bot
+                // enemy scan only ever targets monsters, and killing a gray
+                // or a red is not a crime. Reds are PKs, or they are this
+                // bug.
+                if (bot.Murderer)
+                {
+                    if (transitions >= MaxTransitionsPerTick) continue;
+                    var was = bot.Behavior?.SerializableName ?? "none";
+                    bot.Behavior = BehaviorRegistry.Create("PK");
+                    transitions++;
+                    Log($"[{bot.Name}] red running '{was}' — put back on the PK brain");
+                    continue;
+                }
+
                 // DUNGEON RULE: a bot inside a dungeon is a DungeonCrawler.
                 // A crawler mid-crawl is left alone — its own run timer
                 // decides when to climb out; a lifecycle swap here would

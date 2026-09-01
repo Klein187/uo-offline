@@ -810,6 +810,12 @@ namespace Server.CustomBots
         // yourself, you don't clear rooms.
         protected virtual bool WantsFreshFights => true;
 
+        // The same question from outside. BotGrayWatch asks it before
+        // handing this bot a red: a crawler on its way out with empty packs
+        // has already decided it is done fighting, and a murderer walking
+        // past does not change that.
+        public bool LooksForTrouble => WantsFreshFights;
+
         // Patrol legs walk by default; a follower catching up to its
         // party leader overrides this to run.
         protected virtual bool PatrolRuns => false;
