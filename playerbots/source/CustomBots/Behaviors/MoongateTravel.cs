@@ -222,12 +222,7 @@ namespace Server.CustomBots
                 // starts it exploring whatever city it arrived in.
                 try
                 {
-                    var traveler = new TravelerBehavior();
-                    if (resumeDestination != null)
-                    {
-                        traveler.DestinationName = resumeDestination;
-                    }
-                    bot.Behavior = traveler;
+                    bot.Behavior = RedTerritory.TravelBrain(bot, resumeDestination);
                 }
                 catch (Exception ex)
                 {

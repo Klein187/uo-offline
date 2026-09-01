@@ -78,7 +78,7 @@ namespace Server.CustomBots
             // Visit's over. Return the bot to traveling — it'll roll a
             // fresh destination and continue its journey. Swapping Behavior
             // detaches THIS behavior, so the caller must return right away.
-            bot.Behavior = BehaviorRegistry.Create("Traveler");
+            bot.Behavior = RedTerritory.TravelBrain(bot);
             return true;
         }
 

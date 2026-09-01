@@ -575,7 +575,7 @@ namespace Server.CustomBots
                     $"(attempt {_attempt}, dest '{_destName ?? "fresh"}' at {_landing}) — continuing on foot");
                 try
                 {
-                    _bot.Behavior = new TravelerBehavior { DestinationName = _destName };
+                    _bot.Behavior = RedTerritory.TravelBrain(_bot, _destName);
                 }
                 catch (Exception ex)
                 {
@@ -698,8 +698,7 @@ namespace Server.CustomBots
         {
             try
             {
-                var traveler = new TravelerBehavior { DestinationName = destName };
-                bot.Behavior = traveler;
+                bot.Behavior = RedTerritory.TravelBrain(bot, destName);
             }
             catch (Exception ex)
             {

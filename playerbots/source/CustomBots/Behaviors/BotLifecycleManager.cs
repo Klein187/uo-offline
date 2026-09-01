@@ -137,12 +137,15 @@ namespace Server.CustomBots
                 // enemy scan only ever targets monsters, and killing a gray
                 // or a red is not a crime. Reds are PKs, or they are this
                 // bug.
+                // NOT rate-limited. MaxTransitionsPerTick exists to stop the
+                // shard re-braining half its population in one tick on the
+                // ordinary phase roll; this is repairing corrupt state, and
+                // five a minute meant a backlog of broken reds took ten
+                // minutes to clear and never finished before a restart.
                 if (bot.Murderer)
                 {
-                    if (transitions >= MaxTransitionsPerTick) continue;
                     var was = bot.Behavior?.SerializableName ?? "none";
                     bot.Behavior = BehaviorRegistry.Create("PK");
-                    transitions++;
                     Log($"[{bot.Name}] red running '{was}' — put back on the PK brain");
                     continue;
                 }
@@ -156,6 +159,7 @@ namespace Server.CustomBots
                 // and keep their brain.
                 if (bot.Behavior is DungeonCrawlerBehavior) continue;
                 if (bot.Behavior is not PKBehavior &&
+                    !RedTerritory.IsRed(bot) &&
                     DungeonRegistry.IsInDungeon(bot))
                 {
                     if (transitions >= MaxTransitionsPerTick) continue;

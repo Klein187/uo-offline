@@ -702,9 +702,13 @@ namespace Server.CustomBots
             // (dungeon PKs hunt there on purpose). The crawler spawns
             // context-less and derives its dungeon+level from the nearest
             // interior point on its first tick (TryRecoverContext).
+            // Asked of notoriety, not just of the brain: a red that spawned
+            // with some other routine is still a red, and turning it into a
+            // monster hunter is how one stops hunting players for good.
             if (!LifecycleExempt &&
                 Behavior is not PKBehavior &&
                 Behavior is not DungeonCrawlerBehavior &&
+                !RedTerritory.IsRed(this) &&
                 DungeonRegistry.IsInDungeon(this))
             {
                 Behavior = new DungeonCrawlerBehavior();

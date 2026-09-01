@@ -148,7 +148,19 @@ namespace Server.CustomBots
 
             // Patrol via an internal Traveler — reuse all the road
             // navigation, waypoint following, and fluid movement.
-            _patrol = new TravelerBehavior { AvoidTowns = true };
+            //
+            // Subordinate: this Traveler steers the feet and nothing else.
+            // Left unmarked it reassigns bot.Behavior on its own — becoming a
+            // defender when attacked, a Visitor on arrival, a crawler at a
+            // dungeon mouth — and since it is NOT the bot's behaviour, each
+            // of those threw away the PK brain instead of its own. That is
+            // where repaired reds kept going.
+            //
+            // Detach first: OnAttached runs again when the backstop in
+            // TickPatrol restores this brain, and a stale patrol still holds
+            // a step timer that would go on driving the feet unseen.
+            _patrol?.OnDetached(bot);
+            _patrol = new TravelerBehavior { AvoidTowns = true, Subordinate = true };
             _patrol.OnAttached(bot);
             _phase = Phase.Patrol;
         }
@@ -188,6 +200,32 @@ namespace Server.CustomBots
             if (bot.Combatant is Mobile threat && threat.Alive &&
                 !threat.Deleted && threat.Map == bot.Map)
             {
+                // Something blue in reach beats whatever monster is chewing
+                // on us. A red standing next to a traveller while it trades
+                // blows with a rat is the whole job going unattended, and
+                // once the fight is on a person TickHunt re-asserts the
+                // Combatant every tick so nothing steals it back.
+                //
+                // Only a MONSTER gets dropped this way — `threat is not
+                // PlayerMobile` covers bots too, since PlayerBot is one — so
+                // this can never make a red abandon a person mid-fight. The
+                // crowd rule still applies: swapping targets in front of a
+                // mob of blues is just a different way to die.
+                if (threat is not PlayerMobile && Core.Now >= _nextScan)
+                {
+                    _nextScan = Core.Now + ScanInterval;
+                    var prey = FindVictim(bot);
+                    if (prey != null &&
+                        BlueCrowd(bot) < Math.Max(CrowdRetreatCount, PackSize(bot) + 1))
+                    {
+                        Console.WriteLine(
+                            $"[pk] {bot.Name} drops '{threat.Name}' for " +
+                            $"{prey.Name} — people first");
+                        BeginHunt(bot, prey);
+                        return;
+                    }
+                }
+
                 TryCombatCare(bot);
                 TryCombatMagic(bot, threat);
                 if (bot.Spell != null)
@@ -287,6 +325,20 @@ namespace Server.CustomBots
 
             // Drive the underlying Traveler so the PK keeps moving.
             _patrol?.Tick(bot);
+
+            // Backstop. Subordinate stops the Traveler's own handoffs, but it
+            // calls out to travel helpers that assign Behavior too, and a red
+            // that quietly stops being a PK is the whole bug. If anything took
+            // the brain, take it back. Cheap, and it can only fire when
+            // something is actually wrong — so the line is worth reading.
+            if (bot.Behavior != this)
+            {
+                Console.WriteLine(
+                    $"[pk] {bot.Name}: patrol handed the brain to " +
+                    $"'{bot.Behavior?.SerializableName ?? "none"}' — taking it back");
+                bot.Behavior = this;
+                return;
+            }
 
             // Scan for a victim on a cadence (scanning every tick is waste).
             if (Core.Now < _nextScan) return;
@@ -487,6 +539,7 @@ namespace Server.CustomBots
             {
                 AvoidTowns = true,
                 DestinationName = dest.Name,
+                Subordinate = true,
             };
             _patrol.OnAttached(bot);
         }
@@ -498,7 +551,7 @@ namespace Server.CustomBots
             _atAmbush = false;
 
             _patrol?.OnDetached(bot);
-            _patrol = new TravelerBehavior { AvoidTowns = true };
+            _patrol = new TravelerBehavior { AvoidTowns = true, Subordinate = true };
             _patrol.OnAttached(bot);
         }
 

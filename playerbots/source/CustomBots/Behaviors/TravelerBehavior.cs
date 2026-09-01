@@ -35,6 +35,21 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Traveler";
 
+        // This Traveler is not the bot's behaviour — it is being driven as a
+        // sub-behaviour by one that is (PKBehavior._patrol). It may steer the
+        // feet and nothing else.
+        //
+        // Every "bot.Behavior = ..." below assumes this object IS the bot's
+        // brain and that swapping it merely detaches this instance. Driven as
+        // a subordinate, those lines instead throw away the OWNER's brain. A
+        // red prowling the roads would be attacked and become a defender, or
+        // reach a destination and become a Visitor, or step into a dungeon
+        // and become a crawler — and in every case stop being a PK, keeping
+        // its murder counts. That is where repaired reds kept going, and it
+        // is why the same names came back to the lifecycle repair over and
+        // over. The owner handles all of it; a subordinate just walks.
+        public bool Subordinate { get; set; }
+
         // ---- Diagnostics ----
         // When true, log state transitions to the server console so you can
         // watch bots' navigation decisions live via tail -f modernuo.log.
@@ -949,6 +964,12 @@ namespace Server.CustomBots
                         ResumeDestination = _gateResumeDestination ?? DestinationName,
                     };
                     bot.Combatant = threat;
+                    if (Subordinate)
+                    {
+                        // The owner fights its own fights. Combatant is set;
+                        // leave the brain alone.
+                        return;
+                    }
                     // Swapping Behavior detaches this Traveler. Return at once.
                     bot.Behavior = defender;
                     return;
@@ -2479,6 +2500,14 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                      $"at '{DestinationName}' " +
                      $"(visit ends in {visitMinMinutes}-{visitMaxMinutes} min)");
 
+            if (Subordinate)
+            {
+                // A prowling red does not stop to visit the inn. Report "no
+                // handoff" so the caller rolls another destination and the
+                // owner keeps its brain.
+                return false;
+            }
+
             // Swapping Behavior detaches this Traveler. Caller returns.
             bot.Behavior = visit;
             return true;
@@ -2610,6 +2639,30 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         private void EnterDungeonAsCrawler(PlayerBot bot)
         {
             StopStepTimer();
+
+            // A red does not become a monster hunter for walking through a
+            // door. This is where repaired reds were being broken again:
+            // PKBehavior drives one of these Travelers internally for its
+            // patrol, so a red put back on the PK brain would prowl to a
+            // dungeon, come through the entrance, and have its brain
+            // overwritten here — and the lifecycle would repair it, and it
+            // would walk in again. Hunting a dungeon is what a dungeon PK is
+            // FOR; it camps the hall it lands in.
+            if (Subordinate)
+            {
+                // The owner already routes itself once it is underground
+                // (PKBehavior.TickPatrol camps the hall it lands in).
+                Log(bot, $"Entered a dungeon via '{DestinationName}' — owner keeps the brain");
+                return;
+            }
+
+            if (RedTerritory.IsRed(bot))
+            {
+                Log(bot, $"Entered a dungeon via '{DestinationName}' — staying a red");
+                bot.Behavior = BehaviorRegistry.Create("PK");
+                return;
+            }
+
             Log(bot, $"Teleported into a dungeon via '{DestinationName}' — becoming a crawler");
             bot.Behavior = new DungeonCrawlerBehavior();
         }

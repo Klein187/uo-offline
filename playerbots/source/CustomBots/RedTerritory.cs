@@ -63,6 +63,22 @@ namespace Server.CustomBots
         // Reds live there. Everyone else keeps away.
         public static bool AllowedFor(PlayerBot bot) => IsRed(bot);
 
+        // The brain to hand a bot when some journey ends and it needs to go
+        // back to getting on with things.
+        //
+        // A red goes back to being a red. Everywhere that handed out a plain
+        // Traveler was silently un-PKing them: a red recalls, the recall
+        // fizzles or lands, MagicTravel hands off a fresh Traveler, and the
+        // murder counts stay while the brain that used them is gone. Worse,
+        // those handoffs fire from TIMER callbacks, so PKBehavior's own tick
+        // never runs again to notice — only the lifecycle repair caught it, a
+        // minute later, and then the same bot did it again. Reds kept coming
+        // back to the repair list because of this line, in four places.
+        public static PlayerBotBehavior TravelBrain(PlayerBot bot, string destName = null) =>
+            IsRed(bot)
+                ? BehaviorRegistry.Create("PK")
+                : new TravelerBehavior { DestinationName = destName };
+
         // Public moongates stand in guarded towns, so a red stepping out of
         // one is dead where it lands. They walk, or they stay where they are.
         public static bool MayUseMoongates(PlayerBot bot) => !IsRed(bot);
