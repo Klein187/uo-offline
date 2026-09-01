@@ -583,8 +583,17 @@ namespace Server.CustomBots
 
         public static HaggleSession SessionFor(ShopStock stock, Serial buyer)
         {
-            if (!stock.Sessions.TryGetValue(buyer, out var s) ||
-                Core.Now - s.LastAt > SessionIdle)
+            // An idle conversation is forgotten, but NOT one that ended in a
+            // handshake that is still good. SessionIdle is three minutes and
+            // AgreementWindow is five, so a buyer who shook on a price and
+            // then took four minutes to walk to a bank and count out the coin
+            // had the agreement thrown away underneath them: AgreedPriceFor
+            // still said yes, the session behind it was blank, and the trade
+            // window opened at the asking price.
+            bool live = stock.Sessions.TryGetValue(buyer, out var s);
+            bool shookOn = live && s.AgreedPrice > 0 && Core.Now < s.AgreedUntil;
+
+            if (!live || Core.Now - s.LastAt > SessionIdle && !shookOn)
             {
                 s = new HaggleSession();
                 stock.Sessions[buyer] = s;
@@ -638,13 +647,29 @@ namespace Server.CustomBots
             counter = stock.Asking;
 
             int already = AgreedPriceFor(stock, buyer);
+            var s = SessionFor(stock, buyer);
+
             if (already > 0)
             {
-                counter = already;
-                return HaggleResult.Accepted; // already shook on it
+                // Meeting the number already shaken on — or bettering it —
+                // is that handshake standing.
+                if (offer <= 0 || offer >= already)
+                {
+                    counter = already;
+                    return HaggleResult.Accepted;
+                }
+
+                // Undercutting it is a NEW haggle, and it used to come back
+                // "Accepted" at the OLD number. The seller said "deal", the
+                // buyer heard yes to the number they had just named, put that
+                // on the table, and was refused by a bot quoting the figure
+                // they thought they had talked it out of. Saying deal and
+                // meaning a different price is the whole bug. Drop the stale
+                // handshake and answer the new number honestly.
+                s.AgreedPrice = 0;
+                s.AgreedUntil = DateTime.MinValue;
             }
 
-            var s = SessionFor(stock, buyer);
             s.Rounds++;
 
             // An offer under half the floor is not a negotiation.
