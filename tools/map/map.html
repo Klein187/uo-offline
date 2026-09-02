@@ -840,12 +840,24 @@ function renameDest(){
  if(!name||name===old){return;}
  fetch("/dest_rename",{method:"POST",headers:{"Content-Type":"application/json"},
   body:JSON.stringify({name:old,newName:name})})
- .then(r=>r.json()).then(r=>{
+ // A 404 answers with an HTML error page, and r.json() on that THROWS.
+ // With no catch the whole thing failed in silence: you typed a name,
+ // pressed OK, and nothing happened, with nothing on screen saying why.
+ // The usual cause is an editor still running from before this route
+ // existed, so say that out loud instead of dying quietly.
+ .then(r=>r.text().then(t=>{
+   let j=null;try{j=JSON.parse(t);}catch(e){}
+   if(j===null){throw new Error(r.status===404
+    ?"this editor is running older code and has no rename route. Restart serve_map.py."
+    :"server said "+r.status);}
+   return j;}))
+ .then(r=>{
   document.getElementById("info").textContent=r.ok
    ?"renamed '"+r.from+"' to '"+r.name+"' ("+r.catalog+")\nRun [ReloadDestinations."
    :"rename failed: "+r.error;
   if(r.ok&&destSel){destSel.n=r.name;}
-  loadData();});
+  loadData();})
+ .catch(e=>{document.getElementById("info").textContent="rename failed: "+e.message;});
 }
 function toggleActive(){
  if(!destSel)return;
