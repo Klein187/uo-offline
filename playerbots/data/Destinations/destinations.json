@@ -1598,7 +1598,7 @@
       ]
     },
     {
-      "Name": "Graveyard 62",
+      "Name": "Brit GY'",
       "X": 1367,
       "Y": 1482,
       "Z": 10,
@@ -10316,7 +10316,7 @@
       "Z": 0,
       "Type": "VendorAlchemist",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1025",
       "Arrivals": [
         {
           "X": 3631,
@@ -10335,7 +10335,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1027",
       "Arrivals": [
         {
           "X": 3636,
@@ -10354,7 +10354,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1029",
       "Arrivals": [
         {
           "X": 3645,
@@ -10373,7 +10373,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1030",
       "Arrivals": [
         {
           "X": 3662,
@@ -10392,7 +10392,7 @@
       "Z": 0,
       "Type": "Inn",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1034",
       "Arrivals": [
         {
           "X": 3669,
@@ -10411,7 +10411,7 @@
       "Z": 0,
       "Type": "Inn",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1038",
       "Arrivals": [
         {
           "X": 3670,
@@ -10430,7 +10430,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1037",
       "Arrivals": [
         {
           "X": 3636,
@@ -10449,7 +10449,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1065",
       "Arrivals": [
         {
           "X": 3604,
@@ -10561,7 +10561,7 @@
       "Z": 20,
       "Type": "VendorProvisioner",
       "City": "Magincia",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1040",
       "Arrivals": [
         {
           "X": 3714,
@@ -10580,7 +10580,7 @@
       "Z": 0,
       "Type": "VendorWeaponer",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1078",
       "Arrivals": [
         {
           "X": 4443,
@@ -10599,7 +10599,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1078",
       "Arrivals": [
         {
           "X": 4439,
@@ -10618,7 +10618,7 @@
       "Z": 0,
       "Type": "Inn",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1077",
       "Arrivals": [
         {
           "X": 4405,
@@ -10637,7 +10637,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1076",
       "Arrivals": [
         {
           "X": 4397,
@@ -10656,7 +10656,7 @@
       "Z": 0,
       "Type": "VendorAlchemist",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1414",
       "Arrivals": [
         {
           "X": 4422,
@@ -10675,7 +10675,7 @@
       "Z": 0,
       "Type": "VendorSmith",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1132",
       "Arrivals": [
         {
           "X": 4395,
@@ -10694,7 +10694,7 @@
       "Z": 0,
       "Type": "VendorAlchemist",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1071",
       "Arrivals": [
         {
           "X": 4421,
@@ -10713,7 +10713,7 @@
       "Z": 0,
       "Type": "VendorCarpenter",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1138",
       "Arrivals": [
         {
           "X": 4417,
@@ -10732,7 +10732,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1139",
       "Arrivals": [
         {
           "X": 4420,
@@ -10751,7 +10751,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1137",
       "Arrivals": [
         {
           "X": 4392,
@@ -10907,7 +10907,7 @@
       "Z": 20,
       "Type": "VendorAlchemist",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1069",
       "Arrivals": [
         {
           "X": 4456,
@@ -10927,7 +10927,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1150",
       "Arrivals": [
         {
           "X": 4457,
@@ -10946,7 +10946,7 @@
       "Z": 0,
       "Type": "Inn",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1148",
       "Arrivals": [
         {
           "X": 4486,
@@ -10965,7 +10965,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "WP 1145",
       "Arrivals": [
         {
           "X": 4481,
@@ -10984,7 +10984,7 @@
       "Z": 30,
       "Type": "VendorAlchemist",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "Verity Dock Trail 20",
       "Arrivals": [
         {
           "X": 4546,
@@ -11003,7 +11003,7 @@
       "Z": 30,
       "Type": "VendorMage",
       "City": "Moonglow",
-      "NearestWaypoint": "Britain Inn East Road",
+      "NearestWaypoint": "Verity Dock Trail 20",
       "Arrivals": [
         {
           "X": 4544,
@@ -11022,7 +11022,7 @@
       "Z": 2,
       "Type": "VendorProvisioner",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Blue Boar Tavern",
+      "NearestWaypoint": "WP 1013",
       "Arrivals": [
         {
           "X": 2682,
@@ -11041,7 +11041,7 @@
       "Z": 0,
       "Type": "VendorProvisioner",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Blue Boar Tavern",
+      "NearestWaypoint": "WP 1015",
       "Arrivals": [
         {
           "X": 2735,
@@ -11117,7 +11117,7 @@
       "Z": 0,
       "Type": "VendorTailor",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1001",
       "Arrivals": [
         {
           "X": 2708,
@@ -11136,7 +11136,7 @@
       "Z": 0,
       "Type": "Healer",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 999",
       "Arrivals": [
         {
           "X": 2708,
@@ -11155,7 +11155,7 @@
       "Z": 10,
       "Type": "VendorSmith",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1009",
       "Arrivals": [
         {
           "X": 2637,
@@ -11174,7 +11174,7 @@
       "Z": 10,
       "Type": "VendorCarpenter",
       "City": "Buccaneer's Den",
-      "NearestWaypoint": "Britain Alchemist East",
+      "NearestWaypoint": "WP 1009",
       "Arrivals": [
         {
           "X": 2628,
