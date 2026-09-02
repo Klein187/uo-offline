@@ -81,6 +81,7 @@ MODERNUO_DIR="${INSTALL_ROOT}/ModernUO"
 DIST_DIR="${MODERNUO_DIR}/Distribution"
 CFG_DIR="${DIST_DIR}/Configuration"
 SPAWNERS_DIR="${DIST_DIR}/Spawners/uoclassic"
+MODERNUO_BUILD_SHA_FILE="${INSTALL_ROOT}/.modernuo-built-sha"
 
 CLASSICUO_DIR="${INSTALL_ROOT}/ClassicUO"
 CLASSICUO_RELEASE_URL="https://api.github.com/repos/ClassicUO/ClassicUO/releases"
@@ -317,9 +318,25 @@ build_modernuo() {
   export PATH="${DOTNET_ROOT}:${PATH}"
   export DOTNET_ROOT
 
-  if [[ -f "${DIST_DIR}/ModernUO.dll" ]]; then
-    say "ModernUO already built. Skipping (delete ${DIST_DIR}/ModernUO.dll to force rebuild)."
+  local source_sha="" built_sha=""
+  source_sha="$(git -C "${MODERNUO_DIR}" rev-parse HEAD 2>/dev/null || true)"
+  [[ -f "${MODERNUO_BUILD_SHA_FILE}" ]] \
+    && built_sha="$(tr -d '[:space:]' < "${MODERNUO_BUILD_SHA_FILE}")"
+
+  if [[ -f "${DIST_DIR}/ModernUO.dll" ]] \
+     && [[ -n "${source_sha}" ]] \
+     && [[ "${built_sha}" == "${source_sha}" ]]; then
+    say "ModernUO already built from ${source_sha:0:7}. Skipping."
     return
+  fi
+
+  if [[ -f "${DIST_DIR}/ModernUO.dll" ]]; then
+    if [[ -n "${built_sha}" && -n "${source_sha}" ]]; then
+      say "ModernUO changed (${built_sha:0:7} -> ${source_sha:0:7}); rebuilding."
+    else
+      say "ModernUO build commit is unknown; rebuilding once to establish it."
+    fi
+    rm -f "${DIST_DIR}/ModernUO.dll"
   fi
 
   cd "${MODERNUO_DIR}"
@@ -340,6 +357,14 @@ build_modernuo() {
   fi
 
   [[ -f "${DIST_DIR}/ModernUO.dll" ]] || die "Build produced no ModernUO.dll. Check output above."
+
+  # Record this only after a successful build. A missing/mismatched stamp is
+  # deliberately fail-safe: the next installer run builds rather than running
+  # a DLL that may not match the checked-out engine source.
+  if [[ -n "${source_sha}" ]]; then
+    printf '%s\n' "${source_sha}" > "${MODERNUO_BUILD_SHA_FILE}.tmp"
+    mv "${MODERNUO_BUILD_SHA_FILE}.tmp" "${MODERNUO_BUILD_SHA_FILE}"
+  fi
   ok "Build artifacts at ${DIST_DIR}"
 }
 
