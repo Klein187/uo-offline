@@ -1234,7 +1234,7 @@ function InstallMapEditor {
   # and serve_map.py reads both roots from the environment.
   $launcher = [IO.Path]::Combine($MapDir, "uo-map.ps1")
   @"
-# Starts the map editor server if it is not already up, then opens it.
+# Restarts the map editor server on the current code, then opens it.
 `$env:UO_MAP_DIR    = "$MapDir"
 `$env:UO_SHARD_ROOT = "$InstallRoot"
 `$here  = "$MapDir"
@@ -1247,10 +1247,37 @@ function Up {
   catch { return `$false }
 }
 
-if (-not (Up)) {
-  Start-Process -FilePath `$py -ArgumentList @(`$serve) -WorkingDirectory `$here -WindowStyle Hidden
-  for (`$i = 0; `$i -lt 20; `$i++) { Start-Sleep -Milliseconds 500; if (Up) { break } }
+# Who is holding the port? Get-NetTCPConnection is not on every Windows,
+# so fall back to netstat.
+function Holders {
+  try {
+    return @(Get-NetTCPConnection -LocalPort 8777 -State Listen -ErrorAction Stop |
+             ForEach-Object { `$_.OwningProcess })
+  } catch {
+    return @(netstat -ano | Select-String ':8777\s+.*LISTENING' |
+             ForEach-Object { (`$_.ToString().Trim() -split '\s+')[-1] })
+  }
 }
+
+# ALWAYS restart, never reuse. The server runs windowless, so there is
+# nothing on screen to close, and an old one sits there serving old code
+# for as long as the machine is up. Not hypothetical: one left running
+# for nine hours kept serving a stale page AND a stale file directory
+# through browser restarts and hard refreshes, with nothing on screen
+# saying so. One click should always mean "the editor as it is on disk".
+#
+# NOT `$pid. That is PowerShell's own process id and this would kill
+# the launcher itself.
+foreach (`$owner in (Holders)) {
+  if (`$owner -and "`$owner" -ne "0") {
+    try { Stop-Process -Id ([int]`$owner) -Force -ErrorAction Stop } catch { }
+  }
+}
+for (`$i = 0; `$i -lt 20; `$i++) { if (-not (Up)) { break }; Start-Sleep -Milliseconds 250 }
+
+Start-Process -FilePath `$py -ArgumentList @(`$serve) -WorkingDirectory `$here -WindowStyle Hidden
+for (`$i = 0; `$i -lt 20; `$i++) { Start-Sleep -Milliseconds 500; if (Up) { break } }
+
 if (-not (Up)) { Write-Host "The map server did not start. Run: `$py `$serve" -ForegroundColor Yellow; Start-Sleep 5; exit 1 }
 Start-Process `$url
 "@ | Set-Content $launcher

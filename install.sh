@@ -1249,19 +1249,27 @@ install_map_editor() {
   # serve_map.py reads both roots from the environment.
   cat > "${map_dir}/uo-map-launch.sh" <<EOF
 #!/bin/bash
-# Starts the map editor server if it is not already up, then opens it.
+# Restarts the map editor server on the current code, then opens it.
 export UO_MAP_DIR="${map_dir}"
 export UO_SHARD_ROOT="${INSTALL_ROOT}"
 URL="http://localhost:8777/map.html"
 LOG="${map_dir}/serve_map.log"
 
-if ! curl -s -o /dev/null --max-time 1 "\${URL}"; then
-    nohup python3 "${map_dir}/serve_map.py" >"\${LOG}" 2>&1 &
-    for _ in \$(seq 1 10); do
-        sleep 0.5
-        curl -s -o /dev/null --max-time 1 "\${URL}" && break
-    done
-fi
+# ALWAYS restart, never reuse. The server has no window, so there is
+# nothing to close, and an old one sits there serving old code and an
+# old file directory for as long as the machine is up. One click should
+# always mean "the editor as it is on disk right now".
+pkill -f "serve_map.py" 2>/dev/null
+for _ in \$(seq 1 10); do
+    curl -s -o /dev/null --max-time 1 "\${URL}" || break
+    sleep 0.25
+done
+
+nohup python3 "${map_dir}/serve_map.py" >"\${LOG}" 2>&1 &
+for _ in \$(seq 1 10); do
+    sleep 0.5
+    curl -s -o /dev/null --max-time 1 "\${URL}" && break
+done
 
 xdg-open "\${URL}"
 EOF
