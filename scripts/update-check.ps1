@@ -86,67 +86,40 @@ try {
         }
     }
 
-    # What does the update actually contain? The compare endpoint gives the
-    # commits between what is installed and what is on the branch. If it
-    # fails (a force-push can orphan the local sha, for one), fall back to
-    # a generic message rather than dropping the whole check.
+    # What does the update actually contain? UPDATE-NOTES.txt on the
+    # branch, written by hand.
+    #
+    # This used to be assembled from commit messages through the compare
+    # API: subject on the bullet, body indented underneath, trailers
+    # stripped. It worked, and it read like a developer talking to another
+    # developer, because that is what commit messages are. Someone opening
+    # the launcher wants to know what is different in the GAME. So the
+    # notes are a file in the repo now and this just shows it.
+    #
+    # Same failure rule as the rest of this script: if the file cannot be
+    # fetched, say something generic rather than dropping the check.
     $lines = @()
-    $count = 0
     try {
-        $cmp = Invoke-RestMethod `
-            -Uri "https://api.github.com/repos/$repo/compare/$localSha...$branch" `
+        $notes = Invoke-RestMethod `
+            -Uri "https://raw.githubusercontent.com/$repo/$branch/UPDATE-NOTES.txt" `
             -Headers $headers -TimeoutSec $TimeoutSec
-        $count = $cmp.ahead_by
-        foreach ($c in $cmp.commits) {
-            # First line is the summary. Anything after the blank line is
-            # the explanation, and for a change worth explaining that is
-            # the part the player actually wants -- a bare subject like
-            # "hawkers sell real goods" says what changed and nothing
-            # about what it means at the bank. Indented under the bullet,
-            # capped so one chatty commit cannot fill the whole box.
-            $msg = $c.commit.message -replace "`r`n", "`n"
-            $parts = $msg -split "`n"
-            $subject = $parts[0].Trim()
-            if (-not $subject) { continue }
-
-            $entry = @("  - $subject")
-            $shown = 0
-            for ($i = 1; $i -lt $parts.Count -and $shown -lt 8; $i++) {
-                $line = $parts[$i].TrimEnd()
-                if (-not $line.Trim()) {
-                    # Keep one blank line between paragraphs, never a run.
-                    if ($shown -gt 0 -and $entry[-1] -ne "") { $entry += "" }
-                    continue
-                }
-                # Trailers are bookkeeping, not news. The player does not
-                # need Co-Authored-By on a "what's in this update" screen.
-                if ($line -match '^\s*(Co-Authored-By|Signed-off-by|Claude-Session|Reviewed-by|Refs|Fixes|Closes)\s*:' -or
-                    $line -match '^\s*(https?://|Generated with)') { continue }
-                $entry += "      $($line.Trim())"
-                $shown++
-            }
-            # Commits are joined newest-first below, so each entry is one
-            # block; a trailing blank keeps them from running together.
-            if ($shown -gt 0) { $entry += "" }
-            $lines += ($entry -join "`r`n")
+        if ($notes -is [array]) { $notes = $notes -join "`n" }
+        $notes = ([string]$notes) -replace "`r`n", "`n"
+        if ($notes.Trim()) {
+            $lines = @(($notes.TrimEnd() -split "`n") -join "`r`n")
         }
-        # Newest first reads better in a changelog.
-        [array]::Reverse($lines)
     } catch {
         $lines = @()
     }
 
     if ($lines.Count -eq 0) {
-        $lines = @("  - A new version is available on GitHub.")
+        $lines = @("A new version is available on GitHub.")
     }
 
-    $countText = "A new version of UO Offline is available."
-    if ($count -gt 0) {
-        if ($count -eq 1) { $countText = "1 update is available." }
-        else { $countText = "$count updates are available." }
-    }
-
-    $body = $countText + "`r`n`r`nWhat's in it:`r`n`r`n" + ($lines -join "`r`n") +
+    # The notes speak for themselves. No generated heading on top of them.
+    # The installer line stays: it is the one thing somebody needs to know
+    # before clicking Update, and it is not news.
+    $body = ($lines -join "`r`n") +
         "`r`n`r`nUpdating re-runs the installer, which rebuilds the server with " +
         "the new bots. Your world, characters and accounts are kept."
 

@@ -75,78 +75,26 @@ fi
 # does not have it. Either way, a failure here downgrades to a generic
 # line rather than dropping the whole check.
 # -------------------------------------------------------------------------
-CMP_JSON="$(curl -fsSL --max-time "${TIMEOUT}" -H "${UA}" \
-  "${API}/compare/${LOCAL_SHA}...${BRANCH}" 2>/dev/null)"
+# The notes are written by hand, in UPDATE-NOTES.txt on the branch.
+#
+# This used to be assembled from commit messages through the compare API,
+# with a python3 path and a sed fallback for machines without it. It worked,
+# and it read like a developer talking to another developer, because that is
+# what commit messages are. Someone opening the launcher wants to know what
+# is different in the GAME. A file in the repo says that better, and it
+# deletes the whole JSON-scraping fallback along with it.
+#
+# Same failure rule as the rest of this script: if the fetch fails, show a
+# generic line rather than dropping the check.
+CHANGELOG="$(curl -fsSL --max-time "${TIMEOUT}" -H "${UA}" \
+  "https://raw.githubusercontent.com/${REPO}/${BRANCH}/UPDATE-NOTES.txt" 2>/dev/null)"
 
-CHANGELOG=""
-if [[ -n "${CMP_JSON}" ]]; then
-  if command -v python3 >/dev/null 2>&1; then
-    CHANGELOG="$(printf '%s' "${CMP_JSON}" | python3 -c '
-import json, sys
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-# Subject on the bullet, the commit body indented under it. A change
-# worth explaining carries its explanation in the body, and that is
-# the part the player wants; the subject alone says what changed and
-# nothing about what it means. Capped so one chatty commit cannot
-# fill the whole box.
-entries = []
-for c in data.get("commits", []):
-    raw = c.get("commit", {}).get("message", "")
-    parts = raw.replace("\r", "").split("\n")
-    subject = parts[0].strip()
-    if not subject:
-        continue
-    block = ["  - " + subject]
-    shown = 0
-    for line in parts[1:]:
-        if shown >= 8:
-            break
-        text = line.strip()
-        if not text:
-            if shown and block[-1] != "":
-                block.append("")
-            continue
-        # Trailers are bookkeeping, not news. The player does not need
-        # Co-Authored-By on a "what is in this update" screen.
-        low = text.lower()
-        if low.startswith(("co-authored-by:", "signed-off-by:", "claude-session:",
-                           "reviewed-by:", "refs:", "fixes:", "closes:",
-                           "http://", "https://", "generated with")):
-            continue
-        block.append("      " + text)
-        shown += 1
-    if shown:
-        block.append("")
-    entries.append("\n".join(block))
-entries.reverse()
-print("\n".join(entries))
-' 2>/dev/null)"
-  else
-    # No python3. Slice out just the "commits" array first - the compare
-    # response also carries base_commit and merge_base_commit, which are
-    # commits the player ALREADY has, and a trailing "files" array whose
-    # patch text can contain anything at all.
-    CHANGELOG="$(printf '%s' "${CMP_JSON}" \
-      | sed -E 's/.*"commits"[[:space:]]*:[[:space:]]*\[//' \
-      | sed -E 's/"files"[[:space:]]*:[[:space:]]*\[.*//' \
-      | grep -oE '"message"[[:space:]]*:[[:space:]]*"[^"]*"' \
-      | sed -E 's/^"message"[[:space:]]*:[[:space:]]*"//; s/"$//' \
-      | sed -E 's/[\]n.*$//' \
-      | sed -E 's/^/  - /' \
-      | tac)"
-  fi
-fi
+[[ -n "${CHANGELOG}" ]] || CHANGELOG="A new version is available on GitHub."
 
-[[ -n "${CHANGELOG}" ]] || CHANGELOG="  - A new version is available on GitHub."
-
-BODY="A new version of UO Offline is available.
-
-What's in it:
-
-${CHANGELOG}
+# The notes speak for themselves; no generated heading on top of them. The
+# installer line stays, because it is the one thing somebody needs to know
+# before choosing Update and it is not news.
+BODY="${CHANGELOG}
 
 Updating re-runs the installer, which rebuilds the server with the new
 bots. Your world, characters and accounts are kept."

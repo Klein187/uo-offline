@@ -1,0 +1,13 @@
+Hello everyone. I am going to start manually imputing the update window because automated was getting too convoluted. I would like to thank you all for playing and I hope you are having fun! If you find any bugs or have suggestions please message me on reddit, comment on the post, or through GitHub. Enjoy!
+
+Recent Updates
+-Moonglow moongate was a party (as were all island moongates). Fixed, should see less people hanging around.
+-When you haggled a price with a bot they wouldn't hold to that price, they would go back to the original price. They will now hold to the agreed upon price.
+-Bots weren't accepting the trade so a trade window would pop up but the transaction would never finish. Fixed
+-Bots who yell "WTB REGS" will now actually buy from you if you say you have the item they are looking for. (small bug with it that i will fix the next few days)
+-Bots wouldn't actually loot their body after they died and were resurrected. Will now get their loot back if its still there. On a side note, bots just randomly resurrect right now. This will be fixed.
+-Bots were having trouble traveling through doors in dungeons. Its better but still needs tweaking. They would also stand next to walls trying to attack something they couldn't reach. Its better but still needs work.
+-Reds who were in dungeons turned into a dungeoncrawler and wouldn't attack blues nor would blues attack reds. Fixed. Reds now attack blues and will prioritize attacking blue, if they are fighting a skeleton they will stop and attack blues. Still not as fluid as i would like but better.
+-When bots would flee from a monster they would stop and try attacking it again which would lead to their death, they are better at fleeing.
+-a world crash due to being near an empty corpse was fixed.
+-In the map editor you can now rename placed destinations.
