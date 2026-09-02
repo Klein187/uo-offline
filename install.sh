@@ -41,14 +41,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   ./install.sh --install-root /mnt/games/uo-offline
 #   INSTALL_ROOT=/mnt/games/uo-offline ./install.sh
 # Everything below hangs off this, so it has to be settled before they are.
-for _arg_i in $(seq 1 $#); do
-  if [[ "${!_arg_i}" == "--install-root" ]]; then
-    _next=$((_arg_i + 1))
-    INSTALL_ROOT="${!_next:-}"
-  elif [[ "${!_arg_i}" == --install-root=* ]]; then
-    INSTALL_ROOT="${!_arg_i#*=}"
-  elif [[ "${!_arg_i}" == "--no-map-editor" ]]; then
+_args=("$@")
+_i=0
+while [[ ${_i} -lt ${#_args[@]} ]]; do
+  _arg="${_args[_i]}"
+  if [[ "${_arg}" == "--install-root" ]]; then
+    _next=$((_i + 1))
+    INSTALL_ROOT="${_args[_next]:-}"
+    _i=$((_i + 2))
+  elif [[ "${_arg}" == --install-root=* ]]; then
+    INSTALL_ROOT="${_arg#*=}"
+    _i=$((_i + 1))
+  elif [[ "${_arg}" == "--no-map-editor" ]]; then
     INSTALL_MAP_EDITOR=0
+    _i=$((_i + 1))
+  else
+    _i=$((_i + 1))
   fi
 done
 
@@ -56,7 +64,7 @@ done
 # bots - not something you need in order to play. On by default, off with
 # --no-map-editor or INSTALL_MAP_EDITOR=0.
 INSTALL_MAP_EDITOR="${INSTALL_MAP_EDITOR:-1}"
-unset _arg_i _next
+unset _args _i _arg _next
 
 INSTALL_ROOT="${INSTALL_ROOT:-${HOME}/uo-modernuo}"
 INSTALL_ROOT="${INSTALL_ROOT%/}"
@@ -120,6 +128,32 @@ SHARD_NAME="UO Offline"
 DOTNET_ROOT="${HOME}/.dotnet"
 
 # ---------------------------------------------------------------------------
+# Cross-platform helpers
+# ---------------------------------------------------------------------------
+file_size() {
+  local f="$1"
+  if [[ -f "${f}" ]]; then
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+      stat -f%z "${f}" 2>/dev/null || echo 0
+    else
+      stat -c%s "${f}" 2>/dev/null || echo 0
+    fi
+  else
+    echo 0
+  fi
+}
+
+calc_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$@"
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$@"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Pretty output
 # ---------------------------------------------------------------------------
 banner() { printf '\n\033[1;36m=== %s ===\033[0m\n' "$*"; }
@@ -134,11 +168,15 @@ die()    { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 preflight() {
   banner "Pre-flight checks"
 
-  [[ "$(uname -s)" == "Linux" ]] || die "Linux-only installer."
+  local os_name
+  os_name="$(uname -s)"
+  [[ "${os_name}" == "Linux" || "${os_name}" == "Darwin" ]] || die "Linux and macOS only installer (detected ${os_name})."
   [[ "${EUID}" -ne 0 ]]         || die "Run as your normal user, not root. sudo will be invoked when needed."
 
   command -v curl   >/dev/null || die "curl is required."
-  command -v sudo   >/dev/null || warn "sudo not found — dependency install will fail if deps are missing."
+  if [[ "${os_name}" != "Darwin" ]]; then
+    command -v sudo   >/dev/null || warn "sudo not found — dependency install will fail if deps are missing."
+  fi
 
   # The install root can be anywhere, so check it here rather than failing
   # several steps later with a confusing message.
@@ -156,7 +194,30 @@ preflight() {
 install_deps() {
   banner "Installing native dependencies"
 
-  if command -v apt-get >/dev/null; then
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    say "macOS detected. Using Homebrew."
+    if ! command -v brew >/dev/null 2>&1; then
+      warn "Homebrew not found."
+      say "To install Homebrew, run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+      say "Attempting to install Homebrew now..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || die "Homebrew is required on macOS. Install Homebrew from https://brew.sh and re-run."
+      if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [[ -x /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      fi
+    fi
+
+    say "Installing native packages via Homebrew (unar, sevenzip, mono-libgdiplus, zlib, git)..."
+    brew install unar sevenzip mono-libgdiplus zlib git || warn "brew install completed with warnings; continuing..."
+
+    if [[ "$(uname -m)" == "arm64" ]]; then
+      if ! /usr/bin/pgrep oahd >/dev/null 2>&1 && ! pkgutil --pkg-info=com.apple.pkg.RosettaUpdateAuto >/dev/null 2>&1 && ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+        say "Installing Rosetta 2 (required for ClassicUO on Apple Silicon)..."
+        softwareupdate --install-rosetta --agree-to-license || warn "Rosetta 2 install exited with status $?."
+      fi
+    fi
+  elif command -v apt-get >/dev/null; then
     say "Debian-family distro detected. Using apt."
     sudo apt-get update -y
     sudo apt-get install -y \
@@ -275,6 +336,12 @@ bootstrap_dotnet() {
     return
   fi
 
+  if command -v dotnet >/dev/null 2>&1 \
+     && dotnet --list-sdks 2>/dev/null | grep -qE "^${channel}\."; then
+    ok "Found compatible system .NET SDK: $(dotnet --version)"
+    return
+  fi
+
   say "Downloading dotnet-install.sh..."
   local tmp="${INSTALL_ROOT}/.dotnet-install.sh"
   curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${tmp}"
@@ -322,9 +389,18 @@ build_modernuo() {
     return
   fi
 
+  local os_target="linux"
+  local arch_target="x64"
+  [[ "$(uname -s)" == "Darwin" ]] && os_target="osx"
+  case "$(uname -m)" in
+    arm64|aarch64) arch_target="arm64" ;;
+    *)             arch_target="x64" ;;
+  esac
+
   cd "${MODERNUO_DIR}"
   chmod +x ./publish.sh
-  ./publish.sh release linux x64 || true
+  say "Building ModernUO for ${os_target} ${arch_target}..."
+  ./publish.sh release "${os_target}" "${arch_target}" || true
 
   if [[ ! -f "${DIST_DIR}/ModernUO.dll" ]]; then
     # A build can fail on stale intermediate output left behind by a
@@ -336,7 +412,7 @@ build_modernuo() {
     # before giving up.
     warn "Build produced no ModernUO.dll. Clearing stale build output and retrying once..."
     clear_build_artifacts
-    ./publish.sh release linux x64 || true
+    ./publish.sh release "${os_target}" "${arch_target}" || true
   fi
 
   [[ -f "${DIST_DIR}/ModernUO.dll" ]] || die "Build produced no ModernUO.dll. Check output above."
@@ -368,7 +444,22 @@ fix_felucca_season() {
  fi
 
  cp "${mapdef}" "${mapdef}.original"
- sed -i '/"name": "Felucca"/,/"rules"/ s/"season": 4/"season": 1/' "${mapdef}"
+ if command -v python3 >/dev/null 2>&1; then
+   python3 -c '
+import sys, json
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+for item in data:
+    if isinstance(item, dict) and item.get("name") == "Felucca":
+        item["season"] = 1
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+' "${mapdef}"
+ else
+   sed -i.bak '/"name": "Felucca"/,/"rules"/ s/"season": 4/"season": 1/' "${mapdef}" 2>/dev/null || sed -i '/"name": "Felucca"/,/"rules"/ s/"season": 4/"season": 1/' "${mapdef}"
+   rm -f "${mapdef}.bak"
+ fi
 
  if grep -A 5 '"name": "Felucca"' "${mapdef}" | grep -q '"season": 1'; then
    ok "Felucca season set to Summer (leafy trees)."
@@ -419,7 +510,7 @@ uo_data_problem() {
       return 1
     fi
 
-    actual="$(stat -c%s "${dir}/${name}" 2>/dev/null || echo 0)"
+    actual="$(file_size "${dir}/${name}")"
     if [[ "${actual}" -lt "${min}" ]]; then
       printf '%s is only %s bytes (expected at least %s) - the file is truncated' \
         "${name}" "${actual}" "${min}"
@@ -493,15 +584,16 @@ unpack_uo_exe() {
   warn "It is a WinRAR (RAR5) self-extracting archive. p7zip cannot read RAR"
   warn "at all, and unar cannot see past the stub. Install one that can and"
   warn "re-run this script:"
+  warn "    macOS:          brew install unar          (or: brew install sevenzip)"
   warn "    Debian/Ubuntu:  sudo apt install unrar     (or: 7zip)"
   warn "    Fedora:         sudo dnf install unrar     (or: p7zip-plugins)"
   warn "    Arch/SteamOS:   sudo pacman -S unrar"
   return 1
 }
 
-# One extraction attempt. Judged by whether the data files actually appeared,
-# never by the exit code -- 7z "succeeds" while failing every file with
-# "Unsupported Method", which is how this went unnoticed in the first place.
+# One extraction attempt. Judged by whether the data files actually appeared AND
+# have valid non-zero sizes -- 7z/7zz can "succeed" creating 0-byte files while
+# failing on RAR5 payload.
 run_extractor() {
   local tool="$1" archive="$2" dest="$3"
 
@@ -513,9 +605,20 @@ run_extractor() {
     *)     "${tool}" x -y "-o${dest}" "${archive}" >/dev/null 2>&1 || true ;;
   esac
 
-  if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
-    ok "Extracted with ${tool}."
-    return 0
+  local art_file=""
+  art_file="$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)"
+  if [[ -n "${art_file}" ]]; then
+    local sz
+    sz="$(file_size "${art_file}")"
+    if [[ "${sz}" -ge 10000000 ]]; then
+      ok "Extracted with ${tool}."
+      return 0
+    else
+      # Corrupted or 0-byte files left behind by an extractor that cannot handle RAR5 stream
+      local extracted_dir
+      extracted_dir="$(dirname "${art_file}")"
+      rm -rf "${extracted_dir}"
+    fi
   fi
   return 1
 }
@@ -561,6 +664,8 @@ find_or_download_uo_data() {
   # Common locations for an existing install. Modern client versions (post
   # 7.0.59) crash ClassicUO's animation loader, so we only accept older.
   local candidates=(
+    "${HOME}/Library/Application Support/Steam/steamapps/compatdata/*/pfx/drive_c/Program Files (x86)/Electronic Arts/Ultima Online Classic"
+    "${HOME}/Library/Application Support/Ultima Online Classic"
     "${HOME}/.steam/steam/steamapps/compatdata/*/pfx/drive_c/Program Files (x86)/Electronic Arts/Ultima Online Classic"
     "${HOME}/Games/Ultima Online Classic"
     "${HOME}/Ultima Online Classic"
@@ -599,7 +704,7 @@ find_or_download_uo_data() {
 
   # NOT a 7z archive, whatever the extension suggests: the UO Classic full
   # client is a WinRAR SFX with a RAR5 payload. See unpack_uo_exe.
-  command -v unar >/dev/null || command -v 7zz >/dev/null || command -v unrar >/dev/null || command -v 7z >/dev/null || die "No archive extractor found. Install unar (Debian/Ubuntu/Fedora) or unarchiver (Arch)."
+  command -v unar >/dev/null || command -v 7zz >/dev/null || command -v unrar >/dev/null || command -v 7z >/dev/null || die "No archive extractor found. Install unar (macOS: brew install unar; Linux: apt/pacman/dnf) or unarchiver."
 
   mkdir -p "${INSTALL_ROOT}/UOData"
   local exe_path="${INSTALL_ROOT}/UOData/${UO_DATA_VERSION}.exe"
@@ -623,7 +728,7 @@ find_or_download_uo_data() {
   local ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
 
   if [[ -f "${exe_path}" ]]; then
-    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+    have="$(file_size "${exe_path}")"
   fi
 
   if [[ "${have}" -ge "${min_exe}" ]]; then
@@ -638,7 +743,7 @@ find_or_download_uo_data() {
     # fine. -C - resumes rather than starting the 929 MB over again.
     curl -fL --progress-bar -C - -A "${ua}" -o "${exe_path}" "${UO_DATA_URL}"
 
-    have="$(stat -c%s "${exe_path}" 2>/dev/null || echo 0)"
+    have="$(file_size "${exe_path}")"
     if [[ "${have}" -lt "${min_exe}" ]]; then
       die "The UO client download finished at ${have} bytes, short of the expected ~929 MB. Delete ${exe_path} and re-run."
     fi
@@ -700,7 +805,15 @@ swap_t2a_map() {
     return
   fi
 
-  command -v 7z >/dev/null || { warn "7z not found; skipping T2A map swap (install p7zip and re-run)."; return; }
+  local sz_tool=""
+  if command -v 7zz >/dev/null 2>&1; then
+    sz_tool="7zz"
+  elif command -v 7z >/dev/null 2>&1; then
+    sz_tool="7z"
+  else
+    warn "7z/7zz not found; skipping T2A map swap (install p7zip or sevenzip and re-run)."
+    return
+  fi
 
   # 1. Obtain the UOSA installer (cached so re-runs don't re-download ~349 MB).
   mkdir -p "${T2A_SRC_DIR}"
@@ -717,15 +830,17 @@ swap_t2a_map() {
   # 2. Extract the three map files (7z reads the NSIS archive directly).
   local extract_dir="${T2A_SRC_DIR}/uosa-install"
   mkdir -p "${extract_dir}"
-  say "Extracting T2A map files with 7z..."
-  7z x -y "-o${extract_dir}" "${uosa_exe}" map0.mul statics0.mul staidx0.mul >/dev/null || true
+  say "Extracting T2A map files with ${sz_tool}..."
+  "${sz_tool}" x -y "-o${extract_dir}" "${uosa_exe}" map0.mul statics0.mul staidx0.mul >/dev/null 2>&1 || true
 
   # Locate them (the NSIS layout may nest the files).
   local missing=0 f src
-  declare -A src_path
   for f in map0.mul statics0.mul staidx0.mul; do
     src="$(find "${extract_dir}" -maxdepth 4 -name "${f}" -print -quit 2>/dev/null || true)"
-    if [[ -z "${src}" ]]; then warn "T2A ${f} not found after extract."; missing=1; else src_path[${f}]="${src}"; fi
+    if [[ -z "${src}" ]]; then
+      warn "T2A ${f} not found after extract."
+      missing=1
+    fi
   done
   [[ "${missing}" == "0" ]] || { warn "Aborting T2A swap; modern map kept."; return; }
 
@@ -738,7 +853,8 @@ swap_t2a_map() {
 
   # 4. Copy the T2A files over the live data dir.
   for f in map0.mul statics0.mul staidx0.mul; do
-    cp -f "${src_path[${f}]}" "${UO_DATA}/${f}"
+    src="$(find "${extract_dir}" -maxdepth 4 -name "${f}" -print -quit 2>/dev/null || true)"
+    [[ -n "${src}" ]] && cp -f "${src}" "${UO_DATA}/${f}"
   done
   ok "T2A map art installed (intact Magincia). Revert: cp ${backup_dir}/* back over the data dir."
 }
@@ -785,24 +901,35 @@ install_classicuo() {
   command -v unzip >/dev/null || die "unzip is required."
   mkdir -p "${CLASSICUO_DIR}"
 
+  local platform_filter="linux"
+  [[ "$(uname -s)" == "Darwin" ]] && platform_filter="osx"
+
   local tmp_zip="${INSTALL_ROOT}/.classicuo.zip"
-  say "Querying GitHub for the latest Linux release..."
+  say "Querying GitHub for the latest ${platform_filter} release..."
 
   local asset_url=""
   asset_url="$(curl -fsSL "${CLASSICUO_RELEASE_URL}/latest" 2>/dev/null \
     | grep -oE '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*"' \
-    | grep -iE 'linux' | head -n1 \
+    | grep -iE "${platform_filter}" | head -n1 \
     | sed -E 's/.*"(https[^"]+)".*/\1/' || true)"
 
   if [[ -z "${asset_url}" ]]; then
-    say "No Linux asset on /latest. Checking dev-release tag..."
+    say "No ${platform_filter} asset on /latest. Checking dev-release tag..."
     asset_url="$(curl -fsSL "${CLASSICUO_RELEASE_URL}/tags/ClassicUO-dev-release" 2>/dev/null \
       | grep -oE '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*"' \
-      | grep -iE 'linux' | head -n1 \
+      | grep -iE "${platform_filter}" | head -n1 \
       | sed -E 's/.*"(https[^"]+)".*/\1/' || true)"
   fi
 
-  [[ -n "${asset_url}" ]] || die "Could not find a ClassicUO Linux release on GitHub."
+  if [[ -z "${asset_url}" ]]; then
+    say "Checking main-release tag..."
+    asset_url="$(curl -fsSL "${CLASSICUO_RELEASE_URL}/tags/ClassicUO-main-release" 2>/dev/null \
+      | grep -oE '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*"' \
+      | grep -iE "${platform_filter}" | head -n1 \
+      | sed -E 's/.*"(https[^"]+)".*/\1/' || true)"
+  fi
+
+  [[ -n "${asset_url}" ]] || die "Could not find a ClassicUO ${platform_filter} release on GitHub."
 
   say "Downloading: ${asset_url}"
   curl -fL --progress-bar -o "${tmp_zip}" "${asset_url}"
@@ -812,15 +939,18 @@ install_classicuo() {
   rm -f "${tmp_zip}"
 
   local cuo_bin=""
-  for name in ClassicUO ClassicUO.bin.x86_64 cuo; do
+  for name in ClassicUO ClassicUO.bin.osx ClassicUO.bin.x86_64 cuo; do
     [[ -f "${CLASSICUO_DIR}/${name}" ]] && { cuo_bin="${CLASSICUO_DIR}/${name}"; break; }
   done
   [[ -n "${cuo_bin}" ]] || cuo_bin="$(find "${CLASSICUO_DIR}" -maxdepth 2 -type f \
-    \( -name 'ClassicUO' -o -name 'ClassicUO.bin.x86_64' -o -name 'cuo' \) \
+    \( -name 'ClassicUO' -o -name 'ClassicUO.bin.osx' -o -name 'ClassicUO.bin.x86_64' -o -name 'cuo' \) \
     -print -quit 2>/dev/null || true)"
 
   if [[ -n "${cuo_bin}" ]]; then
     chmod +x "${cuo_bin}"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+      xattr -cr "${CLASSICUO_DIR}" 2>/dev/null || true
+    fi
     echo "${cuo_bin}" > "${INSTALL_ROOT}/.classicuo-bin-path"
     ok "ClassicUO binary: ${cuo_bin}"
   else
@@ -1098,6 +1228,11 @@ EOF
 # Step 12 — Mark for first-launch wizard
 # ---------------------------------------------------------------------------
 arm_first_launch() {
+  if [[ -f "${SERVER_DIR}/Saves/Accounts/accounts.json" ]] || [[ -d "${SERVER_DIR}/Saves/Accounts" && -n "$(ls -A "${SERVER_DIR}/Saves/Accounts" 2>/dev/null)" ]]; then
+    rm -f "${INSTALL_ROOT}/.needs-owner-account"
+    ok "Existing accounts detected; preserving owner account."
+    return
+  fi
   touch "${INSTALL_ROOT}/.needs-owner-account"
   ok "Owner account will be created on first launch: ${OWNER_USER} / ${OWNER_PASS}"
 }
@@ -1157,11 +1292,51 @@ EOF
 install_desktop_entry() {
   banner "Installing desktop launcher"
 
-  local apps_dir="${HOME}/.local/share/applications"
-  mkdir -p "${apps_dir}" "${HOME}/Desktop"
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    local app_dir="${HOME}/Applications/UO Offline.app"
+    local desktop_app="${HOME}/Desktop/UO Offline.app"
+    mkdir -p "${app_dir}/Contents/MacOS" "${app_dir}/Contents/Resources" "${HOME}/Desktop"
 
-  local desktop_file="${apps_dir}/UO-Offline.desktop"
-  cat > "${desktop_file}" <<EOF
+    cat > "${app_dir}/Contents/Info.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>uo-offline</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.uo-offline.launcher</string>
+    <key>CFBundleName</key>
+    <string>UO Offline</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.15</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+    cat > "${app_dir}/Contents/MacOS/uo-offline" <<EOF
+#!/usr/bin/env bash
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/share/dotnet:\${HOME}/.dotnet:\${PATH}"
+exec "${INSTALL_ROOT}/start.sh"
+EOF
+    chmod +x "${app_dir}/Contents/MacOS/uo-offline"
+
+    rm -rf "${desktop_app}"
+    cp -R "${app_dir}" "${desktop_app}" 2>/dev/null || ln -sf "${app_dir}" "${desktop_app}" 2>/dev/null || true
+
+    ok "macOS Application installed: ~/Applications/UO Offline.app and ~/Desktop/UO Offline.app"
+  else
+    local apps_dir="${HOME}/.local/share/applications"
+    mkdir -p "${apps_dir}" "${HOME}/Desktop"
+
+    local desktop_file="${apps_dir}/UO-Offline.desktop"
+    cat > "${desktop_file}" <<EOF
 [Desktop Entry]
 Type=Application
 Name=UO Offline
@@ -1173,11 +1348,12 @@ Terminal=false
 Categories=Game;RolePlaying;
 StartupNotify=false
 EOF
-  chmod +x "${desktop_file}"
-  cp "${desktop_file}" "${HOME}/Desktop/UO-Offline.desktop" 2>/dev/null || true
-  chmod +x "${HOME}/Desktop/UO-Offline.desktop" 2>/dev/null || true
+    chmod +x "${desktop_file}"
+    cp "${desktop_file}" "${HOME}/Desktop/UO-Offline.desktop" 2>/dev/null || true
+    chmod +x "${HOME}/Desktop/UO-Offline.desktop" 2>/dev/null || true
 
-  ok "Desktop launcher installed."
+    ok "Desktop launcher installed."
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1263,7 +1439,11 @@ if ! curl -s -o /dev/null --max-time 1 "\${URL}"; then
     done
 fi
 
-xdg-open "\${URL}"
+if [[ "\$(uname -s)" == "Darwin" ]]; then
+    open "\${URL}"
+elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "\${URL}"
+fi
 EOF
   chmod +x "${map_dir}/uo-map-launch.sh"
 
@@ -1343,22 +1523,42 @@ install_playerbots() {
   # Hash the source we're about to deploy so we know whether to force a
   # rebuild. If the hash matches what's already deployed, skip the touch
   # of ModernUO.dll so build_modernuo can skip cleanly.
-  local new_hash
-  new_hash="$(find "${src_dir}/source" "${src_dir}/data" -type f -exec sha256sum {} + 2>/dev/null \
-    | sort | sha256sum | cut -d' ' -f1)"
+  local new_hash=""
+  if command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1; then
+    local hash_cmd="sha256sum"
+    command -v shasum >/dev/null 2>&1 && hash_cmd="shasum -a 256"
+    new_hash="$(find "${src_dir}/source" "${src_dir}/data" -type f -exec ${hash_cmd} {} + 2>/dev/null \
+      | sort | ${hash_cmd} | cut -d' ' -f1)"
+  elif command -v python3 >/dev/null 2>&1; then
+    new_hash="$(python3 -c '
+import hashlib, os, sys
+h = hashlib.sha256()
+for root in ["'"${src_dir}/source"'", "'"${src_dir}/data"'"]:
+    for dirpath, _, filenames in os.walk(root):
+        for f in sorted(filenames):
+            p = os.path.join(dirpath, f)
+            try:
+                with open(p, "rb") as fh:
+                    h.update(fh.read())
+            except OSError:
+                pass
+print(h.hexdigest())
+' 2>/dev/null || true)"
+  fi
+
   local hash_file="${src_target}/.deployed-hash"
   local prev_hash=""
   [[ -f "${hash_file}" ]] && prev_hash="$(cat "${hash_file}")"
 
-  if [[ -d "${src_target}" && "${new_hash}" == "${prev_hash}" ]]; then
+  if [[ -d "${src_target}" && -n "${new_hash}" && "${new_hash}" == "${prev_hash}" ]]; then
     say "PlayerBot sources unchanged. Skipping deploy."
     return
   fi
 
   say "Deploying bot source -> ${src_target}"
   mkdir -p "${src_target}"
-  cp -rT "${src_dir}/source/CustomBots" "${src_target}"
-  echo "${new_hash}" > "${hash_file}"
+  cp -R "${src_dir}/source/CustomBots/." "${src_target}/"
+  [[ -n "${new_hash}" ]] && echo "${new_hash}" > "${hash_file}"
 
   # Deploy every bot data directory present in the repo. The bots need
   # Destinations (where to go), Waypoints (the road graph), Zones (painted
@@ -1369,7 +1569,7 @@ install_playerbots() {
     if [[ -d "${src_dir}/data/${sub}" ]]; then
       say "Deploying ${sub} -> ${DIST_DIR}/Data/${sub}"
       mkdir -p "${DIST_DIR}/Data/${sub}"
-      cp -rT "${src_dir}/data/${sub}" "${DIST_DIR}/Data/${sub}"
+      cp -R "${src_dir}/data/${sub}/." "${DIST_DIR}/Data/${sub}/"
     fi
   done
   # Navigation/fields_cache.bin is a generated distance-field cache; the

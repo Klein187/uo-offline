@@ -40,8 +40,10 @@ rm -rf "${INSTALL_ROOT}"
 echo "Removing desktop launcher..."
 rm -f "${HOME}/Desktop/UO-Offline.desktop"
 rm -f "${HOME}/.local/share/applications/UO-Offline.desktop"
+rm -rf "${HOME}/Applications/UO Offline.app"
+rm -rf "${HOME}/Desktop/UO Offline.app"
 
-# Refresh the application menu so KDE notices the launcher is gone.
+# Refresh application caches if tools are present
 update-desktop-database "${HOME}/.local/share/applications" >/dev/null 2>&1 || true
 kbuildsycoca5 --noincremental >/dev/null 2>&1 \
   || kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
@@ -57,7 +59,8 @@ kbuildsycoca5 --noincremental >/dev/null 2>&1 \
 if [[ -d "${DOTNET_ROOT}" ]]; then
   echo ""
   read -r -p "Also remove the .NET 10 SDK at ${DOTNET_ROOT}? (y/N): " ans
-  if [[ "${ans,,}" == "y" ]] || [[ "${ans,,}" == "yes" ]]; then
+  ans_lower="$(echo "${ans}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "${ans_lower}" == "y" ]] || [[ "${ans_lower}" == "yes" ]]; then
     echo "Removing ${DOTNET_ROOT}..."
     rm -rf "${DOTNET_ROOT}"
     echo "Removed."

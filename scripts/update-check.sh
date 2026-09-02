@@ -24,6 +24,8 @@
 # =========================================================================
 set -uo pipefail
 
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/share/dotnet:${HOME}/.dotnet:${PATH}"
+
 INSTALL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="${INSTALL_ROOT}/uo-offline-version.json"
 SKIP="${INSTALL_ROOT}/uo-offline-skipped.txt"
@@ -136,7 +138,7 @@ print("\n".join(entries))
       | sed -E 's/^"message"[[:space:]]*:[[:space:]]*"//; s/"$//' \
       | sed -E 's/[\]n.*$//' \
       | sed -E 's/^/  - /' \
-      | tac)"
+      | awk '{a[i++]=$0} END {for (j=i-1; j>=0;) print a[j--]}')"
   fi
 fi
 
@@ -157,6 +159,26 @@ bots. Your world, characters and accounts are kept."
 have_gui() { [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; }
 
 ask() {
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v osascript >/dev/null 2>&1; then
+    local escaped_body="${BODY//\"/\\\"}"
+    local escaped_title="${TITLE//\"/\\\"}"
+    local res
+    res="$(osascript -e "
+try
+  set res to button returned of (display dialog \"${escaped_body}\" with title \"${escaped_title}\" buttons {\"Skip This Version\", \"Play Now\", \"Update Now\"} default button \"Update Now\" cancel button \"Play Now\")
+  return res
+on error number -128
+  return \"Play Now\"
+end try
+" 2>/dev/null || true)"
+    case "${res}" in
+      "Update Now") printf 'update' ;;
+      "Skip This Version") printf 'skip' ;;
+      *) printf 'play' ;;
+    esac
+    return
+  fi
+
   if have_gui && command -v kdialog >/dev/null 2>&1; then
     kdialog --title "${TITLE}" \
             --yes-label "Update Now" \
@@ -248,6 +270,11 @@ if [[ -t 1 ]]; then
   exit 10
 fi
 
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  osascript -e "tell application \"Terminal\" to do script \"cd '$(dirname "${INSTALLER}")' && bash '${INSTALLER}'\"" >/dev/null 2>&1 &
+  exit 10
+fi
+
 for term in konsole gnome-terminal xfce4-terminal x-terminal-emulator xterm; do
   command -v "${term}" >/dev/null 2>&1 || continue
   case "${term}" in
@@ -266,7 +293,11 @@ ${INSTALLER}
 No terminal program was found to run it in. Run that script yourself to
 finish updating. Starting the game as normal for now."
 
-if have_gui && command -v kdialog >/dev/null 2>&1; then
+if [[ "$(uname -s)" == "Darwin" ]] && command -v osascript >/dev/null 2>&1; then
+  local escaped_msg="${MSG//\"/\\\"}"
+  local escaped_title="${TITLE//\"/\\\"}"
+  osascript -e "display dialog \"${escaped_msg}\" with title \"${escaped_title}\" buttons {\"OK\"} default button \"OK\"" >/dev/null 2>&1
+elif have_gui && command -v kdialog >/dev/null 2>&1; then
   kdialog --title "${TITLE}" --msgbox "${MSG}" >/dev/null 2>&1
 elif have_gui && command -v zenity >/dev/null 2>&1; then
   zenity --info --title="${TITLE}" --no-wrap --text="${MSG}" >/dev/null 2>&1
