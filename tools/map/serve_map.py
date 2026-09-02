@@ -618,6 +618,68 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return
+        if self.path.split("?")[0] == "/dest_rename":
+            # Body: {name, newName}. Renames a place in whichever catalog it
+            # lives in. The generated names are machine-made ("Graveyard 62",
+            # "Despise lvl1 L1 Room") and there was no way to give them a
+            # real one without hand-editing JSON.
+            #
+            # Safe to rename: nothing points AT a destination by name. The
+            # arrows run the other way — a destination names its
+            # NearestWaypoint and its Arrivals' Waypoints, so it is WAYPOINT
+            # names that other records depend on. Bots only hold a
+            # destination name for the length of one trip.
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                old = (p.get("name") or "").strip()
+                new = (p.get("newName") or "").strip()
+
+                if not old or not new:
+                    self._json(400, {"ok": False, "error": "need a name and a new name"})
+                    return
+                if new == old:
+                    self._json(200, {"ok": True, "name": new, "unchanged": True})
+                    return
+
+                # Find it, in either catalog.
+                target, path_used, doc = None, None, None
+                for path in (DEST_JSON, GEN_JSON):
+                    if not os.path.exists(path):
+                        continue
+                    d = jload(path)
+                    hit = next((e for e in d.get("Destinations", [])
+                                if (e.get("Name") or "").lower() == old.lower()), None)
+                    if hit is not None:
+                        target, path_used, doc = hit, path, d
+                        break
+
+                if target is None:
+                    self._json(404, {"ok": False, "error": f"'{old}' not found"})
+                    return
+
+                # Names are the lookup key (DestinationCatalog.GetByName), so
+                # a duplicate would shadow whichever loaded second. Check
+                # BOTH catalogs, or enabling an archived one later collides.
+                for path in (DEST_JSON, GEN_JSON):
+                    if not os.path.exists(path):
+                        continue
+                    for e in jload(path).get("Destinations", []):
+                        if e is not target and (e.get("Name") or "").lower() == new.lower():
+                            self._json(409, {"ok": False,
+                                             "error": f"'{new}' is already used"})
+                            return
+
+                target["Name"] = new
+                import shutil
+                shutil.copy(path_used, path_used + ".bak-rename")
+                open(path_used, "w", encoding="utf-8").write(json.dumps(doc, indent=2))
+                self._json(200, {"ok": True, "from": old, "name": new,
+                                 "catalog": "active" if path_used == DEST_JSON
+                                            else "generated"})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
         if self.path.split("?")[0] == "/dest_move":
             try:
                 n = int(self.headers.get("Content-Length", 0))

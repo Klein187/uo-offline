@@ -178,6 +178,8 @@
    <button onclick="goHome()">Britain</button>
    <button id="refresh" onclick="loadData()">&#10227; Refresh</button>
   </div>
+  <button id="renBtn" style="display:none;width:100%;margin-top:6px;padding:5px;background:#2d4a5a"
+    onclick="renameDest()" title="Rename this place (F2)"></button>
   <button id="actBtn" style="display:none;width:100%;margin-top:6px;padding:5px"
     onclick="toggleActive()"></button>
   <div id="stamp"></div>
@@ -818,6 +820,9 @@ function updateFollowBanner(){
 }
 function updateActBtn(){
  const b=document.getElementById("actBtn");
+ const rb=document.getElementById("renBtn");
+ if(rb){rb.style.display=destSel?"block":"none";
+  if(destSel){rb.textContent="\u270e Rename "+destSel.n;}}
  if(destSel){
   b.style.display="block";
   if(destSel.s==="active"){b.textContent="\u2014 Disable (archive) "+destSel.n;
@@ -825,6 +830,22 @@ function updateActBtn(){
   else{b.textContent="\u2713 Enable (activate) "+destSel.n;
    b.style.background="#2d5a2d";}
  }else{b.style.display="none";}
+}
+function renameDest(){
+ if(!destSel){return;}
+ const old=destSel.n;
+ const nn=prompt("Rename this place to:",old);
+ if(nn===null){return;}
+ const name=nn.trim();
+ if(!name||name===old){return;}
+ fetch("/dest_rename",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name:old,newName:name})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?"renamed '"+r.from+"' to '"+r.name+"' ("+r.catalog+")\nRun [ReloadDestinations."
+   :"rename failed: "+r.error;
+  if(r.ok&&destSel){destSel.n=r.name;}
+  loadData();});
 }
 function toggleActive(){
  if(!destSel)return;
@@ -984,8 +1005,10 @@ addEventListener("keydown",e=>{
   .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
    r.ok?`removed arrival spot (#${arrSel.index}) — ${r.remaining} left\nRun [ReloadDestinations.`
        :"failed: "+r.error;arrSel=null;loadData();});
+ }else if(e.key==="F2"&&destSel){renameDest();
  }else if(e.key==="Escape"){drawPts=[];selZone=-1;wpSel=null;destSel=null;arrSel=null;
-  document.getElementById("actBtn").style.display="none";draw();
+  document.getElementById("actBtn").style.display="none";
+  {const rb=document.getElementById("renBtn");if(rb){rb.style.display="none";}}draw();
  }else if(e.key==="Delete"&&destSel&&destSel.s==="active"){
   if(confirm(`Delete destination '${destSel.n}' from the active catalog?`)){
    fetch("/dest_del",{method:"POST",headers:{"Content-Type":"application/json"},
