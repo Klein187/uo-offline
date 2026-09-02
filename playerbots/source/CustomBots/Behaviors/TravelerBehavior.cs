@@ -988,27 +988,13 @@ namespace Server.CustomBots
                     return;
                 }
 
-                // While drifting toward the destination, tick the drift
-                // logic. Drift ends naturally when close enough, stuck,
-                // or timed out — then HandleArrival takes over.
+                // The fast step timer owns distance-field approaches. Keep
+                // it armed here in case another state transition stopped it;
+                // do not call FieldApproach.Step from the 2s decision tick.
                 if (_isApproaching)
                 {
-                    var apField = DestinationFieldCache.Get(DestinationName);
-                    var apResult = FieldApproach.Step(
-                        bot, apField,
-                        _finalCoord ?? bot.Location, DriftArriveRange);
-                    switch (apResult)
-                    {
-                        case ApproachResult.Stepped:
-                            return;
-                        case ApproachResult.Arrived:
-                        case ApproachResult.Blocked:
-                        case ApproachResult.NoField:
-                            _isApproaching = false;
-                            StopStepTimer();
-                            HandleArrival(bot);
-                            return;
-                    }
+                    EnsureStepTimer(bot, running: false);
+                    return;
                 }
                 if (_isDrifting)
                 {
@@ -3075,11 +3061,41 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             }
         }
 
+        // Advance a distance-field final approach from the same fast timer as
+        // ordinary walking. This mode is post-arrival cosmetic movement: it
+        // must never call PathFollower or change _legIndex, otherwise the
+        // final waypoint can re-enter the arrival path on every callback.
+        private void StepFinalApproach(PlayerBot bot)
+        {
+            var apField = DestinationFieldCache.Get(DestinationName);
+            var apResult = FieldApproach.Step(
+                bot, apField,
+                _finalCoord ?? bot.Location, DriftArriveRange);
+
+            if (apResult == ApproachResult.Stepped)
+            {
+                return;
+            }
+
+            _isApproaching = false;
+            StopStepTimer();
+            HandleArrival(bot);
+        }
+
         private void StepOnce(PlayerBot bot)
         {
             if (bot.Deleted || !bot.Alive || bot.Map == null || bot.Map == Map.Internal)
             {
                 StopStepTimer();
+                return;
+            }
+
+            // A distance-field final approach is a separate movement mode.
+            // Handle it before checking _follower: the route follower still
+            // points at the final waypoint, but must not advance it again.
+            if (_isApproaching)
+            {
+                StepFinalApproach(bot);
                 return;
             }
 
@@ -3171,12 +3187,10 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
 
             if (_hasArrived)
             {
-                // Already arrived (field approach in progress — it steps
-                // from the decision tick). The step timer must NOT keep
-                // advancing legs past the end of the path: doing so
-                // re-logged ARRIVED and re-armed the final approach every
-                // tick (the ARRIVED/approach ping-pong; leg counters like
-                // 183/7), pacing bots in place at their destination.
+                // Already arrived. The step timer must NOT keep advancing
+                // legs past the end of the path: doing so re-logged ARRIVED
+                // and re-armed the final approach every callback (the
+                // ARRIVED/approach ping-pong; leg counters like 183/7).
                 StopStepTimer();
                 return;
             }
