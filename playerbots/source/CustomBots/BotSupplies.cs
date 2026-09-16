@@ -22,6 +22,7 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using Server;
 using Server.Items;
 
@@ -240,6 +241,61 @@ namespace Server.CustomBots
             Console.WriteLine(
                 $"[supplies] {bot.Name} is low on {need} — heading to '{best.Name}'");
             return best.Name;
+        }
+
+        // -------------------------------------------------------------------
+        // The shopping list: every stack this bot is short of and how deep
+        // to fill it. Same rules as the arrival restock below, but nothing
+        // is created. BotVendorPurchase buys these off a real vendor's shelf
+        // when the shop floor has been drawn.
+        // -------------------------------------------------------------------
+        public static List<(Type type, int target)> WantedStacks(PlayerBot bot)
+        {
+            var list = new List<(Type, int)>();
+            var pack = bot?.Backpack;
+            if (pack == null || bot.Deleted)
+            {
+                return list;
+            }
+            if (UsesAmmo(bot) && pack.GetAmount(typeof(Arrow)) < AmmoLow)
+            {
+                list.Add((typeof(Arrow), AmmoFull));
+                list.Add((typeof(Bolt), BoltFull));
+            }
+            if (UsesBandages(bot) && pack.GetAmount(typeof(Bandage)) < BandageLow)
+            {
+                list.Add((typeof(Bandage), BandageFull));
+            }
+            if (UsesReagents(bot))
+            {
+                foreach (var t in ReagentTypes)
+                {
+                    if (pack.GetAmount(t) < ReagentLow)
+                    {
+                        list.Add((t, ReagentFull));
+                    }
+                }
+            }
+            else if (UsesTravelReagents(bot))
+            {
+                foreach (var t in TravelReagentTypes)
+                {
+                    if (pack.GetAmount(t) < ReagentLow)
+                    {
+                        list.Add((t, TravelReagentFull));
+                    }
+                }
+            }
+            if (UsesScrolls(bot) && pack.GetAmount(typeof(RecallScroll)) < ScrollLow)
+            {
+                list.Add((typeof(RecallScroll), ScrollTarget(bot)));
+            }
+            if (bot.CombatPet is { Deleted: false, Alive: true } &&
+                pack.GetAmount(typeof(RawRibs)) < PetFoodLow)
+            {
+                list.Add((typeof(RawRibs), PetFoodFull));
+            }
+            return list;
         }
 
         // -------------------------------------------------------------------

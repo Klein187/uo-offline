@@ -186,7 +186,16 @@ namespace Server.CustomBots
             return _follower.GetGoalLocation();
         }
 
-        private PathFollower _follower;
+        // The leg walker: the engine PathFollower, or a ZoneFollower when
+        // this bot walks the painted mesh and the leg lies inside it.
+        private ILegFollower _follower;
+
+        // Per-bot override for zone walking. Null follows the fleet mode
+        // ([zonenav off|half|on). The test rig sets true.
+        public bool? UseZones { get; set; }
+
+        // For [NavPath: the zone follower in use this leg, if any.
+        public ZoneFollower ActiveZoneFollower => _follower as ZoneFollower;
         private bool _running;
         // Last known mount state — combined with _running to decide if the
         // step timer needs to restart at a different rate.
@@ -213,7 +222,10 @@ namespace Server.CustomBots
         private DateTime _driftLastProgress;
         // Drift gives up after 6 seconds total, or 3 seconds without
         // progress, or once within 2 tiles of the destination coord.
-        private TimeSpan DriftMaxDuration => TimeSpan.FromSeconds(6);
+        // The zone walker drifts THROUGH a doorway link into a drawn area,
+        // which is a real short route, not a nudge onto a tile. Give it time.
+        private TimeSpan DriftMaxDuration =>
+            _follower is ZoneFollower { OnMesh: true } ? TimeSpan.FromSeconds(20) : TimeSpan.FromSeconds(6);
         private TimeSpan DriftStuckTimeout => TimeSpan.FromSeconds(3);
         private const int DriftArriveRange = 2;
 
@@ -1960,7 +1972,7 @@ namespace Server.CustomBots
                 node.Location.Y + (_legIndex == _plannedPath.Count - 1 ? _finalOffsetY : 0),
                 node.Location.Z
             );
-            _follower = new PathFollower(bot, legTarget);
+            _follower = LegFollowers.Create(bot, legTarget, UseZones);
             EnsureStepTimer(bot, running);
         }
 
@@ -1990,6 +2002,18 @@ namespace Server.CustomBots
             if (_dungeonEntry) { StopStepTimer(); return; }
 
             if (!_finalCoord.HasValue) { StopStepTimer(); return; }
+
+            // A drawn Area with a zone-walking bot: drift, so the zone
+            // walker routes through the doorway link and the bot ends up
+            // INSIDE the shop. The distance field aims at the coordinate
+            // and stopped bots on the doorstep, outside the polygon.
+            var drawn = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
+            if (drawn != null && drawn.IsMesh && !drawn.Contains(bot.X, bot.Y) &&
+                ZoneNav.WantsZones(bot, UseZones) && ZoneRegistry.MeshZoneAt(bot.Location) != null)
+            {
+                StartDrift(bot);
+                return;
+            }
 
             var field = DestinationFieldCache.Get(DestinationName);
             if (field != null && field.Covers(bot.X, bot.Y))
@@ -2034,7 +2058,7 @@ namespace Server.CustomBots
                         driftGoal = new Point3D(portal.CenterX, portal.CenterY, _finalCoord.Value.Z);
                 }
             }
-            _follower = new PathFollower(bot, driftGoal);
+            _follower = LegFollowers.Create(bot, driftGoal, UseZones);
             EnsureStepTimer(bot, running: false);  // walk into shops, don't run
             Log(bot, $"Drifting toward destination coord ({_driftBestDist} tiles)");
         }
@@ -2298,12 +2322,17 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
 {
     if (!_finalCoord.HasValue) return false;
 
+    var zone = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
+    // Standing inside the drawn floor is arrival, whatever the arrival
+    // spot says: the zone walker brings bots in through the door and
+    // leaves them well inside, often more than 3 tiles from the spot.
+    if (zone != null && zone.Contains(bot.X, bot.Y)) return true;
+
     // Arrival-point destinations: reaching the placed arrival tile IS
     // arrival — no painted area required (the go-to-a-spot path).
     var dObj = DestinationCatalog.GetByName(DestinationName);
     if (dObj != null && dObj.ArrivalPoint.HasValue)
         return bot.InRange(dObj.ArrivalPoint.Value, 3);  // ArrivalPoint reached = arrived
-    var zone = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
     if (zone == null) return false;            // unpainted: never hand off
     // Arrival = INSIDE the area only. The portal is a threshold to pass
     // THROUGH on the way in, never a place to stop and hand off — that
@@ -2510,7 +2539,15 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             // Arrived somewhere that sells what we're short of (an errand
             // destination, or just passing a vendor while low) — buy it,
             // visibly. No-op when nothing is needed.
-            BotSupplies.TryRestockAtArrival(bot, _destType);
+            //
+            // A shop whose floor has been drawn as a vendor Area sells for
+            // real instead: the Shopper walks to the vendor and buys off
+            // its shelf (BotVendorPurchase). The invisible refill stays for
+            // shops nobody has drawn yet.
+            if (!BotVendorPurchase.HasDrawnVendorArea(DestinationName))
+            {
+                BotSupplies.TryRestockAtArrival(bot, _destType);
+            }
 
             // A dig site is a destination for two different reasons, and
             // only one of them ends in a shovel.
@@ -2819,7 +2856,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
         {
             if (!_dungeonEntryWalking || _follower == null)
             {
-                _follower = new PathFollower(bot, _dungeonEntryTile);
+                _follower = new EnginePathFollower(bot, _dungeonEntryTile);
                 _dungeonEntryWalking = true;
             }
             EnsureStepTimer(bot, running: false);

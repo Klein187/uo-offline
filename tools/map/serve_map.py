@@ -52,6 +52,36 @@ PKS_ACK = _data("Live/pks_ack.json")
 # Editor-authored PK spawns + hunt-area polygons (read by PKSpawnData).
 PK_SPAWNS_JSON = _data("CustomSpawns/pk_spawns.json")
 
+# Walk atlas (tools/walkmap_atlas.py output, P5 PGM, 255 = standable). The
+# editor shades unwalkable tiles red while a zone is drawn or selected.
+# Read lazily; the first candidate that exists wins.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+ATLAS_CANDIDATES = [os.path.join(MAP_DIR, "walk_atlas.pgm"),
+                    os.path.join(_HERE, "walk_atlas.pgm"),
+                    os.path.expanduser("~/uo-offline/tools/map/walk_atlas.pgm")]
+_atlas = None
+
+def atlas_window(x0, y0, x1, y1):
+    """Rows of '1'/'0' for the tile box, or None when no atlas is present."""
+    global _atlas
+    if _atlas is None:
+        path = next((p for p in ATLAS_CANDIDATES if os.path.exists(p)), None)
+        if not path: return None
+        with open(path, "rb") as f: data = f.read()
+        if not data.startswith(b"P5"): return None
+        parts = data.split(b"\n", 3)
+        w, h = map(int, parts[1].split())
+        _atlas = (w, h, parts[3])
+    w, h, px = _atlas
+    x0 = max(0, x0); y0 = max(0, y0); x1 = min(w - 1, x1); y1 = min(h - 1, y1)
+    if x1 < x0 or y1 < y0:
+        return {"x0": x0, "y0": y0, "w": 0, "h": 0, "rows": []}
+    rows = []
+    for y in range(y0, y1 + 1):
+        seg = px[y * w + x0: y * w + x1 + 1]
+        rows.append("".join("1" if b == 255 else "0" for b in seg))
+    return {"x0": x0, "y0": y0, "w": x1 - x0 + 1, "h": y1 - y0 + 1, "rows": rows}
+
 # Valid Kind values for a spawn record (drives generator type + filter layer).
 SPAWN_KINDS = {"Monster", "NPC", "Vendor", "PlayerBotFixed", "PlayerBotLifecycle"}
 
@@ -280,6 +310,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
     def do_GET(self):
+        if self.path.split("?")[0] == "/walk":
+            # /walk?x0=&y0=&x1=&y1=  -> walkability rows for the red shading
+            from urllib.parse import urlparse, parse_qs
+            try:
+                q = parse_qs(urlparse(self.path).query)
+                x0, y0, x1, y1 = (int(q[k][0]) for k in ("x0", "y0", "x1", "y1"))
+                if x1 - x0 > 400 or y1 - y0 > 400: raise ValueError("box too big (max 400)")
+                win = atlas_window(x0, y0, x1, y1)
+                if win is None:
+                    self._json(404, {"ok": False, "error": "no walk_atlas.pgm"}); return
+                win["ok"] = True
+                self._json(200, win)
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
         if self.path.split("?")[0] == "/mapdata.json":
             try: self._json(200, build_data())
             except Exception as ex: self.send_error(500, str(ex))
@@ -462,6 +507,26 @@ class Handler(SimpleHTTPRequestHandler):
                                  "x": cx, "y": cy, "z": z, "city": city,
                                  "nearest_wp": nw, "wp_dist": nd,
                                  "gap": nd > 38})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/dest_poly":
+            # Reshape a destination's painted outline (corner drag in the editor).
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                pts = [[int(a), int(b)] for a, b in p["points"]]
+                if len(pts) < 3: raise ValueError("need >=3 points")
+                d = jload(DEST_JSON)
+                want = (p.get("name") or "").lower()
+                hit = next((e for e in d.get("Destinations", [])
+                            if (e.get("Name") or "").lower() == want), None)
+                if hit is None: raise ValueError("no such destination")
+                hit["Polygon"] = pts
+                import shutil
+                shutil.copy(DEST_JSON, DEST_JSON + ".bak-zonedest")
+                open(DEST_JSON, "w", encoding="utf-8").write(json.dumps(d, indent=2))
+                self._json(200, {"ok": True, "name": hit["Name"]})
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return
@@ -891,6 +956,9 @@ class Handler(SimpleHTTPRequestHandler):
                            and len(z["Points"]) >= 3, "bad zone"
                     z["Points"] = [[int(p[0]), int(p[1])] for p in z["Points"]]
                     z.setdefault("Kind", "Portal")
+                    if "Cost" in z:
+                        try: z["Cost"] = float(z["Cost"])
+                        except Exception: z.pop("Cost", None)
                 save_zones(zones)
                 self._json(200, {"ok": True, "count": len(zones)})
             except Exception as ex:

@@ -51,6 +51,12 @@ namespace Server.CustomBots
         private static readonly string ThuntAck = Live("thunt_ack.json");
         private static readonly string ShopReq = Live("shop_request.txt");
         private static readonly string ShopAck = Live("shop_ack.json");
+        // vendor_request.txt: "token <destination name>" — send the nearest
+        // eligible bot to a drawn vendor area on the zone walker, with gold
+        // in its pack, so the walk-in, the wander and the purchase can be
+        // counted in the console ([shopper] / [vendor] lines).
+        private static readonly string VendorReq = Live("vendor_request.txt");
+        private static readonly string VendorAck = Live("vendor_ack.json");
         private static readonly string SosReq = Live("sos_request.txt");
         private static readonly string SosAck = Live("sos_ack.json");
         private static readonly string TameReq = Live("tame_request.txt");
@@ -123,6 +129,7 @@ namespace Server.CustomBots
         private static long _lastPKs = -1;
         private static long _lastThunt = -1;
         private static long _lastShop = -1;
+        private static long _lastVendor = -1;
         private static long _lastSos = -1;
         private static long _lastTame = -1;
         private static long _lastHouses = -1;
@@ -158,6 +165,7 @@ namespace Server.CustomBots
             _lastPKs = ReadToken(PKsReq) ?? 0;
             _lastThunt = ReadToken(ThuntReq) ?? 0;
             _lastShop = ReadToken(ShopReq) ?? 0;
+            _lastVendor = ReadVendorRequest(out _) ?? 0;
             _lastSos = ReadToken(SosReq) ?? 0;
             _lastTame = ReadToken(TameReq) ?? 0;
             _lastHouses = ReadHousesRequest(out _, out _) ?? 0;
@@ -279,6 +287,13 @@ namespace Server.CustomBots
             {
                 _lastShop = shopTok.Value;
                 DoTestShop(shopTok.Value);
+            }
+
+            var vendorTok = ReadVendorRequest(out string vendorDest);
+            if (vendorTok != null && vendorTok.Value != _lastVendor)
+            {
+                _lastVendor = vendorTok.Value;
+                DoVendorTest(vendorTok.Value, vendorDest);
             }
 
             var sosTok = ReadToken(SosReq);
@@ -1152,6 +1167,102 @@ namespace Server.CustomBots
         // goto_request.txt: "<token> <destination name>" � send a random
         // eligible bot traveling to the named destination. Headless way to
         // exercise a specific route (island ferries, new trails) on demand.
+        private static long? ReadVendorRequest(out string dest)
+        {
+            dest = null;
+            try
+            {
+                if (!File.Exists(VendorReq))
+                {
+                    return null;
+                }
+                var text = File.ReadAllText(VendorReq).Trim();
+                int sp = text.IndexOf(' ');
+                if (sp <= 0 || !long.TryParse(text[..sp], out var t))
+                {
+                    return null;
+                }
+                dest = text[(sp + 1)..].Trim();
+                return t;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // The counted vendor rig. Same bot pick as goto, plus: the bot walks
+        // zones for sure, and carries enough gold to buy something, so a
+        // "nothing bought" result means the shop or the walk, not the purse.
+        private static void DoVendorTest(long token, string destName)
+        {
+            // "token [minDistance] <destination>": a minimum distance picks a
+            // bot that has to WALK in, so the street-to-door link is crossed.
+            int minDist = 0;
+            if (destName != null)
+            {
+                int sp = destName.IndexOf(' ');
+                if (sp > 0 && int.TryParse(destName[..sp], out var md))
+                {
+                    minDist = md;
+                    destName = destName[(sp + 1)..].Trim();
+                }
+            }
+            var dest = destName != null ? DestinationCatalog.GetByName(destName) : null;
+            if (dest == null)
+            {
+                Console.WriteLine($"[EditorReload] vendor: unknown destination '{destName}'");
+                WriteAck(VendorAck, $"{{\"token\":{token},\"sent\":false,\"error\":\"unknown destination\"}}");
+                return;
+            }
+            bool drawn = BotVendorPurchase.HasDrawnVendorArea(dest.Name);
+
+            PlayerBot pick = null;
+            int best = int.MaxValue;
+            foreach (var m in World.Mobiles.Values)
+            {
+                if (m is PlayerBot bot && !bot.Deleted && bot.Alive &&
+                    !bot.LifecycleExempt && !bot.LoggingOut &&
+                    !bot.CorpseRunPending && bot.Combatant == null &&
+                    !BotPartyManager.IsInParty(bot) &&
+                    !DungeonRegistry.IsInDungeon(bot) &&
+                    RedTerritory.MayGoTo(bot, dest) &&
+                    (bot.Behavior is TravelerBehavior or BankSitterBehavior
+                                  or IdleBehavior or WanderBehavior))
+                {
+                    int d = Math.Max(Math.Abs(bot.X - dest.Location.X),
+                                     Math.Abs(bot.Y - dest.Location.Y));
+                    if (d >= minDist && d < best)
+                    {
+                        best = d;
+                        pick = bot;
+                    }
+                }
+            }
+
+            if (pick == null)
+            {
+                WriteAck(VendorAck, $"{{\"token\":{token},\"sent\":false,\"error\":\"no eligible bot\"}}");
+                return;
+            }
+
+            int gold = pick.Backpack?.GetAmount(typeof(Server.Items.Gold)) ?? 0;
+            if (gold < 300 && pick.Backpack != null)
+            {
+                pick.Backpack.DropItem(new Server.Items.Gold(300 - gold));
+            }
+
+            pick.Behavior = new TravelerBehavior { DestinationName = dest.Name, UseZones = true };
+            Console.WriteLine($"[vendor] test: {pick.Name} sent to '{dest.Name}' " +
+                              $"({best} tiles away, area drawn: {drawn}, zone mode {ZoneNav.ModeName})");
+            WriteAck(VendorAck,
+                $"{{\"token\":{token},\"sent\":true," +
+                $"\"name\":\"{pick.Name.Replace("\"", "\\\"")}\"," +
+                $"\"dest\":\"{dest.Name.Replace("\"", "\\\"")}\"," +
+                $"\"distance\":{best},\"areaDrawn\":{(drawn ? "true" : "false")}," +
+                $"\"purchasesBefore\":{BotVendorPurchase.PurchaseCount}}}");
+        }
+
         private static long? ReadGotoRequest(out string dest)
         {
             dest = null;

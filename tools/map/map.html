@@ -100,7 +100,8 @@
  <details class="grp" id="gEdit" open><summary>Edit tools</summary>
  <label style="color:#ffb066"><input type="checkbox" id="editZones"> EDIT zones</label>
  <div id="zoneCtl" style="display:none;margin:4px 0">
-  <select id="zKind"><option>Portal</option><option>Area</option><option>Waypoint</option><option>Arrival</option></select>
+  <select id="zKind"><option>Portal</option><option>Area</option><option>Walk</option><option>Waypoint</option><option>Arrival</option></select>
+  <select id="zTag" style="display:none" title="walk zone tag: sets the movement cost"><option>road</option><option>plaza</option><option>interior</option><option>dock</option><option>no-bots</option></select>
   <select id="zType" style="display:none"><option>Bank</option><option>Tavern</option>
    <option>Inn</option><option>Healer</option><option>Stables</option>
    <option>VendorSmith</option><option>VendorWeaponer</option><option>VendorMage</option>
@@ -164,6 +165,8 @@
   <b>EDIT mode:</b> click = add corner &middot; Enter = save zone &middot;
   Esc = cancel &middot; click a zone + Delete = remove &middot;
   <b>drag a dest dot = move it</b><br>
+  <b>Walk zones:</b> kind Walk + tag, click corners, Enter &middot; click a zone + 1-5 = retag
+  &middot; drag a corner = reshape &middot; red tiles = unwalkable (atlas) &middot; diamonds = links<br>
   edges: <span style="color:#3cff5a">ok</span> &middot;
   <span style="color:#ffc832">near 38t limit</span> &middot;
   <span style="color:#ff5050">BROKEN (&gt;38t)</span></div>
@@ -199,6 +202,9 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  MiningSpot:"#b8a58c",LumberSpot:"#3e8e41",
  DungeonEntrance:"#ffa500",DungeonRoom:"#c8924a",
  DungeonDescend:"#ff4040",DungeonAscend:"#40c0ff"};
+const TAG_COLORS={road:"#3cff5a",plaza:"#f0f0f0",interior:"#ffa040",dock:"#4aa8ff","no-bots":"#ff4040"};
+const TAG_COST={road:0.7,plaza:1.0,interior:1.6,dock:1.0,"no-bots":1000};
+let LINKS=[], polySel=null, cornerDrag=null;
 const SPAWN_COLORS={Monster:"#e74c3c",NPC:"#f1c40f",Vendor:"#2ecc71",
  PlayerBotFixed:"#3498db",PlayerBotLifecycle:"#9b59b6"};
 const BOT_BEHAVIORS=["Idle","Wander","Traveler","BankSitter","Shopper","Crafter","Adventurer","PK"];
@@ -231,6 +237,8 @@ function loadData(){
   COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
    `loaded ${new Date().toLocaleTimeString()} — ${DESTS.length} dests, ${WPS.length} wps`;
+  try{computeLinks();}catch(err){console.warn("links",err);}
+  if(polySel){const d=DESTS.find(x=>x.n===polySel.d.n);polySel=d&&d.poly?{d:d}:null;}
   try{draw();}
   catch(err){document.getElementById("info").textContent="Draw failed: "+err.message;}
  }).catch(e=>{document.getElementById("info").textContent="Data load failed: "+e.message;});
@@ -285,14 +293,26 @@ function draw(){
   for(let j=0;j<z.Points.length;j++){const[x,y]=T(z.Points[j][0],z.Points[j][1]);
    j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
   ctx.closePath();
-  const isArea=(z.Kind||"Portal")==="Area";
-  ctx.fillStyle=i===selZone?(isArea?"rgba(80,170,255,.5)":"rgba(255,140,40,.55)")
-                           :(isArea?"rgba(80,170,255,.25)":"rgba(255,140,40,.30)");
-  ctx.fill();ctx.strokeStyle=isArea?"#50aaff":"#ff8c28";ctx.lineWidth=1.5;ctx.stroke();
+  const kind=z.Kind||"Portal",isArea=kind==="Area",isWalk=kind==="Walk";
+  const col=isWalk?(TAG_COLORS[z.Tag]||"#f0f0f0"):isArea?"#50aaff":"#ff8c28";
+  ctx.fillStyle=col+(i===selZone?"80":(isWalk?"30":"40"));
+  ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=i===selZone?2.5:1.5;
+  if(isWalk&&z._lonely){ctx.setLineDash([5,4]);ctx.strokeStyle="#ff4040";}
+  ctx.stroke();ctx.setLineDash([]);
   if(scale>=4){const cx=z.Points.reduce((a,p)=>a+p[0],0)/z.Points.length,
    cy=z.Points.reduce((a,p)=>a+p[1],0)/z.Points.length;const[lx,ly]=T(cx,cy);
-   ctx.fillStyle=(z.Kind==="Area")?"#bfe0ff":"#ffd0a0";ctx.font="10px sans-serif";
-   ctx.fillText(z.Name+(z.Type?" ["+z.Type+"]":""),lx+4,ly);}}
+   ctx.fillStyle=col;ctx.font="10px sans-serif";
+   ctx.fillText(z.Name+(z.Type?" ["+z.Type+"]":"")+
+    (isWalk?" ["+(z.Tag||"road")+(z._lonely?" NO LINK":"")+"]":""),lx+4,ly);}
+  if(i===selZone&&editZones.checked){for(const p of z.Points){const[x,y]=T(p[0],p[1]);
+   ctx.fillStyle="#ffe14d";ctx.fillRect(x-3,y-3,6,6);ctx.strokeStyle="#000";ctx.strokeRect(x-3,y-3,6,6);}}}
+ if(lZones.checked)drawLinks();
+ if(polySel&&editZones.checked&&polySel.d.poly){for(const p of polySel.d.poly){const[x,y]=T(p[0],p[1]);
+  ctx.fillStyle="#ffe14d";ctx.fillRect(x-3,y-3,6,6);ctx.strokeStyle="#000";ctx.strokeRect(x-3,y-3,6,6);}}
+ if(editZones.checked&&scale>=2){
+  if(selZone>=0)walkShade(ZONES[selZone].Points);
+  else if(polySel&&polySel.d.poly)walkShade(polySel.d.poly);
+  if(drawPts.length>=3)walkShade(drawPts);}
  if(drawPts.length){ctx.beginPath();
   for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
    j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
@@ -482,6 +502,13 @@ cv.onmousedown=e=>{
  if(editZones.checked&&drawPts.length===0){
   const tx=ox+e.clientX/scale,ty=oy+e.clientY/scale,tol=Math.max(2,8/scale);
   const mode=document.getElementById("zKind").value;
+  if(mode!=="Arrival"&&mode!=="Waypoint"){
+   // a selected zone's corners can be dragged
+   const poly=selZone>=0?ZONES[selZone].Points:(polySel&&polySel.d.poly)?polySel.d.poly:null;
+   if(poly){for(let ci=0;ci<poly.length;ci++){
+    if(Math.max(Math.abs(tx-poly[ci][0]),Math.abs(ty-poly[ci][1]))<tol){
+     cornerDrag={poly:poly,ci:ci,moved:false};cv.style.cursor="move";return;}}}
+  }
   if(mode==="Arrival"){
    const near=findArrivalNear(tx,ty);
    if(near){arrDrag={dest:near.dest,index:near.index,dObj:near.dObj,
@@ -527,6 +554,17 @@ cv.onmousedown=e=>{
  }
  drag={x:e.clientX,y:e.clientY};moved=0;cv.style.cursor="grabbing";};
 addEventListener("mouseup",e=>{cv.style.cursor="grab";
+ if(cornerDrag){const cd=cornerDrag;cornerDrag=null;
+  if(cd.moved){
+   if(selZone>=0){saveZones();}
+   else if(polySel){
+    fetch("/dest_poly",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({name:polySel.d.n,points:polySel.d.poly})})
+    .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=r.ok
+     ?`reshaped '${r.name}' outline\nRun [ReloadDestinations + [ReloadZones.`:"reshape failed: "+r.error;
+     loadData();});}
+  }
+  return;}
  if(dgTargetDrag){
   const td=dgTargetDrag;dgTargetDrag=null;
   if(td.moved){
@@ -627,6 +665,10 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
  }
  drag=null;});
 addEventListener("mousemove",e=>{
+ if(cornerDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
+  const c=cornerDrag.poly[cornerDrag.ci];
+  if(nx!==c[0]||ny!==c[1]){cornerDrag.moved=true;cornerDrag.poly[cornerDrag.ci]=[nx,ny];draw();}
+  return;}
  if(dgTargetDrag){const nx=Math.round(ox+e.clientX/scale),ny=Math.round(oy+e.clientY/scale);
   if(nx!==dgTargetDrag.tx||ny!==dgTargetDrag.ty)dgTargetDrag.moved=true;
   dgTargetDrag.tx=nx;dgTargetDrag.ty=ny;
@@ -944,23 +986,89 @@ function editClick(px,py){
     :"add failed: "+r.error;
    loadData();});
   return;}
- // select an existing portal if clicked inside one (and not mid-sketch)
+ // select an existing zone if clicked inside one (and not mid-sketch)
  if(drawPts.length===0){
-  for(let i=0;i<ZONES.length;i++)
-   if(ZONES[i].Points&&pointInZone(tx,ty,ZONES[i])){
-    selZone=i;
-    document.getElementById("info").textContent=
-     `[zone] ${ZONES[i].Name} (${ZONES[i].Kind}`+
-     (ZONES[i].Type?` / ${ZONES[i].Type}`:"")+`)\n`+
-     (ZONES[i].LinkedDest?`linked: ${ZONES[i].LinkedDest}\n`:"")+
-     `${ZONES[i].Points.length} corners — press Delete to remove`;
-    draw();return;}
+  if(selZone>=0||polySel){selZone=-1;polySel=null;draw();return;} // click again = deselect, then sketch
+  if(selectZoneAt(tx,ty))return;
  }
- selZone=-1;
+ selZone=-1;polySel=null;
  drawPts.push([tx,ty]);
+ const kindNow=document.getElementById("zKind").value.toLowerCase();
  document.getElementById("info").textContent=
-  `sketching portal: ${drawPts.length} corner(s)\nEnter = save, Esc = cancel`;
+  `sketching ${kindNow} zone: ${drawPts.length} corner(s)\nEnter = save, Esc = cancel`+
+  (kindNow==="walk"?"\nred tiles = unwalkable in the atlas (feedback only)":"");
  draw();}
+const WALKCACHE={};
+function bbox(P){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of P){
+ x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);}return[x0,y0,x1,y1];}
+function inGrown(x,y,z){for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)if(pointInZone(x+dx,y+dy,z))return true;return false;}
+function meshPolys(){const out=[];
+ for(const z of ZONES){if(!z.Points||z.Points.length<3)continue;const k=z.Kind||"Portal";
+  if(k==="Walk"&&z.Tag!=="no-bots")out.push({n:z.Name,P:z.Points,z:z});
+  else if(k==="Area")out.push({n:z.Name,P:z.Points,z:z});}
+ for(const d of DESTS){if(d.poly&&d.poly.length>=3)out.push({n:d.n+" Area",P:d.poly,d:d});}
+ return out;}
+// The same rule the game uses: two mesh shapes link where, grown by one
+// tile, they share ground. A portal joins whatever it touches.
+function computeLinks(){LINKS=[];const polys=meshPolys();for(const p of polys){p.b=bbox(p.P);p.links=0;}
+ for(let i=0;i<polys.length;i++)for(let j=i+1;j<polys.length;j++){const A=polys[i],B=polys[j];
+  const x0=Math.max(A.b[0],B.b[0])-1,x1=Math.min(A.b[2],B.b[2])+1,
+        y0=Math.max(A.b[1],B.b[1])-1,y1=Math.min(A.b[3],B.b[3])+1;
+  if(x1<x0||y1<y0||(x1-x0)*(y1-y0)>40000)continue;
+  const za={Points:A.P},zb={Points:B.P};let sx=0,sy=0,n=0;
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const ia=pointInZone(x,y,za),ib=pointInZone(x,y,zb);
+   if(!ia&&!ib)continue;if(!(ia||inGrown(x,y,za))||!(ib||inGrown(x,y,zb)))continue;sx+=x;sy+=y;n++;}
+  if(n){LINKS.push({a:A.n,b:B.n,x:sx/n,y:sy/n,n:n});A.links++;B.links++;}}
+ for(const z of ZONES){if((z.Kind||"Portal")!=="Portal"||!z.Points||z.Points.length<3)continue;
+  const touched=polys.filter(p=>z.Points.some(q=>inGrown(q[0],q[1],{Points:p.P})));
+  for(let i=0;i<touched.length;i++)for(let j=i+1;j<touched.length;j++){
+   if(LINKS.some(l=>(l.a===touched[i].n&&l.b===touched[j].n)||(l.a===touched[j].n&&l.b===touched[i].n)))continue;
+   const cx=z.Points.reduce((a,p)=>a+p[0],0)/z.Points.length,cy=z.Points.reduce((a,p)=>a+p[1],0)/z.Points.length;
+   LINKS.push({a:touched[i].n,b:touched[j].n,x:cx,y:cy,n:0,via:z.Name});touched[i].links++;touched[j].links++;}}
+ let lonely=0;for(const p of polys){if(p.z&&p.z.Kind==="Walk"){p.z._lonely=p.links===0;if(p.z._lonely)lonely++;}}
+ const st=document.getElementById("stamp");if(st&&lonely)st.textContent+=` — ⚠ ${lonely} walk zone(s) with no link`;}
+function drawLinks(){if(scale<1.5)return;for(const l of LINKS){const[x,y]=T(l.x,l.y);
+ if(x<-9||y<-9||x>cv.width+9||y>cv.height+9)continue;const r=Math.max(3,scale*.7);
+ ctx.beginPath();ctx.moveTo(x,y-r);ctx.lineTo(x+r,y);ctx.lineTo(x,y+r);ctx.lineTo(x-r,y);ctx.closePath();
+ ctx.fillStyle=l.via?"#ffb066":"#ffffff";ctx.fill();ctx.strokeStyle="#000";ctx.lineWidth=1;ctx.stroke();}}
+// Red = a tile inside the shape the walk atlas calls unwalkable. Feedback
+// only; the zone saves whatever was drawn.
+function walkShade(P){if(!P||P.length<3)return;const b=bbox(P);
+ if(b[2]-b[0]>400||b[3]-b[1]>400)return;const key=b.join(",");
+ const w=WALKCACHE[key];
+ if(w===undefined){WALKCACHE[key]=null;
+  fetch(`/walk?x0=${b[0]}&y0=${b[1]}&x1=${b[2]}&y1=${b[3]}`).then(r=>r.json()).then(d=>{
+   WALKCACHE[key]=d.ok?d:false;draw();}).catch(()=>{WALKCACHE[key]=false;});return;}
+ if(!w)return;const z={Points:P},s=Math.max(1,scale);
+ ctx.fillStyle="rgba(255,40,40,.5)";
+ for(let y=w.y0;y<w.y0+w.h;y++){const row=w.rows[y-w.y0];
+  for(let x=w.x0;x<w.x0+w.w;x++){if(row[x-w.x0]!=="0"||!pointInZone(x,y,z))continue;
+   const[px,py]=T(x,y);ctx.fillRect(px,py,s,s);}}}
+function selectZoneAt(tx,ty){let bi=-1,ba=1e18;
+ for(let i=0;i<ZONES.length;i++){const z=ZONES[i];if(!z.Points||!pointInZone(tx,ty,z))continue;
+  const b=bbox(z.Points),a=(b[2]-b[0]+1)*(b[3]-b[1]+1);if(a<ba){ba=a;bi=i;}}
+ if(bi>=0){selZone=bi;polySel=null;const z=ZONES[bi];
+  const links=LINKS.filter(l=>l.a===z.Name||l.b===z.Name).length;
+  document.getElementById("info").textContent=
+   `[zone] ${z.Name} (${z.Kind}`+(z.Type?` / ${z.Type}`:"")+
+   (z.Kind==="Walk"?` / ${z.Tag||"road"} cost ${z.Cost??TAG_COST[z.Tag||"road"]}`:"")+`)\n`+
+   (z.LinkedDest?`linked: ${z.LinkedDest}\n`:"")+
+   `${z.Points.length} corners, ${links} link(s)`+
+   (z.Kind==="Walk"&&!links?" — NO LINK, nothing routes here":"")+`\n`+
+   `drag a corner = reshape · Delete = remove · click = deselect`+
+   (z.Kind==="Walk"?`\n1 road · 2 plaza · 3 interior · 4 dock · 5 no-bots`:"");
+  draw();return true;}
+ let bd=null;ba=1e18;
+ for(const d of DESTS){if(!d.poly||d.poly.length<3||!pointInZone(tx,ty,{Points:d.poly}))continue;
+  const b=bbox(d.poly),a=(b[2]-b[0]+1)*(b[3]-b[1]+1);if(a<ba){ba=a;bd=d;}}
+ if(bd){selZone=-1;polySel={d:bd};destSel=bd;
+  const links=LINKS.filter(l=>l.a===bd.n+" Area"||l.b===bd.n+" Area").length;
+  document.getElementById("info").textContent=
+   `[area] ${bd.n} (${bd.t})\n${bd.poly.length} corners, ${links} link(s)`+
+   (!links?" — NO LINK, bots cannot walk the mesh into it":"")+
+   `\ndrag a corner = reshape (saved to the destination) · click = deselect`;
+  draw();return true;}
+ return false;}
 function saveZones(){
  fetch("/zones",{method:"POST",headers:{"Content-Type":"application/json"},
   body:JSON.stringify({zones:ZONES})})
@@ -983,6 +1091,10 @@ addEventListener("keydown",e=>{
      pkSel=null;loadData();});}}
   return;}
  if(!editZones.checked)return;
+ if(selZone>=0&&drawPts.length===0&&/^[1-5]$/.test(e.key)&&ZONES[selZone].Kind==="Walk"){
+  const tags=["road","plaza","interior","dock","no-bots"];
+  ZONES[selZone].Tag=tags[+e.key-1];ZONES[selZone].Cost=TAG_COST[ZONES[selZone].Tag];
+  saveZones();return;}
  if(e.key==="Enter"&&drawPts.length>=3){
   const kind=document.getElementById("zKind").value;
   if(kind==="Area"){
@@ -1006,6 +1118,12 @@ addEventListener("keydown",e=>{
         `Run [ReloadDestinations + [ReloadZones; fields rebuild next boot.`)
      :"failed: "+r.error;
     drawPts=[];loadData();});
+  }else if(kind==="Walk"){
+   const tag=document.getElementById("zTag").value;
+   const walkN=ZONES.filter(z=>z.Kind==="Walk").length+1;
+   const name=prompt("Walk zone name:",tag+" "+walkN);
+   if(name){ZONES.push({Name:name,Kind:"Walk",Tag:tag,Cost:TAG_COST[tag],Points:drawPts.slice()});
+    drawPts=[];saveZones();}
   }else{
    const name=prompt("Portal name:","Portal "+(ZONES.length+1));
    if(name){ZONES.push({Name:name,Kind:"Portal",Points:drawPts.slice()});
@@ -1018,7 +1136,7 @@ addEventListener("keydown",e=>{
    r.ok?`removed arrival spot (#${arrSel.index}) — ${r.remaining} left\nRun [ReloadDestinations.`
        :"failed: "+r.error;arrSel=null;loadData();});
  }else if(e.key==="F2"&&destSel){renameDest();
- }else if(e.key==="Escape"){drawPts=[];selZone=-1;wpSel=null;destSel=null;arrSel=null;
+ }else if(e.key==="Escape"){drawPts=[];selZone=-1;polySel=null;wpSel=null;destSel=null;arrSel=null;
   document.getElementById("actBtn").style.display="none";
   {const rb=document.getElementById("renBtn");if(rb){rb.style.display="none";}}draw();
  }else if(e.key==="Delete"&&destSel&&destSel.s==="active"){
@@ -1083,7 +1201,7 @@ document.getElementById("editPK").onchange=function(){
  document.getElementById("pkCtl").style.display=this.checked?"block":"none";
  draw();};
 document.getElementById("editZones").onchange=function(){
- drawPts=[];selZone=-1;
+ drawPts=[];selZone=-1;polySel=null;
  if(this.checked){const es=document.getElementById("editSpawns");
   if(es.checked){es.checked=false;document.getElementById("spawnCtl").style.display="none";
    spawnSel=null;document.getElementById("spApply").style.display="none";}
@@ -1093,7 +1211,8 @@ document.getElementById("editZones").onchange=function(){
  document.getElementById("zoneCtl").style.display=this.checked?"block":"none";
  draw();};
 document.getElementById("zKind").onchange=function(){
- document.getElementById("zType").style.display=this.value==="Area"?"inline":"none";};
+ document.getElementById("zType").style.display=this.value==="Area"?"inline":"none";
+ document.getElementById("zTag").style.display=this.value==="Walk"?"inline":"none";};
 document.getElementById("lZones").onchange=draw;
 // ---- spawn editor helpers ----
 function spawnFilterSet(){const s=new Set();

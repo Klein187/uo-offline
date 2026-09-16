@@ -112,6 +112,10 @@ namespace Server.CustomBots
             _totals[kind] = n + 1;
         }
 
+        // All-time count of one kind, for the status page.
+        public static int TotalOf(string kind) =>
+            kind != null && _totals.TryGetValue(kind, out var n) ? n : 0;
+
         // ---- Aggregation (cold path) ----
 
         private class SpotAgg

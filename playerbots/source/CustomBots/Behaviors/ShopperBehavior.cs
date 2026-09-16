@@ -1,21 +1,27 @@
 // =========================================================================
 // ShopperBehavior.cs — a bot shopping at a vendor area.
 //
-// SIMPLIFIED: arrival is zone-based, so by the time a bot becomes a
-// Shopper it is ALREADY inside the vendor's painted area — exactly where
-// it needs to be. So the Shopper does NOT hunt for a vendor mobile, does
-// NOT path anywhere, and does NOT touch doors. It simply stands in the
-// area, says vendor trigger lines ("vendor buy", etc.) and browsing
-// chatter now and then, shifts facing occasionally as if examining wares,
-// and returns to traveling when the timed visit expires.
+// Arrival is zone-based, so by the time a bot becomes a Shopper it is
+// already inside the vendor's painted area. What it does there depends on
+// whether the shop floor has been drawn:
 //
-// No movement = no wall-grinding. The bot shops by being present and
-// speaking, which is all an idle, living-world vendor visit needs.
+//   Drawn vendor Area   The bot moves. It wanders the floor, pauses to
+//                       look at wares, and once or twice per visit walks
+//                       up to the vendor, says "vendor buy", and buys
+//                       something real (BotVendorPurchase). Every step
+//                       stays inside the polygon.
+//
+//   No area             The old behaviour: stand still, say vendor lines,
+//                       shift facing now and then. No walking, no wall
+//                       grinding.
+//
+// The visit timer and the Traveler handoff are unchanged either way.
 // =========================================================================
 
 using System;
 using Server;
 using Server.Mobiles;
+using MoveDelays = Server.Movement.Movement;
 
 namespace Server.CustomBots
 {
@@ -23,7 +29,15 @@ namespace Server.CustomBots
     {
         public override string SerializableName => "Shopper";
 
-        public override string GetStatusLine(PlayerBot bot) => "browsing the shops";
+        public override string GetStatusLine(PlayerBot bot) => _phase switch
+        {
+            Phase.ToVendor => _vendor != null ? $"walking to {_vendor.Name}" : "looking for the vendor",
+            Phase.Buying   => _vendor != null ? $"buying from {_vendor.Name}" : "buying",
+            _              => _area != null ? $"browsing {_area.Name}" : "browsing the shops",
+        };
+
+        public override Point3D? NavGoal(PlayerBot bot) =>
+            _stepTimer != null && _walker != null ? _walker.GetGoalLocation() : null;
 
         // Speech range UO vendors respond within; informational only here.
         public int VendorSpeakRange { get; set; } = 3;
@@ -49,6 +63,26 @@ namespace Server.CustomBots
         public Point3D Home { get; private set; }
         public Map     HomeMap { get; private set; }
 
+        private enum Phase { Browse, ToVendor, Buying }
+        private Phase _phase = Phase.Browse;
+
+        // The drawn shop floor, or null for the stand-still shopper.
+        private PaintedZone _area;
+        private BaseVendor _vendor;
+
+        // Walking inside the area.
+        private ILegFollower _walker;
+        private Timer _stepTimer;
+        private DateTime _walkStarted;
+        private int _walkRange;
+        private static readonly TimeSpan WalkTimeout = TimeSpan.FromSeconds(20);
+
+        // Counters for the log line on the way out.
+        private int _wanders;
+        private int _purchases;
+        private int _buysLeft;
+        private DateTime _buyAt;
+
         // Stand-still "examining wares" window.
         private DateTime _examineUntil = DateTime.MinValue;
 
@@ -63,6 +97,9 @@ namespace Server.CustomBots
             "show me your wares", "i'd like to see what you have",
             "let me see your goods",
         };
+
+        private static readonly string[] ThanksLines = { "ty", "thx", "cheers", "k ty" };
+        private static readonly string[] BrokeLines = { "too rich for me", "nm", "just looking", "maybe later" };
 
         public ShopperBehavior()
         {
@@ -79,6 +116,41 @@ namespace Server.CustomBots
             HomeMap = bot.Map;
             // First vendor line shortly after arriving.
             _nextVendorLine = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(2, 6));
+
+            // The drawn floor under the bot, or one a few tiles away: a
+            // handoff on the doorstep still counts, the first wander goal
+            // walks the bot in.
+            var area = ZoneRegistry.AreaAt(bot.X, bot.Y);
+            if (area == null || !area.IsVendorArea)
+            {
+                area = null;
+                foreach (var z in ZoneRegistry.All)
+                {
+                    if (z.IsVendorArea &&
+                        bot.X >= z.MinX - 3 && bot.X <= z.MaxX + 3 &&
+                        bot.Y >= z.MinY - 3 && bot.Y <= z.MaxY + 3 &&
+                        (area == null || z.Area < area.Area))
+                    {
+                        area = z;
+                    }
+                }
+            }
+            _area = area;
+            if (_area != null)
+            {
+                _buysLeft = Utility.RandomMinMax(1, 2);
+                _buyAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(8, 30));
+            }
+        }
+
+        public override void OnDetached(PlayerBot bot)
+        {
+            StopStepTimer();
+            if (_area != null)
+            {
+                Console.WriteLine($"[shopper] {bot.Name} left {_area.Name}: {_wanders} wander(s), {_purchases} purchase(s)");
+            }
+            base.OnDetached(bot);
         }
 
         private void ScheduleNextVendorLine()
@@ -98,8 +170,16 @@ namespace Server.CustomBots
             // Browsing chatter.
             TrySpeak(bot);
 
+            if (_area != null)
+            {
+                TickInArea(bot);
+                return;
+            }
+
+            // ---- No drawn floor: the stand-still shopper ----
+
             // Say a vendor trigger line on its own cadence — this is the
-            // "shopping" action now that there's no walking to a counter.
+            // "shopping" action when there's no walking to a counter.
             if (Core.Now >= _nextVendorLine)
             {
                 ScheduleNextVendorLine();
@@ -120,6 +200,167 @@ namespace Server.CustomBots
                 _examineUntil = Core.Now +
                     TimeSpan.FromSeconds(Utility.RandomMinMax(4, 10));
             }
+        }
+
+        // ---- The moving shopper ----
+
+        private void TickInArea(PlayerBot bot)
+        {
+            // Mid-walk: the step timer is doing the work. Only watch the clock.
+            if (_stepTimer != null)
+            {
+                if (Core.Now - _walkStarted > WalkTimeout)
+                {
+                    StopStepTimer();
+                    if (_phase == Phase.ToVendor)
+                    {
+                        // Could not reach the counter this time. Try again
+                        // later if a buy is still owed.
+                        _phase = Phase.Browse;
+                        _buyAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(15, 30));
+                    }
+                    _examineUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(3, 6));
+                }
+                return;
+            }
+
+            if (_phase == Phase.Buying)
+            {
+                return;   // the purchase timer will hand back to Browse
+            }
+
+            if (Core.Now < _examineUntil)
+            {
+                return;
+            }
+
+            // Time to buy? Walk to the vendor.
+            if (_buysLeft > 0 && Core.Now >= _buyAt)
+            {
+                _vendor = BotVendorPurchase.FindVendor(_area, bot.Map);
+                if (_vendor == null)
+                {
+                    _buysLeft = 0;   // nobody to buy from; keep browsing
+                }
+                else
+                {
+                    _phase = Phase.ToVendor;
+                    StartWalk(bot, _vendor.Location, range: 2, useZones: null);
+                    return;
+                }
+            }
+
+            // Otherwise wander to another spot on the floor.
+            var goal = _area.RandomStandable(bot.Map, bot.Z);
+            if (goal.HasValue && Math.Max(Math.Abs(goal.Value.X - bot.X), Math.Abs(goal.Value.Y - bot.Y)) >= 2)
+            {
+                _wanders++;
+                _phase = Phase.Browse;
+                StartWalk(bot, goal.Value, range: 0, useZones: true);
+                return;
+            }
+
+            // Nowhere to go this tick: look over the goods where we stand.
+            bot.Direction = (Direction)Utility.Random(8);
+            _examineUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(4, 10));
+        }
+
+        private void StartWalk(PlayerBot bot, Point3D goal, int range, bool? useZones)
+        {
+            _walker = LegFollowers.Create(bot, goal, useZones);
+            _walkRange = range;
+            _walkStarted = Core.Now;
+            StopStepTimer();
+            var interval = TimeSpan.FromMilliseconds(MoveDelays.WalkFootDelay);
+            _stepTimer = Timer.DelayCall(interval, interval, () => StepOnce(bot));
+        }
+
+        private void StopStepTimer()
+        {
+            _stepTimer?.Stop();
+            _stepTimer = null;
+        }
+
+        private void StepOnce(PlayerBot bot)
+        {
+            if (bot.Deleted || bot.Map == null || bot.Map == Map.Internal ||
+                !ReferenceEquals(bot.Behavior, this) || _walker == null)
+            {
+                StopStepTimer();
+                return;
+            }
+
+            bool arrived;
+            try
+            {
+                arrived = _walker.Follow(false, _walkRange);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[shopper] {bot.Name} step failed: {ex.Message}");
+                StopStepTimer();
+                return;
+            }
+            if (!arrived)
+            {
+                return;
+            }
+
+            StopStepTimer();
+            if (_phase == Phase.ToVendor)
+            {
+                AtTheCounter(bot);
+            }
+            else
+            {
+                // Arrived at a browsing spot: stop and look.
+                bot.Direction = (Direction)Utility.Random(8);
+                _examineUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(4, 10));
+            }
+        }
+
+        private void AtTheCounter(PlayerBot bot)
+        {
+            _phase = Phase.Buying;
+            if (_vendor != null && !_vendor.Deleted)
+            {
+                bot.Direction = bot.GetDirectionTo(_vendor);
+            }
+            try { bot.Say("vendor buy"); } catch { }
+
+            // The gump would take a moment to read; so does the bot.
+            Timer.DelayCall(TimeSpan.FromMilliseconds(1500), () =>
+            {
+                if (bot.Deleted || !ReferenceEquals(bot.Behavior, this))
+                {
+                    return;
+                }
+                _buysLeft--;
+                string what = null;
+                try
+                {
+                    what = BotVendorPurchase.TryBuy(bot, _vendor, _area);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[vendor] {bot.Name} purchase failed: {ex.Message}");
+                }
+                if (what != null)
+                {
+                    _purchases++;
+                    if (Utility.RandomDouble() < 0.5)
+                    {
+                        TrySpeakLine(bot, ThanksLines[Utility.Random(ThanksLines.Length)]);
+                    }
+                }
+                else if (Utility.RandomDouble() < 0.5)
+                {
+                    TrySpeakLine(bot, BrokeLines[Utility.Random(BrokeLines.Length)]);
+                }
+                _phase = Phase.Browse;
+                _buyAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(25, 60));
+                _examineUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(3, 6));
+            });
         }
     }
 }

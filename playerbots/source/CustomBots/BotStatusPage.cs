@@ -110,6 +110,8 @@ namespace Server.CustomBots
 
             // ---- Stuck & rescue telemetry ----
             StuckTelemetry.AppendHtml(sb);
+            try { ZoneRegistry.AppendHtml(sb); }
+            catch (Exception ex) { sb.Append($"<p>Nav zones: {ex.Message}</p>"); }
 
             // ---- Who's online ----
             sb.Append($"<h2>Who's Online ({bots.Count})</h2><table>");
