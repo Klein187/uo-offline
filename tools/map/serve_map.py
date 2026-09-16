@@ -498,9 +498,16 @@ class Handler(SimpleHTTPRequestHandler):
                 name = p.get("name") or f"{p.get('type','Spot')} at {cx},{cy}"
                 if any((e.get("Name") or "").lower() == name.lower() for e in arr):
                     self._json(400, {"ok": False, "error": f"'{name}' already exists"}); return
-                arr.append({"Name": name, "X": cx, "Y": cy, "Z": z,
-                            "Type": p.get("type", "CityCenter"), "City": city,
-                            "NearestWaypoint": nw, "Polygon": pts})
+                entry = {"Name": name, "X": cx, "Y": cy, "Z": z,
+                         "Type": p.get("type", "CityCenter"), "City": city,
+                         "NearestWaypoint": nw, "Polygon": pts}
+                # A dungeon room outline drawn where no point existed: scope
+                # it like a dungeon-editor point so crawlers can roll it.
+                if p.get("dungeon"):
+                    entry["Dungeon"] = str(p["dungeon"])
+                    try: entry["Level"] = int(p.get("level", 1))
+                    except Exception: entry["Level"] = 1
+                arr.append(entry)
                 shutil.copy(DEST_JSON, DEST_JSON + ".bak-zonedest")
                 open(DEST_JSON, "w", encoding="utf-8").write(json.dumps(d, indent=2))
                 self._json(200, {"ok": True, "mode": "created", "name": name,

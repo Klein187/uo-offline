@@ -71,7 +71,14 @@ namespace Server.CustomBots
         // A dungeon floor drawn by hand. Standing in one makes a bot a
         // DungeonCrawler, and crawlers route through these to rooms and
         // stairs. Set by the tag, whatever the region says.
-        public bool IsDungeon => IsWalk && string.Equals(Tag, "dungeon", StringComparison.OrdinalIgnoreCase);
+        public bool IsDungeon =>
+            (IsWalk && string.Equals(Tag, "dungeon", StringComparison.OrdinalIgnoreCase)) || IsDungeonRoom;
+
+        // A dungeon room drawn as an Area around its room point: standing
+        // anywhere inside it is arriving at the room, and the linger
+        // shuffles inside the shape instead of around one tile.
+        public bool IsDungeonRoom =>
+            IsArea && string.Equals(Type, "DungeonRoom", StringComparison.OrdinalIgnoreCase);
 
         // Mesh component (zones joined by links share one). Filled by the
         // mesh build; -1 before it runs.

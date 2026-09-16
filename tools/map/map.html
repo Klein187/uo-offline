@@ -109,7 +109,7 @@
    <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
    <option>Dock</option><option>Library</option><option>Graveyard</option>
    <option>Moongate</option><option>CityCenter</option><option>Dungeon</option>
-   <option>MiningSpot</option><option>LumberSpot</option></select>
+   <option>MiningSpot</option><option>LumberSpot</option><option>DungeonRoom</option></select>
  </div>
  <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
  <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
@@ -168,6 +168,8 @@
   <b>Walk zones:</b> kind Walk + tag, click corners, Enter &middot; click a zone + 1-6 = retag
   &middot; tag <b>dungeon</b> = bots inside become crawlers and route through it (asks dungeon + level)
   &middot; drag a corner = reshape &middot; red tiles = unwalkable (atlas) &middot; diamonds = links<br>
+  <b>Dungeon rooms:</b> Area + type DungeonRoom drawn around a room point = the room's outline; crawlers arrive
+  anywhere inside it and clear the whole shape<br>
   edges: <span style="color:#3cff5a">ok</span> &middot;
   <span style="color:#ffc832">near 38t limit</span> &middot;
   <span style="color:#ff5050">BROKEN (&gt;38t)</span></div>
@@ -1119,8 +1121,16 @@ addEventListener("keydown",e=>{
     name=prompt("New destination name:",type+" "+(DESTS.filter(d=>d.s==="active").length+1));
     if(!name)return;
    }else if(!confirm(`Shape contains '${inDot.n}' — make this its outline?`)){return;}
+   // A room outline drawn where no room point exists needs to know its
+   // dungeon and floor, like a point placed with the dungeon editor.
+   const extra={};
+   if(type==="DungeonRoom"&&!inDot){
+    const dn=document.getElementById("dgName"),dl=document.getElementById("dgLevel");
+    const dname=((dn&&dn.value)||prompt("Dungeon name for this room:","")||"").trim();
+    if(!dname)return;
+    extra.dungeon=dname;extra.level=parseInt((dl&&dl.value)||prompt("Level:","1"),10)||0;}
    fetch("/zone_dest",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({points:drawPts,type:type,name:name})})
+    body:JSON.stringify({points:drawPts,type:type,name:name,...extra})})
    .then(r=>r.json()).then(r=>{
     document.getElementById("info").textContent=r.ok
      ?(r.mode==="absorbed"

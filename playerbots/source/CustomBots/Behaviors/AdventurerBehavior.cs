@@ -893,7 +893,8 @@ namespace Server.CustomBots
                 _follower = null;
             }
 
-            bool reached = _goal != null && bot.InRange(_goal.Value, ArrivalRange);
+            bool reached = _goal != null &&
+                           (bot.InRange(_goal.Value, ArrivalRange) || PatrolGoalReachedEarly(bot, _goal.Value));
 
             // Reached the current goal — give a subclass first refusal. A
             // DungeonCrawler uses this to fire a level transition when it
@@ -951,6 +952,11 @@ namespace Server.CustomBots
         // Whether a patrol leg walks the painted mesh. Null follows the
         // fleet mode; a crawler answers true inside drawn dungeon floors.
         protected virtual bool? ZoneWalkOverride(PlayerBot bot, Point3D goal) => null;
+
+        // A subclass can call a goal reached before the bot is within
+        // ArrivalRange of it: a crawler inside a drawn room outline is at
+        // the room, wherever the room point sits.
+        protected virtual bool PatrolGoalReachedEarly(PlayerBot bot, Point3D goal) => false;
 
         // ---- Patrol extension hooks (used by DungeonCrawlerBehavior) ----
         //
@@ -3445,6 +3451,13 @@ namespace Server.CustomBots
             }
 
             bool arrived = _follower.Follow(_running, ArrivalRange);
+            // Inside a drawn room outline counts as there, checked per step:
+            // a 2-second decision tick is too slow to catch the outline
+            // before the bot is on top of the point anyway.
+            if (!arrived && _goal != null && PatrolGoalReachedEarly(bot, _goal.Value))
+            {
+                arrived = true;
+            }
             if (arrived)
             {
                 // Reached current goal. KEEP _goal set — the decision tick's

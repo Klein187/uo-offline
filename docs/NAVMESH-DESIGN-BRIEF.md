@@ -227,6 +227,8 @@ A Walk zone tagged `dungeon` is a hand-drawn dungeon floor. The editor asks for 
 - **Crawlers route through the zones.** When the bot and its target room, stair or entrance sit in linked dungeon zones, the crawler walks the zone mesh straight to it instead of hopping waypoints. Rooms, stairs and entrances stay the authored dungeon points; the zones are how the bot gets between them. Where zones do not cover both ends, the waypoint hops are used as before.
 - **Walk-in exits.** In exit mode, a floor with no stairs sends the crawler to the dungeon entrance point through the zones, and stepping outside the zone ends the crawl.
 
+- **Room outlines.** An Area of type `DungeonRoom` drawn around a room point takes the point in as its outline, the way a vendor area takes in the shop's dot. A crawler heading for that room has arrived the moment it steps inside the outline, wherever the point sits, and its room-clearing shuffle moves anywhere on the drawn floor instead of four tiles around one tile. An outline drawn where no point exists creates the point, scoped to the dungeon and level from the dungeon editor fields.
+
 Dungeon regions and teleporters keep working as they do today. The zones add to them; nothing about the existing crawl is removed.
 
 ## Out of scope

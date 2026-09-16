@@ -697,6 +697,16 @@ namespace Server.CustomBots
                     {
                         return corpse.Location;
                     }
+                    // A drawn room: shuffle anywhere on its floor.
+                    var roomArea = ZoneRegistry.AreaAt(_lingerAnchor.X, _lingerAnchor.Y);
+                    if (roomArea is { IsDungeonRoom: true })
+                    {
+                        var spot = roomArea.RandomStandable(bot.Map, bot.Z);
+                        if (spot.HasValue)
+                        {
+                            return spot.Value;
+                        }
+                    }
                     return new Point3D(
                         _lingerAnchor.X + Utility.RandomMinMax(-LingerShuffleRadius, LingerShuffleRadius),
                         _lingerAnchor.Y + Utility.RandomMinMax(-LingerShuffleRadius, LingerShuffleRadius),
@@ -784,6 +794,30 @@ namespace Server.CustomBots
         //                        start the linger (a camper's never ends).
         //   Linger shuffle     → not claimed; base rolls the next shuffle.
         // -------------------------------------------------------------------
+        private string _earlyArrivalLogged;
+
+        // Heading for a room drawn as an Area: stepping inside the outline
+        // is arrival, the same rule the Traveler uses for a drawn shop.
+        protected override bool PatrolGoalReachedEarly(PlayerBot bot, Point3D goal)
+        {
+            if (_targetPoint == null || _route == null || _routeIndex != _route.Count - 1 ||
+                _targetPoint.Type != DestinationType.DungeonRoom)
+            {
+                return false;
+            }
+            var area = ZoneRegistry.AreaForDestination(_targetPoint.Name, _targetPoint.Location);
+            if (area is { IsDungeonRoom: true } && area.Contains(bot.X, bot.Y))
+            {
+                if (_earlyArrivalLogged != _targetPoint.Name)
+                {
+                    _earlyArrivalLogged = _targetPoint.Name;
+                    Console.WriteLine($"[DungeonCrawler] {bot.Name}: inside '{area.Name}' — at the room");
+                }
+                return true;
+            }
+            return false;
+        }
+
         // Inside a drawn dungeon floor every patrol leg walks the mesh.
         protected override bool? ZoneWalkOverride(PlayerBot bot, Point3D goal) =>
             ZoneRegistry.DungeonZoneAt(bot.Location) != null ||
