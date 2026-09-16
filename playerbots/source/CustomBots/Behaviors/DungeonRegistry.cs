@@ -42,7 +42,21 @@ namespace Server.CustomBots
 
             try
             {
-                return m.Region?.IsPartOf<DungeonRegion>() == true;
+                if (m.Region?.IsPartOf<DungeonRegion>() == true)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            // A hand-drawn dungeon walk zone counts as a dungeon too, so a
+            // cave with no region and no teleporter still makes crawlers.
+            try
+            {
+                return ZoneRegistry.DungeonZoneAt(m.Location) != null;
             }
             catch
             {
@@ -122,41 +136,56 @@ namespace Server.CustomBots
             var pts = new List<BotDestination>();
 
             var graph = WaypointRegistry.Graph;
-            if (graph == null || graph.NodeCount == 0)
+            if (graph != null && graph.NodeCount > 0)
             {
-                return pts;
+                var anchor = graph.FindNearestNode(from);
+                if (anchor != null &&
+                    ChebyshevDist(from, anchor.Location) <= GraphAnchorMaxDist)
+                {
+                    var component = graph.ReachableFrom(anchor.Name);
+
+                    foreach (var d in DestinationCatalog.All)
+                    {
+                        if (!IsInteriorPoint(d.Type))
+                        {
+                            continue;
+                        }
+
+                        // Anchor the point by proximity, not its stored
+                        // NearestWaypoint — those go stale after graph edits.
+                        var node = graph.FindNearestNode(d.Location);
+                        if (node == null ||
+                            ChebyshevDist(d.Location, node.Location) > GraphAnchorMaxDist)
+                        {
+                            continue;
+                        }
+                        if (!component.Contains(node.Name))
+                        {
+                            continue;
+                        }
+
+                        pts.Add(d);
+                    }
+                }
             }
 
-            var anchor = graph.FindNearestNode(from);
-            if (anchor == null ||
-                ChebyshevDist(from, anchor.Location) > GraphAnchorMaxDist)
+            // Hand-drawn dungeon floors: every point inside a zone the bot's
+            // zone links to is reachable, waypoints or not. Entrances count
+            // here so a walk-in cave can be walked out of.
+            if (ZoneRegistry.DungeonZoneAt(from) != null)
             {
-                return pts;
-            }
-
-            var component = graph.ReachableFrom(anchor.Name);
-
-            foreach (var d in DestinationCatalog.All)
-            {
-                if (!IsInteriorPoint(d.Type))
+                foreach (var d in DestinationCatalog.All)
                 {
-                    continue;
+                    if (!IsInteriorPoint(d.Type) && d.Type != DestinationType.DungeonEntrance)
+                    {
+                        continue;
+                    }
+                    if (pts.Contains(d) || !ZoneRegistry.ZoneConnected(from, d.Location))
+                    {
+                        continue;
+                    }
+                    pts.Add(d);
                 }
-
-                // Anchor the point by proximity, not its stored
-                // NearestWaypoint — those go stale after graph edits.
-                var node = graph.FindNearestNode(d.Location);
-                if (node == null ||
-                    ChebyshevDist(d.Location, node.Location) > GraphAnchorMaxDist)
-                {
-                    continue;
-                }
-                if (!component.Contains(node.Name))
-                {
-                    continue;
-                }
-
-                pts.Add(d);
             }
             return pts;
         }
@@ -223,7 +252,25 @@ namespace Server.CustomBots
                         best = p;
                     }
                 }
-                return best; // null when the floor has no transition pads at all
+                if (best != null)
+                {
+                    return best;
+                }
+
+                // A walk-in dungeon: the way out is the entrance itself,
+                // reached through the drawn zones. Stepping outside the
+                // dungeon zone ends the crawl.
+                foreach (var p in pts)
+                {
+                    if (p.Type != DestinationType.DungeonEntrance) continue;
+                    int dist = ChebyshevDist(from, p.Location);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        best = p;
+                    }
+                }
+                return best; // null when the floor has no way out at all
             }
 
             // Normal mode: rooms + descend points, weighted. Ascend points are

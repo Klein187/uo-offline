@@ -165,7 +165,7 @@ namespace Server.CustomBots
 
         // ---- State ----
         private Point3D? _goal;
-        private PathFollower _follower;
+        private ILegFollower _follower;
         private bool _running;
         // Last known mount state — combined with _running to decide if the
         // step timer needs to restart at a different rate.
@@ -940,13 +940,17 @@ namespace Server.CustomBots
                         _goal = new Point3D(tx, ty, bot.Z);
                     }
                 }
-                _follower = new PathFollower(bot, _goal.Value);
+                _follower = LegFollowers.Create(bot, _goal.Value, ZoneWalkOverride(bot, _goal.Value));
             }
             else if (_follower == null)
             {
-                _follower = new PathFollower(bot, _goal.Value);
+                _follower = LegFollowers.Create(bot, _goal.Value, ZoneWalkOverride(bot, _goal.Value));
             }
         }
+
+        // Whether a patrol leg walks the painted mesh. Null follows the
+        // fleet mode; a crawler answers true inside drawn dungeon floors.
+        protected virtual bool? ZoneWalkOverride(PlayerBot bot, Point3D goal) => null;
 
         // ---- Patrol extension hooks (used by DungeonCrawlerBehavior) ----
         //
@@ -1963,7 +1967,7 @@ namespace Server.CustomBots
             if (_goal != goal || _follower == null)
             {
                 _goal = goal;
-                _follower = new PathFollower(bot, goal);
+                _follower = LegFollowers.Create(bot, goal, ZoneWalkOverride(bot, goal));
             }
             EnsureStepTimer(bot, running);
         }

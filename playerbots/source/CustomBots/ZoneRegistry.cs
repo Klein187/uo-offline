@@ -38,8 +38,10 @@ namespace Server.CustomBots
         public string Kind;                 // "Portal" | "Area" | "Walk"
         public string Type;                 // DestinationType string (Areas)
         public string LinkedDest;           // destination this Area defines
-        public string Tag;                  // road | plaza | interior | dock | no-bots
+        public string Tag;                  // road | plaza | interior | dock | no-bots | dungeon
         public double Cost = 1.0;           // movement weight, from the tag
+        public string Dungeon;              // dungeon walk zones: which dungeon, which floor
+        public int? Level;
         public List<(int x, int y)> Points = new();
         public int CenterX, CenterY;
         public int MinX, MinY, MaxX, MaxY;  // bounding box, inclusive
@@ -65,6 +67,15 @@ namespace Server.CustomBots
 
         public bool IsVendorArea =>
             IsArea && Type != null && Type.StartsWith("Vendor", StringComparison.OrdinalIgnoreCase);
+
+        // A dungeon floor drawn by hand. Standing in one makes a bot a
+        // DungeonCrawler, and crawlers route through these to rooms and
+        // stairs. Set by the tag, whatever the region says.
+        public bool IsDungeon => IsWalk && string.Equals(Tag, "dungeon", StringComparison.OrdinalIgnoreCase);
+
+        // Mesh component (zones joined by links share one). Filled by the
+        // mesh build; -1 before it runs.
+        public int Component = -1;
 
         public bool Contains(int px, int py)
         {
@@ -309,6 +320,7 @@ namespace Server.CustomBots
             "interior" => 1.6,
             "dock"     => 1.0,
             "no-bots"  => 1000.0,
+            "dungeon"  => 1.0,
             _          => 1.0,
         };
 
@@ -353,10 +365,15 @@ namespace Server.CustomBots
                             Type = z.TryGetProperty("Type", out var t) ? t.GetString() : null,
                             LinkedDest = z.TryGetProperty("LinkedDest", out var l) ? l.GetString() : null,
                             Tag = z.TryGetProperty("Tag", out var tg) ? tg.GetString() : null,
+                            Dungeon = z.TryGetProperty("Dungeon", out var dg) ? dg.GetString() : null,
                         };
                         if (z.TryGetProperty("Cost", out var c) && c.ValueKind == JsonValueKind.Number)
                         {
                             pz.Cost = c.GetDouble();
+                        }
+                        if (z.TryGetProperty("Level", out var lv) && lv.ValueKind == JsonValueKind.Number)
+                        {
+                            pz.Level = lv.GetInt32();
                         }
                         if (z.TryGetProperty("ZMin", out var zmin) && zmin.ValueKind == JsonValueKind.Number &&
                             z.TryGetProperty("ZMax", out var zmax) && zmax.ValueKind == JsonValueKind.Number)
@@ -532,6 +549,38 @@ namespace Server.CustomBots
                     links[i].Id = i;
                     links[i].A.Links.Add(links[i]);
                     links[i].B.Links.Add(links[i]);
+                }
+
+                // Components: which zones can reach which. Two points in the
+                // same component always have a link route between them.
+                foreach (var z in _zones)
+                {
+                    z.Component = -1;
+                }
+                int comp = 0;
+                var stack = new Stack<PaintedZone>();
+                foreach (var seed in mesh)
+                {
+                    if (seed.Component >= 0)
+                    {
+                        continue;
+                    }
+                    seed.Component = comp;
+                    stack.Push(seed);
+                    while (stack.Count > 0)
+                    {
+                        var z = stack.Pop();
+                        foreach (var l in z.Links)
+                        {
+                            var o = l.Other(z);
+                            if (o.IsMesh && o.Component < 0)
+                            {
+                                o.Component = comp;
+                                stack.Push(o);
+                            }
+                        }
+                    }
+                    comp++;
                 }
             }
             catch (Exception ex)
@@ -709,6 +758,35 @@ namespace Server.CustomBots
 
         public static PaintedZone MeshZoneAt(Point3D p) => MeshZoneAt(p.X, p.Y, p.Z);
 
+        // The hand-drawn dungeon floor this tile is inside, if any.
+        public static PaintedZone DungeonZoneAt(int x, int y, int z)
+        {
+            EnsureMesh();
+            PaintedZone best = null;
+            foreach (var zone in _zones)
+            {
+                if (!zone.IsDungeon || !zone.Contains(x, y) || !zone.ZCompatible(z))
+                {
+                    continue;
+                }
+                if (best == null || zone.Area < best.Area)
+                {
+                    best = zone;
+                }
+            }
+            return best;
+        }
+
+        public static PaintedZone DungeonZoneAt(Point3D p) => DungeonZoneAt(p.X, p.Y, p.Z);
+
+        // Both points inside mesh zones that links join: a zone route exists.
+        public static bool ZoneConnected(Point3D a, Point3D b)
+        {
+            var za = MeshZoneAt(a);
+            var zb = MeshZoneAt(b);
+            return za != null && zb != null && za.Component >= 0 && za.Component == zb.Component;
+        }
+
         // The painted Area (any type) this tile is inside, smallest first.
         public static PaintedZone AreaAt(int x, int y)
         {
@@ -858,6 +936,7 @@ namespace Server.CustomBots
                 e.Mobile.SendMessage($"{z.Kind}: '{z.Name}'" +
                     (z.Type != null ? $" [{z.Type}]" : "") +
                     (z.Tag != null ? $" tag {z.Tag} cost {z.Cost:0.##}" : "") +
+                    (z.IsDungeon ? $" dungeon '{z.Dungeon ?? "?"}' L{(z.Level.HasValue ? z.Level.Value.ToString() : "?")}" : "") +
                     (string.IsNullOrEmpty(z.LinkedDest) ? "" : $" -> {z.LinkedDest}") +
                     $" center ({z.CenterX},{z.CenterY}), {z.Points.Count} corners" +
                     (z.IsMesh ? $", {z.Links.Count} links, {z.BadTiles} bad tiles, Z {(z.ZKnown ? $"{z.ZMin}..{z.ZMax}" : "?")}" : ""));

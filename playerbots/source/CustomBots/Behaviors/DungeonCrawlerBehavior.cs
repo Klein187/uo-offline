@@ -570,7 +570,7 @@ namespace Server.CustomBots
                 // buy a visible gear upgrade at the next bank visit
                 // (IDEAS 4.3).
                 bot.DungeonRunsSurvived++;
-                bot.Behavior = new TravelerBehavior();
+                bot.Behavior = new TravelerBehavior { DungeonZoneGraceUntil = Core.Now + TimeSpan.FromMinutes(3) };
                 return;
             }
 
@@ -784,6 +784,11 @@ namespace Server.CustomBots
         //                        start the linger (a camper's never ends).
         //   Linger shuffle     → not claimed; base rolls the next shuffle.
         // -------------------------------------------------------------------
+        // Inside a drawn dungeon floor every patrol leg walks the mesh.
+        protected override bool? ZoneWalkOverride(PlayerBot bot, Point3D goal) =>
+            ZoneRegistry.DungeonZoneAt(bot.Location) != null ||
+            ZoneRegistry.DungeonZoneAt(goal) != null ? true : null;
+
         protected override bool OnPatrolGoalReached(PlayerBot bot)
         {
             if (_route != null && _routeIndex < _route.Count - 1)
@@ -810,6 +815,14 @@ namespace Server.CustomBots
             {
                 BeginPadWalk(bot, p.Location);
                 return true;
+            }
+
+            // A walk-in entrance reached on the way out: keep walking to the
+            // tile. Once the bot stands outside the drawn dungeon floor the
+            // "outside the dungeon" check hands it back to the road.
+            if (p.Type == DestinationType.DungeonEntrance)
+            {
+                return false;
             }
 
             _visited.Add(p.Name);
@@ -863,6 +876,16 @@ namespace Server.CustomBots
             _route = null;
             _routeIndex = 0;
             if (target == null) return false;
+
+            // Drawn dungeon floor: the zone walker routes the whole way
+            // through the links, so the route is one hop, the target itself.
+            if (ZoneRegistry.DungeonZoneAt(bot.Location) != null &&
+                ZoneRegistry.ZoneConnected(bot.Location, target.Location))
+            {
+                _route = new List<Point3D> { target.Location };
+                _routeIndex = 0;
+                return true;
+            }
 
             var graph = WaypointRegistry.Graph;
             if (graph == null || graph.NodeCount == 0) return false;
@@ -1071,7 +1094,7 @@ namespace Server.CustomBots
             }
             else
             {
-                bot.Behavior = new TravelerBehavior();
+                bot.Behavior = new TravelerBehavior { DungeonZoneGraceUntil = Core.Now + TimeSpan.FromMinutes(3) };
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: climbed out to the surface");
             }
@@ -1159,7 +1182,7 @@ namespace Server.CustomBots
                     $"{why} — {DungeonName} L{Level} → {gate.Name}");
                 HaltMovement();
                 bot.MoveToWorld(gate.ArrivalPoint ?? gate.Location, bot.Map);
-                bot.Behavior = new TravelerBehavior();
+                bot.Behavior = new TravelerBehavior { DungeonZoneGraceUntil = Core.Now + TimeSpan.FromMinutes(3) };
                 return true;
             }
 
@@ -1183,7 +1206,7 @@ namespace Server.CustomBots
                 $"{why} — {DungeonName} L{Level} → {entrance.Name}");
             HaltMovement();
             bot.MoveToWorld(entrance.Location, bot.Map);
-            bot.Behavior = new TravelerBehavior();
+            bot.Behavior = new TravelerBehavior { DungeonZoneGraceUntil = Core.Now + TimeSpan.FromMinutes(3) };
             return true;
         }
 

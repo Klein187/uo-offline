@@ -196,6 +196,10 @@ namespace Server.CustomBots
 
         // For [NavPath: the zone follower in use this leg, if any.
         public ZoneFollower ActiveZoneFollower => _follower as ZoneFollower;
+
+        // A crawler that just climbed out stands on the drawn entrance. Do
+        // not turn it straight back into a crawler.
+        public DateTime DungeonZoneGraceUntil { get; set; } = DateTime.MinValue;
         private bool _running;
         // Last known mount state — combined with _running to decide if the
         // step timer needs to restart at a different rate.
@@ -844,6 +848,24 @@ namespace Server.CustomBots
             // reach such a bot.
             if (CheckFrozenWatchdog(bot))
             {
+                return;
+            }
+
+            // Standing on a hand-drawn dungeon floor: this bot is a crawler
+            // now. The zone carries the dungeon name and floor when the
+            // mapper filled them in; otherwise the crawler works them out
+            // from the nearest authored point.
+            if (Core.Now >= DungeonZoneGraceUntil && !_dungeonEntry && !_magicTravelPending &&
+                !Subordinate && !RedTerritory.IsRed(bot) &&
+                ZoneRegistry.DungeonZoneAt(bot.Location) is { } dungeonZone)
+            {
+                Log(bot, $"Walked into '{dungeonZone.Name}' — becoming a crawler");
+                StopStepTimer();
+                bot.Behavior = new DungeonCrawlerBehavior
+                {
+                    DungeonName = dungeonZone.Dungeon ?? "",
+                    Level = dungeonZone.Level ?? 0,
+                };
                 return;
             }
 

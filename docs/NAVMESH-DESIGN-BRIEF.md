@@ -219,9 +219,19 @@ When a house is placed or removed, or a decoration pass changes a town, run one 
 
 ---
 
+## Dungeon walk zones (added 2026-09-16, owner's request)
+
+A Walk zone tagged `dungeon` is a hand-drawn dungeon floor. The editor asks for the dungeon name and level when you tag one. What it does:
+
+- **Standing in one makes a bot a crawler.** A Traveler that steps inside becomes a DungeonCrawler scoped to that dungeon and floor, at once. `DungeonRegistry.IsInDungeon` is true inside a dungeon zone too, so the lifecycle rule converts wanderers the same way, and a crawler that steps out of the last dungeon zone goes back to the road. A crawler that just climbed out gets three minutes before the entrance zone can convert it again.
+- **Crawlers route through the zones.** When the bot and its target room, stair or entrance sit in linked dungeon zones, the crawler walks the zone mesh straight to it instead of hopping waypoints. Rooms, stairs and entrances stay the authored dungeon points; the zones are how the bot gets between them. Where zones do not cover both ends, the waypoint hops are used as before.
+- **Walk-in exits.** In exit mode, a floor with no stairs sends the crawler to the dungeon entrance point through the zones, and stepping outside the zone ends the crawl.
+
+Dungeon regions and teleporters keep working as they do today. The zones add to them; nothing about the existing crawl is removed.
+
 ## Out of scope
 
-- Dungeons. Waypoints only.
+- Dungeon routing by anything other than drawn zones and waypoints.
 - Machine-proposed zones of any kind.
 - Selling to vendors. Bots sell through the crafter sell-off and bot-to-bot shops already.
 - Flow fields for the last mile. Not needed while link graphs are a few hundred nodes.

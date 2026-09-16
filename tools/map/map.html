@@ -101,7 +101,7 @@
  <label style="color:#ffb066"><input type="checkbox" id="editZones"> EDIT zones</label>
  <div id="zoneCtl" style="display:none;margin:4px 0">
   <select id="zKind"><option>Portal</option><option>Area</option><option>Walk</option><option>Waypoint</option><option>Arrival</option></select>
-  <select id="zTag" style="display:none" title="walk zone tag: sets the movement cost"><option>road</option><option>plaza</option><option>interior</option><option>dock</option><option>no-bots</option></select>
+  <select id="zTag" style="display:none" title="walk zone tag: sets the movement cost"><option>road</option><option>plaza</option><option>interior</option><option>dock</option><option>no-bots</option><option>dungeon</option></select>
   <select id="zType" style="display:none"><option>Bank</option><option>Tavern</option>
    <option>Inn</option><option>Healer</option><option>Stables</option>
    <option>VendorSmith</option><option>VendorWeaponer</option><option>VendorMage</option>
@@ -165,7 +165,8 @@
   <b>EDIT mode:</b> click = add corner &middot; Enter = save zone &middot;
   Esc = cancel &middot; click a zone + Delete = remove &middot;
   <b>drag a dest dot = move it</b><br>
-  <b>Walk zones:</b> kind Walk + tag, click corners, Enter &middot; click a zone + 1-5 = retag
+  <b>Walk zones:</b> kind Walk + tag, click corners, Enter &middot; click a zone + 1-6 = retag
+  &middot; tag <b>dungeon</b> = bots inside become crawlers and route through it (asks dungeon + level)
   &middot; drag a corner = reshape &middot; red tiles = unwalkable (atlas) &middot; diamonds = links<br>
   edges: <span style="color:#3cff5a">ok</span> &middot;
   <span style="color:#ffc832">near 38t limit</span> &middot;
@@ -202,8 +203,17 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  MiningSpot:"#b8a58c",LumberSpot:"#3e8e41",
  DungeonEntrance:"#ffa500",DungeonRoom:"#c8924a",
  DungeonDescend:"#ff4040",DungeonAscend:"#40c0ff"};
-const TAG_COLORS={road:"#3cff5a",plaza:"#f0f0f0",interior:"#ffa040",dock:"#4aa8ff","no-bots":"#ff4040"};
-const TAG_COST={road:0.7,plaza:1.0,interior:1.6,dock:1.0,"no-bots":1000};
+const TAG_COLORS={road:"#3cff5a",plaza:"#f0f0f0",interior:"#ffa040",dock:"#4aa8ff","no-bots":"#ff4040",dungeon:"#e06060"};
+const TAG_COST={road:0.7,plaza:1.0,interior:1.6,dock:1.0,"no-bots":1000,dungeon:1.0};
+// A dungeon walk zone carries which dungeon and floor it is, so a bot that
+// walks into it becomes a crawler scoped to that floor.
+function askDungeon(z){
+ const dn=document.getElementById("dgName"),dl=document.getElementById("dgLevel");
+ const name=prompt("Dungeon name for this floor:",z.Dungeon||(dn&&dn.value)||"");
+ if(name===null)return false;
+ const lvl=prompt("Level (0 = surface entrance, 1 = first floor):",z.Level!=null?z.Level:((dl&&dl.value)||"1"));
+ if(lvl===null)return false;
+ z.Dungeon=name.trim();z.Level=parseInt(lvl,10)||0;return true;}
 let LINKS=[], polySel=null, cornerDrag=null;
 const SPAWN_COLORS={Monster:"#e74c3c",NPC:"#f1c40f",Vendor:"#2ecc71",
  PlayerBotFixed:"#3498db",PlayerBotLifecycle:"#9b59b6"};
@@ -1052,11 +1062,12 @@ function selectZoneAt(tx,ty){let bi=-1,ba=1e18;
   document.getElementById("info").textContent=
    `[zone] ${z.Name} (${z.Kind}`+(z.Type?` / ${z.Type}`:"")+
    (z.Kind==="Walk"?` / ${z.Tag||"road"} cost ${z.Cost??TAG_COST[z.Tag||"road"]}`:"")+`)\n`+
+   (z.Tag==="dungeon"?`dungeon: ${z.Dungeon||"?"} level ${z.Level!=null?z.Level:"?"} (bots inside become crawlers)\n`:"")+
    (z.LinkedDest?`linked: ${z.LinkedDest}\n`:"")+
    `${z.Points.length} corners, ${links} link(s)`+
    (z.Kind==="Walk"&&!links?" — NO LINK, nothing routes here":"")+`\n`+
    `drag a corner = reshape · Delete = remove · click = deselect`+
-   (z.Kind==="Walk"?`\n1 road · 2 plaza · 3 interior · 4 dock · 5 no-bots`:"");
+   (z.Kind==="Walk"?`\n1 road · 2 plaza · 3 interior · 4 dock · 5 no-bots · 6 dungeon`:"");
   draw();return true;}
  let bd=null;ba=1e18;
  for(const d of DESTS){if(!d.poly||d.poly.length<3||!pointInZone(tx,ty,{Points:d.poly}))continue;
@@ -1091,9 +1102,10 @@ addEventListener("keydown",e=>{
      pkSel=null;loadData();});}}
   return;}
  if(!editZones.checked)return;
- if(selZone>=0&&drawPts.length===0&&/^[1-5]$/.test(e.key)&&ZONES[selZone].Kind==="Walk"){
-  const tags=["road","plaza","interior","dock","no-bots"];
-  ZONES[selZone].Tag=tags[+e.key-1];ZONES[selZone].Cost=TAG_COST[ZONES[selZone].Tag];
+ if(selZone>=0&&drawPts.length===0&&/^[1-6]$/.test(e.key)&&ZONES[selZone].Kind==="Walk"){
+  const tags=["road","plaza","interior","dock","no-bots","dungeon"];const z=ZONES[selZone];
+  z.Tag=tags[+e.key-1];z.Cost=TAG_COST[z.Tag];
+  if(z.Tag==="dungeon"){if(!askDungeon(z))return;}else{delete z.Dungeon;delete z.Level;}
   saveZones();return;}
  if(e.key==="Enter"&&drawPts.length>=3){
   const kind=document.getElementById("zKind").value;
@@ -1122,8 +1134,9 @@ addEventListener("keydown",e=>{
    const tag=document.getElementById("zTag").value;
    const walkN=ZONES.filter(z=>z.Kind==="Walk").length+1;
    const name=prompt("Walk zone name:",tag+" "+walkN);
-   if(name){ZONES.push({Name:name,Kind:"Walk",Tag:tag,Cost:TAG_COST[tag],Points:drawPts.slice()});
-    drawPts=[];saveZones();}
+   if(name){const z={Name:name,Kind:"Walk",Tag:tag,Cost:TAG_COST[tag],Points:drawPts.slice()};
+    if(tag==="dungeon"&&!askDungeon(z))return;
+    ZONES.push(z);drawPts=[];saveZones();}
   }else{
    const name=prompt("Portal name:","Portal "+(ZONES.length+1));
    if(name){ZONES.push({Name:name,Kind:"Portal",Points:drawPts.slice()});

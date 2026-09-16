@@ -29,6 +29,7 @@ namespace Server.CustomBots
         private const int HueInterior = 0x35;  // orange
         private const int HueDock     = 0x59;  // blue
         private const int HueNoBots   = 0x21;  // red
+        private const int HueDungeon  = 0x2C;  // dark red
         private const int HueArea     = 0x8A;  // purple
         private const int HuePortal   = 0x35;  // orange
         private const int HueLink     = 0x481; // white
@@ -118,6 +119,7 @@ namespace Server.CustomBots
                 "interior" => HueInterior,
                 "dock"     => HueDock,
                 "no-bots"  => HueNoBots,
+                "dungeon"  => HueDungeon,
                 _          => HuePlaza,
             };
         }
