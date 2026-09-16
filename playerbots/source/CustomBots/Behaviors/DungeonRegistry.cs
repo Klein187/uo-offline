@@ -135,12 +135,19 @@ namespace Server.CustomBots
         {
             var pts = new List<BotDestination>();
 
+            // On a drawn dungeon floor the waypoint anchor must be ground the
+            // bot can reach on the mesh. Dungeons sit side by side in the map
+            // strip: Hythloth's landing chamber has no waypoint of its own
+            // and its nearest node is Shame level 5, through solid rock.
+            bool onDrawnFloor = ZoneRegistry.DungeonZoneAt(from) != null;
+
             var graph = WaypointRegistry.Graph;
             if (graph != null && graph.NodeCount > 0)
             {
                 var anchor = graph.FindNearestNode(from);
                 if (anchor != null &&
-                    ChebyshevDist(from, anchor.Location) <= GraphAnchorMaxDist)
+                    ChebyshevDist(from, anchor.Location) <= GraphAnchorMaxDist &&
+                    (!onDrawnFloor || ZoneRegistry.ZoneConnected(from, anchor.Location)))
                 {
                     var component = graph.ReachableFrom(anchor.Name);
 
@@ -172,7 +179,7 @@ namespace Server.CustomBots
             // Hand-drawn dungeon floors: every point inside a zone the bot's
             // zone links to is reachable, waypoints or not. Entrances count
             // here so a walk-in cave can be walked out of.
-            if (ZoneRegistry.DungeonZoneAt(from) != null)
+            if (onDrawnFloor)
             {
                 foreach (var d in DestinationCatalog.All)
                 {
@@ -207,11 +214,28 @@ namespace Server.CustomBots
             string dungeon, int level, BotSkillTier tier, bool exitMode, Point3D from,
             HashSet<string> visited = null)
         {
-            var pts = ReachablePoints(from);
-            if (pts.Count == 0)
+            // The reachable pool first. If it holds nothing to roll (a zone
+            // outline the flood fill split wrongly, a floor whose only
+            // reachable point is the exit), fall back to every point on the
+            // floor, which is what the crawl did before zones existed. A
+            // wrong guess costs a stuck cycle; standing still costs the run.
+            var pool = ReachablePoints(from);
+            var pick = pool.Count > 0 ? RollFrom(pool, tier, exitMode, from, visited) : null;
+            if (pick == null)
             {
-                pts = PointsFor(dungeon, level);
+                var all = PointsFor(dungeon, level);
+                if (all.Count > 0 && (pool.Count == 0 || all.Count > pool.Count))
+                {
+                    pick = RollFrom(all, tier, exitMode, from, visited);
+                }
             }
+            return pick;
+        }
+
+        private static BotDestination RollFrom(
+            List<BotDestination> pts, BotSkillTier tier, bool exitMode, Point3D from,
+            HashSet<string> visited)
+        {
             if (pts.Count == 0) return null;
 
             if (exitMode)

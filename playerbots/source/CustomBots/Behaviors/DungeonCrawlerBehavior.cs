@@ -911,27 +911,49 @@ namespace Server.CustomBots
             _routeIndex = 0;
             if (target == null) return false;
 
-            // Drawn dungeon floor: the zone walker routes the whole way
-            // through the links, so the route is one hop, the target itself.
-            if (ZoneRegistry.DungeonZoneAt(bot.Location) != null &&
-                ZoneRegistry.ZoneConnected(bot.Location, target.Location))
+            // Drawn dungeon floor with no waypoints under it: the zone
+            // walker routes the whole way through the links, one hop.
+            // Where the graph covers the floor the hops stay, because a
+            // hop-long leg is what the engine fallback can still path if
+            // the zone walker gives up; each hop walks the zones anyway.
+            bool onDrawnFloor = ZoneRegistry.DungeonZoneAt(bot.Location) != null;
+            bool zoneRoute = onDrawnFloor &&
+                             ZoneRegistry.ZoneConnected(bot.Location, target.Location);
+
+            var graph = WaypointRegistry.Graph;
+            var start = graph?.NodeCount > 0 ? graph.FindNearestNode(bot.Location) : null;
+            var end   = graph?.NodeCount > 0 ? graph.FindNearestNode(target.Location) : null;
+            bool graphCovers = start != null && end != null &&
+                               Dist(bot.Location, start.Location) <= RouteDriftMax &&
+                               Dist(target.Location, end.Location) <= RouteDriftMax;
+            // On a drawn floor a waypoint through the rock is not a way in:
+            // the anchors must be reachable on the mesh too.
+            if (graphCovers && onDrawnFloor &&
+                (!ZoneRegistry.ZoneConnected(bot.Location, start.Location) ||
+                 !ZoneRegistry.ZoneConnected(target.Location, end.Location)))
+            {
+                graphCovers = false;
+            }
+            // A short zone route beats hops; a long one keeps the hops so the
+            // engine fallback still has legs it can path.
+            if (zoneRoute && (!graphCovers || Dist(bot.Location, target.Location) <= 60))
             {
                 _route = new List<Point3D> { target.Location };
                 _routeIndex = 0;
                 return true;
             }
+            var names = graphCovers ? graph.FindPath(start.Name, end.Name) : null;
 
-            var graph = WaypointRegistry.Graph;
-            if (graph == null || graph.NodeCount == 0) return false;
-
-            var start = graph.FindNearestNode(bot.Location);
-            var end   = graph.FindNearestNode(target.Location);
-            if (start == null || end == null) return false;
-            if (Dist(bot.Location, start.Location) > RouteDriftMax) return false;
-            if (Dist(target.Location, end.Location) > RouteDriftMax) return false;
-
-            var names = graph.FindPath(start.Name, end.Name);
-            if (names == null || names.Count == 0) return false;
+            if (names == null || names.Count == 0)
+            {
+                if (zoneRoute)
+                {
+                    _route = new List<Point3D> { target.Location };
+                    _routeIndex = 0;
+                    return true;
+                }
+                return false;
+            }
 
             var route = new List<Point3D>(names.Count + 1);
             foreach (var name in names)

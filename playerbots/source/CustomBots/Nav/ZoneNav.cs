@@ -157,12 +157,19 @@ namespace Server.CustomBots
                 return null;
             }
 
+            int startPart = start.PartNear(from.X, from.Y);
+            int goalPart = goal.PartNear(to.X, to.Y);
+
             var route = new Route { StartZone = start, GoalZone = goal };
             route.Zones.Add(start);
-            if (ReferenceEquals(start, goal))
+            if (ReferenceEquals(start, goal) && (startPart < 0 || goalPart < 0 || startPart == goalPart))
             {
                 route.Targets.Add(to);
                 return route;
+            }
+            if (startPart < 0 || goalPart < 0)
+            {
+                return null;   // off the walkable ground of its own zone
             }
 
             var links = ZoneRegistry.Links;
@@ -182,7 +189,7 @@ namespace Server.CustomBots
             foreach (var l in start.Links)
             {
                 var entered = l.Other(start);
-                if (!entered.IsMesh)
+                if (!entered.IsMesh || l.PartOf(start) != startPart)
                 {
                     continue;
                 }
@@ -219,7 +226,7 @@ namespace Server.CustomBots
                 var zone = EnteredOf(k);
                 double gk = g[k];
 
-                if (ReferenceEquals(zone, goal))
+                if (ReferenceEquals(zone, goal) && l.PartOf(zone) == goalPart)
                 {
                     double total = gk + Cheb(l.MidX, l.MidY, to.X, to.Y) * zone.Cost;
                     if (total < bestGoalCost)
@@ -230,9 +237,10 @@ namespace Server.CustomBots
                     continue;
                 }
 
+                int here = l.PartOf(zone);
                 foreach (var m in zone.Links)
                 {
-                    if (ReferenceEquals(m, l))
+                    if (ReferenceEquals(m, l) || m.PartOf(zone) != here)
                     {
                         continue;
                     }

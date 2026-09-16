@@ -166,6 +166,7 @@ namespace Server.CustomBots
         // ---- State ----
         private Point3D? _goal;
         private ILegFollower _follower;
+        public override ILegFollower ActiveLegFollower => _follower;
         private bool _running;
         // Last known mount state — combined with _running to decide if the
         // step timer needs to restart at a different rate.
@@ -839,6 +840,23 @@ namespace Server.CustomBots
                 // move it — wedged in rock/decor; extract it, since no
                 // goal choice can ever free a bot the engine won't move.
                 _patrolStuckStreak++;
+                // Inside a drawn dungeon floor, say what the bot was trying
+                // to do when it stuck: the goal, the walker, and whether the
+                // mesh thinks the goal is reachable. This is how a wall the
+                // outline straddles gets found.
+                if (_goal != null && ZoneRegistry.DungeonZoneAt(bot.Location) != null)
+                {
+                    string walker = _follower switch
+                    {
+                        ZoneFollower zf => zf.OnMesh ? "zones" : $"engine after zones ({zf.FallbackReason})",
+                        EnginePathFollower => "engine",
+                        null => "none",
+                        _ => "other",
+                    };
+                    Console.WriteLine($"[patrol_stuck] {bot.Name} at ({bot.X},{bot.Y},{bot.Z}) goal ({_goal.Value.X},{_goal.Value.Y}) " +
+                                      $"walker {walker} connected {ZoneRegistry.ZoneConnected(bot.Location, _goal.Value)} " +
+                                      $"streak {_patrolStuckStreak} {SerializableName}");
+                }
                 _goal = null;
                 _follower = null;
                 _lastProgressAt = Core.Now;

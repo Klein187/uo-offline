@@ -229,6 +229,10 @@ A Walk zone tagged `dungeon` is a hand-drawn dungeon floor. The editor asks for 
 
 - **Room outlines.** An Area of type `DungeonRoom` drawn around a room point takes the point in as its outline, the way a vendor area takes in the shop's dot. A crawler heading for that room has arrived the moment it steps inside the outline, wherever the point sits, and its room-clearing shuffle moves anywhere on the drawn floor instead of four tiles around one tile. An outline drawn where no point exists creates the point, scoped to the dungeon and level from the dungeon editor fields.
 
+- **Parts.** A shape drawn over a wall is two chambers under one outline. At load the game flood-fills every zone's tiles with its own step rules and numbers each separately walkable patch a part. Links join parts, not outlines, and routing and reachability work on parts, so a crawler is never offered a room it cannot reach through the wall. The status page shows the part count per zone; more than one part means the outline straddles something solid.
+
+- **Waypoints through rock are ignored.** Dungeons sit side by side in the map strip, and a floor with no waypoint of its own can have its nearest node in the next dungeon over, through solid rock. Hythloth's landing chamber anchored to Shame level 5 that way and crawlers pressed against the wall for minutes. On a drawn floor the crawler only uses a waypoint or a point it can reach on the mesh. Measured on Hythloth level 1 with the owner's zones: stuck events on the drawn floors went from 78 to 3 in five minutes, and Hythloth left the hotspot list.
+
 Dungeon regions and teleporters keep working as they do today. The zones add to them; nothing about the existing crawl is removed.
 
 ## Out of scope

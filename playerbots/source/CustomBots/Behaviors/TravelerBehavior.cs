@@ -196,6 +196,7 @@ namespace Server.CustomBots
 
         // For [NavPath: the zone follower in use this leg, if any.
         public ZoneFollower ActiveZoneFollower => _follower as ZoneFollower;
+        public override ILegFollower ActiveLegFollower => _follower;
 
         // A crawler that just climbed out stands on the drawn entrance. Do
         // not turn it straight back into a crawler.

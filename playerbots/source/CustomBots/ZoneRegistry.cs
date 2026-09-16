@@ -84,6 +84,51 @@ namespace Server.CustomBots
         // mesh build; -1 before it runs.
         public int Component = -1;
 
+        // Parts: a hand-drawn shape can straddle a wall. The mesh build
+        // flood-fills the zone's tiles with the engine's own step rules and
+        // numbers each separately walkable patch. Routing and reachability
+        // work on parts, so two chambers under one outline never count as
+        // one floor. PartMap is indexed over the bounding box; -1 = not a
+        // standable tile of this zone.
+        internal int[] PartMap;
+        public int PartCount;
+        internal int[] PartComponent;   // mesh component per part
+
+        public int PartAt(int x, int y)
+        {
+            if (PartMap == null || x < MinX || x > MaxX || y < MinY || y > MaxY)
+            {
+                return PartMap == null ? 0 : -1;
+            }
+            return PartMap[(x - MinX) + (y - MinY) * (MaxX - MinX + 1)];
+        }
+
+        // The part at this tile, or the part of a standable tile next to it
+        // (a bot on a border tile, a link tile just outside the outline).
+        public int PartNear(int x, int y)
+        {
+            int p = PartAt(x, y);
+            if (p >= 0)
+            {
+                return p;
+            }
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    p = PartAt(x + dx, y + dy);
+                    if (p >= 0)
+                    {
+                        return p;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        public int ComponentOfPart(int part) =>
+            PartComponent != null && part >= 0 && part < PartComponent.Length ? PartComponent[part] : Component;
+
         public bool Contains(int px, int py)
         {
             if (px < MinX || px > MaxX || py < MinY || py > MaxY)
@@ -291,6 +336,9 @@ namespace Server.CustomBots
         public readonly List<(int x, int y)> Tiles = new();
         public int MidX, MidY, MidZ;
         public bool IsDoor;                 // a door stands on the crossing
+        public int PartA, PartB;            // the walkable part joined on each side
+
+        public int PartOf(PaintedZone z) => ReferenceEquals(z, A) ? PartA : PartB;
 
         public PaintedZone Other(PaintedZone z) => ReferenceEquals(z, A) ? B : A;
         public bool Joins(PaintedZone z) => ReferenceEquals(z, A) || ReferenceEquals(z, B);
@@ -471,9 +519,16 @@ namespace Server.CustomBots
                 {
                     MeasureZone(map, z);
                     z.Links.Clear();
+                    z.PartMap = null;
+                    z.PartCount = 0;
+                    z.PartComponent = null;
                 }
 
                 var mesh = _zones.Where(z => z.IsMesh).ToList();
+                foreach (var z in mesh)
+                {
+                    FloodParts(map, z);
+                }
 
                 // Geometry links: shared ground between two grown polygons.
                 for (int i = 0; i < mesh.Count; i++)
@@ -558,36 +613,52 @@ namespace Server.CustomBots
                     links[i].B.Links.Add(links[i]);
                 }
 
-                // Components: which zones can reach which. Two points in the
-                // same component always have a link route between them.
+                // Components over PARTS: which patches of ground can reach
+                // which through the links. Two points in the same component
+                // always have a link route between them on real ground.
                 foreach (var z in _zones)
                 {
                     z.Component = -1;
                 }
                 int comp = 0;
-                var stack = new Stack<PaintedZone>();
+                var stack = new Stack<(PaintedZone z, int part)>();
                 foreach (var seed in mesh)
                 {
-                    if (seed.Component >= 0)
+                    seed.PartComponent = new int[Math.Max(1, seed.PartCount)];
+                    Array.Fill(seed.PartComponent, -1);
+                }
+                foreach (var seed in mesh)
+                {
+                    for (int sp = 0; sp < seed.PartComponent.Length; sp++)
                     {
-                        continue;
-                    }
-                    seed.Component = comp;
-                    stack.Push(seed);
-                    while (stack.Count > 0)
-                    {
-                        var z = stack.Pop();
-                        foreach (var l in z.Links)
+                        if (seed.PartComponent[sp] >= 0)
                         {
-                            var o = l.Other(z);
-                            if (o.IsMesh && o.Component < 0)
+                            continue;
+                        }
+                        seed.PartComponent[sp] = comp;
+                        stack.Push((seed, sp));
+                        while (stack.Count > 0)
+                        {
+                            var (z, part) = stack.Pop();
+                            foreach (var l in z.Links)
                             {
-                                o.Component = comp;
-                                stack.Push(o);
+                                if (l.PartOf(z) != part)
+                                {
+                                    continue;
+                                }
+                                var o = l.Other(z);
+                                int op = l.PartOf(o);
+                                if (o.IsMesh && o.PartComponent != null && op >= 0 && op < o.PartComponent.Length &&
+                                    o.PartComponent[op] < 0)
+                                {
+                                    o.PartComponent[op] = comp;
+                                    stack.Push((o, op));
+                                }
                             }
                         }
+                        comp++;
                     }
-                    comp++;
+                    seed.Component = seed.PartComponent[0];
                 }
             }
             catch (Exception ex)
@@ -600,8 +671,13 @@ namespace Server.CustomBots
             _meshBuildTime = sw.Elapsed;
             int meshZones = _zones.Count(z => z.IsMesh);
             int lonely = _zones.Count(z => z.IsMesh && z.Links.Count == 0);
+            int split = _zones.Count(z => z.IsMesh && z.PartCount > 1);
             Console.WriteLine($"[zones] mesh: {meshZones} zone(s), {links.Count} link(s), " +
-                              $"{lonely} with no link, built in {_meshBuildTime.TotalMilliseconds:0} ms.");
+                              $"{lonely} with no link, {split} split by walls, built in {_meshBuildTime.TotalMilliseconds:0} ms.");
+            foreach (var z in _zones.Where(z => z.IsMesh && z.PartCount > 1))
+            {
+                Console.WriteLine($"[zones]   '{z.Name}' is {z.PartCount} separate patches of ground");
+            }
             foreach (var l in links)
             {
                 Console.WriteLine($"[zones]   link {l}");
@@ -652,6 +728,83 @@ namespace Server.CustomBots
                 z.ZMin = zmin;
                 z.ZMax = zmax;
             }
+        }
+
+        // Number the separately walkable patches inside one outline with
+        // the engine's step rules (climb, drop, doors open on contact).
+        // Huge outlines are not flooded: they get one part, as before.
+        private const int MaxFloodTiles = 40000;
+
+        private static void FloodParts(Map map, PaintedZone z)
+        {
+            int w = z.MaxX - z.MinX + 1, h = z.MaxY - z.MinY + 1;
+            if (map == null || w <= 0 || h <= 0 || w * h > MaxFloodTiles)
+            {
+                z.PartMap = null;
+                z.PartCount = 1;
+                return;
+            }
+            var part = new int[w * h];
+            var tileZ = new int[w * h];
+            Array.Fill(part, -1);
+            int refZ = z.ZKnown ? (z.ZMin + z.ZMax) / 2 : 0;
+            int count = 0;
+            var queue = new Queue<(int x, int y)>();
+            for (int y = z.MinY; y <= z.MaxY; y++)
+            {
+                for (int x = z.MinX; x <= z.MaxX; x++)
+                {
+                    int i = (x - z.MinX) + (y - z.MinY) * w;
+                    if (part[i] >= 0 || !z.Contains(x, y))
+                    {
+                        continue;
+                    }
+                    int seedRef = z.ZKnown ? refZ : map.GetAverageZ(x, y);
+                    if (!Walkable.TryFindSeedZ(map, x, y, seedRef, out int sz))
+                    {
+                        continue;
+                    }
+                    part[i] = count;
+                    tileZ[i] = sz;
+                    queue.Enqueue((x, y));
+                    while (queue.Count > 0)
+                    {
+                        var (cx, cy) = queue.Dequeue();
+                        int ci = (cx - z.MinX) + (cy - z.MinY) * w;
+                        int cz = tileZ[ci];
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            for (int dy = -1; dy <= 1; dy++)
+                            {
+                                if (dx == 0 && dy == 0)
+                                {
+                                    continue;
+                                }
+                                int nx = cx + dx, ny = cy + dy;
+                                if (nx < z.MinX || nx > z.MaxX || ny < z.MinY || ny > z.MaxY)
+                                {
+                                    continue;
+                                }
+                                int ni = (nx - z.MinX) + (ny - z.MinY) * w;
+                                if (part[ni] >= 0 || !z.Contains(nx, ny))
+                                {
+                                    continue;
+                                }
+                                if (!Walkable.CanStepThroughDoors(map, cx, cy, cz, nx, ny, out int nz))
+                                {
+                                    continue;
+                                }
+                                part[ni] = count;
+                                tileZ[ni] = nz;
+                                queue.Enqueue((nx, ny));
+                            }
+                        }
+                    }
+                    count++;
+                }
+            }
+            z.PartMap = part;
+            z.PartCount = Math.Max(1, count);
         }
 
         private static ZoneLink BuildLink(Map map, PaintedZone a, PaintedZone b, PaintedZone via)
@@ -717,6 +870,22 @@ namespace Server.CustomBots
             link.MidY = mid.y;
             int refZ = link.A.ZKnown ? (link.A.ZMin + link.A.ZMax) / 2 : map.GetAverageZ(mid.x, mid.y);
             link.MidZ = Walkable.TryFindSeedZ(map, mid.x, mid.y, refZ, out int z) ? z : refZ;
+
+            // Which patch of ground the crossing joins on each side: the
+            // part under the midpoint first, else any crossing tile's.
+            link.PartA = Math.Max(0, link.A.PartNear(mid.x, mid.y));
+            link.PartB = Math.Max(0, link.B.PartNear(mid.x, mid.y));
+            foreach (var (x, y) in link.Tiles)
+            {
+                if (link.A.PartNear(mid.x, mid.y) < 0 && link.A.PartNear(x, y) >= 0)
+                {
+                    link.PartA = link.A.PartNear(x, y);
+                }
+                if (link.B.PartNear(mid.x, mid.y) < 0 && link.B.PartNear(x, y) >= 0)
+                {
+                    link.PartB = link.B.PartNear(x, y);
+                }
+            }
             foreach (var (x, y) in link.Tiles)
             {
                 if (Walkable.ClosedDoorAt(map, x, y, link.MidZ) || DoorAt(map, x, y, link.MidZ))
@@ -786,12 +955,24 @@ namespace Server.CustomBots
 
         public static PaintedZone DungeonZoneAt(Point3D p) => DungeonZoneAt(p.X, p.Y, p.Z);
 
-        // Both points inside mesh zones that links join: a zone route exists.
+        // The mesh component of the ground under a point: -1 outside the
+        // mesh or on a tile no part of its zone can reach.
+        public static int ComponentAt(Point3D p)
+        {
+            var z = MeshZoneAt(p);
+            if (z == null)
+            {
+                return -1;
+            }
+            int part = z.PartNear(p.X, p.Y);
+            return part < 0 ? -1 : z.ComponentOfPart(part);
+        }
+
+        // Both points on ground the links join: a zone route exists.
         public static bool ZoneConnected(Point3D a, Point3D b)
         {
-            var za = MeshZoneAt(a);
-            var zb = MeshZoneAt(b);
-            return za != null && zb != null && za.Component >= 0 && za.Component == zb.Component;
+            int ca = ComponentAt(a);
+            return ca >= 0 && ca == ComponentAt(b);
         }
 
         // The painted Area (any type) this tile is inside, smallest first.
@@ -901,14 +1082,14 @@ namespace Server.CustomBots
                       $"Zone stalls since boot: {StuckTelemetry.TotalOf("zone_stall")}. " +
                       $"Vendor purchases: {BotVendorPurchase.PurchaseCount}.</p>");
             sb.Append("<table><tr><th>Zone</th><th>Kind</th><th>Tag</th><th>Tiles</th>" +
-                      "<th>Bad</th><th>Z</th><th>Links</th></tr>");
+                      "<th>Bad</th><th>Parts</th><th>Z</th><th>Links</th></tr>");
             foreach (var z in _zones.Where(z => z.IsMesh).OrderBy(z => z.BadTiles == 0)
                                     .ThenBy(z => z.Links.Count).ThenBy(z => z.Name))
             {
-                string warn = z.Links.Count == 0 ? " style=\"color:#c33\"" : z.BadTiles > 0 ? " style=\"color:#c80\"" : "";
+                string warn = z.Links.Count == 0 ? " style=\"color:#c33\"" : z.BadTiles > 0 || z.PartCount > 1 ? " style=\"color:#c80\"" : "";
                 sb.Append($"<tr{warn}><td>{System.Net.WebUtility.HtmlEncode(z.Name)}</td><td>{z.Kind}" +
                           $"{(z.Type != null ? " / " + z.Type : "")}</td><td>{z.Tag}</td>" +
-                          $"<td>{z.TileCount}</td><td>{z.BadTiles}</td>" +
+                          $"<td>{z.TileCount}</td><td>{z.BadTiles}</td><td>{z.PartCount}</td>" +
                           $"<td>{(z.ZKnown ? $"{z.ZMin}..{z.ZMax}" : "?")}</td><td>{z.Links.Count}</td></tr>");
             }
             sb.Append("</table>");
@@ -946,7 +1127,7 @@ namespace Server.CustomBots
                     (z.IsDungeon ? $" dungeon '{z.Dungeon ?? "?"}' L{(z.Level.HasValue ? z.Level.Value.ToString() : "?")}" : "") +
                     (string.IsNullOrEmpty(z.LinkedDest) ? "" : $" -> {z.LinkedDest}") +
                     $" center ({z.CenterX},{z.CenterY}), {z.Points.Count} corners" +
-                    (z.IsMesh ? $", {z.Links.Count} links, {z.BadTiles} bad tiles, Z {(z.ZKnown ? $"{z.ZMin}..{z.ZMax}" : "?")}" : ""));
+                    (z.IsMesh ? $", {z.Links.Count} links, {z.PartCount} part(s), {z.BadTiles} bad tiles, Z {(z.ZKnown ? $"{z.ZMin}..{z.ZMax}" : "?")}" : ""));
         }
 
         private static void Links_OnCommand(CommandEventArgs e)

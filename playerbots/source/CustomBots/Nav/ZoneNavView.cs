@@ -179,7 +179,8 @@ namespace Server.CustomBots
             if (pathBot != null)
             {
                 var bot = FindBot(pathBot);
-                if (bot?.Behavior is TravelerBehavior tb && tb.ActiveZoneFollower is { } zf && zf.OnMesh && zf.Route != null)
+                var walker = bot?.Behavior?.ActiveLegFollower;
+                if (walker is ZoneFollower { OnMesh: true, Route: not null } zf)
                 {
                     var route = zf.Route;
                     for (int i = zf.TargetIndex; i < route.Targets.Count; i++)
@@ -191,13 +192,27 @@ namespace Server.CustomBots
                     pathNote = $" {bot.Name}: {route.Targets.Count - zf.TargetIndex} target(s) left, " +
                                $"in '{route.Zones[Math.Min(zf.TargetIndex, route.Zones.Count - 1)].Name}'.";
                 }
-                else if (bot?.Behavior is TravelerBehavior tb2 && tb2.ActiveZoneFollower is { } zf2)
+                else if (walker is ZoneFollower zf2)
                 {
                     pathNote = $" {bot.Name} fell back to the engine walker ({zf2.FallbackReason}).";
                 }
+                else if (walker is EnginePathFollower ep)
+                {
+                    var g = ep.GetGoalLocation();
+                    var zHere = ZoneRegistry.MeshZoneAt(bot.Location);
+                    var zThere = ZoneRegistry.MeshZoneAt(g);
+                    pathNote = $" {bot.Name} walks the engine path to ({g.X},{g.Y}): " +
+                               (zHere == null ? "not standing in a zone" : zThere == null ? "the goal is outside every zone"
+                                : "zone walking is off for this bot") + ".";
+                }
+                else if (bot == null)
+                {
+                    pathNote = $" {pathBot}: no such bot.";
+                }
                 else
                 {
-                    pathNote = $" {pathBot} is not on a zone route.";
+                    pathNote = $" {bot.Name} is not walking a leg right now ({bot.Behavior?.SerializableName ?? "no behaviour"}: " +
+                               $"{bot.Behavior?.GetStatusLine(bot) ?? "idle"}).";
                 }
             }
 

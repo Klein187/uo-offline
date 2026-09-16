@@ -38,6 +38,10 @@ namespace Server.CustomBots
         // goal is the one measure a retry cannot fake.
         public virtual Point3D? NavGoal(PlayerBot bot) => null;
 
+        // The leg walker in use right now, for [NavPath. Null when the bot
+        // is not walking a leg (fighting, lingering, idle).
+        public virtual ILegFollower ActiveLegFollower => null;
+
         // Chat config — override in subclasses.
         public virtual string[] ChatCategories { get; protected set; } = Array.Empty<string>();
         public virtual double ChatChance        { get; protected set; } = 0.15;

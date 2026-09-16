@@ -38,6 +38,7 @@ namespace Server.CustomBots
 
         public override Point3D? NavGoal(PlayerBot bot) =>
             _stepTimer != null && _walker != null ? _walker.GetGoalLocation() : null;
+        public override ILegFollower ActiveLegFollower => _stepTimer != null ? _walker : null;
 
         // Speech range UO vendors respond within; informational only here.
         public int VendorSpeakRange { get; set; } = 3;
