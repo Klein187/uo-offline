@@ -493,31 +493,62 @@ unpack_uo_exe() {
   warn "It is a WinRAR (RAR5) self-extracting archive. p7zip cannot read RAR"
   warn "at all, and unar cannot see past the stub. Install one that can and"
   warn "re-run this script:"
-  warn "    Debian/Ubuntu:  sudo apt install unrar     (or: 7zip)"
+  warn "    Ubuntu:         sudo add-apt-repository multiverse && sudo apt install unrar"
+  warn "    Debian:         enable non-free, then: sudo apt install unrar"
   warn "    Fedora:         sudo dnf install unrar     (or: p7zip-plugins)"
   warn "    Arch/SteamOS:   sudo pacman -S unrar"
   return 1
 }
 
-# One extraction attempt. Judged by whether the data files actually appeared,
+# One extraction attempt. Judged by whether a COMPLETE data set came out,
 # never by the exit code -- 7z "succeeds" while failing every file with
-# "Unsupported Method", which is how this went unnoticed in the first place.
+# "Unsupported Method".
+#
+# Judging by "art.mul exists" was not enough either. p7zip creates every
+# file it lists, then fails to fill it, so a 0-byte art.mul counted as a
+# win. That stopped the loop before unrar or unar ever ran, and the user got
+# "extraction is incomplete" on every stock Debian/Ubuntu box. So each
+# attempt goes into its own empty staging folder, is checked with
+# uo_data_problem, and is thrown away if it is not whole.
 run_extractor() {
   local tool="$1" archive="$2" dest="$3"
+  local stage="${dest}/.extract-${tool}"
+
+  rm -rf "${stage}"
+  mkdir -p "${stage}"
 
   case "${tool}" in
     # -D stops unar wrapping everything in a folder named after the archive;
     # the payload already carries its own version folder.
-    unar)  unar -q -f -D -o "${dest}" "${archive}" >/dev/null 2>&1 || true ;;
-    unrar) unrar x -y -inul "${archive}" "${dest}/" >/dev/null 2>&1 || true ;;
-    *)     "${tool}" x -y "-o${dest}" "${archive}" >/dev/null 2>&1 || true ;;
+    unar)  unar -q -f -D -o "${stage}" "${archive}" >/dev/null 2>&1 || true ;;
+    unrar) unrar x -y -inul "${archive}" "${stage}/" >/dev/null 2>&1 || true ;;
+    *)     "${tool}" x -y "-o${stage}" "${archive}" >/dev/null 2>&1 || true ;;
   esac
 
-  if [[ -n "$(find "${dest}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)" ]]; then
-    ok "Extracted with ${tool}."
-    return 0
+  local art why
+  art="$(find "${stage}" -maxdepth 3 -name art.mul -print -quit 2>/dev/null)"
+  if [[ -z "${art}" ]]; then
+    rm -rf "${stage}"
+    return 1
   fi
-  return 1
+  if ! why="$(uo_data_problem "$(dirname "${art}")")"; then
+    warn "${tool} left an incomplete copy (${why})."
+    rm -rf "${stage}"
+    return 1
+  fi
+
+  # Good copy. Move it up into dest, replacing anything a failed earlier
+  # run left behind under the same name.
+  local item
+  for item in "${stage}"/* "${stage}"/.[!.]*; do
+    [[ -e "${item}" ]] || continue
+    rm -rf "${dest}/$(basename "${item}")"
+    mv "${item}" "${dest}/"
+  done
+  rm -rf "${stage}"
+
+  ok "Extracted with ${tool}."
+  return 0
 }
 
 # Byte offset of the RAR5 signature inside the self-extractor, or empty.
