@@ -1,7 +1,3 @@
-I know I said updates would slow down but I got a few features done over the weekend that I think people will enjoy. Some of these are bigger features so you will probably run into a few bugs.
+I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
-Recent Updates
--You can play with friends! Starting up will now ask play by myself, host for friend, or join a friend. Read FRIENDS.MD under /docs will help explain how to play with each other.
--You can now build a guild. Invite bots to join your guild and they will persist throughout. Basic chat in guild chat. Ask if anyone wants to group up, guild mates will recall to you to group up and adventure.
--Thieves! New thief bots will steal from other bots and you. There is now a guild out there made just of thieves.
--Combat improvements
+-Linux install bug fixed
