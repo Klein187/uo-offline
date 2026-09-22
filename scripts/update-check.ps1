@@ -150,15 +150,36 @@ try {
     # everything and look like a hang.
     $form.TopMost = $true
 
-    $text = New-Object System.Windows.Forms.TextBox
-    $text.Multiline = $true
+    # A RichTextBox so a line in the notes can be bold. A line written as
+    # **like this** shows in bold without the asterisks.
+    $text = New-Object System.Windows.Forms.RichTextBox
     $text.ReadOnly = $true
     $text.ScrollBars = "Vertical"
     $text.Location = New-Object System.Drawing.Point(14, 14)
     $text.Size = New-Object System.Drawing.Size(520, 300)
-    $text.Text = $body
     $text.BackColor = [System.Drawing.Color]::White
     $form.Controls.Add($text)
+    $boldFont = New-Object System.Drawing.Font($text.Font, [System.Drawing.FontStyle]::Bold)
+    # Strip the markers and remember where each bold line starts. The
+    # positions are counted from the text itself: the control's own line
+    # numbers count wrapped screen lines, which lands on the wrong line.
+    $boldSpans = @()
+    $plainLines = @()
+    $pos = 0
+    foreach ($line in ($body -split "`r`n")) {
+        if ($line -match '^\s*\*\*(.+)\*\*\s*$') {
+            $line = $Matches[1]
+            $boldSpans += ,@($pos, $line.Length)
+        }
+        $plainLines += $line
+        $pos += $line.Length + 1
+    }
+    $text.Text = $plainLines -join "`n"
+    foreach ($span in $boldSpans) {
+        $text.Select($span[0], $span[1])
+        $text.SelectionFont = $boldFont
+    }
+    $text.SelectionStart = 0
 
     $btnUpdate = New-Object System.Windows.Forms.Button
     $btnUpdate.Text = "Update Now"

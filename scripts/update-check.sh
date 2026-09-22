@@ -103,6 +103,18 @@ BODY="${CHANGELOG}
 Updating re-runs the installer, which rebuilds the server with the new
 bots. Your world, characters and accounts are kept."
 
+# A line written as **like this** in the notes shows in bold. Each prompt
+# gets its own copy: kdialog and zenity read <b> markup (so & < > must be
+# escaped, and kdialog needs <br> for line breaks once it sees a tag), the
+# terminal uses ANSI bold.
+BOLD_RE='^[[:space:]]*\*\*\(.*\)\*\*[[:space:]]*$'
+BODY_MARKUP="$(printf '%s\n' "${BODY}" \
+  | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+        -e "s/${BOLD_RE}/<b>\1<\/b>/")"
+BODY_HTML="$(printf '%s\n' "${BODY_MARKUP}" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/<br>/g')"
+BODY_TERM="$(printf '%s\n' "${BODY}" \
+  | sed -e "s/${BOLD_RE}/$(printf '\033')[1m\1$(printf '\033')[0m/")"
+
 # -------------------------------------------------------------------------
 # ask -> prints one of: update | play | skip
 # -------------------------------------------------------------------------
@@ -114,7 +126,7 @@ ask() {
             --yes-label "Update Now" \
             --no-label "Play Now" \
             --cancel-label "Skip This Version" \
-            --yesnocancel "${BODY}" >/dev/null 2>&1
+            --yesnocancel "${BODY_HTML}" >/dev/null 2>&1
     case $? in
       0) printf 'update' ;;
       1) printf 'play'   ;;
@@ -126,7 +138,7 @@ ask() {
   if have_gui && command -v zenity >/dev/null 2>&1; then
     local extra
     extra="$(zenity --question --title="${TITLE}" --no-wrap \
-              --text="${BODY}" \
+              --text="${BODY_MARKUP}" \
               --ok-label="Update Now" --cancel-label="Play Now" \
               --extra-button="Skip This Version" 2>/dev/null)"
     local rc=$?
@@ -140,7 +152,7 @@ ask() {
   # Terminal prompt. Only when someone is actually there to read it.
   if [[ -t 0 && -t 1 ]]; then
     printf '\n\033[0;36m=========================================================\033[0m\n' >&2
-    printf '%s\n' "${BODY}" >&2
+    printf '%s\n' "${BODY_TERM}" >&2
     printf '\033[0;36m=========================================================\033[0m\n' >&2
     printf '  [u] update now    [p] play now    [s] skip this version\n' >&2
     local reply=""
