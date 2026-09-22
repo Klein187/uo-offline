@@ -58,6 +58,23 @@ done
 INSTALL_MAP_EDITOR="${INSTALL_MAP_EDITOR:-1}"
 unset _arg_i _next
 
+# With no root given, follow the desktop launcher to the install the player
+# actually uses. The launcher's update button runs this from a temp folder,
+# and launchers from before 2026-09-21 did not pass --install-root, so an
+# install anywhere but ~/uo-modernuo got a second, empty one with no
+# accounts.
+if [[ -z "${INSTALL_ROOT:-}" ]]; then
+  _launcher="${HOME}/.local/share/applications/UO-Offline.desktop"
+  if [[ -f "${_launcher}" ]]; then
+    _exec="$(sed -n 's/^Exec=//p' "${_launcher}" | head -n1)"
+    _dir="${_exec%/start.sh}"
+    if [[ "${_dir}" != "${_exec}" && -f "${_dir}/start.sh" ]]; then
+      INSTALL_ROOT="${_dir}"
+    fi
+  fi
+  unset _launcher _exec _dir
+fi
+
 INSTALL_ROOT="${INSTALL_ROOT:-${HOME}/uo-modernuo}"
 INSTALL_ROOT="${INSTALL_ROOT%/}"
 

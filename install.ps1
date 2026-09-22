@@ -123,9 +123,29 @@ function Set-InstallRoot {
   $script:PythonDir    = [IO.Path]::Combine($Path, "python")
 }
 
-# The default is the same place it has always been.
+# The install the "UO Offline" desktop shortcut starts, if there is one.
+#
+# The launcher's Update Now button runs this installer from a temp folder.
+# Launchers from before 2026-09-21 did not pass -InstallPath, so an install
+# in a folder the player picked got a second, empty install at the default
+# instead: no accounts, a new owner prompt. Those launchers are still out
+# there, so with no -InstallPath the installer follows the shortcut to the
+# install the player actually uses.
+function Find-ShortcutInstall {
+  try {
+    $lnkPath = [IO.Path]::Combine([Environment]::GetFolderPath("Desktop"), "UO Offline.lnk")
+    if (-not (Test-Path -LiteralPath $lnkPath)) { return $null }
+    $dir = (New-Object -ComObject WScript.Shell).CreateShortcut($lnkPath).WorkingDirectory
+    if ($dir -and (Test-Path -LiteralPath ([IO.Path]::Combine($dir, "start.ps1")))) { return $dir }
+  } catch { }
+  return $null
+}
+
+# Otherwise the default is the same place it has always been.
 if ($InstallPath) {
   Set-InstallRoot $InstallPath
+} elseif ($found = Find-ShortcutInstall) {
+  Set-InstallRoot $found
 } else {
   Set-InstallRoot (Join-Path $env:USERPROFILE "uo-modernuo")
 }

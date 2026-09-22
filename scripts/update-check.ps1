@@ -217,9 +217,16 @@ try {
 
     # Visible window on purpose: the rebuild takes minutes and a silent
     # background job would look like the launcher did nothing.
+    #
+    # -InstallPath is the folder this script lives in, which is the install
+    # being updated. Without it the installer falls back to its default,
+    # %USERPROFILE%\uo-modernuo. Anyone who picked a different folder got
+    # a second, empty install there: no accounts, a new owner prompt, and
+    # the desktop shortcut repointed at it.
     Start-Process -FilePath "powershell.exe" -ArgumentList @(
         "-NoProfile", "-ExecutionPolicy", "Bypass",
-        "-File", "`"$($installer.FullName)`""
+        "-File", "`"$($installer.FullName)`"",
+        "-InstallPath", "`"$InstallRoot`""
     ) -WorkingDirectory $installer.DirectoryName | Out-Null
 
     Emit "updating"

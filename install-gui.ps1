@@ -32,6 +32,19 @@ if (-not (Test-Path $EnginePath)) {
 # (The engine is the source of truth; these are read from it at runtime.)
 $InstallRootLabel = Join-Path $env:USERPROFILE "uo-modernuo"
 
+# Re-running the installer to update: offer the folder the "UO Offline"
+# desktop shortcut starts, not the default, so an install in a folder the
+# player picked is updated in place instead of duplicated.
+try {
+    $lnkPath = [IO.Path]::Combine([Environment]::GetFolderPath("Desktop"), "UO Offline.lnk")
+    if (Test-Path -LiteralPath $lnkPath) {
+        $lnkDir = (New-Object -ComObject WScript.Shell).CreateShortcut($lnkPath).WorkingDirectory
+        if ($lnkDir -and (Test-Path -LiteralPath ([IO.Path]::Combine($lnkDir, "start.ps1")))) {
+            $InstallRootLabel = $lnkDir
+        }
+    }
+} catch { }
+
 # ---------------------------------------------------------------------------
 # Shared state between the UI thread and the worker runspace
 # ---------------------------------------------------------------------------

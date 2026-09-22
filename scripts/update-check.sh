@@ -188,19 +188,26 @@ if [[ -z "${INSTALLER}" ]]; then
 fi
 chmod +x "${INSTALLER}" 2>/dev/null
 
+# --install-root is the folder this script lives in, the install being
+# updated. Without it install.sh falls back to ~/uo-modernuo, and anyone who
+# installed somewhere else got a second, empty install with no accounts.
+# Passed on the command line, not through the environment, because
+# gnome-terminal runs its shells from a server that never sees our env.
+ROOT_Q="$(printf '%q' "${INSTALL_ROOT}")"
+
 # In a terminal, just run it here so the player watches the build. Launched
 # from the desktop icon there is no terminal, so open one - the rebuild
 # takes minutes and a silent background job looks like nothing happened.
 if [[ -t 1 ]]; then
-  ( cd "$(dirname "${INSTALLER}")" && bash "${INSTALLER}" )
+  ( cd "$(dirname "${INSTALLER}")" && bash "${INSTALLER}" --install-root "${INSTALL_ROOT}" )
   exit 10
 fi
 
 for term in konsole gnome-terminal xfce4-terminal x-terminal-emulator xterm; do
   command -v "${term}" >/dev/null 2>&1 || continue
   case "${term}" in
-    gnome-terminal) "${term}" -- bash -lc "cd '$(dirname "${INSTALLER}")' && bash '${INSTALLER}'; echo; read -r -p 'Done. Press Enter to close.'" & ;;
-    *)              "${term}" -e bash -lc "cd '$(dirname "${INSTALLER}")' && bash '${INSTALLER}'; echo; read -r -p 'Done. Press Enter to close.'" & ;;
+    gnome-terminal) "${term}" -- bash -lc "cd '$(dirname "${INSTALLER}")' && bash '${INSTALLER}' --install-root ${ROOT_Q}; echo; read -r -p 'Done. Press Enter to close.'" & ;;
+    *)              "${term}" -e bash -lc "cd '$(dirname "${INSTALLER}")' && bash '${INSTALLER}' --install-root ${ROOT_Q}; echo; read -r -p 'Done. Press Enter to close.'" & ;;
   esac
   exit 10
 done
