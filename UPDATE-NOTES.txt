@@ -1,3 +1,4 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
 -Linux install bug fixed
+-fixed updater not updating to custom install location
