@@ -11,7 +11,8 @@
 //   ├────────────────────────────────────────────────┤
 //   │  WORLD                                          │
 //   │    [★ First Time Setup]                        │
-//   │      decorate, signs, teleporters, moongates,  │
+//   │      decorate, doors, signs, teleporters,      │
+//   │      moongates,                                │
 //   │      criers, spawners, ALL player bots incl.   │
 //   │      the reds, then saves.                     │
 //   ├────────────────────────────────────────────────┤
@@ -233,7 +234,7 @@ namespace Server.CustomBots
             y += ButtonH + 2;
 
             AddHtml(PadX + 30, y, PanelW - PadX - 44, 36,
-                "<BASEFONT COLOR=#C8C0A8><I>Decor, signs, teleporters, moongates, " +
+                "<BASEFONT COLOR=#C8C0A8><I>Decor, doors, signs, teleporters, moongates, " +
                 "criers and spawners, then every player bot including the reds. " +
                 "Saves when it is done. Safe to run again.</I></BASEFONT>");
 
@@ -426,6 +427,11 @@ namespace Server.CustomBots
                 // ----- World setup -----
                 case Act.FirstTimeSetup:
                     BotPanelActions.RunCommand(from, "Decorate");
+                    // Decorate only places the doors listed in the decoration
+                    // files. DoorGen fills every other door frame on the map.
+                    // It skips frames that already hold a door, so a re-run
+                    // does not stack them.
+                    BotPanelActions.RunCommand(from, "DoorGen");
                     BotPanelActions.RunCommand(from, "SignGen");
                     BotPanelActions.RunCommand(from, "TelGen");
                     BotPanelActions.RunCommand(from, "MoonGen");

@@ -190,7 +190,7 @@ Double-click the **UO Offline** desktop icon. It starts the server, opens the ga
 
 The world starts empty. To fill it:
 
-**1.** Type `[GmPanel` to open the GM panel and click **★ First Time Setup**. That one button lays down decor, signs, teleporters, moongates, town criers, the monster and vendor spawners, and the whole player bot population — town and road bots plus the reds — then saves. It is safe to run again later.
+**1.** Type `[GmPanel` to open the GM panel and click **★ First Time Setup**. That one button lays down decor, doors, signs, teleporters, moongates, town criers, the monster and vendor spawners, and the whole player bot population — town and road bots plus the reds — then saves. It is safe to run again later.
 
 **2.** That's all. The Lifecycle system takes over from there.
 
