@@ -31,6 +31,10 @@ TIMEOUT=6
 
 TITLE="UO Offline - update available"
 
+# A development install, where the bots are being worked on. An update would
+# copy the released code and data over the unreleased work, so never offer one.
+[[ -f "${INSTALL_ROOT}/dev-install.txt" ]] && exit 0
+
 # Nothing to compare against, or no way to ask: launch the game.
 [[ -f "${STAMP}" ]] || exit 0
 command -v curl >/dev/null 2>&1 || exit 0

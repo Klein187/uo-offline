@@ -40,6 +40,14 @@ function Emit([string]$verdict) {
 # trace in the player's face.
 # -------------------------------------------------------------------------
 try {
+    # A development install, where the bots are being worked on. An update
+    # would copy the released code and data over the unreleased work, so
+    # never offer one. Create dev-install.txt next to this script to opt out.
+    if (Test-Path (Join-Path $InstallRoot "dev-install.txt")) {
+        Emit "continue"
+        return
+    }
+
     if (-not (Test-Path $StampPath)) {
         # No version stamp: installed before this feature existed, or the
         # stamp could not be written. Nothing to compare against.

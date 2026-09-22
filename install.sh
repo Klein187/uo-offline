@@ -1432,6 +1432,22 @@ install_playerbots() {
     return
   fi
 
+  # Copy what is there now before overwriting it. An update replaces the
+  # bot code and data wholesale, including zones, waypoints and destinations
+  # the player drew in the map editor. Nothing is lost if it is in here.
+  local backup_dir="${INSTALL_ROOT}/backups/$(date +%Y%m%d-%H%M%S)"
+  if [[ -d "${src_target}" ]]; then
+    mkdir -p "${backup_dir}"
+    cp -r "${src_target}" "${backup_dir}/CustomBots"
+  fi
+  for sub in Destinations Waypoints Zones PlayerBotChat; do
+    if [[ -d "${DIST_DIR}/Data/${sub}" ]]; then
+      mkdir -p "${backup_dir}/Data"
+      cp -r "${DIST_DIR}/Data/${sub}" "${backup_dir}/Data/${sub}"
+    fi
+  done
+  [[ -d "${backup_dir}" ]] && say "Backed up the current bots and bot data to ${backup_dir}"
+
   say "Deploying bot source -> ${src_target}"
   mkdir -p "${src_target}"
   cp -rT "${src_dir}/source/CustomBots" "${src_target}"
