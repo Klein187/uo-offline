@@ -105,6 +105,7 @@ namespace Server.CustomBots
                 // of bot that is meant to be there after a restart.
                 if (bot.IsPermanent)
                 {
+                    BringBackOnline(bot);
                     kept++;
                     continue;
                 }
@@ -119,6 +120,33 @@ namespace Server.CustomBots
                 Console.WriteLine($"[Startup] kept {kept} guild-bound bot(s) through the purge");
             }
             return stale.Count;
+        }
+
+        // The engine parks every player character on the internal map when
+        // the world loads (Mobile.Deserialize stores LogoutLocation/LogoutMap)
+        // and puts it back when that player logs in. A bot never logs in, so
+        // a kept guild bot sat on the internal map for good, skipped by every
+        // tick manager. This is that login: put it back where it logged out.
+        private static void BringBackOnline(PlayerBot bot)
+        {
+            if (bot.Map != null && bot.Map != Map.Internal)
+            {
+                return;
+            }
+
+            var map = bot.LogoutMap;
+            var loc = bot.LogoutLocation;
+            if (map == null || map == Map.Internal || loc == Point3D.Zero)
+            {
+                // No logout spot on record: Britain bank steps.
+                map = Map.Felucca;
+                loc = new Point3D(1434, 1699, map.GetAverageZ(1434, 1699));
+            }
+
+            bot.LoggingOut = false;
+            bot.SessionEndsAt = DateTime.MinValue;
+            bot.MoveToWorld(loc, map);
+            Console.WriteLine($"[Startup] {bot.Name} logged back in at {loc} ({map})");
         }
 
         // -------------------------------------------------------------------
