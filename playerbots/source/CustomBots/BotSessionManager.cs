@@ -10,10 +10,11 @@
 //     beat). Its spawner refills the slot minutes later — someone ELSE
 //     logging in.
 //   - A 24-hour POPULATION CURVE (local server clock = the player's own
-//     clock) scales the target population: dead at 5am, packed in the
-//     evening. Surplus bots get logged out gradually; spawner refills are
-//     gated through AllowSpawn() so the population climbs back only as
-//     the curve allows.
+//     clock) scales the target population: quiet at 5am, packed in the
+//     evening, and never below MinOnline (500 bots). Surplus bots get
+//     logged out gradually; spawner refills are gated through
+//     AllowSpawn() so the population climbs back only as the curve
+//     allows.
 //   - Fresh spawns during play are "logins": journaled, and sometimes the
 //     bot greets the room ("hey all", "anyone on?").
 //
@@ -66,8 +67,13 @@ namespace Server.CustomBots
 
         public static double CurveNow => HourCurve[DateTime.Now.Hour];
 
+        // The curve never takes the world below this many bots, whatever
+        // the hour. A cap set lower than this still wins.
+        public const int MinOnline = 500;
+
         public static int TargetNow =>
-            Math.Max(1, (int)(BotPopulation.TargetCount * CurveNow));
+            Math.Max(1, Math.Min(BotPopulation.TargetCount,
+                Math.Max(MinOnline, (int)(BotPopulation.TargetCount * CurveNow))));
 
         public static void Configure()
         {

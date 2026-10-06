@@ -217,7 +217,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Guilds and the Order/Chaos war.** Thirteen era guilds ("The Undead Lords", "DOOM", "Knights of Yew") with both big-zerg and small-crew rosters. About 40% of bots wear a `[TAG]`. Six guilds carry Order or Chaos shields, and opposing shields fight on sight, in town, with the guards ignoring it, the way T2A worked.
 
-**Login and logout sessions.** Bots don't exist forever. They log in, play one to four hours, say "gtg dinner", and vanish. The population follows a daily curve: dead at 5am, packed in the evening. Fresh spawns arrive as logins ("hey all", "what did i miss").
+**Login and logout sessions.** Bots don't exist forever. They log in, play one to four hours, say "gtg dinner", and vanish. The population follows a daily curve: quiet at 5am, packed in the evening, and never fewer than 500 bots online. Fresh spawns arrive as logins ("hey all", "what did i miss").
 
 **The event journal and gossip.** The shard keeps a record of everything notable — kills, deaths, murders, duels, hunts, red sightings — and bots at banks retell real events. "Aldreth got pked at despise earlier!!" only gets said if it actually happened. Bots that hunted or dueled together become friends and greet each other by name from then on.
 
