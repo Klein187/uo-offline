@@ -438,6 +438,10 @@ namespace Server.CustomBots
                     BotPanelActions.RunCommand(from, "TownCriers");
                     BotPanelActions.RunCommand(from,
                         "GenerateSpawners Spawners/uoclassic/UOClassic.map");
+                    // That import adds a whole second set every time it runs,
+                    // so a repeat setup stacked every NPC and monster. Keep
+                    // one spawner per spot.
+                    SpawnerDedupe.Run();
                     // That list predates T2A: no Ice, Fire, Terathan Keep or
                     // Orc Cave, and many dungeon spawners pile their monsters
                     // on one tile. Fill and spread them now.
