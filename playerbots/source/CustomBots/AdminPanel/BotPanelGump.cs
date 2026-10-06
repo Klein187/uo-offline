@@ -438,6 +438,10 @@ namespace Server.CustomBots
                     BotPanelActions.RunCommand(from, "TownCriers");
                     BotPanelActions.RunCommand(from,
                         "GenerateSpawners Spawners/uoclassic/UOClassic.map");
+                    // That list predates T2A: no Ice, Fire, Terathan Keep or
+                    // Orc Cave, and many dungeon spawners pile their monsters
+                    // on one tile. Fill and spread them now.
+                    DungeonSpawnFix.Run();
                     // Both halves of the player bot population: the towns and
                     // roads from GenerateBots, the reds from GeneratePKs.
                     BotPanelActions.RunCommand(from, "GenerateBots");

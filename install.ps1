@@ -529,7 +529,7 @@ function InstallPlayerBots {
     Copy-Item -Recurse -Force $srcTarget (Join-Path $backupDir "CustomBots")
     $backedUp = $true
   }
-  foreach ($sub in @("Destinations","Waypoints","Zones","PlayerBotChat")) {
+  foreach ($sub in @("Destinations","Waypoints","Zones","PlayerBotChat","CustomSpawns")) {
     $cur = Join-Path $DistDir "Data\$sub"
     if (Test-Path $cur) {
       New-Item -ItemType Directory -Force -Path (Join-Path $backupDir "Data") | Out-Null
@@ -544,9 +544,9 @@ function InstallPlayerBots {
   Copy-Item -Recurse -Force (Join-Path $srcDir "source\CustomBots\*") $srcTarget
 
   # Deploy every bot data directory present in the repo (Destinations,
-  # Waypoints, Zones, PlayerBotChat). Navigation/fields_cache.bin is a
+  # Waypoints, Zones, PlayerBotChat, CustomSpawns). Navigation/fields_cache.bin is a
   # generated cache the bots rebuild on first run — not shipped.
-  foreach ($sub in @("Destinations","Waypoints","Zones","PlayerBotChat")) {
+  foreach ($sub in @("Destinations","Waypoints","Zones","PlayerBotChat","CustomSpawns")) {
     $from = Join-Path $srcDir "data\$sub"
     if (Test-Path $from) {
       $to = Join-Path $DistDir "Data\$sub"

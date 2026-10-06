@@ -1440,7 +1440,7 @@ install_playerbots() {
     mkdir -p "${backup_dir}"
     cp -r "${src_target}" "${backup_dir}/CustomBots"
   fi
-  for sub in Destinations Waypoints Zones PlayerBotChat; do
+  for sub in Destinations Waypoints Zones PlayerBotChat CustomSpawns; do
     if [[ -d "${DIST_DIR}/Data/${sub}" ]]; then
       mkdir -p "${backup_dir}/Data"
       cp -r "${DIST_DIR}/Data/${sub}" "${backup_dir}/Data/${sub}"
@@ -1456,9 +1456,10 @@ install_playerbots() {
   # Deploy every bot data directory present in the repo. The bots need
   # Destinations (where to go), Waypoints (the road graph), Zones (painted
   # areas + portals for arrival), Navigation (field caches), and
-  # PlayerBotChat (speech lines). Whole-dir copy so new dirs are picked up
+  # PlayerBotChat (speech lines), CustomSpawns (PK camps, T2A dungeon
+  # spawns). Whole-dir copy so new dirs are picked up
   # automatically.
-  for sub in Destinations Waypoints Zones PlayerBotChat; do
+  for sub in Destinations Waypoints Zones PlayerBotChat CustomSpawns; do
     if [[ -d "${src_dir}/data/${sub}" ]]; then
       say "Deploying ${sub} -> ${DIST_DIR}/Data/${sub}"
       mkdir -p "${DIST_DIR}/Data/${sub}"
