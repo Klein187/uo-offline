@@ -7,12 +7,15 @@ The point of it is the PlayerBots. The world is full of bots that fight, shop, b
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, all on localhost.
 
 <details>
-<summary><b>What's new — September 2026</b></summary>
+<summary><b>What's new — September and October 2026</b></summary>
 
 <br>
 
 Newest first.
 
+- **Guild bots come back.** Bots you recruited into your guild were kept through a restart but never showed up again. They log back in where they left off now.
+- **Pack horses don't weigh you down.** What your pack horse carried counted against the horse you rode, but only while mounted. It no longer counts.
+- **Never an empty shard.** The population still follows the time of day, but there are always at least 500 bots online.
 - **Reds on every shard.** PKs never spawned for most players, because the installer left out the file that says where their camps are. It ships now, so setup places them and the next update adds them to worlds that already exist.
 - **Save and stop saves.** Switching between solo and hosting asked the server to save and stop, but it stopped before the save was written and hung. It waits for the save now.
 - **Monsters in every T2A dungeon, and not in piles.** Ice, Fire, Terathan Keep and the Orc Cave had no monsters at all, because the world's spawn list predates T2A. They are stocked now. Dungeon monsters also used to pile up a dozen to a tile, and they spread out across the room now.

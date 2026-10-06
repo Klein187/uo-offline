@@ -1,5 +1,12 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
+-fixed a bug where pks weren’t spawning. Be careful out there
+-fixed bug where recruited guild bots never spawned again
+-fixed bug where pack horse weight would weigh you down
+-a minimum of 500 bots will be in game no matter what time of day
+-t2a dungeons didn’t have mobs, fixed
+-mobs would stack up on one tile in dungeons, fixed
+-switching between solo and hosted wouldn’t save the state of the world , fixed
 -Doors werent being properly generated when doing initial setup. works now.
 **Log into your admin account and run [DoorGen to add doors.**
 -Linux install bug fixed
