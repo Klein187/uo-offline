@@ -13,6 +13,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Bots shop at the NPC shops again.** Most shops had no floor drawn, so a bot reached the door, gave up and left, and almost nothing was ever bought. 60 shop floors are drawn now, a bot at a shop door walks in, and a shop with no floor still gets a real visit.
 - **No more stacked NPCs and monsters.** Running First Time Setup more than once added a whole second copy of every town NPC, animal and monster spawner each time, so shops had several of the same vendor standing on one another. The extras are removed on the next start, and setup no longer stacks them.
 - **Bots own houses and run shops.** Some bots now come back session after session as regulars, with the same name, gear and bank account. Regulars live in the roadside houses, let themselves in with a key, stash their loot and often log out at home. A regular who saves up a deed's price buys a real one from an architect and places it.
 - **Bots shop at vendor houses too.** A bot low on reagents, bandages, arrows or recall scrolls checks the vendor houses as well as the town shops, walks in and buys from the player vendor the way you would. Fighters with gold drop by now and then to look for a better weapon.

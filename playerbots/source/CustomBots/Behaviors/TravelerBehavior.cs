@@ -2351,6 +2351,39 @@ namespace Server.CustomBots
 
 
 
+// Outside a drawn shop floor but close to it: the trip ends on the street
+// or at the closed door, and a Traveler does not open doors. The Shopper
+// does, and is handed the shop's floor to walk in to.
+private bool ShopDoorstepArrival(PlayerBot bot)
+{
+    if (!_finalCoord.HasValue)
+    {
+        return false;
+    }
+    var area = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
+    return area != null &&
+        bot.X >= area.MinX - 15 && bot.X <= area.MaxX + 15 &&
+        bot.Y >= area.MinY - 15 && bot.Y <= area.MaxY + 15;
+}
+
+// A shop nobody has drawn a floor for: ZoneArrival never says yes there,
+// and the bot used to turn round at the door, pick somewhere new and often
+// Recall straight off. Within a few tiles of the shop is arrival enough; the
+// Shopper stands and browses and buys from the vendor nearest it.
+private bool UndrawnShopArrival(PlayerBot bot)
+{
+    if (!_finalCoord.HasValue || ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value) != null)
+    {
+        return false;
+    }
+    var dObj = DestinationCatalog.GetByName(DestinationName);
+    if (dObj != null && dObj.ArrivalPoint.HasValue)
+    {
+        return false;
+    }
+    return bot.InRange(_finalCoord.Value, 8);
+}
+
 private bool ZoneArrival(PlayerBot bot, int fallbackRange)
 {
     if (!_finalCoord.HasValue) return false;
@@ -2722,7 +2755,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     // open doors, so they deliver to the doorway and the
                     // SHOPPER walks in to the counter (it opens doors).
                     // 8 tiles accepts doorsteps, rejects street-stallers.
-                    if (!ZoneArrival(bot, 15))
+                    if (!ZoneArrival(bot, 15) && !UndrawnShopArrival(bot) && !ShopDoorstepArrival(bot))
                     {
                         Log(bot, $"No Shopper handoff at '{DestinationName}' — " +
                                  $"{(_finalCoord.HasValue ? bot.GetDistanceToSqrt(_finalCoord.Value).ToString("0") : "?")} tiles from the vendor (leaving)");
@@ -2773,6 +2806,12 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             if (visit is GathererBehavior gb)
             {
                 gb.SiteName = DestinationName;
+            }
+            // The shopper is handed the shop's own floor, so one that
+            // arrives at the door (not yet inside) still walks in to it.
+            if (visit is ShopperBehavior sb && _finalCoord.HasValue)
+            {
+                sb.ShopArea = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
             }
             visit.VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(
                 Utility.RandomMinMax(visitMinMinutes, visitMaxMinutes));

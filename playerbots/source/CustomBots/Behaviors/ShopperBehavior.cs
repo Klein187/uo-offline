@@ -81,7 +81,12 @@ namespace Server.CustomBots
         // Counters for the log line on the way out.
         private int _wanders;
         private int _purchases;
+        // The floor of the shop the Traveler brought it to, when it has one.
+        public PaintedZone ShopArea { get; set; }
+
         private int _buysLeft;
+        private bool _triedUndrawnBuy;
+        private DateTime _undrawnBuyAt = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(6, 20));
         private DateTime _buyAt;
 
         // Stand-still "examining wares" window.
@@ -121,7 +126,7 @@ namespace Server.CustomBots
             // The drawn floor under the bot, or one a few tiles away: a
             // handoff on the doorstep still counts, the first wander goal
             // walks the bot in.
-            var area = ZoneRegistry.AreaAt(bot.X, bot.Y);
+            var area = ShopArea is { IsVendorArea: true } ? ShopArea : ZoneRegistry.AreaAt(bot.X, bot.Y);
             if (area == null || !area.IsVendorArea)
             {
                 area = null;
@@ -178,6 +183,33 @@ namespace Server.CustomBots
             }
 
             // ---- No drawn floor: the stand-still shopper ----
+
+            // One real purchase from the vendor nearest it (the shop it came
+            // to has no drawn floor to walk, but the NPC still sells).
+            if (!_triedUndrawnBuy && Core.Now >= _undrawnBuyAt)
+            {
+                _triedUndrawnBuy = true;
+                BaseVendor nearest = null;
+                int nd = int.MaxValue;
+                foreach (var m in bot.Map.GetMobilesInRange(bot.Location, 8))
+                {
+                    if (m is BaseVendor v && !v.Deleted && v.Alive)
+                    {
+                        int d = Math.Max(Math.Abs(v.X - bot.X), Math.Abs(v.Y - bot.Y));
+                        if (d < nd)
+                        {
+                            nd = d;
+                            nearest = v;
+                        }
+                    }
+                }
+                if (nearest != null)
+                {
+                    bot.Direction = bot.GetDirectionTo(nearest);
+                    BotVendorPurchase.TryBuy(bot, nearest, null);
+                }
+                return;
+            }
 
             // Say a vendor trigger line on its own cadence — this is the
             // "shopping" action when there's no walking to a counter.
