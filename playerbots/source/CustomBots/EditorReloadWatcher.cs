@@ -404,7 +404,16 @@ namespace Server.CustomBots
                 _lastShutdown = downTok.Value;
                 Console.WriteLine("[EditorReload] shutdown requested by the launcher — saving the world and stopping");
                 try { World.Save(); } catch (Exception ex) { Console.WriteLine($"[EditorReload] save before shutdown failed: {ex.Message}"); }
-                Core.Kill();
+
+                // World.Save only queues the save; it is written on a later
+                // tick. Killing straight away left the save unwritten and the
+                // process hung. Wait for the write off the loop, then stop,
+                // the same way the admin gump's shutdown does.
+                System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    World.WaitForWriteCompletion();
+                    Core.Kill();
+                });
             }
 
             var bankTok = ReadLingerRequest(BankReq, out var bankLinger);

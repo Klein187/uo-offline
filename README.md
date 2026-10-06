@@ -13,6 +13,8 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Reds on every shard.** PKs never spawned for most players, because the installer left out the file that says where their camps are. It ships now, so setup places them and the next update adds them to worlds that already exist.
+- **Save and stop saves.** Switching between solo and hosting asked the server to save and stop, but it stopped before the save was written and hung. It waits for the save now.
 - **Monsters in every T2A dungeon, and not in piles.** Ice, Fire, Terathan Keep and the Orc Cave had no monsters at all, because the world's spawn list predates T2A. They are stocked now. Dungeon monsters also used to pile up a dozen to a tile, and they spread out across the room now.
 - **Draw where bots walk, and shops that sell.** In the map editor you can now draw walk zones (streets, plazas, docks) and bots walk straight through them instead of the engine's 38-tile path box, crossing between zones where the shapes touch. Draw a vendor's shop floor and bots walk in, browse the floor, and buy real items from the real vendor with their own gold. Tag a walk zone as a dungeon floor and any bot that steps into it becomes a dungeon crawler that routes through your zones to the rooms and stairs. `[NavShow` draws the zones in-game. See [docs/NAVMESH-DESIGN-BRIEF.md](docs/NAVMESH-DESIGN-BRIEF.md).
 - **Play with friends.** Clicking UO Offline now asks how you want to play: by yourself, host for friends, or join a friend. Hosting lets friends into your world over the LAN or, from anywhere, over Tailscale; joining connects the game to a friend's PC. See [docs/FRIENDS.md](docs/FRIENDS.md).
