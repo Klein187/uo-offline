@@ -181,6 +181,9 @@ namespace Server.CustomBots
                 }
             }
 
+            // Where this bot calls home, once per roll (BotHangouts).
+            var hangout = bot != null ? BotHangouts.For(bot) : null;
+
             double total = 0;
             var weights = new double[snapshot.Length];
             for (int i = 0; i < snapshot.Length; i++)
@@ -215,12 +218,9 @@ namespace Server.CustomBots
 
                 if (w > 0 && bot != null)
                 {
-                    // Home bias — regulars emerge for free.
-                    if (!string.IsNullOrEmpty(bot.HomeCity) &&
-                        string.Equals(d.City, bot.HomeCity, StringComparison.OrdinalIgnoreCase))
-                    {
-                        w *= 2.5;
-                    }
+                    // Home — most days are spent in and around the home
+                    // town; other towns and islands are outings.
+                    w *= BotHangouts.Factor(hangout, d);
 
                     // Danger — everyone's heard about the murders there.
                     w *= BotDangerMap.Multiplier(d);

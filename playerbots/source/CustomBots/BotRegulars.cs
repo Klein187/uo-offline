@@ -250,6 +250,12 @@ namespace Server.CustomBots
 
             bot.MoveToWorld(loc, map);
 
+            // Saved before home towns were saved: the town it logs in near.
+            if (string.IsNullOrEmpty(bot.HomeCity))
+            {
+                bot.HomeCity = BotHangouts.TownNear(loc) ?? BotHomeCities.RollHome();
+            }
+
             // Logged in at home: start the day in the house, and leave by
             // the front door like an owner.
             var home = BotHomes.HomeOf(bot);

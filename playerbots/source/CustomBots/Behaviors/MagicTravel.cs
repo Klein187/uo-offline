@@ -71,8 +71,10 @@ namespace Server.CustomBots
         private const int MaxCastAttempts = 5;
 
         // Only trips at least this long (straight-line tiles) justify the
-        // mana — short hops stay on foot so streets keep their traffic.
-        public const int MinTripDistance = 80;
+        // mana — getting around town and the country near it is done on
+        // foot, as players did, so streets and roads keep their traffic.
+        // (Was 80: a bot recalled across its own town.)
+        public const int MinTripDistance = 250;
 
         // Of eligible long trips, how many go by magic — scaled by
         // distance, because that's how players actually chose: nobody
@@ -80,9 +82,9 @@ namespace Server.CustomBots
         // town over. (Kept below 1.0 even for epic trips — an
         // all-teleport world empties the roads.)
         public static double MagicTripChanceFor(int dist) =>
-            dist >= 300 ? 0.85
-            : dist >= 150 ? 0.65
-            : 0.45;
+            dist >= 600 ? 0.85
+            : dist >= 400 ? 0.65
+            : 0.40;
         // …and of those, how many a gate-capable mage opens a gate for.
         public const double GateShare = 0.4;
 
@@ -174,7 +176,7 @@ namespace Server.CustomBots
                     // genuinely long hauls — which is also what keeps a
                     // scroll in the pack for the day it's WEDGED and
                     // needs the emergency escape.
-                    if (dist < 200) return false;
+                    if (dist < 400) return false;
                     chance *= 0.6;
                 }
                 if (Utility.RandomDouble() >= chance) return false;

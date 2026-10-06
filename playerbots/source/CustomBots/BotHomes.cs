@@ -218,6 +218,8 @@ namespace Server.CustomBots
 
         private static void RegisterHome(BaseHouse house, PlayerBot owner)
         {
+            // An owner's home town is the one its house is near.
+            owner.HomeCity = BotHangouts.TownNear(house.Location) ?? owner.HomeCity;
             _homeOf[owner] = house;
             var d = AddDestination($"Home of {owner.Name}", DestinationType.Home, house.BanLocation);
             if (d != null)

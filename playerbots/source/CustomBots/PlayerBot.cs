@@ -695,6 +695,10 @@ namespace Server.CustomBots
         {
             base.OnAfterSpawn();
 
+            // Home is the town it was spawned in or near, not a random one:
+            // a Britain bot lives in Britain (BotHangouts).
+            HomeCity = BotHangouts.TownNear(Location) ?? HomeCity;
+
             string behaviorName = null;
             if (Spawner is PlayerBotSpawner pbs)
             {
@@ -1069,7 +1073,7 @@ namespace Server.CustomBots
         {
             base.Serialize(writer);
 
-            writer.Write(8);                                       // version
+            writer.Write(9);                                       // version
             writer.Write(IsBot);
             writer.Write(_behavior?.SerializableName ?? "Idle");
             Personality.Write(writer);
@@ -1081,6 +1085,7 @@ namespace Server.CustomBots
             writer.Write(GuildBound);                              // v7
             writer.Write(Regular);                                 // v8
             writer.Write(OfflineSince);                            // v8
+            writer.Write(HomeCity ?? "");                          // v9
         }
 
         public override void Deserialize(IGenericReader reader)
@@ -1154,6 +1159,10 @@ namespace Server.CustomBots
             {
                 Regular = reader.ReadBool();
                 OfflineSince = reader.ReadDateTime();
+            }
+            if (version >= 9)
+            {
+                HomeCity = reader.ReadString();
             }
 
             // Migrate legacy Crafter-class bots (saved before the split into
