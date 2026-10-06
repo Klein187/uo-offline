@@ -312,7 +312,13 @@ namespace Server.CustomBots
                     continue;
                 }
 
-                if (AtHome(bot, home) || HeadingHome(bot, home))
+                if (AtHome(bot, home) || HeadingHome(bot, home) || BotVendorHouses.OnStockRun(bot))
+                {
+                    continue;
+                }
+
+                // A shop with a bare shelf: go buy stock to sell.
+                if (BotVendorHouses.ShelfLow(bot) && BotVendorHouses.TryStartStockRun(bot))
                 {
                     continue;
                 }
@@ -345,7 +351,8 @@ namespace Server.CustomBots
 
         // The lifecycle manager leaves these bots alone.
         public static bool IsBusy(PlayerBot bot) =>
-            _errands.ContainsKey(bot) || bot.Behavior is ErrandWalkBehavior or HomeVisitBehavior;
+            _errands.ContainsKey(bot) || bot.Behavior is ErrandWalkBehavior or HomeVisitBehavior ||
+            BotVendorHouses.OnStockRun(bot);
 
         private static bool HeadingHome(PlayerBot bot, BaseHouse home) =>
             bot.Behavior is TravelerBehavior t && _destOf.TryGetValue(home, out var d) &&
@@ -908,6 +915,9 @@ namespace Server.CustomBots
                 case BotClass.Lumberjack:
                     Add(chest, "Log", Utility.RandomMinMax(80, 300));
                     break;
+                case BotClass.Carpenter:
+                    Add(chest, "Board", Utility.RandomMinMax(60, 200));
+                    break;
                 case BotClass.Fisherman:
                     Add(chest, "FishSteak", Utility.RandomMinMax(10, 40));
                     break;
@@ -961,8 +971,17 @@ namespace Server.CustomBots
             foreach (var item in bot.Backpack.Items)
             {
                 if (item is Gold or Key or HouseDeed or Spellbook or Runebook or RecallRune or BaseTool ||
-                    item.LootType is LootType.Newbied or LootType.Blessed || keep.Contains(item.GetType()))
+                    item.LootType is LootType.Newbied or LootType.Blessed || keep.Contains(item.GetType()) ||
+                    BotVendorHouses.IsResale(item))
                 {
+                    continue;
+                }
+                // Found reagents and scrolls it has no use for go in the
+                // chest (and from there on the shelf).
+                if (item is BaseReagent && !BotSupplies.BurnsReagents(bot) ||
+                    item is SpellScroll && !(item is RecallScroll && BotSupplies.BurnsScrolls(bot)))
+                {
+                    move.Add(item);
                     continue;
                 }
                 // Loot only. Supplies (reagents, bandages, arrows) stay in the
@@ -987,7 +1006,7 @@ namespace Server.CustomBots
             "StarSapphire", "Tourmaline",
         };
 
-        private static bool IsGem(Item item) => _gems.Contains(item.GetType().Name);
+        internal static bool IsGem(Item item) => _gems.Contains(item.GetType().Name);
 
         // -------------------------------------------------------------------
         // Chat
@@ -1059,6 +1078,42 @@ namespace Server.CustomBots
                 case "shop":
                     names.AddRange(BotHouseShopping.SendShoppers(count));
                     break;
+                case "craft":
+                    foreach (var (owner, house) in new List<KeyValuePair<PlayerBot, BaseHouse>>(_homeOf))
+                    {
+                        if (names.Count >= count || owner.Deleted || BotVendorHouses.VendorOf(house) == null ||
+                            owner.Class is not (BotClass.Smith or BotClass.Tailor or BotClass.Carpenter))
+                        {
+                            continue;
+                        }
+                        if (owner.Map == Map.Internal)
+                        {
+                            BotRegulars.LogInNow(owner);
+                        }
+                        names.Add($"{owner.Name} made {BotVendorHouses.TestCraft(owner)}");
+                    }
+                    break;
+                case "stock":
+                    {
+                        // Shop owners (logged in if need be) off on a stock run now.
+                        foreach (var (owner, house) in new List<KeyValuePair<PlayerBot, BaseHouse>>(_homeOf))
+                        {
+                            if (names.Count >= count || owner.Deleted || BotVendorHouses.VendorOf(house) == null)
+                            {
+                                continue;
+                            }
+                            if (owner.Map == Map.Internal && !BotRegulars.LogInNow(owner))
+                            {
+                                continue;
+                            }
+                            owner.Combatant = null;
+                            if (BotVendorHouses.ForceStockRun(owner))
+                            {
+                                names.Add(owner.Name);
+                            }
+                        }
+                        break;
+                    }
                 case "rich":
                 case "visit":
                     {

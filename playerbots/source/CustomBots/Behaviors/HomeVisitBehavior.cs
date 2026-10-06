@@ -6,10 +6,6 @@
 // in its chest, and stays a while, moving about now and then. Near the end
 // of its session it stays until it logs out, so it logs out inside and
 // comes back there next time. Otherwise it lets itself out and travels on.
-//
-// The same visit serves a customer at somebody else's vendor house
-// (BotHouseShopping): in through the unlocked door, up to the vendor, buy,
-// a look around, and out again.
 // =========================================================================
 
 using System;
@@ -28,8 +24,6 @@ namespace Server.CustomBots
         private enum State { ToDoor, Entering, Inside, Leaving, Exiting }
 
         private readonly BaseHouse _house;
-        private readonly Server.Mobiles.PlayerVendor _vendor; // set = a customer
-        private bool _bought;
         private State _state = State.ToDoor;
         private Point3D _outside, _inside;
         private Direction _dirIn;
@@ -47,19 +41,11 @@ namespace Server.CustomBots
             ChatChance = 0.03;
         }
 
-        // A customer, come to buy from the vendor in this house.
-        public HomeVisitBehavior(BaseHouse house, Server.Mobiles.PlayerVendor vendor) : this(house)
-        {
-            _vendor = vendor;
-        }
-
-        private bool Customer => _vendor != null;
-
         public override string GetStatusLine(PlayerBot bot) => _state switch
         {
-            State.ToDoor   => Customer ? "walking up to a vendor house" : "walking up to the house",
-            State.Entering => Customer ? "going in to shop" : "unlocking the front door",
-            State.Inside   => Customer ? "shopping at a player vendor" : "at home",
+            State.ToDoor   => "walking up to the house",
+            State.Entering => "unlocking the front door",
+            State.Inside   => "at home",
             _              => "heading out of the house",
         };
 
@@ -119,11 +105,7 @@ namespace Server.CustomBots
             switch (_state)
             {
                 case State.ToDoor:
-                    if (Customer && _vendor.Deleted)
-                    {
-                        Leave(bot);
-                    }
-                    else if (bot.X == _outside.X && bot.Y == _outside.Y)
+                    if (bot.X == _outside.X && bot.Y == _outside.Y)
                     {
                         bot.Direction = _dirIn;
                         SetState(State.Entering);
@@ -190,16 +172,6 @@ namespace Server.CustomBots
 
         private void StartStay(PlayerBot bot)
         {
-            if (Customer)
-            {
-                // A look around and a purchase; customers do not move in.
-                _stayUntil = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(45, 120));
-                _walkGoal = _vendor.Location;
-                _follower = null;
-                _stateSince = Core.Now;
-                return;
-            }
-
             int stashed = BotHomes.StashLoot(bot, _house);
             Console.WriteLine($"[homes] {bot.Name} is home" +
                 (stashed > 0 ? $", stashed {stashed} item(s)" : ""));
@@ -223,15 +195,6 @@ namespace Server.CustomBots
             if (bot.LoggingOut)
             {
                 return;
-            }
-            if (Customer && !_bought &&
-                (bot.InRange(_vendor, 2) || Core.Now - _stateSince > TimeSpan.FromSeconds(25)))
-            {
-                _bought = true;
-                bot.Direction = bot.GetDirectionTo(_vendor);
-                BotHouseShopping.Buy(bot, _vendor);
-                _walkGoal = Point3D.Zero;
-                _nextMove = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(10, 30));
             }
             if (Core.Now >= _stayUntil)
             {
@@ -294,7 +257,7 @@ namespace Server.CustomBots
             {
                 return;
             }
-            var road = BotHomes.RoadOf(_house) ?? BotHouseShopping.RoadOfShop(_house);
+            var road = BotHomes.RoadOf(_house);
             if (road is Point3D r && bot.InRange(r, 45) && !bot.InRange(r, 3))
             {
                 bot.Behavior = new ErrandWalkBehavior(r, 2, "walking back to the road",

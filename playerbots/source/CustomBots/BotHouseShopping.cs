@@ -5,8 +5,8 @@
 // in houses, not from the NPCs. Bots now do the same:
 //
 //   - Every bot-owned vendor house is a destination ("Name's shop") on the
-//     road node nearest its door, and its doors are unlocked, as a public
-//     shop's were.
+//     road node nearest its door. The vendor stands outside on the
+//     doorstep, so the house itself stays locked.
 //   - A supply errand (arrows, bandages, reagents, recall scrolls, pet
 //     food) looks at the vendor houses as well as the town shops. A house
 //     vendor that has what the bot is short of, at a sane price, wins when
@@ -15,8 +15,8 @@
 //   - Now and then a fighter with gold goes looking for a better weapon,
 //     and a vendor house that has one is where it goes.
 //
-// At the shop the customer lets itself in, walks up to the vendor and buys
-// the way a player's purchase completes (PlayerVendorBuyGump): whole lot,
+// At the shop the customer walks up to the vendor and buys the way a
+// player's purchase completes (PlayerVendorBuyGump): whole lot,
 // gold from the pack then the bank, the price into the vendor's till. The
 // owner banks the till the next time it is home.
 //
@@ -90,13 +90,20 @@ namespace Server.CustomBots
             _shopByDest[d.Name] = house;
             _destOfShop[house] = d.Name;
 
-            // A shop is open to the public.
+            // The vendor works the doorstep, so the house stays locked. A
+            // vendor still standing inside (placed before the doorstep rule)
+            // is moved out.
             foreach (var door in house.Doors)
             {
                 if (door != null)
                 {
-                    door.Locked = false;
+                    door.Locked = true;
                 }
+            }
+            var vendor = BotVendorHouses.VendorOf(house);
+            if (vendor != null && house.IsInside(vendor))
+            {
+                BotVendorHouses.PlaceOnDoorstep(vendor, house);
             }
         }
 
@@ -262,7 +269,23 @@ namespace Server.CustomBots
                 bot.Behavior = new HomeVisitBehavior(house);
                 return true;
             }
-            bot.Behavior = new HomeVisitBehavior(house, vendor);
+
+            // Up to the vendor on the doorstep, buy, a moment's look at the
+            // rest of the shelf, then off.
+            bot.Behavior = new ErrandWalkBehavior(vendor.Location, 1, "shopping at a player vendor",
+                b =>
+                {
+                    b.Direction = b.GetDirectionTo(vendor);
+                    Buy(b, vendor);
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomMinMax(8, 25)), () =>
+                    {
+                        if (!b.Deleted && b.Behavior is ErrandWalkBehavior)
+                        {
+                            b.Behavior = new TravelerBehavior();
+                        }
+                    });
+                },
+                b => b.Behavior = new TravelerBehavior());
             return true;
         }
 

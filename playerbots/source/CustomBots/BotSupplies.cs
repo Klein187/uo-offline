@@ -69,6 +69,12 @@ namespace Server.CustomBots
         // Real spell-slingers burn the full reagent shelf (combat casting).
         // Treasure Hunters cast for real too — spells are how they clear
         // chest guardians.
+        // Whether this bot burns reagents or recall scrolls at all: what it
+        // finds of them is kept, not sold (BotVendorHouses).
+        public static bool BurnsReagents(PlayerBot bot) => UsesReagents(bot) || UsesTravelReagents(bot);
+
+        public static bool BurnsScrolls(PlayerBot bot) => UsesScrolls(bot);
+
         private static bool UsesReagents(PlayerBot bot) =>
             bot.Class is BotClass.Mage or BotClass.TreasureHunter;
 

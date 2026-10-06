@@ -15,7 +15,7 @@ Newest first.
 
 - **Bots own houses and run shops.** Some bots now come back session after session as regulars, with the same name, gear and bank account. Regulars live in the roadside houses, let themselves in with a key, stash their loot and often log out at home. A regular who saves up a deed's price buys a real one from an architect and places it.
 - **Bots shop at vendor houses too.** A bot low on reagents, bandages, arrows or recall scrolls checks the vendor houses as well as the town shops, walks in and buys from the player vendor the way you would. Fighters with gold drop by now and then to look for a better weapon.
-- **Vendor houses at the busy spots.** Draw house spots in the map editor and bot-owned houses with real player vendors go up inside them. Stock comes from what the owner brings home and makes, and you buy from them the normal way.
+- **Vendor houses at the busy spots.** Draw house spots in the map editor and bot-owned houses go up inside them, each with a real player vendor on the doorstep. Owners restock with what they find in dungeons, what they make at the bench, and what they buy in bulk at NPC shops to sell on. You buy from them the normal way.
 - **Guild bots come back.** Bots you recruited into your guild were kept through a restart but never showed up again. They log back in where they left off now.
 - **Pack horses don't weigh you down.** What your pack horse carried counted against the horse you rode, but only while mounted. It no longer counts.
 - **Never an empty shard.** The population still follows the time of day, but there are always at least 500 bots online.
@@ -270,7 +270,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Visible taming.** Tamers stalk wild animals and work them with the classic client spam ("I've always wanted an animal like you"). Sometimes the beast shies away, sometimes it submits. Tamed pets follow their master through town, get hawked at the bank, and either sell to a bystander or get released. No bot accumulates a permanent pet.
 
-**Bot homesteads.** Small era houses sit along the wilderness roads, placed with the real house placement rules, furnished, and each owned by a regular bot who uses it: lets itself in with its key, puts loot in its chest, stays a while, and often logs out inside. A world gets 30 at setup. Regulars who save up the price of a deed buy one from an architect and build their own. Houses in drawn house spots get a player vendor, stocked from the owner's loot and its trade, and its takings go to the owner's bank.
+**Bot homesteads.** Small era houses sit along the wilderness roads, placed with the real house placement rules, furnished, and each owned by a regular bot who uses it: lets itself in with its key, puts loot in its chest, stays a while, and often logs out inside. A world gets 30 at setup. Regulars who save up the price of a deed buy one from an architect and build their own. Houses in drawn house spots get a player vendor on the doorstep. The owner restocks it only from what it found, made or bought: dungeon loot, pieces crafted from real materials, and supplies bought in bulk at NPC shops on a stock run. The takings go to the owner's bank.
 
 **Gear progression.** Dungeon runs pay. Survive three and the next bank visit is shopping day: a visible tier promotion with better skills and kit ("finally saved up for new gear"). Regulars get better over weeks.
 

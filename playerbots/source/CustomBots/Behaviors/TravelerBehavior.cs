@@ -2382,7 +2382,12 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             {
                 return BotHomes.OnArrived(bot, DestinationName);
             }
-            // A player vendor's house: in to shop.
+            // A shop owner on a stock run, at the NPC shop it came to buy from.
+            if (BotVendorHouses.OnArrivedAt(bot, DestinationName))
+            {
+                return true;
+            }
+            // A player vendor's house: up to the vendor to shop.
             if (_destType == DestinationType.HouseShop)
             {
                 return BotHouseShopping.OnArrived(bot, DestinationName);

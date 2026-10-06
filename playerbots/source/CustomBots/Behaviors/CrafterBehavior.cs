@@ -611,6 +611,19 @@ namespace Server.CustomBots
                 return;
             }
 
+            // A crafter with its own vendor house keeps its work for its own
+            // shelf, and takes a batch home once it has a few pieces.
+            if (BotVendorHouses.KeepsOwnWork(bot))
+            {
+                if (_made.Count >= 5)
+                {
+                    Console.WriteLine($"[crafter] {bot.Name} takes {_made.Count} finished piece(s) home for its vendor");
+                    _made.Clear();
+                    BotHomes.SendHome(bot);
+                }
+                return;
+            }
+
             int sell = Math.Min(_made.Count - 2, Utility.RandomMinMax(1, 2));
             for (int i = 0; i < sell; i++)
             {
