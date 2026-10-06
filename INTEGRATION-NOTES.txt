@@ -119,22 +119,12 @@ Core.SA), so a T2A shard gets the old behaviour. Patch in:
      "stamina.useMountStaminaOnlyWhenOverloaded": "false" in
      Configuration/modernuo.json for stock behaviour.
 
-  2. Fatigue now counts the pack train as load, not just the rider.
-     GetPackTrainOverweight() adds the mount's own pack (a beetle) plus
-     every pack beast out with the rider, and EventSink_Movement folds
-     that into the overweight figure passed to ProcessMountMovement.
-
-     A beast is over its capacity at 40 + 3.5 * Str stones, the same
-     formula players use -- BaseCreature inherits Mobile.MaxWeight,
-     which is int.MaxValue, so nothing in stock ever reports a laden
-     pack animal as heavy. A pack horse (Str 44-120) hauls 194-460
-     stones free; past that the mount starts tiring. Only beasts with a
-     StrongBackpack count, which is the engine's own test for a pack
-     animal (BaseCreature.DisplayWeight).
-
-The unmounted case is untouched: a player on foot still loses stamina
-for their own weight only, and an overloaded pack horse does not tire
-someone walking beside it.
+  2. (Removed 2026-10-06 by patch 0008.) The first version also counted
+     a pack beast's load against the rider's mount. Players read it as a
+     bug: ride with a full pack horse and you tire, walk beside it and
+     you don't. T2A never did this. 0008 takes it back out; a horse now
+     tires only when the rider is over their own carry weight. Apply
+     0008 after 0004.
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or
 horses go lame on long rides for no reason.

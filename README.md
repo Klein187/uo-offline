@@ -273,7 +273,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Equipment, strictly era.** Beyond class signatures, every bot rolls accessories from the classic 1998 set: floppy hats, jester hats, feathered caps, tricornes, cloaks and sashes dyed only in colors the T2A dye tub could mix, with true black as the rare one. Metal armor is iron or genuine colored ore. Magic gear uses the real era system, Ruin through Vanquishing, with exceptional maker's marks that GM crafters announce when they pull one off. Nothing on anyone's back postdates 1998.
 
-**Mounts.** Most bots spawn on a horse, ostard, or llama. Working folk are the exception: gatherers walk with their pack beasts, and fishermen work the pier on foot. Coat colors vary, mounted bots move at proper mount speed, and mounts despawn cleanly with their rider. A horse only tires when it is hauling something: a rider over their carry weight, or a pack beast loaded past its own.
+**Mounts.** Most bots spawn on a horse, ostard, or llama. Working folk are the exception: gatherers walk with their pack beasts, and fishermen work the pier on foot. Coat colors vary, mounted bots move at proper mount speed, and mounts despawn cleanly with their rider. A horse only tires when its rider is over their carry weight. What a pack beast carries never counts.
 
 **Behaviors.** Bots run one of many behaviors, swapped by the lifecycle system and by arriving somewhere that calls for a different one:
 

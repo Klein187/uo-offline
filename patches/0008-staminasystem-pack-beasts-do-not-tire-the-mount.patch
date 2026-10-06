@@ -1,0 +1,65 @@
+diff --git a/Projects/UOContent/Misc/StaminaSystem.cs b/Projects/UOContent/Misc/StaminaSystem.cs
+index d82aebd..ab6ca9d 100644
+--- a/Projects/UOContent/Misc/StaminaSystem.cs
++++ b/Projects/UOContent/Misc/StaminaSystem.cs
+@@ -3,7 +3,6 @@ using System.Collections.Generic;
+ using System.Runtime.CompilerServices;
+ using System.Runtime.InteropServices;
+ using ModernUO.CodeGeneratedEvents;
+-using Server.Items;
+ using Server.Logging;
+ using Server.Mobiles;
+ using Server.Spells.Ninjitsu;
+@@ -309,9 +308,7 @@ public static class StaminaSystem
+ 
+         if (EnableMountStamina && from.Mount != null)
+         {
+-            // What the mount is actually hauling: an overweight rider, plus anything the
+-            // pack beasts in the train behind it are carrying beyond their own capacity.
+-            ProcessMountMovement(from.Mount, Math.Max(overweight, 0) + GetPackTrainOverweight(from), e);
++            ProcessMountMovement(from.Mount, overweight, e);
+         }
+         else
+         {
+@@ -420,41 +417,6 @@ public static class StaminaSystem
+         }
+     }
+ 
+-    // A pack beast carries in a StrongBackpack, which BaseCreature.DisplayWeight already
+-    // treats as the mark of a pack animal. The beast itself is never "overweight" in stock:
+-    // BaseCreature inherits Mobile.MaxWeight, which is int.MaxValue. Give it the same
+-    // Str-derived capacity a player gets, so a laden pack train reads as a real load.
+-    public static int GetPackCapacity(Mobile beast) => 40 + (int)(3.5 * beast.Str);
+-
+-    public static int GetPackOverweight(Mobile beast)
+-    {
+-        if (beast?.Backpack is not StrongBackpack pack)
+-        {
+-            return 0;
+-        }
+-
+-        return Math.Max(0, pack.TotalWeight - GetPackCapacity(beast));
+-    }
+-
+-    // The mount's own pack (a beetle) plus every pack beast the rider has out with them.
+-    public static int GetPackTrainOverweight(Mobile from)
+-    {
+-        var total = GetPackOverweight(from.Mount as Mobile);
+-
+-        if (from is PlayerMobile { AllFollowers: not null } pm)
+-        {
+-            foreach (var follower in pm.AllFollowers)
+-            {
+-                if (!ReferenceEquals(follower, from.Mount))
+-                {
+-                    total += GetPackOverweight(follower);
+-                }
+-            }
+-        }
+-
+-        return total;
+-    }
+-
+     public static int GetStamLoss(Mobile from, int overWeight, bool running)
+     {
+         var loss = BaseOverweightLoss + overWeight / StonesPerOverweightLoss;
