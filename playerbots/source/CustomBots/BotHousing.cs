@@ -42,6 +42,7 @@ using Server.Commands;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
+using Server.Multis.Deeds;
 
 namespace Server.CustomBots
 {
@@ -51,7 +52,7 @@ namespace Server.CustomBots
         // the log cabin. (Two-story/tower/keep would read as too rich for
         // roadside squatters, and their footprints rarely validate in
         // rough terrain anyway.)
-        private static readonly int[] HouseMultiIds =
+        public static readonly int[] HouseMultiIds =
         {
             0x64, // stone and plaster
             0x66, // fieldstone
@@ -378,6 +379,230 @@ namespace Server.CustomBots
             return placed;
         }
 
+        // ------------------------------------------------------------------
+        // Site finding for BotHomes. Same rules as Scatter: the real
+        // HousePlacement.Check (through a Player-level mobile, so no staff
+        // bypass), off the trails, and spaced from every house in the world.
+        // ------------------------------------------------------------------
+
+        // The real deed for each small house, so a bot places a house the
+        // way a player does: HouseDeed.OnPlacement, keys and all.
+        public static HouseDeed DeedFor(int multiId) => multiId switch
+        {
+            0x64 => new StonePlasterHouseDeed(),
+            0x66 => new FieldStoneHouseDeed(),
+            0x68 => new SmallBrickHouseDeed(),
+            0x6A => new WoodHouseDeed(),
+            0x6C => new WoodPlasterHouseDeed(),
+            0x6E => new ThatchedRoofCottageDeed(),
+            0x9A => new LogCabinDeed(),
+            _    => new SmallBrickHouseDeed(),
+        };
+
+        private static bool TooCloseToHouse(Map map, int x, int y, int spacing)
+        {
+            foreach (var h in BaseHouse.AllHouses)
+            {
+                if (h != null && !h.Deleted && h.Map == map &&
+                    Math.Max(Math.Abs(h.X - x), Math.Abs(h.Y - y)) < spacing)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static List<WaypointNode> _ruralNodes;
+
+        private static List<WaypointNode> RuralNodes()
+        {
+            if (_ruralNodes != null)
+            {
+                return _ruralNodes;
+            }
+            _ruralNodes = new List<WaypointNode>();
+            var graph = WaypointRegistry.Graph;
+            if (graph == null)
+            {
+                return _ruralNodes;
+            }
+            foreach (var node in graph.AllNodes)
+            {
+                bool nearCity = false;
+                foreach (var d in DestinationCatalog.All)
+                {
+                    if (d.Type == DestinationType.CityCenter && !string.IsNullOrEmpty(d.City) &&
+                        Math.Max(Math.Abs(d.Location.X - node.Location.X),
+                            Math.Abs(d.Location.Y - node.Location.Y)) < CityRadius)
+                    {
+                        nearCity = true;
+                        break;
+                    }
+                }
+                // Dungeon floors live in the far east of the map; no house there.
+                if (!nearCity && node.Location.X < 5120)
+                {
+                    _ruralNodes.Add(node);
+                }
+            }
+            return _ruralNodes;
+        }
+
+        // A countryside spot off a rural road node, optionally within
+        // nearRange of a point. checker must be a Player-level mobile; it is
+        // moved to the spot for the check and put back after.
+        public static bool TryFindRuralSite(Map map, Mobile checker, int multiId,
+            Point3D? near, int nearRange, out Point3D center, out WaypointNode node,
+            int attempts = 1500)
+        {
+            center = Point3D.Zero;
+            node = null;
+            var graph = WaypointRegistry.Graph;
+            var pool = RuralNodes();
+            if (map == null || graph == null || pool.Count == 0)
+            {
+                return false;
+            }
+
+            var candidates = pool;
+            if (near is Point3D p)
+            {
+                candidates = pool.FindAll(n =>
+                    Math.Max(Math.Abs(n.Location.X - p.X), Math.Abs(n.Location.Y - p.Y)) <= nearRange);
+                if (candidates.Count == 0)
+                {
+                    candidates = pool;
+                }
+            }
+
+            int rejTrail = 0, rejHouse = 0, rejCheck = 0, rejPath = 0;
+            for (int i = 0; i < attempts; i++)
+            {
+                var n = candidates[Utility.Random(candidates.Count)];
+                int x = n.Location.X + Utility.RandomMinMax(OffsetMin, OffsetMax) * (Utility.RandomBool() ? 1 : -1);
+                int y = n.Location.Y + Utility.RandomMinMax(OffsetMin, OffsetMax) * (Utility.RandomBool() ? 1 : -1);
+                if (TooCloseToTrail(graph, x, y))
+                {
+                    rejTrail++;
+                    continue;
+                }
+                if (TooCloseToHouse(map, x, y, MinHouseSpacing))
+                {
+                    rejHouse++;
+                    continue;
+                }
+                var c = new Point3D(x, y, map.GetAverageZ(x, y));
+                if (!CheckSite(map, checker, multiId, c))
+                {
+                    rejCheck++;
+                    continue;
+                }
+                if (!CanWalkToRoad(map, checker, c, n.Location))
+                {
+                    rejPath++;
+                    continue;
+                }
+                center = c;
+                node = n;
+                return true;
+            }
+            Console.WriteLine($"[BotHousing] no countryside site for 0x{multiId:X} in {attempts} tries " +
+                $"({candidates.Count} road nodes): trail {rejTrail}, near a house {rejHouse}, " +
+                $"placement rules {rejCheck}, no path to the road {rejPath}");
+            return false;
+        }
+
+        // A spot inside a drawn polygon (vendor hot spots). Houses may sit
+        // closer to the road and to each other here: that is the point of a
+        // hot spot. Still never on a trail.
+        public static bool TryFindSiteInPolygon(Map map, Mobile checker, int multiId,
+            Point2D[] poly, int minTrail, int minSpacing, out Point3D center, int attempts = 400)
+        {
+            center = Point3D.Zero;
+            var graph = WaypointRegistry.Graph;
+            if (map == null || graph == null || poly == null || poly.Length < 3)
+            {
+                return false;
+            }
+            int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
+            foreach (var q in poly)
+            {
+                x0 = Math.Min(x0, q.X);
+                y0 = Math.Min(y0, q.Y);
+                x1 = Math.Max(x1, q.X);
+                y1 = Math.Max(y1, q.Y);
+            }
+            for (int i = 0; i < attempts; i++)
+            {
+                int x = Utility.RandomMinMax(x0, x1);
+                int y = Utility.RandomMinMax(y0, y1);
+                if (!InPolygon(poly, x, y) || TooCloseToHouse(map, x, y, minSpacing) ||
+                    TooCloseToTrail(graph, x, y, minTrail))
+                {
+                    continue;
+                }
+                var c = new Point3D(x, y, map.GetAverageZ(x, y));
+                var road = graph.FindNearestNode(c);
+                if (road != null && CheckSite(map, checker, multiId, c) &&
+                    CanWalkToRoad(map, checker, c, road.Location))
+                {
+                    center = c;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool CheckSite(Map map, Mobile checker, int multiId, Point3D c)
+        {
+            var back = checker.Location;
+            var backMap = checker.Map;
+            checker.MoveToWorld(c, map);
+            var result = HousePlacement.Check(checker, multiId, c, out _);
+            if (backMap != null && backMap != Map.Internal)
+            {
+                checker.MoveToWorld(back, backMap);
+            }
+            return result == HousePlacementResult.Valid;
+        }
+
+        // The owner has to get between its front door and the road. These
+        // small houses open to the south, so walk from just below the
+        // footprint to the road node with the engine's own pathfinder; open
+        // country with no way through (cliffs, a river, a thicket) is
+        // turned down.
+        private static bool CanWalkToRoad(Map map, Mobile checker, Point3D center, Point3D road)
+        {
+            int fy = center.Y + 6;
+            if (!Walkable.TryFindSeedZ(map, center.X, fy, center.Z, out var fz))
+            {
+                return false;
+            }
+            var back = checker.Location;
+            var backMap = checker.Map;
+            checker.MoveToWorld(new Point3D(center.X, fy, fz), map);
+            bool ok = new MovementPath(checker, road).Success;
+            if (backMap != null && backMap != Map.Internal)
+            {
+                checker.MoveToWorld(back, backMap);
+            }
+            return ok;
+        }
+
+        public static bool InPolygon(Point2D[] poly, int x, int y)
+        {
+            bool inside = false;
+            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+            {
+                if ((poly[i].Y > y) != (poly[j].Y > y) &&
+                    x < (double)(poly[j].X - poly[i].X) * (y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X)
+                {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
         private static BaseHouse BuildHouse(Mobile probeOwner, int multiId)
         {
             try
@@ -395,7 +620,10 @@ namespace Server.CustomBots
             }
         }
 
-        private static bool TooCloseToTrail(WaypointGraph graph, int x, int y)
+        private static bool TooCloseToTrail(WaypointGraph graph, int x, int y) =>
+            TooCloseToTrail(graph, x, y, MinTrailDistance);
+
+        private static bool TooCloseToTrail(WaypointGraph graph, int x, int y, int minTrail)
         {
             foreach (var node in graph.AllNodes)
             {
@@ -404,7 +632,7 @@ namespace Server.CustomBots
                 {
                     continue;
                 }
-                if (Math.Max(Math.Abs(node.Location.X - x), Math.Abs(node.Location.Y - y)) < MinTrailDistance)
+                if (Math.Max(Math.Abs(node.Location.X - x), Math.Abs(node.Location.Y - y)) < minTrail)
                 {
                     return true;
                 }
@@ -415,7 +643,7 @@ namespace Server.CustomBots
                     {
                         continue;
                     }
-                    if (SegmentDistance(x, y, node.Location.X, node.Location.Y, other.Location.X, other.Location.Y) < MinTrailDistance)
+                    if (SegmentDistance(x, y, node.Location.X, node.Location.Y, other.Location.X, other.Location.Y) < minTrail)
                     {
                         return true;
                     }

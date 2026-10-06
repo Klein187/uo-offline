@@ -446,6 +446,8 @@ namespace Server.CustomBots
                     // roads from GenerateBots, the reds from GeneratePKs.
                     BotPanelActions.RunCommand(from, "GenerateBots");
                     BotPanelActions.RunCommand(from, "GeneratePKs");
+                    // Furnished homes with a regular living in each.
+                    BotHomes.SeedNow();
                     BotPanelActions.SaveWorld(from);
                     BotPanelState.Log(from,
                         $"First Time Setup complete — target {BotPopulation.TargetCount} " +

@@ -350,6 +350,48 @@ namespace Server.CustomBots
             return stock;
         }
 
+        // One lot for a house vendor (BotVendorHouses): anything but house
+        // deeds, optionally only goods that pass a test (a smith's vendor
+        // sells metal, a tailor's cloth and leather). Same build and the same
+        // price band as a hawker's stock. Null when nothing fit.
+        public static Item RollVendorGoods(Func<Item, bool> fits, out int price)
+        {
+            price = 0;
+            for (int tries = 0; tries < 40; tries++)
+            {
+                var goods = RollGoods();
+                if (goods.Kind == GoodsKind.BigTicket)
+                {
+                    continue;
+                }
+                var item = Build(goods, out int amount);
+                if (item == null)
+                {
+                    continue;
+                }
+                if (fits != null && !fits(item))
+                {
+                    item.Delete();
+                    continue;
+                }
+                if (goods.MaxAmount > 1)
+                {
+                    double span = Math.Max(1, goods.MaxAmount - goods.MinAmount);
+                    double t = (amount - goods.MinAmount) / span;
+                    price = (int)(goods.MinPrice + (goods.MaxPrice - goods.MinPrice) * t);
+                }
+                else
+                {
+                    price = Utility.RandomMinMax(goods.MinPrice, goods.MaxPrice);
+                }
+                price = Math.Max(5, Round(price));
+                return item;
+            }
+            return null;
+        }
+
+        public static int RoundPrice(int price) => Round(price);
+
         // Prices people actually said out loud. Nobody advertised 4,317gp.
         private static int Round(int price)
         {

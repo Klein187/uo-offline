@@ -1,0 +1,7 @@
+# somebody placed a house. {actor} = the owner. {place} and {when} as usual.
+
+{actor} placed a house out by {place}
+{actor} finally got a house {when}
+saw a new house go up near {place}
+{actor} has a house now. must be rich
+theres a new house by {place}

@@ -109,6 +109,14 @@ namespace Server.CustomBots
                     kept++;
                     continue;
                 }
+                // Regulars stay logged out until the session manager
+                // brings them back over the next minutes.
+                if (bot.Regular)
+                {
+                    BotRegulars.AdoptAtBoot(bot);
+                    kept++;
+                    continue;
+                }
                 stale.Add(bot);
             }
             foreach (var bot in stale)
@@ -117,7 +125,7 @@ namespace Server.CustomBots
             }
             if (kept > 0)
             {
-                Console.WriteLine($"[Startup] kept {kept} guild-bound bot(s) through the purge");
+                Console.WriteLine($"[Startup] kept {kept} guild-bound bot(s) and regular(s) through the purge");
             }
             return stale.Count;
         }
@@ -202,7 +210,9 @@ namespace Server.CustomBots
             int n = 0;
             foreach (var m in World.Mobiles.Values)
             {
-                if (m is PlayerBot bot && !bot.Deleted)
+                // Logged-out regulars wait on the internal map; they are
+                // not in the world.
+                if (m is PlayerBot bot && !bot.Deleted && bot.Map != Map.Internal)
                     n++;
             }
             return n;

@@ -475,6 +475,7 @@ namespace Server.CustomBots
             // put theirs back.
             GatherSpots.OnCatalogReloaded();
             TreasureSites.OnCatalogReloaded();
+            BotHomes.OnCatalogReloaded();
 
             return loaded.Count;
         }

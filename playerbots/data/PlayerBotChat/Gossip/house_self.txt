@@ -1,0 +1,5 @@
+# the owner telling it.
+
+placed my house by {place} {when}
+got my own place now, near {place}
+my house is up near {place}, come by

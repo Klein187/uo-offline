@@ -96,6 +96,7 @@ namespace Server.CustomBots
                 // inside, breaking the follow).
                 if (BotPartyManager.IsInParty(bot)) continue;
                 if (BotPlayerParty.InPlayerParty(bot)) continue; // adventuring with a player
+                if (BotHomes.IsBusy(bot)) continue; // buying a house, or at home
 
                 // Dead bots (and freshly-ressed ones mid corpse-run) are
                 // owned by the death flow: ghost → healer walk → res →

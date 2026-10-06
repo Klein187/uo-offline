@@ -74,6 +74,7 @@ namespace Server.CustomBots
                 ["party"]    = 1.5,
                 ["warband"]  = 1.2, // a patrol marched out
                 ["convoy"]   = 0.6, // guild crew on the road — mild news
+                ["house"]    = 1.2, // somebody finally placed a house
             };
 
         private static string GossipDir =>

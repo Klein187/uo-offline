@@ -13,6 +13,8 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Bots own houses and run shops.** Some bots now come back session after session as regulars, with the same name, gear and bank account. Regulars live in the roadside houses, let themselves in with a key, stash their loot and often log out at home. A regular who saves up a deed's price buys a real one from an architect and places it.
+- **Vendor houses at the busy spots.** Draw house spots in the map editor and bot-owned houses with real player vendors go up inside them. Stock comes from what the owner brings home and makes, and you buy from them the normal way.
 - **Guild bots come back.** Bots you recruited into your guild were kept through a restart but never showed up again. They log back in where they left off now.
 - **Pack horses don't weigh you down.** What your pack horse carried counted against the horse you rode, but only while mounted. It no longer counts.
 - **Never an empty shard.** The population still follows the time of day, but there are always at least 500 bots online.
@@ -267,7 +269,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Visible taming.** Tamers stalk wild animals and work them with the classic client spam ("I've always wanted an animal like you"). Sometimes the beast shies away, sometimes it submits. Tamed pets follow their master through town, get hawked at the bank, and either sell to a bystander or get released. No bot accumulates a permanent pet.
 
-**Bot homesteads.** Small era houses — stone cottages, log cabins, thatched-roof cottages — sit along the wilderness roads, placed with the real house placement rules. Each has a locked door and a named sign. They're ownerless, ageless, and removable with `[BotHouses scatter/clear`.
+**Bot homesteads.** Small era houses sit along the wilderness roads, placed with the real house placement rules, furnished, and each owned by a regular bot who uses it: lets itself in with its key, puts loot in its chest, stays a while, and often logs out inside. A world gets 30 at setup. Regulars who save up the price of a deed buy one from an architect and build their own. Houses in drawn house spots get a player vendor, stocked from the owner's loot and its trade, and its takings go to the owner's bank.
 
 **Gear progression.** Dungeon runs pay. Survive three and the next bank visit is shopping day: a visible tier promotion with better skills and kit ("finally saved up for new gear"). Regulars get better over weeks.
 
@@ -341,6 +343,7 @@ It draws the full Felucca map with your waypoints, destinations, zones, and spaw
 - **Waypoints** — click to add (snaps to walkable road and auto-connects neighbors), drag to move, link or sever edges, delete.
 - **Destinations** — drag to move, enable or disable, paint areas over them so the shape becomes the destination, or create new ones.
 - **Arrival points** — drop them on reachable tiles, including interior floors, drag and delete them, and link each to route waypoints by clicking the gold marker and then a waypoint.
+- **House spots** — draw an area and say how many vendor houses it should hold. The ⌂ button (or the next restart) fills it with bot-owned houses that have player vendors inside.
 - **Spawns** — place spawn points of every kind (PlayerBot fixed-role, PlayerBot lifecycle, Monster, NPC, Vendor) with a count, range, and respawn timer. Filter by kind, drag, edit, delete. `[GenerateCustomSpawners` turns the saved `spawns.json` into real in-game spawners.
 
 Two read-only overlays help you debug:
@@ -402,6 +405,8 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 - `[GenerateBots` — re-lay the ambient population: BankSitters on bank arrival points, Shoppers on vendor arrival points, the rest roaming Travelers.
 - `[GenerateCustomSpawners` — turn the spawn editor's `spawns.json` into real in-game spawners.
 - `[LiveMap on|off [seconds]` — stream a live entity snapshot to the map editor.
+- `[BotHomes` — how many bot homes there are and who is out buying a deed.
+- `[Regulars` — regulars online and logged out.
 
 </details>
 

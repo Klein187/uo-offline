@@ -2275,6 +2275,8 @@ namespace Server.CustomBots
         private static bool IsLeaveImmediately(DestinationType type)
         {
             return type == DestinationType.Graveyard
+                || type == DestinationType.Home
+                || type == DestinationType.Architect
                 || type == DestinationType.Dungeon
                 || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
                 || type == DestinationType.MiningSpot
@@ -2366,6 +2368,13 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
 
         private bool TryHandoffToDestinationBehavior(PlayerBot bot)
         {
+            // A house, a building plot or an Architect: BotHomes sent this
+            // bot here and takes it from the front step.
+            if (_destType is DestinationType.Home or DestinationType.Architect)
+            {
+                return BotHomes.OnArrived(bot, DestinationName);
+            }
+
             // Moongate: a bot arriving at a moongate has a chance to step
             // through it and emerge at a random other moongate — this is
             // how bots spread between cities. Handled before the switch

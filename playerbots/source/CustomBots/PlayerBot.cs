@@ -167,6 +167,17 @@ namespace Server.CustomBots
 
         public bool IsPermanent => GuildBound && Guild is Server.Guilds.Guild;
 
+        // A regular logs out like a player and comes back later with the
+        // same name, gear and bank box (BotRegulars). Saved with the bot (v8).
+        public bool Regular;
+
+        // When a regular logged out. MinValue while it is online.
+        public DateTime OfflineSince;
+
+        // Kept through restarts and population wipes: guild members and
+        // regulars. Only guild members also never log out.
+        public bool IsKept => IsPermanent || Regular;
+
         public override void OnGuildChange(Server.Guilds.BaseGuild oldGuild)
         {
             base.OnGuildChange(oldGuild);
@@ -943,6 +954,8 @@ namespace Server.CustomBots
             {
                 BotSessionManager.FixedRoleCount--;
             }
+            BotRegulars.Forget(this);
+            BotHomes.Forget(this);
             NamePool.Release(Name);
             base.OnAfterDelete();
         }
@@ -1056,7 +1069,7 @@ namespace Server.CustomBots
         {
             base.Serialize(writer);
 
-            writer.Write(7);                                       // version
+            writer.Write(8);                                       // version
             writer.Write(IsBot);
             writer.Write(_behavior?.SerializableName ?? "Idle");
             Personality.Write(writer);
@@ -1066,6 +1079,8 @@ namespace Server.CustomBots
             writer.Write((byte)CrafterSpec);                       // v5 layout (3 subtypes)
             writer.Write(BotGuildIndex);                           // v6
             writer.Write(GuildBound);                              // v7
+            writer.Write(Regular);                                 // v8
+            writer.Write(OfflineSince);                            // v8
         }
 
         public override void Deserialize(IGenericReader reader)
@@ -1134,6 +1149,11 @@ namespace Server.CustomBots
             if (version >= 7)
             {
                 GuildBound = reader.ReadBool();
+            }
+            if (version >= 8)
+            {
+                Regular = reader.ReadBool();
+                OfflineSince = reader.ReadDateTime();
             }
 
             // Migrate legacy Crafter-class bots (saved before the split into

@@ -113,7 +113,10 @@ namespace Server.CustomBots
             {
                 return true;
             }
-            return NamePool.InUseCount - FixedRoleCount < TargetNow;
+            // Offline regulars still hold their names but are not online.
+            // And a regular ready to come back gets the place first.
+            return NamePool.InUseCount - FixedRoleCount - BotRegulars.OfflineCount < TargetNow &&
+                !BotRegulars.AnyReady();
         }
 
         private static int CountLive()
@@ -180,6 +183,13 @@ namespace Server.CustomBots
             int target = TargetNow;
             int surplus = live - target;
             int logouts = 0;
+
+            // Room on the curve goes to regulars first: somebody you have
+            // seen before logs back in before the spawners add a stranger.
+            if (surplus < 0)
+            {
+                BotRegulars.LogInSome(-surplus);
+            }
 
             foreach (var bot in _scratch)
             {
@@ -255,7 +265,9 @@ namespace Server.CustomBots
             // A beat between "gtg" and vanishing, like a real logout timer.
             Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomMinMax(3, 6)), () =>
             {
-                if (!bot.Deleted)
+                // A regular (or a bot that becomes one now) logs out and
+                // will be back. Everyone else is gone for good.
+                if (!bot.Deleted && !BotRegulars.TryKeep(bot))
                 {
                     bot.Delete();
                 }

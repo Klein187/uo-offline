@@ -55,6 +55,13 @@ namespace Server.CustomBots
         // (weight 0) — the treasure-hunt manager hands a bot the site as
         // an explicit Traveler destination when a hunt starts.
         TreasureSite,
+        // A bot's own house (BotHomes registers one per bot-owned house, on
+        // the road node nearest its door). Never rolled; only its owner
+        // is sent there.
+        Home,
+        // A real Architect NPC, where house deeds are sold. Registered by
+        // BotHomes from the live world; never rolled.
+        Architect,
 
         // ---- Dungeon points (see DungeonCrawlerBehavior / DungeonRegistry) ----
         // A surface teleporter into a dungeon. ROLLABLE like Dungeon: combat
@@ -361,7 +368,8 @@ namespace Server.CustomBots
 
             // Dig sites are never destinations in their own right — the
             // treasure-hunt manager assigns them explicitly.
-            if (type == DestinationType.TreasureSite)
+            if (type is DestinationType.TreasureSite or DestinationType.Home
+                     or DestinationType.Architect)
             {
                 return 0.0;
             }

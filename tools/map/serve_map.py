@@ -51,6 +51,11 @@ PKS_REQ = _data("Live/pks_request.txt")
 PKS_ACK = _data("Live/pks_ack.json")
 # Editor-authored PK spawns + hunt-area polygons (read by PKSpawnData).
 PK_SPAWNS_JSON = _data("CustomSpawns/pk_spawns.json")
+# Vendor-house hot spots: polygon + how many vendor houses (BotVendorHouses).
+HOUSE_SPOTS_JSON = _data("CustomSpawns/house_spots.json")
+# "Place vendor houses" bridge: BotHomes reads "token vendors".
+HOMES_REQ = _data("Live/homes_request.txt")
+HOMES_ACK = _data("Live/homes_ack.json")
 
 # Walk atlas (tools/walkmap_atlas.py output, P5 PGM, 255 = standable). The
 # editor shades unwalkable tiles red while a zone is drawn or selected.
@@ -283,9 +288,13 @@ def build_data():
     if os.path.exists(PK_SPAWNS_JSON):
         try: pkspawns = jload(PK_SPAWNS_JSON).get("Spawns", [])
         except Exception: pkspawns = []
+    housespots = []
+    if os.path.exists(HOUSE_SPOTS_JSON):
+        try: housespots = jload(HOUSE_SPOTS_JSON).get("Spots", [])
+        except Exception: housespots = []
     return {"dests": dests, "wps": wps, "edges": edges,
             "zones": load_zones(), "spawns": load_spawns(), "gather": gather,
-            "pkspawns": pkspawns}
+            "pkspawns": pkspawns, "housespots": housespots}
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -377,12 +386,14 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": str(ex)})
             return
         if self.path.split("?")[0] in ("/reload_status", "/genbots_status",
-                                       "/livemap_status", "/genpks_status"):
-            # The game's EditorReloadWatcher writes these acks.
+                                       "/livemap_status", "/genpks_status",
+                                       "/genvendors_status"):
+            # The game's EditorReloadWatcher (and BotHomes) write these acks.
             which = self.path.split("?")[0]
             ack = (RELOAD_ACK if which == "/reload_status"
                    else GENBOTS_ACK if which == "/genbots_status"
                    else PKS_ACK if which == "/genpks_status"
+                   else HOMES_ACK if which == "/genvendors_status"
                    else LIVEMAP_ACK)
             try:
                 body = open(ack, "rb").read() if os.path.exists(ack) else b"{}"
@@ -426,6 +437,54 @@ class Handler(SimpleHTTPRequestHandler):
                     json.dumps(data, indent=2))
                 self._json(200, {"ok": True, "name": rec["name"],
                                  "count": len(data["Spawns"])})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] in ("/hs_save", "/hs_del"):
+            # Vendor-house hot spots in house_spots.json.
+            #   /hs_save {name, count, poly:[[x,y],...]}  add or replace by name
+            #   /hs_del  {name}                           remove
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                p = json.loads(self.rfile.read(n))
+                name = (p.get("name") or "").strip()
+                if not name: raise ValueError("a spot needs a name")
+                data = {"Spots": []}
+                if os.path.exists(HOUSE_SPOTS_JSON):
+                    try: data = jload(HOUSE_SPOTS_JSON)
+                    except Exception: data = {"Spots": []}
+                data.setdefault("Spots", [])
+                before = len(data["Spots"])
+                data["Spots"] = [e for e in data["Spots"]
+                                 if (e.get("name") or "").lower() != name.lower()]
+                if self.path.split("?")[0] == "/hs_save":
+                    poly = [[int(a), int(b)] for a, b in (p.get("poly") or [])]
+                    if len(poly) < 3: raise ValueError("need >=3 corners")
+                    data["Spots"].append({"name": name,
+                                          "count": max(1, min(10, int(p.get("count", 2)))),
+                                          "poly": poly})
+                os.makedirs(os.path.dirname(HOUSE_SPOTS_JSON), exist_ok=True)
+                if os.path.exists(HOUSE_SPOTS_JSON):
+                    import shutil; shutil.copy(HOUSE_SPOTS_JSON, HOUSE_SPOTS_JSON + ".bak")
+                open(HOUSE_SPOTS_JSON, "w", encoding="utf-8").write(json.dumps(data, indent=2))
+                self._json(200, {"ok": True, "name": name, "count": len(data["Spots"]),
+                                 "removed": before - len(data["Spots"])
+                                 if self.path.split("?")[0] == "/hs_del" else 0})
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": str(ex)})
+            return
+        if self.path.split("?")[0] == "/genvendors":
+            # Bump homes_request.txt with "token vendors"; BotHomes fills the
+            # drawn hot spots in game and acks in homes_ack.json.
+            try:
+                os.makedirs(os.path.dirname(HOMES_REQ), exist_ok=True)
+                tok = 0
+                if os.path.exists(HOMES_REQ):
+                    try: tok = int((open(HOMES_REQ).read().split() or ["0"])[0])
+                    except Exception: tok = 0
+                tok += 1
+                open(HOMES_REQ, "w").write(f"{tok} vendors")
+                self._json(200, {"ok": True, "token": tok})
             except Exception as ex:
                 self._json(400, {"ok": False, "error": str(ex)})
             return

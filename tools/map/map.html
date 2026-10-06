@@ -76,6 +76,7 @@
   <label style="display:inline"><input type="checkbox" class="spF" data-k="PlayerBotLifecycle" checked> <span style="color:#9b59b6">BotL</span></label>
  </div>
  <label style="color:#e8a0a0"><input type="checkbox" id="lPK" checked> PK spawns</label>
+ <label style="color:#f0c060"><input type="checkbox" id="lHS" checked> House spots</label>
  <label style="color:#e07a5f"><input type="checkbox" id="lDigs"> Dig sites</label>
  <label style="color:#7bbf7e"><input type="checkbox" id="lGather"> Gather spots</label>
  <label style="color:#ffae6e"><input type="checkbox" id="lCov"> WP coverage gaps</label>
@@ -114,6 +115,11 @@
  <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
  <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
   click = add hunt-area corner &middot; Enter = save (asks name + count)<br>Esc = cancel
+ </div>
+ <label style="color:#f0c060"><input type="checkbox" id="editHS"> EDIT house spots</label>
+ <div id="hsCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#f0c060">
+  click = add corner &middot; Enter = save (asks name + how many vendor houses)<br>
+  click a spot = select &middot; Delete = remove &middot; Esc = cancel
  </div>
  <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
  <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
@@ -154,6 +160,9 @@
    &#8635; Reload in game</button>
  <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33" title="Place the PK spawns drawn in the editor (pk_spawns.json)">
   ☠ Place PK spawns in game</button>
+ <button id="genVendors" style="width:100%;margin-top:4px;padding:5px;background:#5a4a2d"
+   title="Fill every drawn house spot with bot vendor houses (house_spots.json)">
+   &#8962; Place vendor houses in game</button>
  <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
    &#9851; Regenerate bots in game</button>
@@ -195,6 +204,7 @@
 <script>
 let DESTS=[], WPS=[], EDGES=[], ZONES=[], GATHER=[], wpByName={};
 let PKSPAWNS=[], pkSel=null;
+let HSPOTS=[], hsSel=null;
 let drawPts=[], selZone=-1, dotDrag=null, wpDrag=null, wpSel=null, destSel=null, arrDrag=null, arrSel=null;
 const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085",
  Stables:"#795548",VendorSmith:"#34495e",VendorWeaponer:"#788ca0",VendorMage:"#2980b9",
@@ -245,6 +255,7 @@ function loadData(){
   DESTS=d.dests; WPS=d.wps; EDGES=d.edges; ZONES=d.zones||[]; SPAWNS=d.spawns||[];
   GATHER=d.gather||[];
   PKSPAWNS=d.pkspawns||[];
+  HSPOTS=d.housespots||[];
   wpByName={}; WPS.forEach(w=>wpByName[w.n]=w);
   COV=null; if(document.getElementById("lCov").checked)computeCoverage();
   document.getElementById("stamp").textContent=
@@ -414,6 +425,23 @@ function draw(){
   ctx.textAlign="left";ctx.textBaseline="alphabetic";
   if(scale>=4){ctx.fillStyle="#ffb0b0";ctx.font="10px sans-serif";
    ctx.fillText(s.name+" ("+(s.amount||3)+")",x+8,y+3);}}
+ // vendor-house hot spots: gold polygons, name + count
+ if(document.getElementById("lHS").checked)for(const s of HSPOTS){
+  if(!s.poly||s.poly.length<3)continue;ctx.beginPath();
+  for(let j=0;j<s.poly.length;j++){const[hx,hy]=T(s.poly[j][0],s.poly[j][1]);
+   j?ctx.lineTo(hx,hy):ctx.moveTo(hx,hy);}
+  ctx.closePath();ctx.fillStyle=s===hsSel?"#f0c06066":"#f0c06033";ctx.fill();
+  ctx.strokeStyle="#f0c060";ctx.lineWidth=s===hsSel?2.5:1.5;ctx.stroke();
+  if(scale>=2){const c=hsCenter(s);const[x,y]=T(c[0],c[1]);
+   ctx.fillStyle="#ffe0a0";ctx.font="11px sans-serif";ctx.textAlign="center";
+   ctx.fillText("\u2302 "+s.name+" ("+(s.count||2)+")",x,y);ctx.textAlign="left";}}
+ // in-progress house-spot sketch
+ if(document.getElementById("editHS").checked&&drawPts.length){ctx.beginPath();
+  for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
+   j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.strokeStyle="#f0c060";ctx.lineWidth=2;ctx.stroke();
+  for(const p of drawPts){const[x,y]=T(p[0],p[1]);
+   ctx.fillStyle="#f0c060";ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();}}
  // in-progress PK hunt-area sketch
  if(document.getElementById("editPK").checked&&drawPts.length){ctx.beginPath();
   for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
@@ -502,7 +530,7 @@ function draw(){
      ctx.fillRect(px-3,py-3,6,6);ctx.strokeRect(px-3,py-3,6,6);}}}
  }
 }
-["lEdges","lWps","lDests","lLabels","lSpawns","lPK","lDigs"].forEach(id=>document.getElementById(id).onchange=draw);
+["lEdges","lWps","lDests","lLabels","lSpawns","lPK","lDigs","lHS"].forEach(id=>document.getElementById(id).onchange=draw);
 document.querySelectorAll(".spF").forEach(c=>c.onchange=draw);
 let drag=null,moved=0;
 cv.onmousedown=e=>{
@@ -672,6 +700,7 @@ addEventListener("mouseup",e=>{cv.style.cursor="grab";
   if(editSpawns.checked)spawnClick(e.clientX,e.clientY);
   else if(editZones.checked)editClick(e.clientX,e.clientY);
   else if(document.getElementById("editPK").checked)pkClick(e.clientX,e.clientY);
+  else if(document.getElementById("editHS").checked)hsClick(e.clientX,e.clientY);
   else if(document.getElementById("editDungeon").checked)dungeonClick(e.clientX,e.clientY);
   else inspect(e.clientX,e.clientY);
  }
@@ -1092,6 +1121,17 @@ function saveZones(){
   loadData();})
  .catch(e=>{document.getElementById("info").textContent="save failed: "+e;});}
 addEventListener("keydown",e=>{
+ if(document.getElementById("editHS").checked){
+  if(e.key==="Enter"&&drawPts.length>=3){saveHS();}
+  else if(e.key==="Escape"){drawPts=[];hsSel=null;draw();}
+  else if((e.key==="Delete"||e.key==="Backspace")&&hsSel){
+   if(confirm(`Delete house spot '${hsSel.name}'? (houses already placed stay)`)){
+    fetch("/hs_del",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({name:hsSel.name})})
+    .then(r=>r.json()).then(r=>{document.getElementById("info").textContent=
+     r.ok?`removed house spot (${r.removed})`:"delete failed: "+r.error;
+     hsSel=null;loadData();});}}
+  return;}
  if(document.getElementById("editPK").checked){
   if(e.key==="Enter"&&drawPts.length>=3){savePK();}
   else if(e.key==="Escape"){drawPts=[];pkSel=null;draw();}
@@ -1182,6 +1222,50 @@ addEventListener("keydown",e=>{
  }else if(e.key==="Delete"&&selZone>=0){
   if(confirm(`Delete zone '${ZONES[selZone].Name}'?`)){
    ZONES.splice(selZone,1);selZone=-1;saveZones();}}});
+// ---- vendor-house hot spot editor ----
+function hsCenter(s){return[Math.round(s.poly.reduce((a,p)=>a+p[0],0)/s.poly.length),
+ Math.round(s.poly.reduce((a,p)=>a+p[1],0)/s.poly.length)];}
+function inPoly(poly,x,y){let inside=false;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+  if((poly[i][1]>y)!==(poly[j][1]>y)&&
+     x<(poly[j][0]-poly[i][0])*(y-poly[i][1])/(poly[j][1]-poly[i][1])+poly[i][0])inside=!inside;}
+ return inside;}
+function hsClick(px,py){
+ const r=cv.getBoundingClientRect();
+ const tx=Math.round((px-r.left)/scale+viewX), ty=Math.round((py-r.top)/scale+viewY);
+ // a click inside an existing spot (no sketch in progress) selects it
+ if(drawPts.length===0){
+  for(const s of HSPOTS){if(s.poly&&s.poly.length>=3&&inPoly(s.poly,tx,ty)){
+   hsSel=s;document.getElementById("info").textContent=
+    `[house spot] ${s.name} · ${s.count||2} vendor house(s) · ${s.poly.length} corners
+Delete = remove`;
+   draw();return;}}
+ }
+ hsSel=null;drawPts.push([tx,ty]);
+ document.getElementById("info").textContent=
+  `House spot: ${drawPts.length} corner(s)
+Enter = save (name + count), Esc = cancel`;
+ draw();}
+function saveHS(){
+ const name=prompt("House spot name:","Spot "+(HSPOTS.length+1));
+ if(!name){return;}
+ const cnt=parseInt(prompt("How many vendor houses here?","2")||"2",10)||2;
+ fetch("/hs_save",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name:name,count:cnt,poly:drawPts})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?`saved house spot '${r.name}' — ${r.count} total
+Use the \u2302 button to place the vendor houses in game.`
+   :"save failed: "+r.error;
+  drawPts=[];loadData();});}
+document.getElementById("editHS").onchange=function(){
+ drawPts=[];hsSel=null;
+ if(this.checked){
+  for(const id of ["editZones","editSpawns","editDungeon","editPK"]){
+   const o=document.getElementById(id);if(o&&o.checked){o.checked=false;o.onchange&&o.onchange();}}
+  document.getElementById("lHS").checked=true;}
+ document.getElementById("hsCtl").style.display=this.checked?"block":"none";
+ draw();};
 // ---- PK spawn / hunt-area editor ----
 function pkClick(px,py){
  const r=cv.getBoundingClientRect();
@@ -1218,7 +1302,7 @@ Use the ☠ button to (re)place them in game.`
 document.getElementById("editPK").onchange=function(){
  drawPts=[];pkSel=null;
  if(this.checked){
-  for(const id of ["editZones","editSpawns","editDungeon"]){
+  for(const id of ["editZones","editSpawns","editDungeon","editHS"]){
    const o=document.getElementById(id);if(o&&o.checked){o.checked=false;o.onchange&&o.onchange();}}
   document.getElementById("lPK").checked=true;draw();}
  document.getElementById("pkCtl").style.display=this.checked?"block":"none";
@@ -1618,6 +1702,11 @@ document.getElementById("genPKs").onclick=function(){
    "travel routes; replaces any existing PK spawners)"))return;
  triggerInGame("/genpks","/genpks_status","placing PK spawners in game...",
   a=>"PKs armed: "+a.spawners+" spawner(s), ~"+a.pks+" red hunters on the roads",20);};
+document.getElementById("genVendors").onclick=function(){
+ if(!confirm("Fill every drawn house spot with bot vendor houses? "+
+   "(only adds houses a spot is missing; nothing is removed)"))return;
+ triggerInGame("/genvendors","/genvendors_status","placing vendor houses in game...",
+  a=>"vendor houses: "+a.names+" ("+a.homes+" bot homes in the world)",40);};
 document.getElementById("genBots").onclick=function(){
  if(!confirm("Regenerate the whole bot population? This clears all bots and "+
    "spawners and re-lays them (bank/shop crowds move to current arrival points)."))return;
