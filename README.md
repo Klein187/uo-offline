@@ -14,6 +14,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 Newest first.
 
 - **Bots own houses and run shops.** Some bots now come back session after session as regulars, with the same name, gear and bank account. Regulars live in the roadside houses, let themselves in with a key, stash their loot and often log out at home. A regular who saves up a deed's price buys a real one from an architect and places it.
+- **Bots shop at vendor houses too.** A bot low on reagents, bandages, arrows or recall scrolls checks the vendor houses as well as the town shops, walks in and buys from the player vendor the way you would. Fighters with gold drop by now and then to look for a better weapon.
 - **Vendor houses at the busy spots.** Draw house spots in the map editor and bot-owned houses with real player vendors go up inside them. Stock comes from what the owner brings home and makes, and you buy from them the normal way.
 - **Guild bots come back.** Bots you recruited into your guild were kept through a restart but never showed up again. They log back in where they left off now.
 - **Pack horses don't weigh you down.** What your pack horse carried counted against the horse you rode, but only while mounted. It no longer counts.

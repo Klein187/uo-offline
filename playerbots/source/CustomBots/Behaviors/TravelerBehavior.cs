@@ -536,6 +536,13 @@ namespace Server.CustomBots
                 return errand;
             }
 
+            // A fighter with gold now and then goes to see what the vendor
+            // houses have in weapons.
+            if (!AvoidTowns && BotHouseShopping.PickBrowseTrip(bot) is string browse)
+            {
+                return browse;
+            }
+
             var botNode = NearestReachableNode(bot);
 
             // Reroll picks that land on a gateless island (e.g. Buccaneer's
@@ -2277,6 +2284,7 @@ namespace Server.CustomBots
             return type == DestinationType.Graveyard
                 || type == DestinationType.Home
                 || type == DestinationType.Architect
+                || type == DestinationType.HouseShop
                 || type == DestinationType.Dungeon
                 || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
                 || type == DestinationType.MiningSpot
@@ -2373,6 +2381,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             if (_destType is DestinationType.Home or DestinationType.Architect)
             {
                 return BotHomes.OnArrived(bot, DestinationName);
+            }
+            // A player vendor's house: in to shop.
+            if (_destType == DestinationType.HouseShop)
+            {
+                return BotHouseShopping.OnArrived(bot, DestinationName);
             }
 
             // Moongate: a bot arriving at a moongate has a chance to step

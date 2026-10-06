@@ -62,6 +62,9 @@ namespace Server.CustomBots
         // A real Architect NPC, where house deeds are sold. Registered by
         // BotHomes from the live world; never rolled.
         Architect,
+        // A bot-owned house with a player vendor in it (BotHouseShopping).
+        // Never rolled; shoppers are sent there.
+        HouseShop,
 
         // ---- Dungeon points (see DungeonCrawlerBehavior / DungeonRegistry) ----
         // A surface teleporter into a dungeon. ROLLABLE like Dungeon: combat
@@ -369,7 +372,7 @@ namespace Server.CustomBots
             // Dig sites are never destinations in their own right — the
             // treasure-hunt manager assigns them explicitly.
             if (type is DestinationType.TreasureSite or DestinationType.Home
-                     or DestinationType.Architect)
+                     or DestinationType.Architect or DestinationType.HouseShop)
             {
                 return 0.0;
             }

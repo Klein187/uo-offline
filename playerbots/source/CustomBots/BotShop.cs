@@ -354,13 +354,14 @@ namespace Server.CustomBots
         // deeds, optionally only goods that pass a test (a smith's vendor
         // sells metal, a tailor's cloth and leather). Same build and the same
         // price band as a hawker's stock. Null when nothing fit.
-        public static Item RollVendorGoods(Func<Item, bool> fits, out int price)
+        public static Item RollVendorGoods(Func<Item, bool> fits, out int price, bool bulkOnly = false)
         {
             price = 0;
             for (int tries = 0; tries < 40; tries++)
             {
                 var goods = RollGoods();
-                if (goods.Kind == GoodsKind.BigTicket)
+                if (goods.Kind == GoodsKind.BigTicket ||
+                    bulkOnly && goods.Kind is not (GoodsKind.Bulk or GoodsKind.Scroll))
                 {
                     continue;
                 }
@@ -383,6 +384,15 @@ namespace Server.CustomBots
                 else
                 {
                     price = Utility.RandomMinMax(goods.MinPrice, goods.MaxPrice);
+                }
+
+                // A house vendor sells in smaller lots than a hawker shouts:
+                // 40-100 of a thing, at the same rate per piece.
+                if (item.Stackable && item.Amount > 100)
+                {
+                    int lot = Utility.RandomMinMax(40, 100);
+                    price = price * lot / item.Amount;
+                    item.Amount = lot;
                 }
                 price = Math.Max(5, Round(price));
                 return item;

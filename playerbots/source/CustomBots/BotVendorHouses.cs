@@ -170,9 +170,19 @@ namespace Server.CustomBots
                     var vendor = AddVendor(house, owner);
                     if (vendor != null)
                     {
+                        // Half the opening stock is the everyday stuff people
+                        // come for (reagents, bandages, arrows, scrolls), the
+                        // rest the owner's line of work.
                         for (int i = Utility.RandomMinMax(OpeningStockMin, OpeningStockMax); i > 0; i--)
                         {
-                            AddCrafted(vendor, owner);
+                            if (i % 2 == 0)
+                            {
+                                AddSupplies(vendor);
+                            }
+                            else
+                            {
+                                AddCrafted(vendor, owner);
+                            }
                         }
                     }
                     Console.WriteLine($"[vendorhouses] {owner.Name} opened a shop at '{spot.Name}' " +
@@ -268,6 +278,13 @@ namespace Server.CustomBots
                 }
             }
 
+            // Keep a few everyday supplies on the shelf: the owner buys them
+            // in bulk and sells them on, as players did.
+            if (CountSupplies(vendor) < 3 && Count(vendor) < MaxStock && AddSupplies(vendor))
+            {
+                stocked++;
+            }
+
             if (takings > 0 || stocked > 0)
             {
                 Console.WriteLine($"[vendorhouses] {bot.Name} took {takings} gold from the vendor, " +
@@ -276,6 +293,22 @@ namespace Server.CustomBots
         }
 
         private static int Count(PlayerVendor v) => v.Backpack?.Items.Count ?? 0;
+
+        private static int CountSupplies(PlayerVendor v)
+        {
+            int n = 0;
+            if (v.Backpack != null)
+            {
+                foreach (var item in v.Backpack.Items)
+                {
+                    if (item is BaseReagent or Bandage or Arrow or Bolt or RecallScroll)
+                    {
+                        n++;
+                    }
+                }
+            }
+            return n;
+        }
 
         // What the owner brought home and stashed goes out on the vendor.
         private static int RestockFromChest(PlayerVendor vendor, BaseHouse house)
@@ -342,10 +375,25 @@ namespace Server.CustomBots
                 BotClass.Fisherman  => i => i.GetType().Name.Contains("Fish") || i is BaseReagent,
                 _                   => null,
             };
-            var item = BotShop.RollVendorGoods(fits, out int price);
+            // Nothing of its own trade in the table: general goods instead.
+            var item = BotShop.RollVendorGoods(fits, out int price) ?? BotShop.RollVendorGoods(null, out price);
             if (item == null)
             {
-                Console.WriteLine($"[vendorhouses] nothing in the goods table fits a {owner.Class}");
+                return false;
+            }
+            if (!List(vendor, item, price))
+            {
+                item.Delete();
+                return false;
+            }
+            return true;
+        }
+
+        private static bool AddSupplies(PlayerVendor vendor)
+        {
+            var item = BotShop.RollVendorGoods(null, out int price, bulkOnly: true);
+            if (item == null)
+            {
                 return false;
             }
             if (!List(vendor, item, price))

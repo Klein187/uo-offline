@@ -232,6 +232,17 @@ namespace Server.CustomBots
             }
 
             best ??= bestAnywhere;
+
+            // A vendor house that has it, near enough, gets the business.
+            int townDist = best == null ? int.MaxValue / 2
+                : Math.Max(Math.Abs(best.Location.X - bot.X), Math.Abs(best.Location.Y - bot.Y));
+            if (BotHouseShopping.ShopForSupplies(bot, townDist) is string shop)
+            {
+                bot.NextSupplyErrandAt = Core.Now + ErrandCooldown;
+                Console.WriteLine($"[supplies] {bot.Name} is low on {need} — heading to '{shop}'");
+                return shop;
+            }
+
             if (best == null)
             {
                 return null;

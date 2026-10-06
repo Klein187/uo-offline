@@ -118,6 +118,7 @@ namespace Server.CustomBots
             {
                 BotVendorHouses.EnsureAll();
             }
+            BotHouseShopping.RegisterShops();
             _booted = true;
             Console.WriteLine($"[homes] {_homeOf.Count} bot homes ({adopted} adopted, {seeded} seeded now), " +
                 $"{_architects.Count} architects");
@@ -141,6 +142,7 @@ namespace Server.CustomBots
             AdoptOwnerless();
             int seeded = EnsureSeeded();
             BotVendorHouses.EnsureAll();
+            BotHouseShopping.RegisterShops();
             return seeded;
         }
 
@@ -148,7 +150,7 @@ namespace Server.CustomBots
         // Destinations
         // -------------------------------------------------------------------
 
-        private static BotDestination AddDestination(string name, DestinationType type, Point3D near)
+        internal static BotDestination AddDestination(string name, DestinationType type, Point3D near)
         {
             var existing = DestinationCatalog.GetByName(name);
             if (existing != null)
@@ -1052,6 +1054,10 @@ namespace Server.CustomBots
                     break;
                 case "vendors":
                     names.Add($"{BotVendorHouses.EnsureAll()} vendor houses placed");
+                    BotHouseShopping.RegisterShops();
+                    break;
+                case "shop":
+                    names.AddRange(BotHouseShopping.SendShoppers(count));
                     break;
                 case "rich":
                 case "visit":
