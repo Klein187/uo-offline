@@ -75,6 +75,10 @@ namespace Server.CustomBots
 
         public static IReadOnlyList<PKSpawnDef> Defs => _defs;
 
+        // Spawns that exist only in memory (the file could not be written).
+        // The leash lookups below still need them.
+        public static void Use(List<PKSpawnDef> defs) => _defs = defs;
+
         public static List<PKSpawnDef> Load()
         {
             var list = new List<PKSpawnDef>();

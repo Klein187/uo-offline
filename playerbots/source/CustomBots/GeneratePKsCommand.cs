@@ -200,6 +200,17 @@ namespace Server.CustomBots
                 {
                     WriteSpawnJson(synth);
                     defs = PKSpawnData.Load();
+
+                    // A failed write must not cost the world its reds. It
+                    // used to: installs never shipped Data/CustomSpawns, the
+                    // write threw on the missing folder, the reload came back
+                    // empty, and First Time Setup placed no PKs at all.
+                    if (defs.Count == 0)
+                    {
+                        defs = synth;
+                        PKSpawnData.Use(synth);
+                    }
+
                     Console.WriteLine(
                         $"[GeneratePKs] no drawn spawns — synthesized " +
                         $"{defs.Count} default spawn(s) from the catalog.");
@@ -292,6 +303,7 @@ namespace Server.CustomBots
             {
                 var path = System.IO.Path.Combine(
                     Core.BaseDirectory, "Data", "CustomSpawns", "pk_spawns.json");
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
                 using var stream = System.IO.File.Create(path);
                 using var w = new System.Text.Json.Utf8JsonWriter(stream,
                     new System.Text.Json.JsonWriterOptions { Indented = true });
