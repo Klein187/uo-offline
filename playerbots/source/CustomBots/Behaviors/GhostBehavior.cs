@@ -128,7 +128,21 @@ namespace Server.CustomBots
         // Standing this close to a real ankh with the last steps blocked
         // counts as touching it. The bot IS at the shrine; the difference
         // is a step in the masonry, not a story.
-        private const int StalledReachSlack = 6;
+        // Ten, not six: shrine ankhs stand on platforms, and the
+        // Spirituality shrine's walk-up spot is eight tiles out; at six every
+        // ghost there gave up, picked the same shrine again and waited out
+        // the twenty-minute net.
+        private const int StalledReachSlack = 10;
+
+        // A healer or an ankh this far off is still worth walking to when no
+        // healer or shrine destination can be reached: the islands with a
+        // dungeon mouth (Fire Isle, the Deceit isle) have a healer standing
+        // half a screen away that is nobody's destination.
+        private const int FarResSiteRange = 150;
+
+        // Truly nowhere to go: carried to a res point after this, not after
+        // the full twenty minutes.
+        private static readonly TimeSpan NowhereRescueAfter = TimeSpan.FromMinutes(5);
 
         public GhostBehavior()
         {
@@ -367,12 +381,35 @@ namespace Server.CustomBots
                 return;
             }
 
-            // Nowhere to go from here — an island with no shrine, a corner
-            // the graph doesn't cover. Keep haunting and ask again in a
-            // minute; a wandering healer may walk past, and the stranding
-            // net is the backstop. Said once per ghost, because a silent
-            // version of this is how you end up with bots standing in a
-            // field for twenty minutes and no idea why.
+            // No destination to walk to. A real healer or ankh further off
+            // on this same island still counts (the walk fails if it is
+            // across water, and the ghost ends up back here).
+            var far = Core.Now >= _skipSiteUntil
+                ? BotDeathManager.FindResSite(bot, FarResSiteRange)
+                : null;
+            if (far.HasValue)
+            {
+                Console.WriteLine(
+                    $"[death] {bot.Name}'s ghost has no road to a healer, but sees one " +
+                    $"at {far.Value} — walking over");
+                SeekSite = far;
+                return;
+            }
+
+            // Truly nowhere: an island with no healer and no ankh. A player
+            // would wait for a passing res; a bot waits a few minutes for
+            // one, then the stranding net carries it.
+            if (bot.LastDeathAt != DateTime.MinValue && Core.Now - bot.LastDeathAt >= NowhereRescueAfter)
+            {
+                StopWalk();
+                BotDeathManager.CarryToResPoint(bot, "had nowhere to go");
+                return;
+            }
+
+            // Keep haunting and ask again in a minute; a wandering healer
+            // may walk past. Said once per ghost, because a silent version
+            // of this is how you end up with bots standing in a field for
+            // twenty minutes and no idea why.
             if (!_warnedNowhereToGo)
             {
                 _warnedNowhereToGo = true;
@@ -558,8 +595,13 @@ namespace Server.CustomBots
 
             if (Core.Now - _walkBestAt > WalkStallLimit)
             {
-                _walkStalled = true;
+                // Stop first, then raise the flag: StopWalk clears it (so a
+                // new walk starts clean), and setting it before the stop
+                // meant nobody ever saw a stall. Ghosts five tiles from a
+                // shrine ankh on its platform walked at it, stalled,
+                // forgot, and started again until the twenty-minute net.
                 StopWalk();
+                _walkStalled = true;
             }
         }
 

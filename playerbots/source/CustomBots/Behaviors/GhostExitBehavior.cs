@@ -60,6 +60,7 @@ namespace Server.CustomBots
         // sudden big jump is the "it fired" signal. Same machinery as the
         // crawler's pad walk, minus the combat freeze it needed.
         private bool _padPending;
+        private bool _padStepped;
         private Point3D _padTile;
         private DateTime _padStartedAt;
         private static readonly TimeSpan PadTimeout = TimeSpan.FromSeconds(20);
@@ -309,6 +310,7 @@ namespace Server.CustomBots
         private void BeginPadWalk(PlayerBot bot, Point3D pad)
         {
             _padPending   = true;
+            _padStepped   = false;
             _padTile      = pad;
             _padStartedAt = Core.Now;
             BeginWalk(bot, pad, 0);
@@ -323,6 +325,25 @@ namespace Server.CustomBots
             {
                 ResolveLanding(bot);
                 return;
+            }
+
+            // Standing ON the stair already (died on the landing tile, or the
+            // walk ended on it) fires nothing: a teleporter only works when
+            // something steps onto it. Step off and back on, once.
+            if (!_padStepped && bot.X == _padTile.X && bot.Y == _padTile.Y &&
+                Core.Now - _padStartedAt > TimeSpan.FromSeconds(3))
+            {
+                _padStepped = true;
+                foreach (Direction d in new[] { Direction.North, Direction.East, Direction.South, Direction.West })
+                {
+                    if (bot.Move(d))
+                    {
+                        Console.WriteLine($"[death] {bot.Name}'s ghost was standing on the stair — stepping off and back on");
+                        _padStartedAt = Core.Now;
+                        BeginWalk(bot, _padTile, 0);
+                        return;
+                    }
+                }
             }
 
             if (Core.Now - _padStartedAt > PadTimeout)

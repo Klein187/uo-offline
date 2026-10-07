@@ -79,17 +79,23 @@ namespace Server.CustomBots
                 return false;
             }
 
+            CarryToResPoint(bot, "never made it");
+            return true;
+        }
+
+        // The net's own move: to the nearest res point, raised there.
+        public static void CarryToResPoint(PlayerBot bot, string why)
+        {
             var refuge = NearestResPoint(bot);
             if (refuge != null)
             {
                 Console.WriteLine(
-                    $"[death] {bot.Name}'s ghost never made it — carried to " +
+                    $"[death] {bot.Name}'s ghost {why} — carried to " +
                     $"'{refuge.Name}'");
                 bot.MoveToWorld(refuge.ArrivalPoint ?? refuge.Location, bot.Map);
             }
 
             ResurrectBot(bot, "wedged ghost, carried to a res point");
-            return true;
         }
 
         // -------------------------------------------------------------------
