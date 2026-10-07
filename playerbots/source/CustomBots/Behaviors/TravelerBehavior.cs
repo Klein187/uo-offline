@@ -431,10 +431,10 @@ namespace Server.CustomBots
                 DestinationName = PickNewDestinationName(bot);
             }
 
-            // Roll arrival style: 40% Linger / 40% Wait / 20% Wander.
+            // Roll arrival style: 45% Linger / 45% Wait / 10% Wander.
             double r = Utility.RandomDouble();
-            Arrival = r < 0.40 ? ArrivalStyle.Linger
-                    : r < 0.80 ? ArrivalStyle.Wait
+            Arrival = r < 0.45 ? ArrivalStyle.Linger
+                    : r < 0.90 ? ArrivalStyle.Wait
                     : ArrivalStyle.Wander;
 
             _lastLoc        = bot.Location;
@@ -2238,7 +2238,7 @@ namespace Server.CustomBots
             switch (Arrival)
             {
                 case ArrivalStyle.Linger:
-                    var linger = TimeSpan.FromSeconds(Utility.RandomMinMax(60, 120));
+                    var linger = TimeSpan.FromSeconds(Utility.RandomMinMax(180, 360));
                     if (Core.Now - _arrivedAt > linger)
                     {
                         PickNewDestination(bot);
@@ -2254,7 +2254,7 @@ namespace Server.CustomBots
                     // practice parked 40% of arrivals at '· arriving' for
                     // entire sessions — the status page read as a stuck-bot
                     // epidemic. Wait is now just a LONG linger.
-                    var wait = TimeSpan.FromSeconds(Utility.RandomMinMax(180, 360));
+                    var wait = TimeSpan.FromSeconds(Utility.RandomMinMax(360, 720));
                     if (Core.Now - _arrivedAt > wait)
                     {
                         PickNewDestination(bot);
@@ -2735,7 +2735,7 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     targetBehavior = who < 0.08 ? "Beggar"
                                    : who < 0.15 ? "Newbie"
                                    : "BankSitter";
-                    chance = 0.40;  // many bank visitors just pass through
+                    chance = 0.60;  // plenty pass through, more stay a while
                     break;
 
                 case DestinationType.Graveyard:
@@ -2767,8 +2767,11 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     // by IsLeaveImmediately below), they don't loiter as
                     // Travelers in a vendor's room.
                     chance = 0.80;
-                    visitMinMinutes = 1;
-                    visitMaxMinutes = 3;
+                    // Players browsed, compared prices and chatted at the
+                    // counter. 1-3 minutes made every bot a drive-by and
+                    // sent it off on another trip (and often a Recall).
+                    visitMinMinutes = 4;
+                    visitMaxMinutes = 10;
                     break;
 
                 case DestinationType.Healer:
@@ -2782,8 +2785,18 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     // window (shrines chant their virtue mantra), then on.
                     targetBehavior  = "Visitor";
                     chance          = 0.85;
-                    visitMinMinutes = 1;
-                    visitMaxMinutes = 3;
+                    // An inn or a tavern is somewhere to sit a while; a
+                    // healer, a stable or a shrine is a shorter stop.
+                    if (_destType is DestinationType.Inn or DestinationType.Tavern)
+                    {
+                        visitMinMinutes = 6;
+                        visitMaxMinutes = 15;
+                    }
+                    else
+                    {
+                        visitMinMinutes = 3;
+                        visitMaxMinutes = 8;
+                    }
                     break;
 
                 default:

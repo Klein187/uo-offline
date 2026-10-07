@@ -302,6 +302,16 @@ namespace Server.CustomBots
                         {
                             return new Point3D(x, y, z);
                         }
+                        // Third height: the floor that is really there.
+                        // A pier's deck sits a few above the authored point
+                        // and the averaged ground (the water), so neither
+                        // takes a landing; Dock 117 refused every Recall
+                        // for that reason.
+                        if (Walkable.TryFindSeedZ(map, x, y, anchor.Z, out var sz) &&
+                            sz != anchor.Z && sz != z && map.CanSpawnMobile(x, y, sz))
+                        {
+                            return new Point3D(x, y, sz);
+                        }
                     }
                 }
                 return null;
@@ -332,6 +342,11 @@ namespace Server.CustomBots
             if (map.CanSpawnMobile(basePoint.X, basePoint.Y, bz))
             {
                 return new Point3D(basePoint.X, basePoint.Y, bz);
+            }
+            if (Walkable.TryFindSeedZ(map, basePoint.X, basePoint.Y, basePoint.Z, out var fz) &&
+                map.CanSpawnMobile(basePoint.X, basePoint.Y, fz))
+            {
+                return new Point3D(basePoint.X, basePoint.Y, fz);
             }
 
             // Last resort — old behavior, at least at the authored coord.
