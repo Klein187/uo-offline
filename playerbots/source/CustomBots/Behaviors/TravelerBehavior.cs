@@ -261,6 +261,11 @@ namespace Server.CustomBots
 
         private DateTime _pauseUntil = DateTime.MinValue;
 
+        // The way out of a building to the first leg's waypoint, when the
+        // trip starts somewhere the waypoints can't be walked to directly.
+        private List<Point3D> _exitTiles;
+        private string _exitNode;
+
         private Timer _stepTimer;
 
         // Last position recorded at the bottom of StepOnce. If we tick
@@ -679,8 +684,12 @@ namespace Server.CustomBots
         // that resolves; fall back to the plain nearest so behavior never
         // degrades below the old lookup.
         // -------------------------------------------------------------------
-        private static WaypointNode NearestReachableNode(PlayerBot bot)
+        private static WaypointNode NearestReachableNode(PlayerBot bot) =>
+            NearestReachableNode(bot, out _);
+
+        private static WaypointNode NearestReachableNode(PlayerBot bot, out bool reachable)
         {
+            reachable = false;
             var graph = WaypointRegistry.Graph;
             var candidates = new List<WaypointNode>(4);
             graph.FindNearestNodes(bot.Location, 4, candidates);
@@ -695,6 +704,7 @@ namespace Server.CustomBots
                                  Math.Abs(n.Location.Y - bot.Y));
                 if (d <= 2)
                 {
+                    reachable = true;
                     return n; // effectively standing on it
                 }
                 if (d > WaypointGraph.MaxLegDistance)
@@ -703,6 +713,7 @@ namespace Server.CustomBots
                 }
                 if (new MovementPath(bot, n.Location).Success)
                 {
+                    reachable = true;
                     return n;
                 }
             }
@@ -1150,6 +1161,11 @@ namespace Server.CustomBots
                 }
             }
 
+            if (_follower is ExitPathFollower exitF && exitF.Remaining >= 0)
+            {
+                legDist = exitF.Remaining;
+            }
+
             if (legDist < _bestDistToLeg)
             {
                 _bestDistToLeg = legDist;
@@ -1198,7 +1214,10 @@ namespace Server.CustomBots
                     // Otherwise: nudge + repath, reset counter for the
                     // next cycle.
                     Log(bot, $"STUCK x{_legAttempts} on '{(_plannedPath.Count > 0 ? _plannedPath[_legIndex] : "?")}' " +
-                             $"({legDist} tiles, cycle {_legCyclesSpent}/{MaxLegCycles}) — nudging + repath");
+                             $"({legDist} tiles, cycle {_legCyclesSpent}/{MaxLegCycles}) — nudging + repath" +
+                             $" [diag at {bot.Location} from '{(_legIndex > 0 && _legIndex < _plannedPath.Count ? _plannedPath[_legIndex - 1] : "-")}'" +
+                             $" leg {curLegLoc} paused={Core.Now < _pauseUntil} run={Core.Now < _forceRunUntil}" +
+                             $" follower={(_follower == null ? "none" : _follower.GetType().Name)}]");
                     NudgeAway(bot);
                     _follower?.ForceRepath();
                     _legAttempts = 0;
@@ -1324,7 +1343,36 @@ namespace Server.CustomBots
                 return;
             }
 
-            var nearest = NearestReachableNode(bot);
+            var nearest = NearestReachableNode(bot, out bool reachable);
+            _exitTiles = null;
+            _exitNode = null;
+            if (nearest != null && !reachable && !string.IsNullOrEmpty(DestinationName))
+            {
+                // None of the nearest waypoints can be walked to: the bot
+                // is inside somewhere whose door faces away from them. Find
+                // the way out first.
+                var way = ExitWalk.FindWayOut(bot, out var exitNode, out bool sealedIn);
+                if (way != null)
+                {
+                    nearest = exitNode;
+                    _exitTiles = way;
+                    _exitNode = exitNode.Name;
+                    Log(bot, $"inside at ({bot.X},{bot.Y},{bot.Z}) — walking out to '{exitNode.Name}' ({way.Count} steps)");
+                }
+                else if (sealedIn)
+                {
+                    // No way out on foot at all: a roof, a sealed room. Only
+                    // a bad landing or spawn puts anyone there.
+                    Log(bot, $"BOXED IN at ({bot.X},{bot.Y},{bot.Z}) — no way out on foot; moving to '{nearest.Name}'");
+                    StuckTelemetry.Record(bot, "boxed_in", $"({bot.X},{bot.Y},{bot.Z}) near '{nearest.Name}'");
+                    var to = nearest.Location;
+                    Walkable.TryFindSeedZ(bot.Map, to.X, to.Y, to.Z, out var toZ);
+                    bot.MoveToWorld(new Point3D(to.X, to.Y, toZ), bot.Map);
+                    _lastLoc = bot.Location;
+                    _lastProgressAt = Core.Now;
+                    _lastLoggedLeg = null;
+                }
+            }
             if (nearest == null || string.IsNullOrEmpty(DestinationName))
             {
                 _hasArrived = true;
@@ -1622,7 +1670,12 @@ namespace Server.CustomBots
                         StuckTelemetry.Record(bot, "marooned_rescue",
                             $"toward '{DestinationName}' → {rescueGate.Name}");
                         _gateResumeDestination = DestinationName;
-                        bot.MoveToWorld(rescueGate.ArrivalPoint ?? rescueGate.Location, bot.Map);
+                        // On the floor, not the stored Z: Moongate 150 is
+                        // stored at Z 0, under the floor of its dais, and
+                        // a bot put there can't take a step.
+                        var gateAt = rescueGate.ArrivalPoint ?? rescueGate.Location;
+                        Walkable.TryFindSeedZ(bot.Map, gateAt.X, gateAt.Y, gateAt.Z, out var gateZ);
+                        bot.MoveToWorld(new Point3D(gateAt.X, gateAt.Y, gateZ), bot.Map);
                         DestinationName = rescueGate.Name;
                         _planDepth++;
                         PlanPath(bot);
@@ -2002,7 +2055,9 @@ namespace Server.CustomBots
                 node.Location.Y + (_legIndex == _plannedPath.Count - 1 ? _finalOffsetY : 0),
                 node.Location.Z
             );
-            _follower = LegFollowers.Create(bot, legTarget, UseZones);
+            _follower = _exitTiles != null && _legIndex == 0 && node.Name == _exitNode
+                ? new ExitPathFollower(bot, _exitTiles, legTarget)
+                : LegFollowers.Create(bot, legTarget, UseZones);
             EnsureStepTimer(bot, running);
         }
 

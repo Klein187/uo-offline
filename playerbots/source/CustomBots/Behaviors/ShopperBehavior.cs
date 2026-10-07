@@ -284,8 +284,13 @@ namespace Server.CustomBots
             }
 
             // Otherwise wander to another spot on the floor.
+            // Only on the floor it stands on. An outline drawn over a wall
+            // or a roof has standable tiles up there too, and a shopper sent
+            // to the level above the Britain Smith (Z 52 over a Z 30 shop) could not
+            // find its way back down when the visit ended.
             var goal = _area.RandomStandable(bot.Map, bot.Z);
-            if (goal.HasValue && Math.Max(Math.Abs(goal.Value.X - bot.X), Math.Abs(goal.Value.Y - bot.Y)) >= 2)
+            if (goal.HasValue && Math.Abs(goal.Value.Z - bot.Z) <= 10 &&
+                Math.Max(Math.Abs(goal.Value.X - bot.X), Math.Abs(goal.Value.Y - bot.Y)) >= 2)
             {
                 _wanders++;
                 _phase = Phase.Browse;

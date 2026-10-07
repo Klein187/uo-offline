@@ -162,6 +162,11 @@ namespace Server.CustomBots
                     UseFallback("no zone route");
                     return _fallback.Follow(run, range);
                 }
+                if (IsDetour())
+                {
+                    UseFallback("zone route is a detour");
+                    return _fallback.Follow(run, range);
+                }
             }
 
             // Crossed the current link? Then aim at the next one.
@@ -199,6 +204,30 @@ namespace Server.CustomBots
             }
 
             return PathFollower.Check(_bot.Location, _goal, range);
+        }
+
+        // A route that goes far out of its way when the engine walker can
+        // walk the leg directly. Zones that touch at only one spot send the
+        // bot round by it: the road 54 / road 55 crossing is 16 tiles south
+        // of WP 517 while WP 518 is 21 tiles north, and the bots stalled at
+        // the crossing (213 STUCK lines in 25 minutes, the 10/6 audit's
+        // worst road spot). The zones are drawn by hand; this only declines
+        // the route, it doesn't touch them.
+        private bool IsDetour()
+        {
+            int direct = Cheb(_bot.Location, _goal);
+            if (direct > WaypointGraph.MaxLegDistance)
+            {
+                return false;
+            }
+            int len = 0;
+            var at = _bot.Location;
+            foreach (var t in _route.Targets)
+            {
+                len += Cheb(at, t);
+                at = t;
+            }
+            return len > direct * 3 / 2 + 10 && new MovementPath(_bot, _goal).Success;
         }
 
         private void Stall()

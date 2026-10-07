@@ -241,7 +241,7 @@
       "Name": "Central Britain Road 2",
       "X": 1489,
       "Y": 1603,
-      "Z": 16,
+      "Z": 17,
       "Connects": [
         "Alley To Baker",
         "Britain West Healer",
@@ -407,7 +407,7 @@
       "Name": "Britain Forge 2",
       "X": 1435,
       "Y": 1584,
-      "Z": 21,
+      "Z": 20,
       "Connects": [
         "Britain Forge 1",
         "Britain Forge 3",
@@ -657,7 +657,7 @@
       "Name": "britdock 2",
       "X": 1438,
       "Y": 1760,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "britdock3"
       ]
@@ -666,7 +666,7 @@
       "Name": "britdock3",
       "X": 1435,
       "Y": 1757,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "britdock 1",
         "britdock 2"
@@ -801,7 +801,7 @@
       "Name": "brit cntrl rd",
       "X": 1458,
       "Y": 1665,
-      "Z": 7,
+      "Z": 6,
       "Connects": [
         "Britain Gem Shop",
         "brit cntrlrd 2",
@@ -1583,7 +1583,7 @@
       "Name": "WP 154",
       "X": 1539,
       "Y": 1530,
-      "Z": 39,
+      "Z": 40,
       "Connects": [
         "WP 153",
         "WP 25",
@@ -1662,7 +1662,7 @@
       "Name": "WP 2",
       "X": 1617,
       "Y": 1647,
-      "Z": 35,
+      "Z": 34,
       "Connects": [
         "Rec 11",
         "Rec 2.4"
@@ -1778,7 +1778,7 @@
       "Name": "WP 13",
       "X": 1621,
       "Y": 1771,
-      "Z": 56,
+      "Z": 55,
       "Connects": [
         "WP 11"
       ]
@@ -1821,7 +1821,7 @@
       "Name": "WP 18",
       "X": 1667,
       "Y": 1587,
-      "Z": 2,
+      "Z": 1,
       "Connects": [
         "Rec 8.1",
         "WP 14",
@@ -1854,7 +1854,7 @@
       "Name": "WP 21",
       "X": 1700,
       "Y": 1581,
-      "Z": 25,
+      "Z": 26,
       "Connects": [
         "WP 19",
         "WP 22"
@@ -1864,7 +1864,7 @@
       "Name": "WP 22",
       "X": 1707,
       "Y": 1570,
-      "Z": 48,
+      "Z": 47,
       "Connects": [
         "WP 21"
       ]
@@ -1873,7 +1873,7 @@
       "Name": "WP 23",
       "X": 1662,
       "Y": 1560,
-      "Z": 15,
+      "Z": 14,
       "Connects": [
         "Rec 7.1",
         "WP 14",
@@ -1906,7 +1906,7 @@
       "Name": "WP 26",
       "X": 1587,
       "Y": 1531,
-      "Z": 37,
+      "Z": 36,
       "Connects": [
         "WP 25",
         "WP 27",
@@ -1929,7 +1929,7 @@
       "Name": "WP 28",
       "X": 1602,
       "Y": 1548,
-      "Z": 25,
+      "Z": 24,
       "Connects": [
         "Rec 5.2",
         "WP 25",
@@ -1951,7 +1951,7 @@
       "Name": "WP 30",
       "X": 1644,
       "Y": 1524,
-      "Z": 36,
+      "Z": 35,
       "Connects": [
         "WP 29",
         "WP 573"
@@ -2465,7 +2465,7 @@
       "Name": "WP 78",
       "X": 1473,
       "Y": 2151,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "WP 77",
         "WP 79"
@@ -2475,7 +2475,7 @@
       "Name": "WP 79",
       "X": 1473,
       "Y": 2159,
-      "Z": -15,
+      "Z": 6,
       "Connects": [
         "WP 78",
         "brittrinbrdg"
@@ -2497,7 +2497,7 @@
       "Name": "WP 83",
       "X": 1556,
       "Y": 1530,
-      "Z": -15,
+      "Z": 40,
       "Connects": [
         "WP 154",
         "WP 25"
@@ -2755,7 +2755,7 @@
       "Name": "WP 108",
       "X": 1607,
       "Y": 2384,
-      "Z": 5,
+      "Z": 2,
       "Connects": [
         "WP 106",
         "WP 107",
@@ -2857,7 +2857,7 @@
       "Name": "WP 118",
       "X": 1668,
       "Y": 2575,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "WP 117",
         "WP 119"
@@ -3239,7 +3239,7 @@
       "Name": "WP 167",
       "X": 1945,
       "Y": 2844,
-      "Z": 15,
+      "Z": 14,
       "Connects": [
         "WP 166",
         "WP 168"
@@ -3628,7 +3628,7 @@
       "Name": "WP 205",
       "X": 2071,
       "Y": 2796,
-      "Z": -15,
+      "Z": 5,
       "Connects": [
         "WP 204",
         "WP 206"
@@ -3638,7 +3638,7 @@
       "Name": "WP 206",
       "X": 2103,
       "Y": 2794,
-      "Z": -1,
+      "Z": 5,
       "Connects": [
         "WP 1018",
         "WP 1019",
@@ -3730,7 +3730,7 @@
       "Name": "WP 215",
       "X": 1957,
       "Y": 2708,
-      "Z": 18,
+      "Z": 17,
       "Connects": [
         "WP 214"
       ]
@@ -3759,7 +3759,7 @@
       "Name": "WP 218",
       "X": 1916,
       "Y": 2700,
-      "Z": 18,
+      "Z": 19,
       "Connects": [
         "WP 217",
         "WP 219"
@@ -3860,7 +3860,7 @@
       "Name": "trbrtbrdg",
       "X": 1482,
       "Y": 2160,
-      "Z": 3,
+      "Z": 6,
       "Connects": [
         "WP 80",
         "brittrinbrdg"
@@ -6794,7 +6794,7 @@
       "Name": "WP 492",
       "X": 789,
       "Y": 2289,
-      "Z": 6,
+      "Z": 7,
       "Connects": [
         "WP 491",
         "WP 493",
@@ -7408,7 +7408,7 @@
       "Name": "WP 549",
       "X": 1367,
       "Y": 1212,
-      "Z": 1,
+      "Z": 0,
       "Connects": [
         "WP 548",
         "WP 550"
@@ -7656,7 +7656,7 @@
       "Name": "WP 573",
       "X": 1654,
       "Y": 1514,
-      "Z": 18,
+      "Z": 20,
       "Connects": [
         "WP 30",
         "WP 574"
@@ -8297,7 +8297,7 @@
       "Name": "WP 636",
       "X": 1186,
       "Y": 953,
-      "Z": 5,
+      "Z": 6,
       "Connects": [
         "WP 635",
         "WP 637"
@@ -9363,7 +9363,7 @@
       "Name": "WP 741",
       "X": 2836,
       "Y": 994,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "WP 1270",
         "WP 737"
@@ -9496,7 +9496,7 @@
       "Name": "WP 754",
       "X": 2851,
       "Y": 833,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 750",
         "WP 755"
@@ -9580,7 +9580,7 @@
       "Name": "WP 762",
       "X": 2884,
       "Y": 755,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "WP 761",
         "WP 763"
@@ -9692,7 +9692,7 @@
       "Name": "WP 773",
       "X": 2956,
       "Y": 848,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 771",
         "WP 774",
@@ -9754,7 +9754,7 @@
       "Name": "WP 779",
       "X": 3009,
       "Y": 828,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "WP 777"
       ]
@@ -9763,7 +9763,7 @@
       "Name": "WP 780",
       "X": 2973,
       "Y": 788,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 778",
         "WP 781"
@@ -9794,7 +9794,7 @@
       "Name": "WP 783",
       "X": 2982,
       "Y": 749,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 782"
       ]
@@ -9812,7 +9812,7 @@
       "Name": "WP 785",
       "X": 2961,
       "Y": 739,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 784",
         "WP 786"
@@ -9852,7 +9852,7 @@
       "Name": "WP 789",
       "X": 2929,
       "Y": 708,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 788",
         "WP 790"
@@ -9951,7 +9951,7 @@
       "Name": "WP 798",
       "X": 2853,
       "Y": 703,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 1293",
         "WP 797"
@@ -10135,7 +10135,7 @@
       "Name": "WP 816",
       "X": 2902,
       "Y": 933,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 815",
         "WP 817"
@@ -10145,7 +10145,7 @@
       "Name": "WP 817",
       "X": 2914,
       "Y": 931,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 816",
         "WP 818",
@@ -10284,7 +10284,7 @@
       "Name": "WP 831",
       "X": 2907,
       "Y": 630,
-      "Z": -15,
+      "Z": 16,
       "Connects": [
         "WP 828",
         "WP 832"
@@ -10922,7 +10922,7 @@
       "Name": "WP 894",
       "X": 2649,
       "Y": 470,
-      "Z": -5,
+      "Z": 31,
       "Connects": [
         "WP 893"
       ]
@@ -11048,7 +11048,7 @@
       "Name": "WP 906",
       "X": 637,
       "Y": 2235,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "WP 435",
         "WP 905"
@@ -11058,7 +11058,7 @@
       "Name": "WP 907",
       "X": 1491,
       "Y": 3688,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "WP 908",
         "WP 910"
@@ -11068,7 +11068,7 @@
       "Name": "WP 908",
       "X": 1491,
       "Y": 3704,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "WP 907",
         "WP 909"
@@ -11490,7 +11490,7 @@
       "Name": "WP 947",
       "X": 1373,
       "Y": 3882,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "WP 946",
         "WP 948",
@@ -11685,7 +11685,7 @@
       "Name": "WP 965",
       "X": 1500,
       "Y": 3991,
-      "Z": -3,
+      "Z": -2,
       "Connects": [
         "WP 964"
       ]
@@ -11923,7 +11923,7 @@
       "Name": "WP 989",
       "X": 1372,
       "Y": 3906,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 947"
       ]
@@ -11932,7 +11932,7 @@
       "Name": "WP 990",
       "X": 2069,
       "Y": 2856,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 197"
       ]
@@ -12061,7 +12061,7 @@
       "Name": "WP 1002",
       "X": 2737,
       "Y": 2167,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "WP 1000",
         "WP 1003",
@@ -12074,7 +12074,7 @@
       "Name": "WP 1003",
       "X": 2746,
       "Y": 2167,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1002"
       ]
@@ -12158,7 +12158,7 @@
       "Name": "WP 1011",
       "X": 2673,
       "Y": 2212,
-      "Z": -1,
+      "Z": 0,
       "Connects": [
         "WP 1010",
         "WP 1012",
@@ -12256,7 +12256,7 @@
       "Name": "WP 1020",
       "X": 2111,
       "Y": 2771,
-      "Z": 4,
+      "Z": 2,
       "Connects": [
         "WP 1018",
         "WP 1019",
@@ -12288,7 +12288,7 @@
       "Name": "WP 1023",
       "X": 2118,
       "Y": 2724,
-      "Z": 10,
+      "Z": 11,
       "Connects": [
         "WP 1022",
         "WP 1024"
@@ -12434,7 +12434,7 @@
       "Name": "WP 1036",
       "X": 3645,
       "Y": 2660,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1035",
         "WP 1037",
@@ -12445,7 +12445,7 @@
       "Name": "WP 1037",
       "X": 3635,
       "Y": 2653,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1035",
         "WP 1036",
@@ -12456,7 +12456,7 @@
       "Name": "WP 1038",
       "X": 3665,
       "Y": 2662,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1035",
         "WP 1036",
@@ -12467,7 +12467,7 @@
       "Name": "WP 1039",
       "X": 3688,
       "Y": 2638,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "WP 1034",
         "WP 1040"
@@ -12540,7 +12540,7 @@
       "Name": "WP 1046",
       "X": 3734,
       "Y": 2727,
-      "Z": 38,
+      "Z": 44,
       "Connects": [
         "WP 1045",
         "WP 1047"
@@ -12550,7 +12550,7 @@
       "Name": "WP 1047",
       "X": 3743,
       "Y": 2741,
-      "Z": 5,
+      "Z": 2,
       "Connects": [
         "WP 1046",
         "WP 1048"
@@ -12560,7 +12560,7 @@
       "Name": "WP 1048",
       "X": 3743,
       "Y": 2764,
-      "Z": 5,
+      "Z": 46,
       "Connects": [
         "WP 1047"
       ]
@@ -12641,7 +12641,7 @@
       "Name": "WP 1056",
       "X": 3696,
       "Y": 2580,
-      "Z": 14,
+      "Z": 15,
       "Connects": [
         "WP 1055",
         "WP 1057"
@@ -12661,7 +12661,7 @@
       "Name": "WP 1058",
       "X": 3720,
       "Y": 2595,
-      "Z": 31,
+      "Z": 32,
       "Connects": [
         "WP 1057",
         "WP 1059"
@@ -12992,7 +12992,7 @@
       "Name": "WP 1089",
       "X": 4512,
       "Y": 1250,
-      "Z": 6,
+      "Z": 7,
       "Connects": [
         "WP 1088",
         "WP 1090",
@@ -13064,7 +13064,7 @@
       "Name": "WP 1096",
       "X": 4570,
       "Y": 1367,
-      "Z": 14,
+      "Z": 13,
       "Connects": [
         "WP 1095",
         "WP 1097"
@@ -13084,7 +13084,7 @@
       "Name": "WP 1098",
       "X": 4539,
       "Y": 1379,
-      "Z": 23,
+      "Z": 21,
       "Connects": [
         "WP 1097",
         "WP 1099"
@@ -13514,7 +13514,7 @@
       "Name": "WP 1140",
       "X": 4422,
       "Y": 1051,
-      "Z": -1,
+      "Z": 0,
       "Connects": [
         "WP 1139",
         "WP 1141",
@@ -13537,7 +13537,7 @@
       "Name": "WP 1142",
       "X": 4409,
       "Y": 1043,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1140",
         "WP 1143",
@@ -13548,7 +13548,7 @@
       "Name": "WP 1143",
       "X": 4396,
       "Y": 1043,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1141",
         "WP 1142",
@@ -13559,7 +13559,7 @@
       "Name": "WP 1144",
       "X": 4419,
       "Y": 1043,
-      "Z": -15,
+      "Z": -2,
       "Connects": [
         "WP 1140",
         "WP 1142",
@@ -14345,7 +14345,7 @@
       "Name": "WP 1222",
       "X": 2527,
       "Y": 514,
-      "Z": 3,
+      "Z": 1,
       "Connects": [
         "WP 1221",
         "WP 1223"
@@ -14365,7 +14365,7 @@
       "Name": "WP 1224",
       "X": 2553,
       "Y": 502,
-      "Z": 12,
+      "Z": 10,
       "Connects": [
         "WP 1292",
         "WP 1369",
@@ -14410,7 +14410,7 @@
       "Name": "WP 1228",
       "X": 3675,
       "Y": 2264,
-      "Z": 20,
+      "Z": 21,
       "Connects": [
         "Magincia Stairs",
         "WP 1231"
@@ -14558,7 +14558,7 @@
       "Name": "WP 1240",
       "X": 3673,
       "Y": 2278,
-      "Z": -5,
+      "Z": -2,
       "Connects": [
         "Magincia Stairs",
         "magdock"
@@ -14740,7 +14740,7 @@
       "Name": "WP 1258",
       "X": 3641,
       "Y": 2156,
-      "Z": 49,
+      "Z": 47,
       "Connects": [
         "WP 1257",
         "WP 1259"
@@ -14760,7 +14760,7 @@
       "Name": "WP 1260",
       "X": 3593,
       "Y": 2150,
-      "Z": 61,
+      "Z": 60,
       "Connects": [
         "WP 1259",
         "WP 1261"
@@ -14770,7 +14770,7 @@
       "Name": "WP 1261",
       "X": 3573,
       "Y": 2145,
-      "Z": 51,
+      "Z": 52,
       "Connects": [
         "WP 1260"
       ]
@@ -14855,7 +14855,7 @@
       "Name": "WP 1269",
       "X": 2881,
       "Y": 985,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 1268",
         "WP 1271"
@@ -15062,7 +15062,7 @@
       "Name": "WP 1289",
       "X": 2619,
       "Y": 490,
-      "Z": 4,
+      "Z": 7,
       "Connects": [
         "WP 1290",
         "WP 895"
@@ -15072,7 +15072,7 @@
       "Name": "WP 1290",
       "X": 2610,
       "Y": 504,
-      "Z": 1,
+      "Z": 2,
       "Connects": [
         "WP 1289",
         "WP 1291"
@@ -15092,7 +15092,7 @@
       "Name": "WP 1292",
       "X": 2569,
       "Y": 511,
-      "Z": 14,
+      "Z": 13,
       "Connects": [
         "WP 1224",
         "WP 1291"
@@ -15102,7 +15102,7 @@
       "Name": "WP 1293",
       "X": 2835,
       "Y": 703,
-      "Z": -15,
+      "Z": 21,
       "Connects": [
         "WP 798",
         "WP 799"
@@ -15964,7 +15964,7 @@
       "Name": "Sacrifice Trail 8",
       "X": 3118,
       "Y": 593,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Sacrifice Trail 7",
         "Sacrifice Trail 9"
@@ -15974,7 +15974,7 @@
       "Name": "Sacrifice Trail 9",
       "X": 3122,
       "Y": 590,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Sacrifice Trail 10",
         "Sacrifice Trail 8"
@@ -15984,7 +15984,7 @@
       "Name": "Sacrifice Trail 10",
       "X": 3141,
       "Y": 571,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Sacrifice Trail 11",
         "Sacrifice Trail 9"
@@ -15994,7 +15994,7 @@
       "Name": "Sacrifice Trail 11",
       "X": 3163,
       "Y": 554,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Sacrifice Trail 10",
         "Sacrifice Trail 12"
@@ -16004,7 +16004,7 @@
       "Name": "Sacrifice Trail 12",
       "X": 3191,
       "Y": 554,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Sacrifice Trail 11",
         "Sacrifice Trail 13"
@@ -16014,7 +16014,7 @@
       "Name": "Sacrifice Trail 13",
       "X": 3219,
       "Y": 554,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Sacrifice Trail 12",
         "Sacrifice Trail 14"
@@ -16044,7 +16044,7 @@
       "Name": "Sacrifice Trail 16",
       "X": 3282,
       "Y": 536,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Sacrifice Trail 15",
         "Sacrifice Trail 17"
@@ -16154,7 +16154,7 @@
       "Name": "Sacrifice Trail 27",
       "X": 3333,
       "Y": 318,
-      "Z": 0,
+      "Z": 4,
       "Connects": [
         "Sacrifice Trail 26",
         "Sacrifice Trail 28"
@@ -16294,7 +16294,7 @@
       "Name": "Justice Trail 13",
       "X": 1177,
       "Y": 935,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Justice Trail 11x6",
         "Justice Trail 14"
@@ -16304,7 +16304,7 @@
       "Name": "Justice Trail 14",
       "X": 1152,
       "Y": 946,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Justice Trail 13",
         "Justice Trail 15"
@@ -16314,7 +16314,7 @@
       "Name": "Justice Trail 15",
       "X": 1145,
       "Y": 953,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Justice Trail 14",
         "Justice Trail 16"
@@ -16324,7 +16324,7 @@
       "Name": "Justice Trail 16",
       "X": 1142,
       "Y": 954,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Justice Trail 15",
         "Justice Trail 17"
@@ -16374,7 +16374,7 @@
       "Name": "Justice Trail 21",
       "X": 1118,
       "Y": 889,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Justice Trail 20",
         "Justice Trail 22"
@@ -16414,7 +16414,7 @@
       "Name": "Justice Trail 25",
       "X": 1115,
       "Y": 822,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Justice Trail 24",
         "Justice Trail 26"
@@ -16424,7 +16424,7 @@
       "Name": "Justice Trail 26",
       "X": 1132,
       "Y": 804,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Justice Trail 25",
         "Justice Trail 27"
@@ -16434,7 +16434,7 @@
       "Name": "Justice Trail 27",
       "X": 1151,
       "Y": 784,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Justice Trail 26",
         "Justice Trail 28"
@@ -16454,7 +16454,7 @@
       "Name": "Justice Trail 29",
       "X": 1180,
       "Y": 754,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 28",
         "Justice Trail 30"
@@ -16464,7 +16464,7 @@
       "Name": "Justice Trail 30",
       "X": 1199,
       "Y": 734,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 29",
         "Justice Trail 31"
@@ -16474,7 +16474,7 @@
       "Name": "Justice Trail 31",
       "X": 1200,
       "Y": 707,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 30",
         "Justice Trail 32"
@@ -16484,7 +16484,7 @@
       "Name": "Justice Trail 32",
       "X": 1200,
       "Y": 680,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 31",
         "Justice Trail 33"
@@ -16494,7 +16494,7 @@
       "Name": "Justice Trail 33",
       "X": 1203,
       "Y": 676,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 32",
         "Justice Trail 34"
@@ -16504,7 +16504,7 @@
       "Name": "Justice Trail 34",
       "X": 1222,
       "Y": 657,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 33",
         "Justice Trail 35"
@@ -16514,7 +16514,7 @@
       "Name": "Justice Trail 35",
       "X": 1236,
       "Y": 642,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 34",
         "Justice Trail 36"
@@ -16524,7 +16524,7 @@
       "Name": "Justice Trail 36",
       "X": 1241,
       "Y": 641,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 35",
         "Justice Trail 37"
@@ -16534,7 +16534,7 @@
       "Name": "Justice Trail 37",
       "X": 1269,
       "Y": 641,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Justice Trail 36",
         "Justice Trail 38"
@@ -16544,7 +16544,7 @@
       "Name": "Justice Trail 38",
       "X": 1296,
       "Y": 638,
-      "Z": 0,
+      "Z": 16,
       "Connects": [
         "Justice Trail 37",
         "Justice Trail 39"
@@ -16554,7 +16554,7 @@
       "Name": "Justice Trail 39",
       "X": 1299,
       "Y": 638,
-      "Z": 0,
+      "Z": 16,
       "Connects": [
         "Justice Trail 38",
         "Justice Trail 40"
@@ -16564,7 +16564,7 @@
       "Name": "Justice Trail 40",
       "X": 1300,
       "Y": 637,
-      "Z": 0,
+      "Z": 16,
       "Connects": [
         "Justice Trail 39",
         "Justice Trail 41"
@@ -16574,7 +16574,7 @@
       "Name": "Justice Trail 41",
       "X": 1300,
       "Y": 634,
-      "Z": 0,
+      "Z": 16,
       "Connects": [
         "Justice Trail 40"
       ]
@@ -16673,7 +16673,7 @@
       "Name": "Honor Trail 16",
       "X": 1714,
       "Y": 2867,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Honor Trail 15",
         "Honor Trail 17"
@@ -16703,7 +16703,7 @@
       "Name": "Honor Trail 19",
       "X": 1668,
       "Y": 2881,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Honor Trail 18",
         "Honor Trail 20"
@@ -16713,7 +16713,7 @@
       "Name": "Honor Trail 20",
       "X": 1662,
       "Y": 2881,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Honor Trail 19",
         "Honor Trail 21"
@@ -16983,7 +16983,7 @@
       "Name": "Honor Trail 47",
       "X": 1686,
       "Y": 3352,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Honor Trail 46",
         "Honor Trail 48"
@@ -17013,7 +17013,7 @@
       "Name": "Honor Trail 50",
       "X": 1721,
       "Y": 3416,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Honor Trail 49",
         "Honor Trail 51"
@@ -17033,7 +17033,7 @@
       "Name": "Honor Trail 52",
       "X": 1723,
       "Y": 3449,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Honor Trail 51",
         "Honor Trail 53"
@@ -17053,7 +17053,7 @@
       "Name": "Honor Trail 54",
       "X": 1723,
       "Y": 3505,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Honor Trail 53",
         "Honor Trail 55"
@@ -17063,7 +17063,7 @@
       "Name": "Honor Trail 55",
       "X": 1730,
       "Y": 3525,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Honor Trail 54",
         "Honor Trail 56"
@@ -17073,7 +17073,7 @@
       "Name": "Honor Trail 56",
       "X": 1729,
       "Y": 3526,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Honor Trail 55",
         "Honor Trail 57"
@@ -17083,7 +17083,7 @@
       "Name": "Honor Trail 57",
       "X": 1724,
       "Y": 3528,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Honor Trail 56"
       ]
@@ -17309,7 +17309,7 @@
       "Name": "Valor Trail 1",
       "X": 2392,
       "Y": 3899,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Valor Trail 2"
       ]
@@ -17348,7 +17348,7 @@
       "Name": "Valor Trail 5",
       "X": 2480,
       "Y": 3919,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Valor Trail 4",
         "Valor Trail 6"
@@ -17358,7 +17358,7 @@
       "Name": "Valor Trail 6",
       "X": 2492,
       "Y": 3931,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Valor Trail 5"
       ]
@@ -36719,7 +36719,7 @@
       "Name": "Verity Dock Trail 13",
       "X": 4499,
       "Y": 1002,
-      "Z": 0,
+      "Z": 10,
       "Connects": [
         "Verity Dock Trail 12",
         "Verity Dock Trail 14"
@@ -36729,7 +36729,7 @@
       "Name": "Verity Dock Trail 14",
       "X": 4499,
       "Y": 974,
-      "Z": 0,
+      "Z": 10,
       "Connects": [
         "Verity Dock Trail 13",
         "Verity Dock Trail 15"
@@ -36799,7 +36799,7 @@
       "Name": "Dagger Trail 1",
       "X": 4213,
       "Y": 541,
-      "Z": 0,
+      "Z": 36,
       "Connects": [
         "Dagger Trail 2"
       ]
@@ -36808,7 +36808,7 @@
       "Name": "Dagger Trail 2",
       "X": 4215,
       "Y": 543,
-      "Z": 0,
+      "Z": 36,
       "Connects": [
         "Dagger Trail 1",
         "Dagger Trail 3"
@@ -36818,7 +36818,7 @@
       "Name": "Dagger Trail 3",
       "X": 4217,
       "Y": 570,
-      "Z": 0,
+      "Z": 35,
       "Connects": [
         "Dagger Trail 2",
         "Dagger Trail 4"
@@ -36828,7 +36828,7 @@
       "Name": "Dagger Trail 4",
       "X": 4213,
       "Y": 587,
-      "Z": 0,
+      "Z": 36,
       "Connects": [
         "Dagger Trail 3",
         "Dagger Trail 5"
@@ -36838,7 +36838,7 @@
       "Name": "Dagger Trail 5",
       "X": 4212,
       "Y": 588,
-      "Z": 0,
+      "Z": 36,
       "Connects": [
         "Dagger Trail 4",
         "Dagger Trail 6"
@@ -36848,7 +36848,7 @@
       "Name": "Dagger Trail 6",
       "X": 4206,
       "Y": 603,
-      "Z": 0,
+      "Z": 10,
       "Connects": [
         "Dagger Trail 5",
         "Dagger Trail 7"
@@ -36858,7 +36858,7 @@
       "Name": "Dagger Trail 7",
       "X": 4205,
       "Y": 608,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Dagger Trail 6",
         "Dagger Trail 8"
@@ -36978,7 +36978,7 @@
       "Name": "Dagger Trail 19",
       "X": 4074,
       "Y": 442,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Dagger Trail 18",
         "Dagger Trail 20"
@@ -36988,7 +36988,7 @@
       "Name": "Dagger Trail 20",
       "X": 4077,
       "Y": 439,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Dagger Trail 19",
         "Dagger Trail 21"
@@ -36998,7 +36998,7 @@
       "Name": "Dagger Trail 21",
       "X": 4104,
       "Y": 437,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Dagger Trail 20",
         "Dagger Trail 22"
@@ -37008,7 +37008,7 @@
       "Name": "Dagger Trail 22",
       "X": 4109,
       "Y": 432,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Dagger Trail 21"
       ]
@@ -37027,7 +37027,7 @@
       "Name": "Hythloth Approach 2",
       "X": 4273,
       "Y": 3718,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Hythloth Approach 1",
         "Hythloth Approach 3"
@@ -37037,7 +37037,7 @@
       "Name": "Hythloth Approach 3",
       "X": 4279,
       "Y": 3723,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Hythloth Approach 2",
         "Hythloth Approach 4"
@@ -37157,7 +37157,7 @@
       "Name": "Hythloth Approach 15",
       "X": 4505,
       "Y": 3743,
-      "Z": 0,
+      "Z": 16,
       "Connects": [
         "Hythloth Approach 14",
         "Hythloth Approach 16"
@@ -37167,7 +37167,7 @@
       "Name": "Hythloth Approach 16",
       "X": 4533,
       "Y": 3743,
-      "Z": 0,
+      "Z": 18,
       "Connects": [
         "Hythloth Approach 15",
         "Hythloth Approach 17"
@@ -37177,7 +37177,7 @@
       "Name": "Hythloth Approach 17",
       "X": 4556,
       "Y": 3742,
-      "Z": 0,
+      "Z": 4,
       "Connects": [
         "Hythloth Approach 16",
         "Hythloth Approach 18"
@@ -37187,7 +37187,7 @@
       "Name": "Hythloth Approach 18",
       "X": 4559,
       "Y": 3742,
-      "Z": 0,
+      "Z": 4,
       "Connects": [
         "Hythloth Approach 17",
         "Hythloth Approach 19"
@@ -37197,7 +37197,7 @@
       "Name": "Hythloth Approach 19",
       "X": 4561,
       "Y": 3744,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Hythloth Approach 18",
         "Hythloth Approach 20"
@@ -37367,7 +37367,7 @@
       "Name": "Hythloth Approach 36",
       "X": 4719,
       "Y": 3820,
-      "Z": 0,
+      "Z": 40,
       "Connects": [
         "Hythloth Approach 35",
         "Hythloth Approach 37"
@@ -37377,7 +37377,7 @@
       "Name": "Hythloth Approach 37",
       "X": 4720,
       "Y": 3811,
-      "Z": 0,
+      "Z": 40,
       "Connects": [
         "Hythloth Approach 36"
       ]
@@ -37436,7 +37436,7 @@
       "Name": "Destard Approach 6",
       "X": 986,
       "Y": 2471,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Destard Approach 5",
         "Destard Approach 7"
@@ -37596,7 +37596,7 @@
       "Name": "Destard Approach 22",
       "X": 1100,
       "Y": 2707,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Destard Approach 21",
         "Destard Approach 23"
@@ -37606,7 +37606,7 @@
       "Name": "Destard Approach 23",
       "X": 1108,
       "Y": 2699,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Destard Approach 22",
         "Destard Approach 24"
@@ -37626,7 +37626,7 @@
       "Name": "Destard Approach 25",
       "X": 1140,
       "Y": 2669,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Destard Approach 24",
         "Destard Approach 26"
@@ -37636,7 +37636,7 @@
       "Name": "Destard Approach 26",
       "X": 1160,
       "Y": 2651,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Destard Approach 25",
         "Destard Approach 27"
@@ -37944,7 +37944,7 @@
       "Name": "Ice Approach 25",
       "X": 1965,
       "Y": 145,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Ice Approach 24",
         "Ice Approach 26"
@@ -37954,7 +37954,7 @@
       "Name": "Ice Approach 26",
       "X": 1975,
       "Y": 120,
-      "Z": 0,
+      "Z": 4,
       "Connects": [
         "Ice Approach 25",
         "Ice Approach 27"
@@ -37964,7 +37964,7 @@
       "Name": "Ice Approach 27",
       "X": 1985,
       "Y": 110,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Ice Approach 26",
         "Ice Approach 28"
@@ -37974,7 +37974,7 @@
       "Name": "Ice Approach 28",
       "X": 1991,
       "Y": 96,
-      "Z": 0,
+      "Z": 11,
       "Connects": [
         "Ice Approach 27",
         "Ice Approach 29"
@@ -37984,7 +37984,7 @@
       "Name": "Ice Approach 29",
       "X": 1994,
       "Y": 93,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Ice Approach 28",
         "Ice Approach 30"
@@ -37994,7 +37994,7 @@
       "Name": "Ice Approach 30",
       "X": 1997,
       "Y": 86,
-      "Z": 0,
+      "Z": 4,
       "Connects": [
         "Ice Approach 29",
         "Ice Approach 31"
@@ -38004,7 +38004,7 @@
       "Name": "Ice Approach 31",
       "X": 1997,
       "Y": 79,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Ice Approach 30"
       ]
@@ -38233,7 +38233,7 @@
       "Name": "Wrong Approach 23",
       "X": 1998,
       "Y": 294,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Wrong Approach 22",
         "Wrong Approach 24"
@@ -38243,7 +38243,7 @@
       "Name": "Wrong Approach 24",
       "X": 2005,
       "Y": 281,
-      "Z": 0,
+      "Z": 5,
       "Connects": [
         "Wrong Approach 23",
         "Wrong Approach 25"
@@ -38253,7 +38253,7 @@
       "Name": "Wrong Approach 25",
       "X": 2006,
       "Y": 254,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Wrong Approach 24",
         "Wrong Approach 26"
@@ -38273,7 +38273,7 @@
       "Name": "Wrong Approach 27",
       "X": 2046,
       "Y": 236,
-      "Z": 13,
+      "Z": 11,
       "Connects": [
         "Wrong Approach 26",
         "Wrong Approach 28"
@@ -38283,7 +38283,7 @@
       "Name": "Wrong Approach 28",
       "X": 2045,
       "Y": 221,
-      "Z": 14,
+      "Z": 54,
       "Connects": [
         "Wrong Approach 27"
       ]
@@ -38429,7 +38429,7 @@
       "Name": "Shame Approach 14",
       "X": 406,
       "Y": 1445,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Shame Approach 13",
         "Shame Approach 15"
@@ -38549,7 +38549,7 @@
       "Name": "Shame Approach 26",
       "X": 367,
       "Y": 1552,
-      "Z": 1,
+      "Z": 0,
       "Connects": [
         "Shame Approach 25",
         "Shame Approach 27"
@@ -39037,7 +39037,7 @@
       "Name": "Fire Isle Trail 1",
       "X": 2790,
       "Y": 3432,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire Isle Trail 2"
       ]
@@ -39285,7 +39285,7 @@
       "Name": "Magincia Stairs",
       "X": 3674,
       "Y": 2280,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "WP 1228",
         "WP 1240"
@@ -39344,7 +39344,7 @@
       "Name": "WP 1370",
       "X": 2561,
       "Y": 493,
-      "Z": 35,
+      "Z": 0,
       "Connects": [
         "WP 1369",
         "WP 1371"
@@ -39354,7 +39354,7 @@
       "Name": "WP 1371",
       "X": 2570,
       "Y": 480,
-      "Z": 52,
+      "Z": 0,
       "Connects": [
         "WP 1370"
       ]
@@ -39787,7 +39787,7 @@
       "Name": "WP 1383",
       "X": 2541,
       "Y": 500,
-      "Z": -15,
+      "Z": 31,
       "Connects": [
         "WP 1224",
         "WP 1395"
@@ -40051,7 +40051,7 @@
       "Name": "WP 1409",
       "X": 1258,
       "Y": 1243,
-      "Z": 44,
+      "Z": 0,
       "Connects": [
         "WP 1408"
       ]
