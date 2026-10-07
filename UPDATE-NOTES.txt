@@ -1,5 +1,17 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
+-bots can own houses now. some come back as regulars, live in their house and stash their loot there
+-bot owned vendor houses at the spots you draw in the map editor. the vendor stands on the doorstep and the owner restocks it from dungeon loot, crafting or buying from npc shops
+-bots shop at house vendors too, not just town vendors
+-stacked npc vendors and spawners fixed. extra copies get removed on the next start
+-bots actually walk into shops and buy stuff now instead of turning around at the door
+-bots have a home town and hang out around it. way fewer recalls
+-bots stay longer at shops, inns and the bank
+-recall onto the docks works now
+-ghosts dont stand around dead for 20 minutes anymore
+-bots stop getting stuck on the roads and walking into walls
+
+Last update:
 -fixed a bug where pks weren’t spawning. Be careful out there
 -fixed bug where recruited guild bots never spawned again
 -fixed bug where pack horse weight would weigh you down

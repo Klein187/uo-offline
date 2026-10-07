@@ -13,6 +13,8 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Bots stop walking into walls.** 173 road waypoints were stored at the wrong height, so bots could never reach them and walked at the nearest wall instead. They sit on the real ground now, and a bot leaving a shop walks out the door first. Stuck bots on the roads are down by about three quarters.
+- **Ghosts find a healer.** Dead bots used to stand next to a shrine for twenty minutes, or wait on an island with no healer. They walk the last steps to the ankh now, head for any healer they can see, and get carried to one after five minutes if there is none. The typical ghost is back on its feet in about five minutes instead of nine.
 - **Bots have a home town.** A bot lives in the town it started in and spends most of its time there and in the country around it, with the odd trip to another town or island. Getting around town is done on foot, Recall is for the long trips, and a stop at a shop, an inn or the bank lasts a while instead of a minute. Recalls are down by about two thirds.
 - **Bots shop at the NPC shops again.** Most shops had no floor drawn, so a bot reached the door, gave up and left, and almost nothing was ever bought. 60 shop floors are drawn now, a bot at a shop door walks in, and a shop with no floor still gets a real visit.
 - **No more stacked NPCs and monsters.** Running First Time Setup more than once added a whole second copy of every town NPC, animal and monster spawner each time, so shops had several of the same vendor standing on one another. The extras are removed on the next start, and setup no longer stacks them.
