@@ -559,6 +559,14 @@ namespace Server.CustomBots
             ChatCategories = bot.Combatant != null ? CombatChat : AmbientChatCategories;
             TrySpeak(bot);
 
+            // A subclass that must be somewhere else (a party follower whose
+            // leader is running off) drops the fight and starts none.
+            bool holdFights = HoldFights(bot);
+            if (holdFights && bot.Combatant != null)
+            {
+                AbandonFoe(bot);
+            }
+
             // -- 1. Combat --
             var combatant = bot.Combatant;
             if (combatant is Mobile foe)
@@ -659,7 +667,8 @@ namespace Server.CustomBots
             }
 
             // -- 2. Look for an enemy --
-            var target = FindNearbyEnemy(bot, out bool overwhelming);
+            bool overwhelming = false;
+            var target = holdFights ? null : FindNearbyEnemy(bot, out overwhelming);
 
             // Hurt below the line this bot would flee at? Then it has no
             // business starting anything. If the thing is already on it,
@@ -824,6 +833,18 @@ namespace Server.CustomBots
                 }
             }
 
+            // A subclass moving the bot itself (a party follower walking its
+            // leader's trail) holds the patrol, so two movers never stack.
+            if (HoldPatrol(bot))
+            {
+                _goal = null;
+                _follower = null;
+                _lastLoc = bot.Location;
+                _lastProgressAt = Core.Now;
+                StopStepTimer();
+                return;
+            }
+
             // -- 3. Stuck check --
             if (bot.Location != _lastLoc)
             {
@@ -970,6 +991,14 @@ namespace Server.CustomBots
         // Whether a patrol leg walks the painted mesh. Null follows the
         // fleet mode; a crawler answers true inside drawn dungeon floors.
         protected virtual bool? ZoneWalkOverride(PlayerBot bot, Point3D goal) => null;
+
+        // True while a subclass moves the bot on its own timer; the patrol
+        // stands down (no goal, no step timer) until it returns false.
+        protected virtual bool HoldPatrol(PlayerBot bot) => false;
+
+        // True while the bot must not fight: any current fight is dropped
+        // and no new one starts until it returns false.
+        protected virtual bool HoldFights(PlayerBot bot) => false;
 
         // A subclass can call a goal reached before the bot is within
         // ArrivalRange of it: a crawler inside a drawn room outline is at
@@ -3424,6 +3453,21 @@ namespace Server.CustomBots
                             BeginCast(bot, rf, pointBlank: true);
                         }
                     }
+                    // Pinned short of the band but out of swing range: the
+                    // steps go nowhere and the point-blank rule above wants
+                    // the foe within 2. A foe that stays 3 or 4 tiles off
+                    // (it can't path in either) left the mage standing with
+                    // full mana, casting nothing, for as long as the foe
+                    // stayed put. Cast from here; the minGap column still
+                    // picks only what the gap allows.
+                    else if (castReady && haveLOS && pinned)
+                    {
+                        if (!TrySelfCare(bot))
+                        {
+                            _castReason = "pinned-gap";
+                            BeginCast(bot, rf);
+                        }
+                    }
                     return;
                 }
 
@@ -3497,38 +3541,51 @@ namespace Server.CustomBots
         // Returns whether a tile was actually given up. False means pinned
         // — every way back is blocked — which is the signal the break-away
         // uses to stop trying and fight where it stands.
+        // One real step. Mobile.Move in a direction the mobile is not
+        // facing only TURNS it and still returns true. The ranged loop
+        // faces the foe every tick, so a step away from it was only ever a
+        // turn: the bot spun on its tile, every step "worked", and a mage
+        // with a foe 3 to 5 tiles off never moved and never cast. Turn
+        // first, then step, and count it only if the tile changed.
+        private static bool StepIn(PlayerBot bot, Direction d)
+        {
+            var from = bot.Location;
+            if ((bot.Direction & Direction.Mask) != (d & Direction.Mask))
+            {
+                bot.Direction = d;
+            }
+            return bot.Move(d) && bot.Location != from;
+        }
+
         private static bool StepAwayFrom(PlayerBot bot, Direction toward)
         {
             var away = (Direction)(((int)toward + 4) & 0x7);
-            if (bot.Move(away))
+            if (StepIn(bot, away))
             {
                 return true;
             }
             var l = (Direction)(((int)away + 7) & 0x7);
             var r = (Direction)(((int)away + 1) & 0x7);
-            return bot.Move(l) || bot.Move(r);
+            return StepIn(bot, l) || StepIn(bot, r);
         }
 
         // Step one tile directly away from the foe; flow around blockers.
         private static void StepAway(PlayerBot bot, Direction faceFoe, Mobile foe)
         {
-            var away = (Direction)(((int)faceFoe + 4) & 0x7);
-            if (!bot.Move(away))
-            {
-                var l = (Direction)(((int)away + 7) & 0x7);
-                var r = (Direction)(((int)away + 1) & 0x7);
-                if (!bot.Move(l)) bot.Move(r);
-            }
+            StepAwayFrom(bot, faceFoe);
         }
 
         // Step one tile toward the foe; flow around blockers.
         private static void StepToward(PlayerBot bot, Direction faceFoe)
         {
-            if (!bot.Move(faceFoe))
+            if (!StepIn(bot, faceFoe))
             {
                 var l = (Direction)(((int)faceFoe + 7) & 0x7);
                 var r = (Direction)(((int)faceFoe + 1) & 0x7);
-                if (!bot.Move(l)) bot.Move(r);
+                if (!StepIn(bot, l))
+                {
+                    StepIn(bot, r);
+                }
             }
         }
 

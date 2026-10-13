@@ -81,6 +81,12 @@ namespace Server.CustomBots
         // nearest eligible bot to a party, walks a short route while the
         // bot follows, then vanishes (testing the leader-gone path too).
         private static readonly string PartyTestReq = Live("partytest_request.txt");
+        // partyrun_request.txt: "token x y stepMs bots" - a rig player
+        // invites up to `bots` nearby bots, then RUNS a road route at
+        // stepMs per tile (200 = on foot, 100 = mounted) and logs every
+        // follower distance each 2 s. The old partytest hops 5 tiles
+        // every 6 s, far slower than anyone plays.
+        private static readonly string PartyRunReq = Live("partyrun_request.txt");
         // t2a_request.txt: "token" — spawn one throwaway GM bot per class
         // (plus extra Mage rolls so the tank-mage variants show), dump
         // stats + skills to console, verify the T2A caps, delete them.
@@ -139,6 +145,7 @@ namespace Server.CustomBots
         private static long _lastPadMap = -1;
         private static long _lastSay = -1;
         private static long _lastPartyTest = -1;
+        private static long _lastPartyRun = -1;
         private static long _lastT2A = -1;
         private static long _lastPKFresh = -1;
         private static long _lastMurder = -1;
@@ -175,6 +182,7 @@ namespace Server.CustomBots
             _lastPadMap = ReadToken(PadMapReq) ?? 0;
             _lastSay = ReadSayRequest(out _, out _, out _) ?? 0;
             _lastPartyTest = ReadCoordRequest(PartyTestReq, out _) ?? 0;
+            _lastPartyRun = ReadCoordRequest(PartyRunReq, out _) ?? 0;
             _lastT2A = ReadToken(T2AReq) ?? 0;
             _lastPKFresh = ReadToken(PKFreshReq) ?? 0;
             _lastMurder = ReadCountRequest(MurderReq, out _, out _) ?? 0;
@@ -354,6 +362,36 @@ namespace Server.CustomBots
             {
                 _lastPartyTest = ptTok.Value;
                 DoPartyTest(ptLoc);
+            }
+
+            var prTok = ReadCoordRequest(PartyRunReq, out var prLoc);
+            if (prTok != null && prTok.Value != _lastPartyRun)
+            {
+                _lastPartyRun = prTok.Value;
+                int stepMs = 200, want = 3;
+                string enter = null;
+                try
+                {
+                    var parts = File.ReadAllText(PartyRunReq).Split(
+                        new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length > 3)
+                    {
+                        int.TryParse(parts[3], out stepMs);
+                    }
+                    if (parts.Length > 4)
+                    {
+                        int.TryParse(parts[4], out want);
+                    }
+                    if (parts.Length > 5)
+                    {
+                        enter = string.Join(" ", parts, 5, parts.Length - 5);
+                    }
+                }
+                catch
+                {
+                    // keep the defaults
+                }
+                DoPartyRun(prLoc, Math.Clamp(stepMs, 50, 1000), Math.Clamp(want, 1, 5), enter);
             }
 
             var t2aTok = ReadToken(T2AReq);
@@ -608,6 +646,270 @@ namespace Server.CustomBots
             catch
             {
                 return null;
+            }
+        }
+
+        private static void DoPartyRun(Point3D loc, int stepMs, int want, string enter)
+        {
+            try
+            {
+                var map = Map.Felucca;
+                var graph = WaypointRegistry.Graph;
+                var rig = new Server.Mobiles.PlayerMobile
+                {
+                    Name = "Party Runner",
+                    Body = 0x190,
+                    Hue = 0x83EA,
+                    Player = true,
+                };
+                // Underground the rig is blessed, so the run measures the
+                // following and not how long the rig survives.
+                bool underground = loc.X >= 5120;
+                rig.Blessed = underground;
+                rig.MoveToWorld(loc, map);
+
+                // The nearest free bots, closest first.
+                var picks = new List<PlayerBot>();
+                for (int n = 0; n < want; n++)
+                {
+                    PlayerBot pick = null;
+                    int best = int.MaxValue;
+                    foreach (var m in map.GetMobilesInRange(loc, 30))
+                    {
+                        if (m is PlayerBot b && !picks.Contains(b) && !b.Deleted && b.Alive &&
+                            !b.LifecycleExempt && b.Party == null &&
+                            !BotPartyManager.IsInParty(b) &&
+                            !BotClassHelper.IsArtisan(b.Class) &&
+                            !BotClassHelper.IsGatherer(b.Class) &&
+                            b.Class != BotClass.Crafter &&
+                            b.Behavior is TravelerBehavior or IdleBehavior
+                                       or WanderBehavior or AdventurerBehavior)
+                        {
+                            int d = (int)b.GetDistanceToSqrt(loc);
+                            if (d < best)
+                            {
+                                best = d;
+                                pick = b;
+                            }
+                        }
+                    }
+                    if (pick == null)
+                    {
+                        // Nobody near: borrow a free bot from anywhere, as
+                        // partytest does. The run is the point.
+                        foreach (var m in World.Mobiles.Values)
+                        {
+                            if (m is PlayerBot b && !picks.Contains(b) && !b.Deleted && b.Alive &&
+                                b.Map == map && !b.LifecycleExempt && b.Party == null &&
+                                !BotPartyManager.IsInParty(b) &&
+                                !BotClassHelper.IsArtisan(b.Class) &&
+                                !BotClassHelper.IsGatherer(b.Class) &&
+                                b.Class != BotClass.Crafter && !RedTerritory.IsRed(b) &&
+                                !DungeonRegistry.IsInDungeon(b) &&
+                                b.Behavior is TravelerBehavior or IdleBehavior or WanderBehavior)
+                            {
+                                pick = b;
+                                break;
+                            }
+                        }
+                        if (pick == null)
+                        {
+                            break;
+                        }
+                        // Stop whatever it was doing first: a borrowed bot
+                        // mid-Recall finished the spell after the move.
+                        (pick.Spell as Server.Spells.Spell)?.Disturb(Server.Spells.DisturbType.EquipRequest);
+                        pick.Combatant = null;
+                        pick.Behavior = new IdleBehavior();
+                        pick.MoveToWorld(new Point3D(loc.X - 1 - n, loc.Y, loc.Z), map);
+                    }
+                    picks.Add(pick);
+                }
+                if (picks.Count == 0 || graph == null)
+                {
+                    Console.WriteLine("[partyrun] no eligible bot within 30 tiles");
+                    rig.Delete();
+                    return;
+                }
+                foreach (var b in picks)
+                {
+                    Console.WriteLine($"[partyrun] inviting {b.Name} (mounted={b.Mounted}, {b.Class})");
+                    Server.Engines.PartySystem.Party.Invite(rig, b);
+                }
+
+                // A road route: 120-250 tiles on the surface, 25-100 below.
+                List<Point3D> PickRoute(Point3D from, bool below)
+                {
+                    var first = graph.FindNearestNode(from);
+                    for (int i = 0; i < 300 && first != null; i++)
+                    {
+                        var end = graph.Get(graph.PickRandomName());
+                        if (end == null)
+                        {
+                            continue;
+                        }
+                        int d = Math.Max(Math.Abs(end.Location.X - from.X), Math.Abs(end.Location.Y - from.Y));
+                        if (d < (below ? 25 : 120) || d > (below ? 100 : 250) ||
+                            (end.Location.X >= 5120) != below ||
+                            !graph.SameComponent(first.Name, end.Name))
+                        {
+                            continue;
+                        }
+                        var names = graph.FindPath(first.Name, end.Name);
+                        if (names != null && names.Count > 0)
+                        {
+                            var pts = new List<Point3D>();
+                            foreach (var n in names)
+                            {
+                                var node = graph.Get(n);
+                                if (node != null)
+                                {
+                                    pts.Add(node.Location);
+                                }
+                            }
+                            return pts;
+                        }
+                    }
+                    return null;
+                }
+
+                List<Point3D> route;
+                var entrance = enter != null ? DestinationCatalog.GetByName(enter) : null;
+                if (enter != null)
+                {
+                    // To the entrance's approach node, then onto its pad.
+                    var first = graph.FindNearestNode(loc);
+                    var names = entrance != null && first != null && !string.IsNullOrEmpty(entrance.NearestWaypoint)
+                        ? graph.FindPath(first.Name, entrance.NearestWaypoint)
+                        : null;
+                    if (names == null)
+                    {
+                        Console.WriteLine($"[partyrun] no road to '{enter}'");
+                        rig.Delete();
+                        return;
+                    }
+                    route = new List<Point3D>();
+                    foreach (var n in names)
+                    {
+                        var node = graph.Get(n);
+                        if (node != null)
+                        {
+                            route.Add(node.Location);
+                        }
+                    }
+                    route.Add(entrance.ArrivalPoint ?? entrance.Location);
+                }
+                else
+                {
+                    route = PickRoute(loc, underground);
+                }
+                if (route == null || route.Count == 0)
+                {
+                    Console.WriteLine("[partyrun] no route");
+                    rig.Delete();
+                    return;
+                }
+                Console.WriteLine($"[partyrun] route {route.Count} points, {stepMs} ms a tile" +
+                                  (enter != null ? $", entering '{enter}'" : ""));
+
+                var alg = Server.PathAlgorithms.BitmapAStarAlgorithm.Instance;
+                int nodeIdx = 0;
+                var dirs = new Queue<Direction>();
+                int moved = 0;
+                bool wentBelow = underground;
+
+                // Run once the invites have been accepted (1-2.5 s each).
+                Timer.DelayCall(TimeSpan.FromSeconds(8), () =>
+                {
+                    Timer runTimer = null;
+                    runTimer = Timer.DelayCall(TimeSpan.FromMilliseconds(stepMs),
+                        TimeSpan.FromMilliseconds(stepMs), () =>
+                    {
+                        if (rig.Deleted)
+                        {
+                            runTimer?.Stop();
+                            return;
+                        }
+                        // Through the pad: run a route inside.
+                        if (!wentBelow && rig.X >= 5120)
+                        {
+                            wentBelow = true;
+                            rig.Blessed = true;
+                            route = PickRoute(rig.Location, true) ?? new List<Point3D>();
+                            nodeIdx = 0;
+                            dirs.Clear();
+                            Console.WriteLine($"[partyrun] leader went underground at ({rig.X},{rig.Y},{rig.Z}), " +
+                                              $"inside route {route.Count} points");
+                        }
+                        if (nodeIdx >= route.Count)
+                        {
+                            return;
+                        }
+                        if (dirs.Count == 0)
+                        {
+                            var target = route[nodeIdx];
+                            bool last = nodeIdx == route.Count - 1;
+                            if (rig.InRange(target, last ? 0 : 1))
+                            {
+                                nodeIdx++;
+                                return;
+                            }
+                            var path = alg.Find(rig, map, rig.Location, target);
+                            if (path == null)
+                            {
+                                nodeIdx++;
+                                return;
+                            }
+                            foreach (var dir in path)
+                            {
+                                dirs.Enqueue(dir);
+                            }
+                        }
+                        var step = dirs.Dequeue();
+                        rig.Direction = step;
+                        if (rig.Move(step))
+                        {
+                            moved++;
+                        }
+                        else
+                        {
+                            dirs.Clear();
+                        }
+                    });
+
+                    for (int t = 2; t <= 90; t += 2)
+                    {
+                        int secs = t;
+                        Timer.DelayCall(TimeSpan.FromSeconds(t), () =>
+                        {
+                            if (rig.Deleted)
+                            {
+                                return;
+                            }
+                            var line = $"[partyrun] t={secs}s leader moved {moved}:";
+                            foreach (var b in picks)
+                            {
+                                int d = b.Deleted || b.Map != rig.Map ? -1 : (int)b.GetDistanceToSqrt(rig.Location);
+                                line += $" {b.Name}={d}{(b.Mounted ? "m" : "")}/{b.Behavior?.SerializableName}";
+                            }
+                            Console.WriteLine(line);
+                        });
+                    }
+
+                    Timer.DelayCall(TimeSpan.FromSeconds(95), () =>
+                    {
+                        runTimer?.Stop();
+                        Console.WriteLine("[partyrun] done");
+                        if (!rig.Deleted)
+                        {
+                            rig.Delete();
+                        }
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[partyrun] failed: {ex.Message}");
             }
         }
 

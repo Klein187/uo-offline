@@ -25,9 +25,11 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using Server;
 using Server.Engines.PartySystem;
 using Server.Mobiles;
+using MoveDelays = Server.Movement.Movement;
 
 namespace Server.CustomBots
 {
@@ -43,6 +45,21 @@ namespace Server.CustomBots
         private static readonly TimeSpan GiveUpAfter = TimeSpan.FromSeconds(90);
 
         private DateTime _lostSince = DateTime.MinValue;
+
+        // The leader's footsteps, oldest first. A follower on the trail
+        // steps along it on its own timer at running pace instead of
+        // aiming at the leader every 2-second decision tick: aiming made
+        // it run to where the leader WAS, stop there, and wait, so a
+        // running player lost it within a minute, and past A*'s reach it
+        // stood still. The trail is always walkable (the leader walked
+        // it), and a teleporter the leader stepped on is on it too.
+        private readonly List<Point3D> _trail = new();
+        private const int TrailMax = 800;
+        private const int TeleportGap = 6;
+        private DateTime _trailBlockedUntil = DateTime.MinValue;
+        private Timer _followTimer;
+        private bool _followMounted;
+        private DateTime _onTrailUntil = DateTime.MinValue;
 
         public override string GetStatusLine(PlayerBot bot)
         {
@@ -113,12 +130,16 @@ namespace Server.CustomBots
                 _lostSince = DateTime.MinValue;
             }
 
+            // Leashed: the leader is off and not fighting. Drop whatever
+            // this is and go; the base drops the fight (HoldFights).
+            _leashed = bot.Alive && IsLeashed(bot, leader);
+
             // Assist: whatever is on ANY of us is on all of us. This used
             // to pick up only the leader's fight, and only against a
             // monster — a red on the player, or on another member, got
             // a bot standing there watching. Same rule the bot-led hunts
             // use now.
-            if (bot.Alive && bot.Combatant == null)
+            if (bot.Alive && bot.Combatant == null && !_leashed)
             {
                 var foe = PartyFoe(bot);
                 if (foe != null)
@@ -132,7 +153,209 @@ namespace Server.CustomBots
                 }
             }
 
+            EnsureFollowTimer(bot);
             base.Tick(bot);
+        }
+
+        // How far the leader can get before a follower drops its fight.
+        private const int LeashRange = 10;
+        private bool _leashed;
+
+        protected override bool HoldFights(PlayerBot bot) => _leashed;
+
+        // The leader is more than LeashRange off and is not standing in a
+        // fight of its own. A player who runs is not asking the group to
+        // stay behind and finish the zombie: underground every follower
+        // used to stop for each monster on the way and was left 30 to 60
+        // tiles back, re-engaging reds it had already given up on.
+        private static bool IsLeashed(PlayerBot bot, Mobile leader)
+        {
+            if (Dist(bot.Location, leader.Location) <= LeashRange)
+            {
+                return false;
+            }
+            return leader.Combatant is not Mobile lc || lc.Deleted || !lc.Alive ||
+                   Dist(leader.Location, lc.Location) > 12;
+        }
+
+        protected override bool HoldPatrol(PlayerBot bot) =>
+            bot.Combatant == null && Core.Now < _onTrailUntil;
+
+        private void EnsureFollowTimer(PlayerBot bot)
+        {
+            bool mounted = bot.Mounted;
+            if (_followTimer != null && _followMounted == mounted)
+            {
+                return;
+            }
+            _followTimer?.Stop();
+            _followMounted = mounted;
+            var interval = TimeSpan.FromMilliseconds(
+                mounted ? MoveDelays.RunMountDelay : MoveDelays.RunFootDelay);
+            _followTimer = Timer.DelayCall(interval, interval, () => FollowStep(bot));
+        }
+
+        private void StopFollow()
+        {
+            _followTimer?.Stop();
+            _followTimer = null;
+            _onTrailUntil = DateTime.MinValue;
+        }
+
+        private void RecordLeader(Point3D at)
+        {
+            if (_trail.Count > 0 && _trail[^1] == at)
+            {
+                return;
+            }
+            _trail.Add(at);
+            if (_trail.Count > TrailMax)
+            {
+                _trail.RemoveRange(0, _trail.Count - TrailMax);
+            }
+        }
+
+        // Newest trail point the bot is standing on or next to, or -1.
+        private int TrailIndexAt(PlayerBot bot)
+        {
+            for (int i = _trail.Count - 1; i >= 0; i--)
+            {
+                var c = _trail[i];
+                if (Dist(c, bot.Location) <= 1 && Math.Abs(c.Z - bot.Z) <= 10)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private void FollowStep(PlayerBot bot)
+        {
+            if (bot.Deleted || bot.Behavior != this)
+            {
+                StopFollow();
+                return;
+            }
+            var leader = LeaderOf(bot);
+            if (leader == null || leader.Map != bot.Map)
+            {
+                _onTrailUntil = DateTime.MinValue;
+                return;
+            }
+            RecordLeader(leader.Location);
+
+            if (!bot.Alive || (bot.Combatant != null && !_leashed) || bot.Frozen || bot.Paralyzed ||
+                Dist(bot.Location, leader.Location) <= CloseEnough)
+            {
+                _onTrailUntil = DateTime.MinValue;
+                return;
+            }
+
+            // A blocked step handed the bot to the patrol: let it path round
+            // for a few seconds instead of halting it again next step.
+            if (Core.Now < _trailBlockedUntil)
+            {
+                return;
+            }
+
+            int at = TrailIndexAt(bot);
+            if (at < 0 || at + 1 >= _trail.Count)
+            {
+                _onTrailUntil = DateTime.MinValue;
+                return;
+            }
+
+            // A big gap in the trail is a teleport: the leader stepped on
+            // a pad here. Stand on the same tile and let it take the bot
+            // too. A recall leaves the bot at the last footstep, and the
+            // lost clock handles that. A gap of a tile or two is only the
+            // leader stepping twice between samples.
+            var next = _trail[at + 1];
+            if (Dist(next, _trail[at]) > TeleportGap)
+            {
+                // The pad itself is never on the trail: the leader is moved
+                // the moment it steps on, so the last footstep is the tile
+                // BEFORE it. Step onto the teleporter beside that footstep.
+                next = PadNear(bot.Map, _trail[at]) ?? _trail[at];
+                if (bot.Location == next)
+                {
+                    _onTrailUntil = Core.Now + TimeSpan.FromSeconds(1);
+                    return;
+                }
+            }
+            // Cut a corner where the trail doubles back past the bot.
+            else if (at + 2 < _trail.Count && Dist(_trail[at + 2], bot.Location) <= 1 &&
+                     Dist(_trail[at + 2], _trail[at + 1]) <= 1)
+            {
+                next = _trail[at + 2];
+            }
+
+            if (Core.Now >= _onTrailUntil)
+            {
+                HaltMovement();
+            }
+            _onTrailUntil = Core.Now + TimeSpan.FromSeconds(1);
+
+            if (next == bot.Location)
+            {
+                return;
+            }
+            if (TryStep(bot, bot.GetDirectionTo(next)))
+            {
+                return;
+            }
+
+            // The next footstep is taken, usually by another follower bunched
+            // up behind the same leader. Try the one after it, then a tile
+            // either side, before handing the bot to the patrol.
+            if (at + 2 < _trail.Count && Dist(_trail[at + 2], bot.Location) <= 2 &&
+                TryStep(bot, bot.GetDirectionTo(_trail[at + 2])))
+            {
+                return;
+            }
+            var ahead = bot.GetDirectionTo(next);
+            if (TryStep(bot, (Direction)(((int)ahead + 1) & 0x7)) ||
+                TryStep(bot, (Direction)(((int)ahead + 7) & 0x7)))
+            {
+                return;
+            }
+
+            // Truly blocked (a door, a wall the trail cut by a teleport):
+            // hand back to the patrol for a few seconds; it paths round it.
+            _onTrailUntil = DateTime.MinValue;
+            _trailBlockedUntil = Core.Now + TimeSpan.FromSeconds(3);
+        }
+
+        // The nearest working teleporter within 2 tiles of a spot, if any.
+        private static Point3D? PadNear(Map map, Point3D at)
+        {
+            Point3D? best = null;
+            int bestDist = int.MaxValue;
+            foreach (var t in map.GetItemsInRange<Server.Items.Teleporter>(at, 2))
+            {
+                if (!t.Active)
+                {
+                    continue;
+                }
+                int d = Dist(t.Location, at);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = t.Location;
+                }
+            }
+            return best;
+        }
+
+        // Turn, then step (a Move in a new direction only turns), running.
+        private static bool TryStep(PlayerBot bot, Direction dir)
+        {
+            var from = bot.Location;
+            if ((bot.Direction & Direction.Mask) != (dir & Direction.Mask))
+            {
+                bot.Direction = dir;
+            }
+            return bot.Move(dir | Direction.Running) && bot.Location != from;
         }
 
         private const int AssistRange = 14;
@@ -232,7 +455,39 @@ namespace Server.CustomBots
             int dist = Dist(bot.Location, leader.Location);
             if (dist <= CloseEnough)
             {
-                return null; // near enough — idle mill beside the group
+                // Near enough: mill a tile or so beside the leader. Null
+                // here is NOT idling - it hands the bot the base wander,
+                // a random spot 8-25 tiles off (or the spot it joined at,
+                // once that is 60 tiles back), which walked it away from
+                // the group it had just caught up with.
+                // Never onto a teleporter: a dungeon's landing sits among
+                // its exit pads, and a milling bot (or the stuck sidestep
+                // after it) walked onto one and back up to the surface.
+                // Near a pad, stand still.
+                if (PadNear(bot.Map, leader.Location) != null || PadNear(bot.Map, bot.Location) != null)
+                {
+                    return bot.Location;
+                }
+                var spot = new Point3D(
+                    leader.X + Utility.RandomMinMax(-FollowSlotRadius, FollowSlotRadius),
+                    leader.Y + Utility.RandomMinMax(-FollowSlotRadius, FollowSlotRadius),
+                    leader.Z);
+                return PadNear(bot.Map, spot) is Point3D pad && Dist(pad, spot) <= 1
+                    ? bot.Location
+                    : spot;
+            }
+
+            if (dist > 30)
+            {
+                // The furthest-along footstep A* can still reach from here:
+                // the nearest one is usually the tile the bot stands on.
+                for (int i = _trail.Count - 1; i >= 0; i--)
+                {
+                    if (Dist(_trail[i], bot.Location) <= 25)
+                    {
+                        return _trail[i];
+                    }
+                }
             }
 
             int seed = bot.Serial.ToInt32();
@@ -256,6 +511,7 @@ namespace Server.CustomBots
 
         private void LeaveGroup(PlayerBot bot, bool sayGoodbye)
         {
+            StopFollow();
             if (bot.Party is Party p)
             {
                 p.Remove(bot);
