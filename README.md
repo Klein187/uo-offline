@@ -13,6 +13,9 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Party bots keep up.** Bots you recruit used to fall behind a running player within a minute and then stand still. They follow your footsteps now, through dungeon entrances too, and drop a fight to catch up when you move on. On foot they still trail a mounted player and catch up when you stop.
+- **Mages cast again.** A mage with a monster a few tiles away could turn on the spot for most of an hour without casting a spell. It steps back and casts now.
+- **Dungeon floors are drawn.** Every dungeon level has a drawn floor the crawlers walk, and twelve rooms stored at the wrong height can be reached now. Fire's first level can be left from the landing, and Covetous has a second entrance into its deep cave for bots that can recall.
 - **Bots stop walking into walls.** 173 road waypoints were stored at the wrong height, so bots could never reach them and walked at the nearest wall instead. They sit on the real ground now, and a bot leaving a shop walks out the door first. Stuck bots on the roads are down by about three quarters.
 - **Ghosts find a healer.** Dead bots used to stand next to a shrine for twenty minutes, or wait on an island with no healer. They walk the last steps to the ankh now, head for any healer they can see, and get carried to one after five minutes if there is none. The typical ghost is back on its feet in about five minutes instead of nine.
 - **Bots have a home town.** A bot lives in the town it started in and spends most of its time there and in the country around it, with the odd trip to another town or island. Getting around town is done on foot, Recall is for the long trips, and a stop at a shop, an inn or the bank lasts a while instead of a minute. Recalls are down by about two thirds.
@@ -436,7 +439,7 @@ The map background PNG is generated. If it's missing, rebuild it from your UO cl
 
 The island cities still need their own waypoint pockets and arrival handling. Six virtue shrines are live as walkable pilgrimage destinations (Chaos, Spirituality, Compassion, Sacrifice, Justice, Honor), each with a server-verified overland trail. Valor and Humility sit on gateless isles and get their pilgrims by Recall. Honesty's island hasn't been authored yet.
 
-**Dungeons.** Still being worked on, mainly the waypoint network the bots walk underground. Wrong and Hythloth are being re-authored floor by floor. Crawlers can reach the deeper levels now, but most runs still end on the first floor.
+**Dungeons.** Still being worked on. Crawlers walk a drawn floor in every dungeon and change levels in Despise, Orc Cave, Wrong, Destard, Shame and Deceit. Covetous's deep levels are only reached through its recall entrance, and Hythloth's first level still needs its waypoints redone.
 
 </details>
 
