@@ -87,6 +87,16 @@ namespace Server.CustomBots
         private static readonly Dictionary<int, Strike> _strikes = new();
         private static readonly TimeSpan StrikeLife = TimeSpan.FromMinutes(10);
 
+        // Strikes are keyed by link id, and the mesh build hands those ids
+        // out fresh every time (links[i].Id = i). After a rebuild the same
+        // id is a DIFFERENT crossing, so the table has to go with the mesh
+        // it was scored against, or a redraw inherits ten minutes of
+        // penalties belonging to links that no longer exist.
+        public static void ClearStrikes()
+        {
+            _strikes.Clear();
+        }
+
         public static void ReportLinkFailure(ZoneLink link, PlayerBot bot, string why)
         {
             if (link == null)

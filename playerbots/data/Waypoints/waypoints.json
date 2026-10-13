@@ -30524,7 +30524,8 @@
       "Y": 1824,
       "Z": 0,
       "Connects": [
-        "Covetous L4 WP 2"
+        "Covetous L4 WP 2",
+        "Covetous L4 Link 9"
       ]
     },
     {
@@ -30570,7 +30571,8 @@
       "Y": 1888,
       "Z": 0,
       "Connects": [
-        "Covetous L1 WP 9 C"
+        "Covetous L1 WP 9 C",
+        "Covetous L4 Link 1"
       ]
     },
     {
@@ -30643,7 +30645,8 @@
       "Y": 1840,
       "Z": 0,
       "Connects": [
-        "Covetous L5 WP 3"
+        "Covetous L5 WP 3",
+        "Covetous L4 Link 4"
       ]
     },
     {
@@ -30678,7 +30681,7 @@
       "Name": "Fire L1 WP 2 B",
       "X": 5686,
       "Y": 1423,
-      "Z": 0,
+      "Z": 37,
       "Connects": [
         "Fire L1 WP 103",
         "Fire L1 WP 104",
@@ -30689,7 +30692,7 @@
       "Name": "Fire L1 WP 6",
       "X": 5791,
       "Y": 1415,
-      "Z": 0,
+      "Z": 38,
       "Connects": [
         "Fire L1 WP 113",
         "Fire L1 WP 38"
@@ -30699,7 +30702,7 @@
       "Name": "Fire L1 WP 7",
       "X": 5798,
       "Y": 1508,
-      "Z": 0,
+      "Z": 19,
       "Connects": [
         "Fire L1 WP 31",
         "Fire L1 WP 62"
@@ -30718,7 +30721,7 @@
       "Name": "Fire L1 WP 9",
       "X": 5738,
       "Y": 1424,
-      "Z": 0,
+      "Z": 29,
       "Connects": [
         "Fire L1 WP 81"
       ]
@@ -30727,7 +30730,7 @@
       "Name": "Fire L1 WP 10",
       "X": 5794,
       "Y": 1462,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Fire L1 WP 21",
         "Fire L1 WP 27"
@@ -30747,7 +30750,7 @@
       "Name": "Fire L1 WP 12",
       "X": 5704,
       "Y": 1466,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 87"
       ]
@@ -30756,7 +30759,7 @@
       "Name": "Fire L1 WP 13",
       "X": 5746,
       "Y": 1452,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 84"
       ]
@@ -30765,7 +30768,7 @@
       "Name": "Fire L1 WP 14",
       "X": 5767,
       "Y": 1481,
-      "Z": 0,
+      "Z": 21,
       "Connects": [
         "Fire L1 WP 102"
       ]
@@ -30774,7 +30777,7 @@
       "Name": "Fire L1 WP 15",
       "X": 5712,
       "Y": 1410,
-      "Z": 0,
+      "Z": 42,
       "Connects": [
         "Fire L1 WP 30",
         "Fire L1 WP 54"
@@ -30794,7 +30797,7 @@
       "Name": "Fire L1 WP 17",
       "X": 5764,
       "Y": 1424,
-      "Z": 0,
+      "Z": 32,
       "Connects": [
         "Fire L1 WP 75"
       ]
@@ -30803,7 +30806,7 @@
       "Name": "Fire L1 WP 20",
       "X": 5799,
       "Y": 1485,
-      "Z": 0,
+      "Z": 41,
       "Connects": [
         "Fire L1 WP 128",
         "Fire L1 WP 60"
@@ -30833,7 +30836,7 @@
       "Name": "Fire L1 WP 23",
       "X": 5772,
       "Y": 1460,
-      "Z": 0,
+      "Z": 24,
       "Connects": [
         "Fire L1 WP 27",
         "Fire L1 WP 41"
@@ -30843,7 +30846,7 @@
       "Name": "Fire L1 WP 25",
       "X": 5693,
       "Y": 1441,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 106"
       ]
@@ -30852,7 +30855,7 @@
       "Name": "Fire L1 WP 27",
       "X": 5783,
       "Y": 1479,
-      "Z": 0,
+      "Z": 21,
       "Connects": [
         "Fire L1 WP 10",
         "Fire L1 WP 23",
@@ -30863,7 +30866,7 @@
       "Name": "Fire L1 WP 28",
       "X": 5670,
       "Y": 1430,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 126"
       ]
@@ -30884,7 +30887,7 @@
       "Name": "Fire L1 WP 30",
       "X": 5697,
       "Y": 1407,
-      "Z": 0,
+      "Z": 68,
       "Connects": [
         "Fire L1 WP 15"
       ]
@@ -30893,7 +30896,7 @@
       "Name": "Fire L1 WP 31",
       "X": 5784,
       "Y": 1500,
-      "Z": 0,
+      "Z": 17,
       "Connects": [
         "Fire L1 WP 61",
         "Fire L1 WP 7"
@@ -30903,7 +30906,7 @@
       "Name": "Fire L1 WP 32",
       "X": 5811,
       "Y": 1471,
-      "Z": 0,
+      "Z": 22,
       "Connects": [
         "Fire L1 WP 128"
       ]
@@ -30921,7 +30924,7 @@
       "Name": "Fire L1 WP 34",
       "X": 5755,
       "Y": 1467,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Fire L1 WP 35",
         "Fire L1 WP 78",
@@ -30932,7 +30935,7 @@
       "Name": "Fire L1 WP 35",
       "X": 5741,
       "Y": 1467,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Fire L1 WP 34",
         "Fire L1 WP 79"
@@ -30942,7 +30945,7 @@
       "Name": "Fire L1 WP 36",
       "X": 5801,
       "Y": 1431,
-      "Z": 0,
+      "Z": 18,
       "Connects": [
         "Fire L1 WP 131"
       ]
@@ -30951,7 +30954,7 @@
       "Name": "Fire L1 WP 37",
       "X": 5672,
       "Y": 1416,
-      "Z": 0,
+      "Z": 70,
       "Connects": [
         "Fire L1 WP 136"
       ]
@@ -30960,7 +30963,7 @@
       "Name": "Fire L1 WP 38",
       "X": 5789,
       "Y": 1425,
-      "Z": 0,
+      "Z": 36,
       "Connects": [
         "Fire L1 WP 40",
         "Fire L1 WP 6"
@@ -30970,7 +30973,7 @@
       "Name": "Fire L1 WP 40",
       "X": 5791,
       "Y": 1430,
-      "Z": 0,
+      "Z": 19,
       "Connects": [
         "Fire L1 WP 21",
         "Fire L1 WP 38"
@@ -30980,7 +30983,7 @@
       "Name": "Fire L1 WP 41",
       "X": 5776,
       "Y": 1466,
-      "Z": 0,
+      "Z": 20,
       "Connects": [
         "Fire L1 WP 23",
         "Fire L1 WP 42"
@@ -30990,7 +30993,7 @@
       "Name": "Fire L1 WP 42",
       "X": 5779,
       "Y": 1464,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 41",
         "Fire L1 WP 43"
@@ -31000,7 +31003,7 @@
       "Name": "Fire L1 WP 43",
       "X": 5786,
       "Y": 1464,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Fire L1 WP 101",
         "Fire L1 WP 42",
@@ -31011,7 +31014,7 @@
       "Name": "Fire L1 WP 45",
       "X": 5789,
       "Y": 1458,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Fire L1 WP 43",
         "Fire L1 WP 46",
@@ -31022,7 +31025,7 @@
       "Name": "Fire L1 WP 46",
       "X": 5789,
       "Y": 1444,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Fire L1 WP 45",
         "Fire L1 WP 47"
@@ -31042,7 +31045,7 @@
       "Name": "Fire L1 WP 48",
       "X": 5783,
       "Y": 1436,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 122",
         "Fire L1 WP 47",
@@ -31055,7 +31058,7 @@
       "Name": "Fire L1 WP 50",
       "X": 5771,
       "Y": 1425,
-      "Z": 0,
+      "Z": 18,
       "Connects": [
         "Fire L1 WP 48",
         "Fire L1 WP 51"
@@ -31065,7 +31068,7 @@
       "Name": "Fire L1 WP 51",
       "X": 5751,
       "Y": 1428,
-      "Z": 0,
+      "Z": 26,
       "Connects": [
         "Fire L1 WP 50",
         "Fire L1 WP 53"
@@ -31075,7 +31078,7 @@
       "Name": "Fire L1 WP 53",
       "X": 5733,
       "Y": 1432,
-      "Z": 0,
+      "Z": 27,
       "Connects": [
         "Fire L1 WP 51",
         "Fire L1 WP 54",
@@ -31087,7 +31090,7 @@
       "Name": "Fire L1 WP 54",
       "X": 5708,
       "Y": 1409,
-      "Z": 0,
+      "Z": 69,
       "Connects": [
         "Fire L1 WP 15",
         "Fire L1 WP 53",
@@ -31098,7 +31101,7 @@
       "Name": "Fire L1 WP 55",
       "X": 5704,
       "Y": 1410,
-      "Z": 0,
+      "Z": 68,
       "Connects": [
         "Fire L1 WP 134",
         "Fire L1 WP 2 B",
@@ -31109,7 +31112,7 @@
       "Name": "Fire L1 WP 57",
       "X": 5782,
       "Y": 1482,
-      "Z": 0,
+      "Z": 41,
       "Connects": [
         "Fire L1 WP 27",
         "Fire L1 WP 59"
@@ -31119,7 +31122,7 @@
       "Name": "Fire L1 WP 59",
       "X": 5783,
       "Y": 1486,
-      "Z": 0,
+      "Z": 43,
       "Connects": [
         "Fire L1 WP 57",
         "Fire L1 WP 60"
@@ -31129,7 +31132,7 @@
       "Name": "Fire L1 WP 60",
       "X": 5790,
       "Y": 1493,
-      "Z": 0,
+      "Z": 43,
       "Connects": [
         "Fire L1 WP 20",
         "Fire L1 WP 59",
@@ -31140,7 +31143,7 @@
       "Name": "Fire L1 WP 61",
       "X": 5790,
       "Y": 1496,
-      "Z": 0,
+      "Z": 45,
       "Connects": [
         "Fire L1 WP 31",
         "Fire L1 WP 60"
@@ -31150,7 +31153,7 @@
       "Name": "Fire L1 WP 62",
       "X": 5816,
       "Y": 1498,
-      "Z": 0,
+      "Z": 18,
       "Connects": [
         "Fire L1 WP 22",
         "Fire L1 WP 7"
@@ -31160,7 +31163,7 @@
       "Name": "Fire L1 WP 63",
       "X": 5728,
       "Y": 1435,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 29",
         "Fire L1 WP 53"
@@ -31170,7 +31173,7 @@
       "Name": "Fire L1 WP 74",
       "X": 5772,
       "Y": 1429,
-      "Z": 0,
+      "Z": 19,
       "Connects": [
         "Fire L1 WP 48",
         "Fire L1 WP 75"
@@ -31180,7 +31183,7 @@
       "Name": "Fire L1 WP 75",
       "X": 5762,
       "Y": 1429,
-      "Z": 0,
+      "Z": 29,
       "Connects": [
         "Fire L1 WP 17",
         "Fire L1 WP 74",
@@ -31191,7 +31194,7 @@
       "Name": "Fire L1 WP 76",
       "X": 5753,
       "Y": 1431,
-      "Z": 0,
+      "Z": 24,
       "Connects": [
         "Fire L1 WP 75",
         "Fire L1 WP 77"
@@ -31201,7 +31204,7 @@
       "Name": "Fire L1 WP 77",
       "X": 5746,
       "Y": 1442,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 76",
         "Fire L1 WP 78",
@@ -31214,7 +31217,7 @@
       "Name": "Fire L1 WP 78",
       "X": 5746,
       "Y": 1458,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 34",
         "Fire L1 WP 77"
@@ -31224,7 +31227,7 @@
       "Name": "Fire L1 WP 79",
       "X": 5736,
       "Y": 1478,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 35",
         "Fire L1 WP 8"
@@ -31234,7 +31237,7 @@
       "Name": "Fire L1 WP 80",
       "X": 5735,
       "Y": 1432,
-      "Z": 0,
+      "Z": 10,
       "Connects": [
         "Fire L1 WP 53",
         "Fire L1 WP 81"
@@ -31244,7 +31247,7 @@
       "Name": "Fire L1 WP 81",
       "X": 5737,
       "Y": 1430,
-      "Z": 0,
+      "Z": 21,
       "Connects": [
         "Fire L1 WP 80",
         "Fire L1 WP 9"
@@ -31254,7 +31257,7 @@
       "Name": "Fire L1 WP 82",
       "X": 5743,
       "Y": 1439,
-      "Z": 0,
+      "Z": 8,
       "Connects": [
         "Fire L1 WP 29",
         "Fire L1 WP 77"
@@ -31264,7 +31267,7 @@
       "Name": "Fire L1 WP 84",
       "X": 5746,
       "Y": 1456,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 13",
         "Fire L1 WP 77",
@@ -31275,7 +31278,7 @@
       "Name": "Fire L1 WP 85",
       "X": 5744,
       "Y": 1462,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 84",
         "Fire L1 WP 87"
@@ -31285,7 +31288,7 @@
       "Name": "Fire L1 WP 87",
       "X": 5725,
       "Y": 1462,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 12",
         "Fire L1 WP 85"
@@ -31295,7 +31298,7 @@
       "Name": "Fire L1 WP 88",
       "X": 5745,
       "Y": 1457,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 34",
         "Fire L1 WP 77"
@@ -31315,7 +31318,7 @@
       "Name": "Fire L1 WP 98",
       "X": 5789,
       "Y": 1446,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Fire L1 WP 45",
         "Fire L1 WP 97"
@@ -31325,7 +31328,7 @@
       "Name": "Fire L1 WP 101",
       "X": 5778,
       "Y": 1471,
-      "Z": 0,
+      "Z": 24,
       "Connects": [
         "Fire L1 WP 102",
         "Fire L1 WP 43"
@@ -31335,7 +31338,7 @@
       "Name": "Fire L1 WP 102",
       "X": 5771,
       "Y": 1481,
-      "Z": 0,
+      "Z": 24,
       "Connects": [
         "Fire L1 WP 101",
         "Fire L1 WP 14"
@@ -31345,7 +31348,7 @@
       "Name": "Fire L1 WP 103",
       "X": 5706,
       "Y": 1416,
-      "Z": 0,
+      "Z": 43,
       "Connects": [
         "Fire L1 WP 104",
         "Fire L1 WP 2 B"
@@ -31355,7 +31358,7 @@
       "Name": "Fire L1 WP 104",
       "X": 5709,
       "Y": 1416,
-      "Z": 0,
+      "Z": 39,
       "Connects": [
         "Fire L1 WP 103",
         "Fire L1 WP 106",
@@ -31367,7 +31370,7 @@
       "Name": "Fire L1 WP 106",
       "X": 5688,
       "Y": 1443,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 104",
         "Fire L1 WP 107",
@@ -31378,7 +31381,7 @@
       "Name": "Fire L1 WP 107",
       "X": 5688,
       "Y": 1447,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 106",
         "Fire L1 WP 16"
@@ -31398,7 +31401,7 @@
       "Name": "Fire L1 WP 111",
       "X": 5722,
       "Y": 1427,
-      "Z": 0,
+      "Z": 41,
       "Connects": [
         "Fire L1 WP 109",
         "Fire L1 WP 112"
@@ -31408,7 +31411,7 @@
       "Name": "Fire L1 WP 112",
       "X": 5713,
       "Y": 1436,
-      "Z": 0,
+      "Z": 28,
       "Connects": [
         "Fire L1 WP 111"
       ]
@@ -31417,7 +31420,7 @@
       "Name": "Fire L1 WP 113",
       "X": 5789,
       "Y": 1422,
-      "Z": 0,
+      "Z": 38,
       "Connects": [
         "Fire L1 WP 114",
         "Fire L1 WP 6"
@@ -31427,7 +31430,7 @@
       "Name": "Fire L1 WP 114",
       "X": 5794,
       "Y": 1435,
-      "Z": 0,
+      "Z": 21,
       "Connects": [
         "Fire L1 WP 113",
         "Fire L1 WP 117",
@@ -31438,7 +31441,7 @@
       "Name": "Fire L1 WP 117",
       "X": 5801,
       "Y": 1436,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 114",
         "Fire L1 WP 118"
@@ -31448,7 +31451,7 @@
       "Name": "Fire L1 WP 118",
       "X": 5814,
       "Y": 1432,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 117"
       ]
@@ -31486,7 +31489,7 @@
       "Name": "Fire L1 WP 128",
       "X": 5803,
       "Y": 1475,
-      "Z": 0,
+      "Z": 24,
       "Connects": [
         "Fire L1 WP 20",
         "Fire L1 WP 32"
@@ -31496,7 +31499,7 @@
       "Name": "Fire L1 WP 131",
       "X": 5796,
       "Y": 1432,
-      "Z": 0,
+      "Z": 20,
       "Connects": [
         "Fire L1 WP 114",
         "Fire L1 WP 36"
@@ -31506,7 +31509,7 @@
       "Name": "Fire L1 WP 134",
       "X": 5699,
       "Y": 1406,
-      "Z": 0,
+      "Z": 68,
       "Connects": [
         "Fire L1 WP 135",
         "Fire L1 WP 55"
@@ -31516,7 +31519,7 @@
       "Name": "Fire L1 WP 135",
       "X": 5696,
       "Y": 1408,
-      "Z": 0,
+      "Z": 71,
       "Connects": [
         "Fire L1 WP 134",
         "Fire L1 WP 136"
@@ -31526,7 +31529,7 @@
       "Name": "Fire L1 WP 136",
       "X": 5690,
       "Y": 1410,
-      "Z": 0,
+      "Z": 70,
       "Connects": [
         "Fire L1 WP 135",
         "Fire L1 WP 37"
@@ -33665,7 +33668,7 @@
       "Name": "Fire L1 WP 3 B",
       "X": 5787,
       "Y": 1336,
-      "Z": 0,
+      "Z": -8,
       "Connects": [
         "Fire L1 WP 48 B",
         "Fire L1 WP 81 B"
@@ -33675,7 +33678,7 @@
       "Name": "Fire L1 WP 4 B",
       "X": 5875,
       "Y": 1377,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 67 B"
       ]
@@ -33684,7 +33687,7 @@
       "Name": "Fire L1 WP 5 B",
       "X": 5860,
       "Y": 1486,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 38 B",
         "Fire L1 WP 80 B"
@@ -33694,7 +33697,7 @@
       "Name": "Fire L1 WP 6 B",
       "X": 5874,
       "Y": 1296,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 109 B"
       ]
@@ -33732,7 +33735,7 @@
       "Name": "Fire L1 WP 11 B",
       "X": 5831,
       "Y": 1363,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 27 B",
         "Fire L1 WP 93 B"
@@ -33742,7 +33745,7 @@
       "Name": "Fire L1 WP 12 B",
       "X": 5871,
       "Y": 1335,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 124 B"
       ]
@@ -33780,7 +33783,7 @@
       "Name": "Fire L1 WP 21 B",
       "X": 5850,
       "Y": 1460,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 38 B"
       ]
@@ -33789,7 +33792,7 @@
       "Name": "Fire L1 WP 22 B",
       "X": 5849,
       "Y": 1305,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Fire L1 WP 107 B",
         "Fire L1 WP 159",
@@ -33800,7 +33803,7 @@
       "Name": "Fire L1 WP 24 B",
       "X": 5769,
       "Y": 1311,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 91 B"
       ]
@@ -33809,7 +33812,7 @@
       "Name": "Fire L1 WP 25 B",
       "X": 5768,
       "Y": 1358,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 16 B"
       ]
@@ -33818,7 +33821,7 @@
       "Name": "Fire L1 WP 26 B",
       "X": 5809,
       "Y": 1347,
-      "Z": 0,
+      "Z": -12,
       "Connects": [
         "Fire L1 WP 101 B",
         "Fire L1 WP 166"
@@ -33838,7 +33841,7 @@
       "Name": "Fire L1 WP 28 B",
       "X": 5817,
       "Y": 1385,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 110 B",
         "Fire L1 WP 53 B",
@@ -33849,7 +33852,7 @@
       "Name": "Fire L1 WP 31 B",
       "X": 5872,
       "Y": 1316,
-      "Z": 0,
+      "Z": -3,
       "Connects": [
         "Fire L1 WP 149"
       ]
@@ -33858,7 +33861,7 @@
       "Name": "Fire L1 WP 33 B",
       "X": 5779,
       "Y": 1391,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 60 B"
       ]
@@ -33876,7 +33879,7 @@
       "Name": "Fire L1 WP 35 B",
       "X": 5827,
       "Y": 1307,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 154"
       ]
@@ -33885,7 +33888,7 @@
       "Name": "Fire L1 WP 36 B",
       "X": 5878,
       "Y": 1478,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 20 B",
         "Fire L1 WP 80 B"
@@ -33952,7 +33955,7 @@
       "Name": "Fire L1 WP 45 B",
       "X": 5807,
       "Y": 1331,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 102 B"
       ]
@@ -33961,7 +33964,7 @@
       "Name": "Fire L1 WP 46 B",
       "X": 5862,
       "Y": 1442,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 20 B",
         "Fire L1 WP 8 B"
@@ -33982,7 +33985,7 @@
       "Name": "Fire L1 WP 48 B",
       "X": 5789,
       "Y": 1351,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 3 B",
         "Fire L1 WP 57 B"
@@ -33992,7 +33995,7 @@
       "Name": "Fire L1 WP 49 B",
       "X": 5800,
       "Y": 1392,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 114 B"
       ]
@@ -34040,7 +34043,7 @@
       "Name": "Fire L1 WP 55 B",
       "X": 5782,
       "Y": 1288,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 129 B",
         "Fire L1 WP 9 B"
@@ -34059,7 +34062,7 @@
       "Name": "Fire L1 WP 57 B",
       "X": 5777,
       "Y": 1349,
-      "Z": 0,
+      "Z": -3,
       "Connects": [
         "Fire L1 WP 48 B",
         "Fire L1 WP 59 B"
@@ -34069,7 +34072,7 @@
       "Name": "Fire L1 WP 59 B",
       "X": 5775,
       "Y": 1358,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 57 B",
         "Fire L1 WP 60 B"
@@ -34079,7 +34082,7 @@
       "Name": "Fire L1 WP 60 B",
       "X": 5792,
       "Y": 1376,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 16 B",
         "Fire L1 WP 164",
@@ -34092,7 +34095,7 @@
       "Name": "Fire L1 WP 61 B",
       "X": 5814,
       "Y": 1383,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 28 B",
         "Fire L1 WP 60 B",
@@ -34114,7 +34117,7 @@
       "Name": "Fire L1 WP 63 B",
       "X": 5823,
       "Y": 1398,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 62 B",
         "Fire L1 WP 64 B"
@@ -34124,7 +34127,7 @@
       "Name": "Fire L1 WP 64 B",
       "X": 5826,
       "Y": 1401,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 63 B",
         "Fire L1 WP 65 B"
@@ -34134,7 +34137,7 @@
       "Name": "Fire L1 WP 65 B",
       "X": 5840,
       "Y": 1401,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 64 B",
         "Fire L1 WP 66 B"
@@ -34144,7 +34147,7 @@
       "Name": "Fire L1 WP 66 B",
       "X": 5849,
       "Y": 1391,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 155",
         "Fire L1 WP 65 B",
@@ -34155,7 +34158,7 @@
       "Name": "Fire L1 WP 67 B",
       "X": 5856,
       "Y": 1391,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 4 B",
         "Fire L1 WP 66 B",
@@ -34166,7 +34169,7 @@
       "Name": "Fire L1 WP 68 B",
       "X": 5866,
       "Y": 1401,
-      "Z": 0,
+      "Z": -3,
       "Connects": [
         "Fire L1 WP 67 B",
         "Fire L1 WP 69 B"
@@ -34197,7 +34200,7 @@
       "Name": "Fire L1 WP 71 B",
       "X": 5865,
       "Y": 1437,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Fire L1 WP 70 B",
         "Fire L1 WP 8 B"
@@ -34217,7 +34220,7 @@
       "Name": "Fire L1 WP 80 B",
       "X": 5865,
       "Y": 1484,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 36 B",
         "Fire L1 WP 5 B"
@@ -34227,7 +34230,7 @@
       "Name": "Fire L1 WP 81 B",
       "X": 5784,
       "Y": 1343,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 3 B",
         "Fire L1 WP 83 B"
@@ -34237,7 +34240,7 @@
       "Name": "Fire L1 WP 83 B",
       "X": 5779,
       "Y": 1346,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 81 B",
         "Fire L1 WP 84 B"
@@ -34247,7 +34250,7 @@
       "Name": "Fire L1 WP 84 B",
       "X": 5773,
       "Y": 1341,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 40 B",
         "Fire L1 WP 83 B",
@@ -34268,7 +34271,7 @@
       "Name": "Fire L1 WP 86 B",
       "X": 5786,
       "Y": 1320,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 160",
         "Fire L1 WP 85 B"
@@ -34278,7 +34281,7 @@
       "Name": "Fire L1 WP 89 B",
       "X": 5801,
       "Y": 1315,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 160",
         "Fire L1 WP 163"
@@ -34288,7 +34291,7 @@
       "Name": "Fire L1 WP 91 B",
       "X": 5777,
       "Y": 1304,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 129 B",
         "Fire L1 WP 132 B",
@@ -34321,7 +34324,7 @@
       "Name": "Fire L1 WP 95 B",
       "X": 5831,
       "Y": 1362,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 27 B"
       ]
@@ -34330,7 +34333,7 @@
       "Name": "Fire L1 WP 99 B",
       "X": 5826,
       "Y": 1362,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 100 B"
       ]
@@ -34339,7 +34342,7 @@
       "Name": "Fire L1 WP 100 B",
       "X": 5824,
       "Y": 1359,
-      "Z": 0,
+      "Z": 3,
       "Connects": [
         "Fire L1 WP 101 B",
         "Fire L1 WP 99 B"
@@ -34360,7 +34363,7 @@
       "Name": "Fire L1 WP 102 B",
       "X": 5807,
       "Y": 1337,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 101 B",
         "Fire L1 WP 103 B",
@@ -34371,7 +34374,7 @@
       "Name": "Fire L1 WP 103 B",
       "X": 5821,
       "Y": 1326,
-      "Z": 0,
+      "Z": -12,
       "Connects": [
         "Fire L1 WP 102 B",
         "Fire L1 WP 104 B"
@@ -34391,7 +34394,7 @@
       "Name": "Fire L1 WP 105 B",
       "X": 5839,
       "Y": 1328,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 104 B",
         "Fire L1 WP 51 B"
@@ -34401,7 +34404,7 @@
       "Name": "Fire L1 WP 107 B",
       "X": 5855,
       "Y": 1305,
-      "Z": 0,
+      "Z": -3,
       "Connects": [
         "Fire L1 WP 108 B",
         "Fire L1 WP 146",
@@ -34422,7 +34425,7 @@
       "Name": "Fire L1 WP 109 B",
       "X": 5870,
       "Y": 1297,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 108 B",
         "Fire L1 WP 6 B"
@@ -34432,7 +34435,7 @@
       "Name": "Fire L1 WP 110 B",
       "X": 5818,
       "Y": 1389,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 111 B",
         "Fire L1 WP 28 B"
@@ -34452,7 +34455,7 @@
       "Name": "Fire L1 WP 112 B",
       "X": 5816,
       "Y": 1399,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 111 B",
         "Fire L1 WP 114 B",
@@ -34474,7 +34477,7 @@
       "Name": "Fire L1 WP 116 B",
       "X": 5826,
       "Y": 1290,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 151"
       ]
@@ -34483,7 +34486,7 @@
       "Name": "Fire L1 WP 118 B",
       "X": 5845,
       "Y": 1325,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 120 B",
         "Fire L1 WP 51 B"
@@ -34513,7 +34516,7 @@
       "Name": "Fire L1 WP 122 B",
       "X": 5850,
       "Y": 1345,
-      "Z": 0,
+      "Z": -3,
       "Connects": [
         "Fire L1 WP 121 B",
         "Fire L1 WP 123 B"
@@ -34523,7 +34526,7 @@
       "Name": "Fire L1 WP 123 B",
       "X": 5855,
       "Y": 1345,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 122 B",
         "Fire L1 WP 124 B",
@@ -34544,7 +34547,7 @@
       "Name": "Fire L1 WP 127 B",
       "X": 5825,
       "Y": 1477,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire Link WP 18"
       ]
@@ -34563,7 +34566,7 @@
       "Name": "Fire L1 WP 132 B",
       "X": 5799,
       "Y": 1304,
-      "Z": 0,
+      "Z": -2,
       "Connects": [
         "Fire L1 WP 134 B",
         "Fire L1 WP 91 B"
@@ -34573,7 +34576,7 @@
       "Name": "Fire L1 WP 134 B",
       "X": 5800,
       "Y": 1297,
-      "Z": 0,
+      "Z": -8,
       "Connects": [
         "Fire L1 WP 132 B",
         "Fire L1 WP 135 B",
@@ -34623,7 +34626,7 @@
       "Name": "Fire L1 WP 139",
       "X": 5861,
       "Y": 1426,
-      "Z": 0,
+      "Z": 7,
       "Connects": [
         "Fire L1 WP 138",
         "Fire L1 WP 141"
@@ -34682,7 +34685,7 @@
       "Name": "Fire L1 WP 147",
       "X": 5865,
       "Y": 1303,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 146",
         "Fire L1 WP 148"
@@ -34692,7 +34695,7 @@
       "Name": "Fire L1 WP 148",
       "X": 5870,
       "Y": 1303,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 147",
         "Fire L1 WP 149"
@@ -34702,7 +34705,7 @@
       "Name": "Fire L1 WP 149",
       "X": 5874,
       "Y": 1306,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 148",
         "Fire L1 WP 31 B"
@@ -34712,7 +34715,7 @@
       "Name": "Fire L1 WP 151",
       "X": 5824,
       "Y": 1292,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 116 B",
         "Fire L1 WP 152"
@@ -34722,7 +34725,7 @@
       "Name": "Fire L1 WP 152",
       "X": 5826,
       "Y": 1294,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 151",
         "Fire L1 WP 153"
@@ -34732,7 +34735,7 @@
       "Name": "Fire L1 WP 153",
       "X": 5825,
       "Y": 1296,
-      "Z": 0,
+      "Z": 2,
       "Connects": [
         "Fire L1 WP 152",
         "Fire L1 WP 154"
@@ -34742,7 +34745,7 @@
       "Name": "Fire L1 WP 154",
       "X": 5827,
       "Y": 1298,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 153",
         "Fire L1 WP 35 B"
@@ -34771,7 +34774,7 @@
       "Name": "Fire L1 WP 157",
       "X": 5833,
       "Y": 1290,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 158"
       ]
@@ -34780,7 +34783,7 @@
       "Name": "Fire L1 WP 158",
       "X": 5836,
       "Y": 1289,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 157",
         "Fire L1 WP 159"
@@ -34800,7 +34803,7 @@
       "Name": "Fire L1 WP 160",
       "X": 5800,
       "Y": 1322,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 86 B",
         "Fire L1 WP 89 B"
@@ -34810,7 +34813,7 @@
       "Name": "Fire L1 WP 163",
       "X": 5798,
       "Y": 1311,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 43 B",
         "Fire L1 WP 89 B",
@@ -34821,7 +34824,7 @@
       "Name": "Fire L1 WP 164",
       "X": 5795,
       "Y": 1377,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 165",
         "Fire L1 WP 60 B"
@@ -34831,7 +34834,7 @@
       "Name": "Fire L1 WP 165",
       "X": 5801,
       "Y": 1377,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 164",
         "Fire L1 WP 44 B"
@@ -34841,7 +34844,7 @@
       "Name": "Fire L1 WP 166",
       "X": 5815,
       "Y": 1344,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 26 B"
       ]
@@ -34850,7 +34853,7 @@
       "Name": "Fire L1 WP 168",
       "X": 5818,
       "Y": 1344,
-      "Z": 0,
+      "Z": -1,
       "Connects": [
         "Fire L1 WP 50 B"
       ]
@@ -36619,7 +36622,7 @@
       "Name": "Fire L1 Door WP",
       "X": 5833,
       "Y": 1486,
-      "Z": 0,
+      "Z": 1,
       "Connects": [
         "Fire L1 WP 11",
         "Fire Link WP 17"
@@ -40172,6 +40175,115 @@
       "Connects": [
         "Wrong L1 WP 29",
         "Wrong L1 WP 31"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 1",
+      "X": 5580,
+      "Y": 1880,
+      "Z": 0,
+      "Connects": [
+        "Covetous L1 WP 3 C",
+        "Covetous L4 Link 2",
+        "Covetous L4 Link 5"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 2",
+      "X": 5580,
+      "Y": 1868,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 1",
+        "Covetous L4 Link 3"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 3",
+      "X": 5590,
+      "Y": 1862,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 2",
+        "Covetous L4 Link 4"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 4",
+      "X": 5590,
+      "Y": 1848,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 3",
+        "Covetous L5 WP 1"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 5",
+      "X": 5570,
+      "Y": 1878,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 1",
+        "Covetous L4 Link 6"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 6",
+      "X": 5562,
+      "Y": 1868,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 5",
+        "Covetous L4 Link 7"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 7",
+      "X": 5562,
+      "Y": 1852,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 6",
+        "Covetous L4 Link 8"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 8",
+      "X": 5568,
+      "Y": 1837,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 7",
+        "Covetous L4 Link 9"
+      ]
+    },
+    {
+      "Name": "Covetous L4 Link 9",
+      "X": 5562,
+      "Y": 1827,
+      "Z": 0,
+      "Connects": [
+        "Covetous L4 Link 8",
+        "Covetous L4 WP 1"
+      ]
+    },
+    {
+      "Name": "Covetous Approach Deep 1",
+      "X": 2545,
+      "Y": 856,
+      "Z": 0,
+      "Connects": [
+        "Covetous Approach Deep 2"
+      ]
+    },
+    {
+      "Name": "Covetous Approach Deep 2",
+      "X": 2530,
+      "Y": 860,
+      "Z": 0,
+      "Connects": [
+        "Covetous Approach Deep 1"
       ]
     }
   ]

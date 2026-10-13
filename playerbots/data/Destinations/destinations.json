@@ -220,9 +220,33 @@
       "Type": "VendorProvisioner",
       "City": "Britain",
       "NearestWaypoint": "brittailor2",
-      "ArrivalX": 1451,
-      "ArrivalY": 1613,
-      "ArrivalZ": 20
+      "Arrivals": [],
+      "Polygon": [
+        [
+          1448,
+          1608
+        ],
+        [
+          1460,
+          1608
+        ],
+        [
+          1460,
+          1617
+        ],
+        [
+          1457,
+          1617
+        ],
+        [
+          1457,
+          1621
+        ],
+        [
+          1448,
+          1621
+        ]
+      ]
     },
     {
       "Name": "Britain Healer",
@@ -232,9 +256,25 @@
       "Type": "Healer",
       "City": "Britain",
       "NearestWaypoint": "Baker Entrance",
-      "ArrivalX": 1473,
-      "ArrivalY": 1612,
-      "ArrivalZ": 20
+      "Arrivals": [],
+      "Polygon": [
+        [
+          1469,
+          1608
+        ],
+        [
+          1480,
+          1608
+        ],
+        [
+          1480,
+          1616
+        ],
+        [
+          1469,
+          1616
+        ]
+      ]
     },
     {
       "Name": "Britain Bowyer",
@@ -253,6 +293,24 @@
             "Britain West Bowyer"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1469,
+          1576
+        ],
+        [
+          1479,
+          1576
+        ],
+        [
+          1479,
+          1584
+        ],
+        [
+          1468,
+          1584
+        ]
       ]
     },
     {
@@ -288,19 +346,25 @@
             "britmage 2"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1484,
+          1559
+        ],
+        [
+          1499,
+          1559
+        ],
+        [
+          1499,
+          1543
+        ],
+        [
+          1484,
+          1543
+        ]
       ]
-    },
-    {
-      "Name": "Britain Stables 3",
-      "X": 1516,
-      "Y": 1546,
-      "Z": 25,
-      "Type": "Stables",
-      "City": "Britain",
-      "NearestWaypoint": "WP 152",
-      "ArrivalX": 1520,
-      "ArrivalY": 1543,
-      "ArrivalZ": 25
     },
     {
       "Name": "Britain Inn 3",
@@ -346,6 +410,24 @@
             "cntrl brit rd 3"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1489,
+          1580
+        ],
+        [
+          1489,
+          1591
+        ],
+        [
+          1480,
+          1591
+        ],
+        [
+          1480,
+          1580
+        ]
       ]
     },
     {
@@ -365,6 +447,32 @@
             "Britain Inn South Stairs"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1492,
+          1602
+        ],
+        [
+          1499,
+          1602
+        ],
+        [
+          1499,
+          1610
+        ],
+        [
+          1508,
+          1610
+        ],
+        [
+          1508,
+          1626
+        ],
+        [
+          1492,
+          1626
+        ]
       ]
     },
     {
@@ -400,6 +508,32 @@
             "Britain Alchemist East"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1496,
+          1656
+        ],
+        [
+          1508,
+          1656
+        ],
+        [
+          1508,
+          1664
+        ],
+        [
+          1504,
+          1664
+        ],
+        [
+          1504,
+          1668
+        ],
+        [
+          1496,
+          1668
+        ]
       ]
     },
     {
@@ -435,33 +569,24 @@
             "WP 133"
           ]
         }
-      ]
-    },
-    {
-      "Name": "Britain Tailor 3",
-      "X": 1471,
-      "Y": 1685,
-      "Z": 0,
-      "Type": "VendorTailor",
-      "City": "Britain",
-      "NearestWaypoint": "Britain Bank Provisioner Entrance",
-      "Arrivals": [
-        {
-          "X": 1475,
-          "Y": 1691,
-          "Z": 0,
-          "Waypoints": [
-            "Britain Tailor Entrance"
-          ]
-        },
-        {
-          "X": 1476,
-          "Y": 1690,
-          "Z": 0,
-          "Waypoints": [
-            "Britain Tailor Entrance"
-          ]
-        }
+      ],
+      "Polygon": [
+        [
+          1464,
+          1664
+        ],
+        [
+          1488,
+          1664
+        ],
+        [
+          1488,
+          1676
+        ],
+        [
+          1464,
+          1677
+        ]
       ]
     },
     {
@@ -489,6 +614,24 @@
             "Britain Gem Shop"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1458,
+          1678
+        ],
+        [
+          1450,
+          1678
+        ],
+        [
+          1450,
+          1695
+        ],
+        [
+          1458,
+          1695
+        ]
       ]
     },
     {
@@ -524,11 +667,45 @@
             "Blue Boar Tavern"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1486,
+          1685
+        ],
+        [
+          1494,
+          1685
+        ],
+        [
+          1495,
+          1677
+        ],
+        [
+          1502,
+          1676
+        ],
+        [
+          1502,
+          1700
+        ],
+        [
+          1495,
+          1700
+        ],
+        [
+          1494,
+          1692
+        ],
+        [
+          1486,
+          1692
+        ]
       ]
     },
     {
       "Name": "Britain Provisioner 9",
-      "X": 1456,
+      "X": 1457,
       "Y": 1724,
       "Z": 6,
       "Type": "VendorProvisioner",
@@ -551,6 +728,24 @@
             "britprov9 2"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1448,
+          1721
+        ],
+        [
+          1463,
+          1721
+        ],
+        [
+          1463,
+          1728
+        ],
+        [
+          1448,
+          1728
+        ]
       ]
     },
     {
@@ -561,15 +756,32 @@
       "Type": "VendorProvisioner",
       "City": "Britain",
       "NearestWaypoint": "brit west rd 1",
-      "Arrivals": [
-        {
-          "X": 1426,
-          "Y": 1734,
-          "Z": 20,
-          "Waypoints": [
-            "brittav3"
-          ]
-        }
+      "Arrivals": [],
+      "Polygon": [
+        [
+          1424,
+          1713
+        ],
+        [
+          1440,
+          1713
+        ],
+        [
+          1439,
+          1724
+        ],
+        [
+          1432,
+          1724
+        ],
+        [
+          1432,
+          1736
+        ],
+        [
+          1425,
+          1736
+        ]
       ]
     },
     {
@@ -580,34 +792,32 @@
       "Type": "VendorProvisioner",
       "City": "Britain",
       "NearestWaypoint": "britprov7",
-      "Arrivals": [
-        {
-          "X": 1414,
-          "Y": 1748,
-          "Z": 10,
-          "Waypoints": [
-            "britprov7"
-          ]
-        }
-      ]
-    },
-    {
-      "Name": "Britain Tailor 5",
-      "X": 1433,
-      "Y": 1614,
-      "Z": 20,
-      "Type": "VendorTailor",
-      "City": "Britain",
-      "NearestWaypoint": "Road To Britain Forge",
-      "Arrivals": [
-        {
-          "X": 1430,
-          "Y": 1611,
-          "Z": 20,
-          "Waypoints": [
-            "brittailor2"
-          ]
-        }
+      "Arrivals": [],
+      "Polygon": [
+        [
+          1412,
+          1744
+        ],
+        [
+          1424,
+          1744
+        ],
+        [
+          1424,
+          1752
+        ],
+        [
+          1432,
+          1752
+        ],
+        [
+          1432,
+          1760
+        ],
+        [
+          1413,
+          1760
+        ]
       ]
     },
     {
@@ -627,6 +837,32 @@
             "Rec 9"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1545,
+          1760
+        ],
+        [
+          1567,
+          1760
+        ],
+        [
+          1567,
+          1769
+        ],
+        [
+          1561,
+          1769
+        ],
+        [
+          1561,
+          1776
+        ],
+        [
+          1544,
+          1776
+        ]
       ]
     },
     {
@@ -646,6 +882,40 @@
             "estbnritwep"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1631,
+          1688
+        ],
+        [
+          1641,
+          1688
+        ],
+        [
+          1641,
+          1696
+        ],
+        [
+          1649,
+          1696
+        ],
+        [
+          1649,
+          1705
+        ],
+        [
+          1641,
+          1705
+        ],
+        [
+          1641,
+          1713
+        ],
+        [
+          1632,
+          1713
+        ]
       ]
     },
     {
@@ -665,6 +935,32 @@
             "eastbritmg"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1584,
+          1648
+        ],
+        [
+          1608,
+          1648
+        ],
+        [
+          1608,
+          1657
+        ],
+        [
+          1601,
+          1657
+        ],
+        [
+          1601,
+          1665
+        ],
+        [
+          1584,
+          1665
+        ]
       ]
     },
     {
@@ -684,6 +980,40 @@
             "estbrittai"
           ]
         }
+      ],
+      "Polygon": [
+        [
+          1544,
+          1648
+        ],
+        [
+          1544,
+          1665
+        ],
+        [
+          1569,
+          1665
+        ],
+        [
+          1569,
+          1648
+        ],
+        [
+          1560,
+          1648
+        ],
+        [
+          1560,
+          1655
+        ],
+        [
+          1552,
+          1655
+        ],
+        [
+          1553,
+          1648
+        ]
       ]
     },
     {
@@ -7867,7 +8197,7 @@
       "Name": "Deceit lvl2 Room 2",
       "X": 5220,
       "Y": 755,
-      "Z": 0,
+      "Z": -20,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 4",
@@ -7888,7 +8218,7 @@
       "Name": "Deceit lvl2 Room 3",
       "X": 5221,
       "Y": 673,
-      "Z": 0,
+      "Z": -20,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 5",
@@ -7931,7 +8261,7 @@
       "Name": "Deceit lvl2 Room 5",
       "X": 5218,
       "Y": 716,
-      "Z": 0,
+      "Z": -20,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Deceit L2 WP 7",
@@ -8601,7 +8931,7 @@
       "Name": "Despise lvl2b Room",
       "X": 5499,
       "Y": 565,
-      "Z": 0,
+      "Z": 60,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 1",
@@ -8622,7 +8952,7 @@
       "Name": "Despise lvl2 Room 2",
       "X": 5384,
       "Y": 614,
-      "Z": 0,
+      "Z": 53,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 5",
@@ -8643,7 +8973,7 @@
       "Name": "Despise lvl2 Room 3",
       "X": 5398,
       "Y": 520,
-      "Z": 0,
+      "Z": 65,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 6",
@@ -8664,7 +8994,7 @@
       "Name": "Despise lvl2b Room B",
       "X": 5485,
       "Y": 631,
-      "Z": 0,
+      "Z": 25,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 35",
@@ -8686,7 +9016,7 @@
       "Name": "Despise lvl2 Room 5",
       "X": 5442,
       "Y": 576,
-      "Z": 0,
+      "Z": 60,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 8",
@@ -8741,7 +9071,7 @@
       "Name": "Shame lvl3 Room 1",
       "X": 5514,
       "Y": 142,
-      "Z": 0,
+      "Z": 20,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Shame L3 WP 1",
@@ -9060,7 +9390,7 @@
       "Name": "Wrong lvl2 Room 1 C",
       "X": 5723,
       "Y": 562,
-      "Z": 0,
+      "Z": 20,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Wrong L2 WP 1 C",
@@ -9539,6 +9869,34 @@
       ],
       "TargetX": 5455,
       "TargetY": 1864,
+      "TargetZ": 0,
+      "TargetLevel": 1
+    },
+    {
+      "Name": "Covetous Deep Entrance",
+      "X": 2545,
+      "Y": 856,
+      "Z": 0,
+      "Type": "DungeonEntrance",
+      "City": "",
+      "NearestWaypoint": "Covetous Approach Deep 1",
+      "Dungeon": "Covetous",
+      "Level": 0,
+      "ArrivalX": 2545,
+      "ArrivalY": 850,
+      "ArrivalZ": 0,
+      "Arrivals": [
+        {
+          "X": 2545,
+          "Y": 850,
+          "Z": 0,
+          "Waypoints": [
+            "Covetous Approach Deep 1"
+          ]
+        }
+      ],
+      "TargetX": 5579,
+      "TargetY": 1927,
       "TargetZ": 0,
       "TargetLevel": 1
     },
@@ -12370,7 +12728,7 @@
       "Name": "Despise lvl2b Room 21",
       "X": 5504,
       "Y": 520,
-      "Z": 0,
+      "Z": 60,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 11",
@@ -12391,7 +12749,7 @@
       "Name": "Despise lvl2 Room 21",
       "X": 5450,
       "Y": 520,
-      "Z": 0,
+      "Z": 63,
       "Type": "DungeonRoom",
       "City": "",
       "NearestWaypoint": "Despise L2 WP 9",
@@ -15063,7 +15421,25 @@
       "NearestWaypoint": "Hythloth L1 WP 3",
       "Dungeon": "Hythloth lvl1",
       "Level": 1,
-      "Arrivals": []
+      "Arrivals": [],
+      "Polygon": [
+        [
+          5904,
+          48
+        ],
+        [
+          5919,
+          48
+        ],
+        [
+          5919,
+          63
+        ],
+        [
+          5904,
+          63
+        ]
+      ]
     },
     {
       "Name": "Hythloth lvl1 Spider Room 2",
@@ -15075,7 +15451,41 @@
       "NearestWaypoint": "Hythloth L1 WP 1",
       "Dungeon": "Hythloth lvl1",
       "Level": 1,
-      "Arrivals": []
+      "Arrivals": [],
+      "Polygon": [
+        [
+          5944,
+          24
+        ],
+        [
+          5959,
+          24
+        ],
+        [
+          5959,
+          27
+        ],
+        [
+          5960,
+          27
+        ],
+        [
+          5960,
+          29
+        ],
+        [
+          5959,
+          29
+        ],
+        [
+          5959,
+          31
+        ],
+        [
+          5944,
+          31
+        ]
+      ]
     },
     {
       "Name": "Hythloth lvl1 Ratman Room",
@@ -15086,7 +15496,41 @@
       "City": "Moonglow",
       "NearestWaypoint": "Hythloth L5 WP 1",
       "Dungeon": "Hythloth lvl1",
-      "Level": 1
+      "Level": 1,
+      "Polygon": [
+        [
+          5976,
+          24
+        ],
+        [
+          5991,
+          24
+        ],
+        [
+          5991,
+          31
+        ],
+        [
+          5989,
+          31
+        ],
+        [
+          5989,
+          32
+        ],
+        [
+          5987,
+          32
+        ],
+        [
+          5987,
+          31
+        ],
+        [
+          5976,
+          31
+        ]
+      ]
     },
     {
       "Name": "Hythloth lvl1 Ratman Room 2",
@@ -15097,19 +15541,41 @@
       "City": "Moonglow",
       "NearestWaypoint": "Hythloth L5 WP 1",
       "Dungeon": "Hythloth lvl1",
-      "Level": 1
-    },
-    {
-      "Name": "Hythloth lvl1 Spider Room 3",
-      "X": 5969,
-      "Y": 80,
-      "Z": 0,
-      "Type": "DungeonRoom",
-      "City": "Moonglow",
-      "NearestWaypoint": "Hythloth L8 WP 2",
-      "Dungeon": "Hythloth lvl1",
       "Level": 1,
-      "Arrivals": []
+      "Polygon": [
+        [
+          5984,
+          56
+        ],
+        [
+          5984,
+          71
+        ],
+        [
+          5999,
+          71
+        ],
+        [
+          5999,
+          56
+        ],
+        [
+          5989,
+          56
+        ],
+        [
+          5989,
+          55
+        ],
+        [
+          5987,
+          55
+        ],
+        [
+          5987,
+          56
+        ]
+      ]
     },
     {
       "Name": "Hythloth lvl1 Scorpion Room",
@@ -15243,6 +15709,185 @@
             "WP 1418"
           ]
         }
+      ]
+    },
+    {
+      "Name": "Hythloth Spider Room 3",
+      "X": 5967,
+      "Y": 78,
+      "Z": 0,
+      "Type": "DungeonRoom",
+      "City": "Moonglow",
+      "NearestWaypoint": "Hythloth L2 WP 3 B",
+      "Polygon": [
+        [
+          5975,
+          87
+        ],
+        [
+          5960,
+          87
+        ],
+        [
+          5960,
+          72
+        ],
+        [
+          5967,
+          72
+        ],
+        [
+          5975,
+          73
+        ]
+      ]
+    },
+    {
+      "Name": "Britain Tailor 5",
+      "X": 1433,
+      "Y": 1614,
+      "Z": 20,
+      "Type": "VendorTailor",
+      "City": "Britain",
+      "NearestWaypoint": "Road To Britain Forge",
+      "Polygon": [
+        [
+          1441,
+          1617
+        ],
+        [
+          1428,
+          1617
+        ],
+        [
+          1428,
+          1607
+        ],
+        [
+          1440,
+          1607
+        ]
+      ]
+    },
+    {
+      "Name": "VendorTailor 489",
+      "X": 1472,
+      "Y": 1691,
+      "Z": 0,
+      "Type": "VendorTailor",
+      "City": "Britain",
+      "NearestWaypoint": "Britain Tailor SE Corner",
+      "Polygon": [
+        [
+          1466,
+          1685
+        ],
+        [
+          1478,
+          1685
+        ],
+        [
+          1478,
+          1692
+        ],
+        [
+          1474,
+          1692
+        ],
+        [
+          1474,
+          1696
+        ],
+        [
+          1466,
+          1696
+        ],
+        [
+          1466,
+          1686
+        ]
+      ]
+    },
+    {
+      "Name": "LumberSpot 488",
+      "X": 1376,
+      "Y": 1541,
+      "Z": 11,
+      "Type": "LumberSpot",
+      "City": "Britain",
+      "NearestWaypoint": "Road To Graveyard 3",
+      "Polygon": [
+        [
+          1326,
+          1521
+        ],
+        [
+          1334,
+          1557
+        ],
+        [
+          1382,
+          1557
+        ],
+        [
+          1384,
+          1550
+        ],
+        [
+          1407,
+          1545
+        ],
+        [
+          1412,
+          1537
+        ],
+        [
+          1388,
+          1518
+        ]
+      ]
+    },
+    {
+      "Name": "VendorProvisioner 489",
+      "X": 1620,
+      "Y": 1584,
+      "Z": 0,
+      "Type": "VendorProvisioner",
+      "City": "Britain",
+      "NearestWaypoint": "Rec 6.1",
+      "Polygon": [
+        [
+          1617,
+          1576
+        ],
+        [
+          1624,
+          1576
+        ],
+        [
+          1625,
+          1584
+        ],
+        [
+          1633,
+          1584
+        ],
+        [
+          1633,
+          1592
+        ],
+        [
+          1608,
+          1592
+        ],
+        [
+          1608,
+          1585
+        ],
+        [
+          1616,
+          1584
+        ]
       ]
     }
   ]

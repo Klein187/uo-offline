@@ -51,6 +51,37 @@ namespace Server.CustomBots
         public int ZMin = int.MinValue, ZMax = int.MaxValue;
         public bool ZKnown => ZMin != int.MinValue;
 
+        // The floor this Area was authored on: the Z of the destination
+        // whose polygon it is, which is the ground the vendor stands on.
+        // A building has more than one storey and the measuring scan finds
+        // them all, so when this is known the zone is measured and flooded
+        // on THIS floor and the storey above is simply not its ground.
+        public int FloorZ = int.MinValue;
+
+        // The floor was guessed from the shape (a dungeon floor), not
+        // authored. The flood still starts on it, but follows real steps
+        // off it: a cave's ledge and the ramp up to it are the same floor.
+        public bool FloorProbed;
+        public bool FloorKnown =>
+            FloorZ != int.MinValue && !FloorIgnored && ZoneRegistry.FloorLock && !IsOpenGround;
+
+        // Open ground has no storey above it to exclude, and a hillside can
+        // climb further than the floor window in one shape, so a mine, a
+        // grove or a dock is measured over the whole column as before.
+        public bool IsOpenGround =>
+            IsGatherSite || string.Equals(Type, "Dock", StringComparison.OrdinalIgnoreCase);
+
+        // Set when the authored floor found nothing standable at all, so
+        // the zone falls back to measuring the whole column, as before.
+        public bool FloorIgnored;
+
+        // How far from the authored floor still counts as the same storey.
+        // UO stacks floors about 20 apart, so this admits steps, a dais or
+        // a shop counter without admitting the storey above.
+        public const int FloorWindow = 10;
+
+        public bool OnFloor(int z) => !FloorKnown || Math.Abs(z - FloorZ) <= FloorWindow;
+
         // Filled by the mesh build.
         public int Id;
         public int TileCount;
@@ -91,6 +122,12 @@ namespace Server.CustomBots
         // one floor. PartMap is indexed over the bounding box; -1 = not a
         // standable tile of this zone.
         internal int[] PartMap;
+
+        // The ground height the flood actually walked at each tile, same
+        // indexing as PartMap. A crossing between two zones is only real
+        // when both zones' floors meet at it, so the link build needs the
+        // height, not just "some tile here is standable".
+        internal int[] PartZMap;
         public int PartCount;
         internal int[] PartComponent;   // mesh component per part
 
@@ -101,6 +138,17 @@ namespace Server.CustomBots
                 return PartMap == null ? 0 : -1;
             }
             return PartMap[(x - MinX) + (y - MinY) * (MaxX - MinX + 1)];
+        }
+
+        public int PartZAt(int x, int y)
+        {
+            if (PartMap == null || PartZMap == null ||
+                x < MinX || x > MaxX || y < MinY || y > MaxY)
+            {
+                return int.MinValue;
+            }
+            int i = (x - MinX) + (y - MinY) * (MaxX - MinX + 1);
+            return PartMap[i] >= 0 ? PartZMap[i] : int.MinValue;
         }
 
         // The part at this tile, or the part of a standable tile next to it
@@ -469,6 +517,8 @@ namespace Server.CustomBots
                             Type = d.TryGetProperty("Type", out var t) ? t.GetString() : null,
                             LinkedDest = d.GetProperty("Name").GetString(),
                             Tag = d.TryGetProperty("Tag", out var tg) ? tg.GetString() : null,
+                            FloorZ = d.TryGetProperty("Z", out var dz) && dz.ValueKind == JsonValueKind.Number
+                                     ? dz.GetInt32() : int.MinValue,
                         };
                         if (d.TryGetProperty("Cost", out var c) && c.ValueKind == JsonValueKind.Number)
                         {
@@ -520,6 +570,7 @@ namespace Server.CustomBots
                     MeasureZone(map, z);
                     z.Links.Clear();
                     z.PartMap = null;
+                    z.PartZMap = null;
                     z.PartCount = 0;
                     z.PartComponent = null;
                 }
@@ -667,13 +718,19 @@ namespace Server.CustomBots
             }
 
             _links = links;
+            // Link ids are handed out fresh above, so every strike scored
+            // against the old mesh now names a different crossing.
+            ZoneNav.ClearStrikes();
             _meshBuiltAt = Core.Now;
             _meshBuildTime = sw.Elapsed;
             int meshZones = _zones.Count(z => z.IsMesh);
             int lonely = _zones.Count(z => z.IsMesh && z.Links.Count == 0);
             int split = _zones.Count(z => z.IsMesh && z.PartCount > 1);
             Console.WriteLine($"[zones] mesh: {meshZones} zone(s), {links.Count} link(s), " +
-                              $"{lonely} with no link, {split} split by walls, built in {_meshBuildTime.TotalMilliseconds:0} ms.");
+                              $"{lonely} with no link, {split} split by walls, " +
+                              $"crossing test {(StrictLinks ? "strict" : "loose")}, " +
+                              $"floors {(FloorLock ? "locked" : "free")}, " +
+                              $"built in {_meshBuildTime.TotalMilliseconds:0} ms.");
             foreach (var z in _zones.Where(z => z.IsMesh && z.PartCount > 1))
             {
                 Console.WriteLine($"[zones]   '{z.Name}' is {z.PartCount} separate patches of ground");
@@ -686,6 +743,90 @@ namespace Server.CustomBots
         }
 
         private static void MeasureZone(Map map, PaintedZone z)
+        {
+            z.FloorIgnored = false;
+            z.FloorProbed = false;
+
+            // A dungeon corridor has no destination record to take a floor
+            // from, and dungeon levels sit right on top of each other, so
+            // the height scan finds the level above wherever this level's
+            // tile is not usable. Read the floor off the shape itself: the
+            // height most of its ground is at.
+            if (z.FloorZ == int.MinValue && z.IsWalk && z.IsDungeon)
+            {
+                z.FloorZ = ProbeFloor(map, z);
+                z.FloorProbed = z.FloorZ != int.MinValue;
+            }
+            Measure(map, z);
+
+            // The authored floor found nothing at all: the record's Z is
+            // wrong for this shape. Better a loose zone than no zone, so
+            // drop the floor and measure the whole column, as before. Done
+            // here, once, so the retry cannot loop.
+            if (z.FloorZ != int.MinValue && !z.ZKnown && z.TileCount > 0 && z.BadTiles >= z.TileCount)
+            {
+                Console.WriteLine($"[zones] '{z.Name}': nothing standable at the authored floor " +
+                                  $"Z {z.FloorZ}, measuring the whole column instead");
+                z.FloorIgnored = true;
+                Measure(map, z);
+            }
+        }
+
+        // The dominant surface inside the shape, or int.MinValue when its
+        // ground is too spread out to call one floor — which is what a
+        // stairwell looks like, and a stairwell must be allowed to span.
+        private const double FloorMajority = 0.6;
+
+        private static int ProbeFloor(Map map, PaintedZone z)
+        {
+            var heights = new List<int>();
+            int area = z.Area;
+            int stride = area > 6000 ? 3 : area > 1500 ? 2 : 1;
+            for (int x = z.MinX; x <= z.MaxX; x += stride)
+            {
+                for (int y = z.MinY; y <= z.MaxY; y += stride)
+                {
+                    if (!z.Contains(x, y))
+                    {
+                        continue;
+                    }
+                    if (Walkable.TryFindSeedZ(map, x, y, map.GetAverageZ(x, y), out int sz))
+                    {
+                        heights.Add(sz);
+                    }
+                }
+            }
+            if (heights.Count == 0)
+            {
+                return int.MinValue;
+            }
+
+            // The height with the most ground within a floor's reach of it.
+            int best = heights[0], bestCount = 0;
+            foreach (var h in heights)
+            {
+                int n = 0;
+                foreach (var o in heights)
+                {
+                    if (Math.Abs(o - h) <= PaintedZone.FloorWindow)
+                    {
+                        n++;
+                    }
+                }
+                if (n > bestCount)
+                {
+                    bestCount = n;
+                    best = h;
+                }
+            }
+            if (bestCount < heights.Count * FloorMajority)
+            {
+                return int.MinValue;   // stairs, a ramp, or two floors equally drawn
+            }
+            return best;
+        }
+
+        private static void Measure(Map map, PaintedZone z)
         {
             z.TileCount = 0;
             z.BadTiles = 0;
@@ -709,14 +850,17 @@ namespace Server.CustomBots
                         continue;
                     }
                     seen++;
-                    int refZ = z.ZKnown ? (z.ZMin + z.ZMax) / 2 : map.GetAverageZ(x, y);
-                    if (Walkable.TryFindSeedZ(map, x, y, refZ, out int sz))
+                    int refZ = z.FloorKnown ? z.FloorZ
+                             : z.ZKnown ? (z.ZMin + z.ZMax) / 2
+                             : map.GetAverageZ(x, y);
+                    if (Walkable.TryFindSeedZ(map, x, y, refZ, out int sz) && z.OnFloor(sz))
                     {
                         if (sz < zmin) zmin = sz;
                         if (sz > zmax) zmax = sz;
                     }
                     else
                     {
+                        // Ground on another storey is not this zone's ground.
                         z.BadTiles++;
                     }
                 }
@@ -741,13 +885,14 @@ namespace Server.CustomBots
             if (map == null || w <= 0 || h <= 0 || w * h > MaxFloodTiles)
             {
                 z.PartMap = null;
+                z.PartZMap = null;
                 z.PartCount = 1;
                 return;
             }
             var part = new int[w * h];
             var tileZ = new int[w * h];
             Array.Fill(part, -1);
-            int refZ = z.ZKnown ? (z.ZMin + z.ZMax) / 2 : 0;
+            int refZ = z.FloorKnown ? z.FloorZ : z.ZKnown ? (z.ZMin + z.ZMax) / 2 : 0;
             int count = 0;
             var queue = new Queue<(int x, int y)>();
             for (int y = z.MinY; y <= z.MaxY; y++)
@@ -759,10 +904,10 @@ namespace Server.CustomBots
                     {
                         continue;
                     }
-                    int seedRef = z.ZKnown ? refZ : map.GetAverageZ(x, y);
-                    if (!Walkable.TryFindSeedZ(map, x, y, seedRef, out int sz))
+                    int seedRef = z.FloorKnown || z.ZKnown ? refZ : map.GetAverageZ(x, y);
+                    if (!Walkable.TryFindSeedZ(map, x, y, seedRef, out int sz) || !z.OnFloor(sz))
                     {
-                        continue;
+                        continue;   // another storey, not this zone's ground
                     }
                     part[i] = count;
                     tileZ[i] = sz;
@@ -790,9 +935,10 @@ namespace Server.CustomBots
                                 {
                                     continue;
                                 }
-                                if (!Walkable.CanStepThroughDoors(map, cx, cy, cz, nx, ny, out int nz))
+                                if (!Walkable.CanStepThroughDoors(map, cx, cy, cz, nx, ny, out int nz) ||
+                                    !z.FloorProbed && !z.OnFloor(nz))
                                 {
-                                    continue;
+                                    continue;   // stairs out of this storey
                                 }
                                 part[ni] = count;
                                 tileZ[ni] = nz;
@@ -803,7 +949,21 @@ namespace Server.CustomBots
                     count++;
                 }
             }
+            // Ground reached off a guessed floor widens the zone's height
+            // range, so links to rooms on the ledge are not ruled out.
+            if (z.FloorProbed && z.ZKnown)
+            {
+                for (int i = 0; i < part.Length; i++)
+                {
+                    if (part[i] >= 0)
+                    {
+                        if (tileZ[i] < z.ZMin) z.ZMin = tileZ[i];
+                        if (tileZ[i] > z.ZMax) z.ZMax = tileZ[i];
+                    }
+                }
+            }
             z.PartMap = part;
+            z.PartZMap = tileZ;
             z.PartCount = Math.Max(1, count);
         }
 
@@ -832,7 +992,7 @@ namespace Server.CustomBots
                     {
                         continue;
                     }
-                    if (!TileStandable(map, x, y, a, b, out int z))
+                    if (!Crossable(map, a, b, x, y, out _, out _, out _))
                     {
                         continue;
                     }
@@ -845,6 +1005,88 @@ namespace Server.CustomBots
             }
             FinishLink(map, link);
             return link;
+        }
+
+        // Off = an Area measures and floods the whole column, as it did
+        // before, so a shop takes in the storey above it again.
+        public static bool FloorLock { get; set; } = true;
+
+        // Off = the old rule (any standable tile both outlines cover).
+        // On = the tile must be ground BOTH zones can step onto from their
+        // own walkable floor. Two zones drawn over the same ground on
+        // different dungeon levels overlap on the map but never meet, so
+        // this is what stops a link being built between two floors.
+        public static bool StrictLinks { get; set; } = true;
+
+        // Two floors this far apart are not one crossing.
+        private const int MaxCrossStep = 4;
+
+        private static bool Crossable(Map map, PaintedZone a, PaintedZone b,
+                                      int x, int y, out int z, out int partA, out int partB)
+        {
+            z = 0;
+            partA = 0;
+            partB = 0;
+            if (!StrictLinks || a.PartMap == null || b.PartMap == null)
+            {
+                partA = Math.Max(0, a.PartNear(x, y));
+                partB = Math.Max(0, b.PartNear(x, y));
+                return TileStandable(map, x, y, a, b, out z);
+            }
+            if (!Reaches(map, a, x, y, out int za, out partA) ||
+                !Reaches(map, b, x, y, out int zb, out partB))
+            {
+                return false;
+            }
+            if (Math.Abs(za - zb) > MaxCrossStep)
+            {
+                return false;   // same tile on the map, two different floors
+            }
+            z = (za + zb) / 2;
+            return true;
+        }
+
+        // The floor of `zone` at this tile: the tile itself when the zone's
+        // own flood walked it, else a flooded neighbour a bot can step from
+        // onto it — which is how a doorway, or an outline stopping one tile
+        // short, still crosses.
+        private static bool Reaches(Map map, PaintedZone zone, int x, int y, out int z, out int part)
+        {
+            z = 0;
+            part = 0;
+            int here = zone.PartAt(x, y);
+            if (here >= 0)
+            {
+                z = zone.PartZAt(x, y);
+                part = here;
+                return z != int.MinValue;
+            }
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    if (dx == 0 && dy == 0)
+                    {
+                        continue;
+                    }
+                    int nx = x + dx, ny = y + dy;
+                    int p = zone.PartAt(nx, ny);
+                    if (p < 0)
+                    {
+                        continue;
+                    }
+                    int nz = zone.PartZAt(nx, ny);
+                    if (nz == int.MinValue ||
+                        !Walkable.CanStepThroughDoors(map, nx, ny, nz, x, y, out int sz))
+                    {
+                        continue;
+                    }
+                    z = sz;
+                    part = p;
+                    return true;
+                }
+            }
+            return false;
         }
 
         // Standable, and on a surface both zones accept.
@@ -862,19 +1104,39 @@ namespace Server.CustomBots
         private static void FinishLink(Map map, ZoneLink link)
         {
             // Midpoint = the crossing tile nearest the centroid of the run,
-            // so a long shared border is crossed near its middle.
+            // so a long shared border is crossed near its middle. A real
+            // door on (or just beside) the crossing wins over the centroid:
+            // a doorway IS where the bot must cross, and a hand-painted
+            // Portal never lands exactly on the tile.
             double cx = link.Tiles.Average(t => (double)t.x);
             double cy = link.Tiles.Average(t => (double)t.y);
-            var mid = link.Tiles.OrderBy(t => (t.x - cx) * (t.x - cx) + (t.y - cy) * (t.y - cy)).First();
+            var door = NearestDoorTile(map, link, cx, cy);
+            if (door.HasValue && !link.Tiles.Contains(door.Value))
+            {
+                link.Tiles.Add(door.Value);
+            }
+            link.IsDoor = door.HasValue;
+            var mid = door ?? link.Tiles
+                .OrderBy(t => (t.x - cx) * (t.x - cx) + (t.y - cy) * (t.y - cy)).First();
             link.MidX = mid.x;
             link.MidY = mid.y;
             int refZ = link.A.ZKnown ? (link.A.ZMin + link.A.ZMax) / 2 : map.GetAverageZ(mid.x, mid.y);
             link.MidZ = Walkable.TryFindSeedZ(map, mid.x, mid.y, refZ, out int z) ? z : refZ;
 
-            // Which patch of ground the crossing joins on each side: the
-            // part under the midpoint first, else any crossing tile's.
-            link.PartA = Math.Max(0, link.A.PartNear(mid.x, mid.y));
-            link.PartB = Math.Max(0, link.B.PartNear(mid.x, mid.y));
+            // Which patch of ground the crossing joins on each side. The
+            // crossing test already worked that out per tile, so ask it
+            // again for the tile that became the midpoint; fall back to the
+            // part under (or beside) the midpoint when it cannot say.
+            if (Crossable(map, link.A, link.B, mid.x, mid.y, out _, out int pa, out int pb))
+            {
+                link.PartA = pa;
+                link.PartB = pb;
+            }
+            else
+            {
+                link.PartA = Math.Max(0, link.A.PartNear(mid.x, mid.y));
+                link.PartB = Math.Max(0, link.B.PartNear(mid.x, mid.y));
+            }
             foreach (var (x, y) in link.Tiles)
             {
                 if (link.A.PartNear(mid.x, mid.y) < 0 && link.A.PartNear(x, y) >= 0)
@@ -886,14 +1148,101 @@ namespace Server.CustomBots
                     link.PartB = link.B.PartNear(x, y);
                 }
             }
-            foreach (var (x, y) in link.Tiles)
+            if (!link.IsDoor)
             {
-                if (Walkable.ClosedDoorAt(map, x, y, link.MidZ) || DoorAt(map, x, y, link.MidZ))
+                foreach (var (x, y) in link.Tiles)
                 {
-                    link.IsDoor = true;
-                    break;
+                    if (Walkable.ClosedDoorAt(map, x, y, link.MidZ) || DoorAt(map, x, y, link.MidZ))
+                    {
+                        link.IsDoor = true;
+                        break;
+                    }
                 }
             }
+        }
+
+        // How far outside a painted Portal to look for the door it meant.
+        private const int DoorSnapRange = 2;
+
+        // The door tile a crossing should aim at: a door standing on one of
+        // the crossing tiles, nearest the centroid. A Portal is painted by
+        // hand, so when none of its own tiles has a door the search widens
+        // a couple of tiles around it and the closest door wins. Direct
+        // links never widen: their tiles are the measured shared ground and
+        // pulling the aim point off it would not be a crossing any more.
+        private static (int x, int y)? NearestDoorTile(Map map, ZoneLink link, double cx, double cy)
+        {
+            int refZ = link.A.ZKnown ? (link.A.ZMin + link.A.ZMax) / 2
+                                     : map.GetAverageZ((int)Math.Round(cx), (int)Math.Round(cy));
+            (int x, int y)? best = null;
+            double bestD = double.MaxValue;
+
+            void Consider(int x, int y)
+            {
+                if (!DoorTile(map, x, y, refZ, out var tile))
+                {
+                    return;
+                }
+                double d = (tile.x - cx) * (tile.x - cx) + (tile.y - cy) * (tile.y - cy);
+                if (d < bestD)
+                {
+                    bestD = d;
+                    best = tile;
+                }
+            }
+
+            foreach (var (x, y) in link.Tiles)
+            {
+                Consider(x, y);
+            }
+            if (best.HasValue || link.Via == null)
+            {
+                return best;
+            }
+
+            var seen = new HashSet<(int, int)>(link.Tiles);
+            foreach (var (x, y) in link.Tiles.ToList())
+            {
+                for (int dx = -DoorSnapRange; dx <= DoorSnapRange; dx++)
+                {
+                    for (int dy = -DoorSnapRange; dy <= DoorSnapRange; dy++)
+                    {
+                        if (seen.Add((x + dx, y + dy)))
+                        {
+                            Consider(x + dx, y + dy);
+                        }
+                    }
+                }
+            }
+            return best;
+        }
+
+        // A door on this tile, reported at the tile it occupies when SHUT.
+        // An open door has moved itself aside by its offset, and the shut
+        // tile is the doorway a bot walks through.
+        private static bool DoorTile(Map map, int x, int y, int z, out (int x, int y) tile)
+        {
+            tile = (x, y);
+            if (map == null || map == Map.Internal)
+            {
+                return false;
+            }
+            foreach (var item in map.GetItemsAt(x, y))
+            {
+                if (item is Server.Items.BaseDoor d && Math.Abs(d.Z - z) <= 15)
+                {
+                    // A locked door is not a way through: a bot cannot open
+                    // it, so aiming the crossing at it would grind forever.
+                    // Leave those links on the centroid, as before.
+                    if (d.Locked && !d.Open)
+                    {
+                        continue;
+                    }
+                    tile = d.Open ? (d.X - d.Offset.X, d.Y - d.Offset.Y) : (d.X, d.Y);
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static bool DoorAt(Map map, int x, int y, int z)
@@ -1132,6 +1481,27 @@ namespace Server.CustomBots
 
         private static void Links_OnCommand(CommandEventArgs e)
         {
+            if (e.Arguments.Length > 0 &&
+                (e.Arguments[0].Equals("strict", StringComparison.OrdinalIgnoreCase) ||
+                 e.Arguments[0].Equals("floors", StringComparison.OrdinalIgnoreCase)))
+            {
+                bool on = e.Arguments.Length < 2 ||
+                          !e.Arguments[1].Equals("off", StringComparison.OrdinalIgnoreCase);
+                if (e.Arguments[0].Equals("floors", StringComparison.OrdinalIgnoreCase))
+                {
+                    FloorLock = on;
+                }
+                else
+                {
+                    StrictLinks = on;
+                }
+                _meshBuilt = false;
+                EnsureMesh();
+                e.Mobile.SendMessage($"Crossing test: {(StrictLinks ? "strict" : "loose")}, " +
+                                     $"floors: {(FloorLock ? "locked" : "free")}. " +
+                                     $"{_links.Count} link(s).");
+                return;
+            }
             EnsureMesh();
             if (_links.Count == 0) { e.Mobile.SendMessage("No zone links."); return; }
             foreach (var l in _links)
