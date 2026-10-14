@@ -266,23 +266,27 @@ namespace Server.CustomBots
             return true;
         }
 
-        // Regulars who have been away long enough to come back. The
-        // spawners hold off while there are any, so a familiar face gets the
-        // free place on the next session tick instead of a stranger.
-        public static bool AnyReady()
+        // Places to hold for regulars who have been away long enough to come
+        // back, so a familiar face gets a free place on the next session
+        // tick instead of a stranger. Never more than one tick's worth of
+        // logins: after a restart every regular is ready at once, and
+        // holding a place for all of them kept the spawners shut for an
+        // hour while they trickled in three a minute.
+        public static int ReadyToHold()
         {
             if (!Enabled)
             {
-                return false;
+                return 0;
             }
+            int n = 0;
             foreach (var bot in _offline)
             {
-                if (!bot.Deleted && Core.Now - bot.OfflineSince >= MinOffline)
+                if (!bot.Deleted && Core.Now - bot.OfflineSince >= MinOffline && ++n >= MaxLoginsPerTick)
                 {
-                    return true;
+                    break;
                 }
             }
-            return false;
+            return n;
         }
 
         // Called from PlayerBot.OnAfterDelete.

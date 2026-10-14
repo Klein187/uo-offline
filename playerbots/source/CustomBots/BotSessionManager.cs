@@ -114,9 +114,9 @@ namespace Server.CustomBots
                 return true;
             }
             // Offline regulars still hold their names but are not online.
-            // And a regular ready to come back gets the place first.
-            return NamePool.InUseCount - FixedRoleCount - BotRegulars.OfflineCount < TargetNow &&
-                !BotRegulars.AnyReady();
+            // A few places are held for regulars ready to come back.
+            return NamePool.InUseCount - FixedRoleCount - BotRegulars.OfflineCount +
+                BotRegulars.ReadyToHold() < TargetNow;
         }
 
         private static int CountLive()
