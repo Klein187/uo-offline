@@ -279,3 +279,18 @@ in a world save still carry it, and would still have crashed every login.
 
 If deploying playerbots onto a fresh ModernUO clone, re-apply this or a
 single stray corpse can lock everyone out of the shard.
+
+
+Stock-file patch: pin a patched Pkcs package (2026-10-14)
+---------------------------------------------------------
+MailKit's MimeKit pulls in System.Security.Cryptography.Pkcs 10.0.0. A
+security advisory against that version (CVE-2026-84008) came out, and
+ModernUO treats NuGet warnings as errors, so the build stopped. Patch in:
+
+  Projects/UOContent/UOContent.csproj  (after the MailKit line)
+
+  + <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+
+A newer ModernUO that already fixed this will refuse the patch, and that
+is fine. If your build fails with NU1902 or NU1903 on this package, add
+the line by hand.

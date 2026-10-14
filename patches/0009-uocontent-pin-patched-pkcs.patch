@@ -1,0 +1,13 @@
+diff --git a/Projects/UOContent/UOContent.csproj b/Projects/UOContent/UOContent.csproj
+index 60f28ac6f..05f11423d 100644
+--- a/Projects/UOContent/UOContent.csproj
++++ b/Projects/UOContent/UOContent.csproj
+@@ -43,6 +43,8 @@
+         <PackageReference Include="LibDeflate.Bindings" Version="1.0.4" />
+         <PackageReference Include="System.IO.Hashing" Version="10.0.11" />
+         <PackageReference Include="MailKit" Version="4.17.0" />
++        <!-- MimeKit pulls in Pkcs 10.0.0, which has a known security hole. -->
++        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.11" />
+         <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.2" />
+         <PackageReference Include="Argon2.Bindings" Version="1.20.0" />
