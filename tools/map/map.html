@@ -1231,8 +1231,7 @@ function inPoly(poly,x,y){let inside=false;
      x<(poly[j][0]-poly[i][0])*(y-poly[i][1])/(poly[j][1]-poly[i][1])+poly[i][0])inside=!inside;}
  return inside;}
 function hsClick(px,py){
- const r=cv.getBoundingClientRect();
- const tx=Math.round((px-r.left)/scale+viewX), ty=Math.round((py-r.top)/scale+viewY);
+ const tx=Math.round(ox+px/scale),ty=Math.round(oy+py/scale);
  // a click inside an existing spot (no sketch in progress) selects it
  if(drawPts.length===0){
   for(const s of HSPOTS){if(s.poly&&s.poly.length>=3&&inPoly(s.poly,tx,ty)){
@@ -1268,8 +1267,7 @@ document.getElementById("editHS").onchange=function(){
  draw();};
 // ---- PK spawn / hunt-area editor ----
 function pkClick(px,py){
- const r=cv.getBoundingClientRect();
- const tx=Math.round((px-r.left)/scale+viewX), ty=Math.round((py-r.top)/scale+viewY);
+ const tx=Math.round(ox+px/scale),ty=Math.round(oy+py/scale);
  // click on an existing PK marker (no sketch in progress) = select to delete
  if(drawPts.length===0){
   for(const s of PKSPAWNS){if(dist(tx,ty,s.x,s.y)<Math.max(8,12/scale)){
