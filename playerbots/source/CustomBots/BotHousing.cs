@@ -63,6 +63,22 @@ namespace Server.CustomBots
             0x9A, // log cabin
         };
 
+        // Every house an Architect sells, for the spots drawn in the map
+        // editor, except the two small workshops: their only door is
+        // upstairs, so a bot has no way in at street level. Each type is listed as often as it should come up: small
+        // houses most, the big ones now and then. Big ones only go where
+        // the whole house fits inside the drawn spot.
+        public static readonly int[] SpotMultiIds =
+        {
+            0x64, 0x64, 0x66, 0x66, 0x68, 0x68, 0x6A, 0x6A, 0x6C, 0x6C, 0x6E, 0x6E, // small houses
+            0x98, 0x9A, 0x9C,       // small tower, log cabin, sandstone patio
+            0x74, 0x76, 0x78, 0x9E, // brick house, two-story houses, villa
+            0x8C, 0x96,             // large patio, marble patio
+            0x7A,                   // tower
+            0x7C,                   // keep
+            0x7E,                   // castle
+        };
+
         private static readonly string[] HouseNouns =
         {
             "cottage", "cabin", "house", "homestead", "hut",
@@ -396,6 +412,19 @@ namespace Server.CustomBots
             0x6C => new WoodPlasterHouseDeed(),
             0x6E => new ThatchedRoofCottageDeed(),
             0x9A => new LogCabinDeed(),
+            0x74 => new BrickHouseDeed(),
+            0x76 => new TwoStoryWoodPlasterHouseDeed(),
+            0x78 => new TwoStoryStonePlasterHouseDeed(),
+            0x7A => new TowerDeed(),
+            0x7C => new KeepDeed(),
+            0x7E => new CastleDeed(),
+            0x8C => new LargePatioDeed(),
+            0x96 => new LargeMarbleDeed(),
+            0x98 => new SmallTowerDeed(),
+            0x9C => new SandstonePatioDeed(),
+            0x9E => new VillaDeed(),
+            0xA0 => new StoneWorkshopDeed(),
+            0xA2 => new MarbleWorkshopDeed(),
             _    => new SmallBrickHouseDeed(),
         };
 
@@ -497,7 +526,7 @@ namespace Server.CustomBots
                     rejCheck++;
                     continue;
                 }
-                if (!CanWalkToRoad(map, checker, c, n.Location))
+                if (!CanWalkToRoad(map, checker, multiId, c, n.Location))
                 {
                     rejPath++;
                     continue;
@@ -536,21 +565,82 @@ namespace Server.CustomBots
             {
                 int x = Utility.RandomMinMax(x0, x1);
                 int y = Utility.RandomMinMax(y0, y1);
-                if (!InPolygon(poly, x, y) || TooCloseToHouse(map, x, y, minSpacing) ||
-                    TooCloseToTrail(graph, x, y, minTrail))
+                string why = !FootprintInPolygon(poly, multiId, x, y) ? "outside"
+                    : TooCloseToHouse(map, x, y, minSpacing) ? "near a house"
+                    : TooCloseToTrail(graph, x, y, minTrail) ? "on a trail"
+                    : null;
+                if (why == null)
                 {
-                    continue;
+                    var c = new Point3D(x, y, map.GetAverageZ(x, y));
+                    var road = graph.FindNearestNode(c);
+                    var check = road == null ? HousePlacementResult.BadLand : CheckSiteResult(map, checker, multiId, c);
+                    if (check != HousePlacementResult.Valid)
+                    {
+                        why = check.ToString();
+                    }
+                    else if (!CanWalkToRoad(map, checker, multiId, c, road.Location))
+                    {
+                        why = "no walk to road";
+                    }
+                    else
+                    {
+                        center = c;
+                        return true;
+                    }
                 }
-                var c = new Point3D(x, y, map.GetAverageZ(x, y));
-                var road = graph.FindNearestNode(c);
-                if (road != null && CheckSite(map, checker, multiId, c) &&
-                    CanWalkToRoad(map, checker, c, road.Location))
-                {
-                    center = c;
-                    return true;
-                }
+                LastRejections[why] = LastRejections.GetValueOrDefault(why) + 1;
             }
             return false;
+        }
+
+        // Why the polygon site finder turned spots down, summed since the
+        // caller last cleared it. For the "no room" log line.
+        public static readonly Dictionary<string, int> LastRejections = new();
+
+        // The house's outline, relative to its center.
+        public static (int x0, int y0, int x1, int y1) Footprint(int multiId)
+        {
+            var mcl = MultiData.GetComponents(multiId);
+            return (mcl.Min.X, mcl.Min.Y, mcl.Max.X, mcl.Max.Y);
+        }
+
+        // The house's center inside the drawn polygon, and the whole house
+        // within the polygon's bounding box (give or take a couple of
+        // tiles). Spots are drawn snugly around a few plots, so asking for
+        // every corner inside the shape itself turned nearly every site
+        // down; this still keeps a castle out of a spot drawn for cottages.
+        private const int FootprintSlack = 2;
+
+        public static bool FootprintInPolygon(Point2D[] poly, int multiId, int x, int y)
+        {
+            if (!InPolygon(poly, x, y))
+            {
+                return false;
+            }
+            int px0 = int.MaxValue, py0 = int.MaxValue, px1 = int.MinValue, py1 = int.MinValue;
+            foreach (var q in poly)
+            {
+                px0 = Math.Min(px0, q.X);
+                py0 = Math.Min(py0, q.Y);
+                px1 = Math.Max(px1, q.X);
+                py1 = Math.Max(py1, q.Y);
+            }
+            var (x0, y0, x1, y1) = Footprint(multiId);
+            return x + x0 >= px0 - FootprintSlack && x + x1 <= px1 + FootprintSlack &&
+                y + y0 >= py0 - FootprintSlack && y + y1 <= py1 + FootprintSlack;
+        }
+
+        private static HousePlacementResult CheckSiteResult(Map map, Mobile checker, int multiId, Point3D c)
+        {
+            var back = checker.Location;
+            var backMap = checker.Map;
+            checker.MoveToWorld(c, map);
+            var result = HousePlacement.Check(checker, multiId, c, out _);
+            if (backMap != null && backMap != Map.Internal)
+            {
+                checker.MoveToWorld(back, backMap);
+            }
+            return result;
         }
 
         private static bool CheckSite(Map map, Mobile checker, int multiId, Point3D c)
@@ -566,14 +656,16 @@ namespace Server.CustomBots
             return result == HousePlacementResult.Valid;
         }
 
-        // The owner has to get between its front door and the road. These
-        // small houses open to the south, so walk from just below the
+        // The owner has to get between its front door and the road. Every
+        // house type opens to the south, so walk from just below the
         // footprint to the road node with the engine's own pathfinder; open
         // country with no way through (cliffs, a river, a thicket) is
         // turned down.
-        private static bool CanWalkToRoad(Map map, Mobile checker, Point3D center, Point3D road)
+        private static bool CanWalkToRoad(Map map, Mobile checker, int multiId, Point3D center, Point3D road)
         {
-            int fy = center.Y + 6;
+            // Two tiles past the front of the house, wherever that is for
+            // this house type.
+            int fy = center.Y + Math.Max(6, MultiData.GetComponents(multiId).Max.Y + 2);
             if (!Walkable.TryFindSeedZ(map, center.X, fy, center.Z, out var fz))
             {
                 return false;

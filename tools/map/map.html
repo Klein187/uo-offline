@@ -110,7 +110,7 @@
    <option>VendorAlchemist</option><option>VendorProvisioner</option><option>Forge</option>
    <option>Dock</option><option>Library</option><option>Graveyard</option>
    <option>Moongate</option><option>CityCenter</option><option>Dungeon</option>
-   <option>MiningSpot</option><option>LumberSpot</option><option>DungeonRoom</option></select>
+   <option>MiningSpot</option><option>LumberSpot</option><option>AdventureArea</option><option>Landmark</option><option>DungeonRoom</option></select>
  </div>
  <label style="color:#ff8080"><input type="checkbox" id="editPK"> EDIT PK areas</label>
  <div id="pkCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#e8a0a0">
@@ -118,8 +118,8 @@
  </div>
  <label style="color:#f0c060"><input type="checkbox" id="editHS"> EDIT house spots</label>
  <div id="hsCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#f0c060">
-  click = add corner &middot; Enter = save (asks name + how many vendor houses)<br>
-  click a spot = select &middot; Delete = remove &middot; Esc = cancel
+  click = add corner &middot; Enter = save (asks name, vendor houses, plain houses)<br>
+  click a spot = select &middot; E = change its numbers &middot; Delete = remove &middot; Esc = cancel
  </div>
  <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
  <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
@@ -212,9 +212,11 @@ const TYPE_COLORS={Bank:"#e6b400",Tavern:"#c0392b",Inn:"#8e44ad",Healer:"#16a085
  VendorAlchemist:"#9b59b6",VendorProvisioner:"#95a5a6",Forge:"#e74c3c",Dock:"#3498db",
  Library:"#f1c40f",Graveyard:"#7f8c8d",Moongate:"#00e5ff",CityCenter:"#fff",
  Crossroads:"#aaa",Bridge:"#aaa",Dungeon:"#600",
- MiningSpot:"#b8a58c",LumberSpot:"#3e8e41",
+ MiningSpot:"#b8a58c",LumberSpot:"#ff2bd6",AdventureArea:"#c6ff00",Landmark:"#00e5c0",
  DungeonEntrance:"#ffa500",DungeonRoom:"#c8924a",
  DungeonDescend:"#ff4040",DungeonAscend:"#40c0ff"};
+// Areas are blue, except the kinds that need to stand out from it.
+const AREA_COLORS={LumberSpot:"#ff2bd6",AdventureArea:"#c6ff00",Landmark:"#00e5c0"};
 const TAG_COLORS={road:"#3cff5a",plaza:"#f0f0f0",interior:"#ffa040",dock:"#4aa8ff","no-bots":"#ff4040",dungeon:"#e06060"};
 const TAG_COST={road:0.7,plaza:1.0,interior:1.6,dock:1.0,"no-bots":1000,dungeon:1.0};
 // A dungeon walk zone carries which dungeon and floor it is, so a bot that
@@ -317,7 +319,7 @@ function draw(){
    j?ctx.lineTo(x,y):ctx.moveTo(x,y);}
   ctx.closePath();
   const kind=z.Kind||"Portal",isArea=kind==="Area",isWalk=kind==="Walk";
-  const col=isWalk?(TAG_COLORS[z.Tag]||"#f0f0f0"):isArea?"#50aaff":"#ff8c28";
+  const col=isWalk?(TAG_COLORS[z.Tag]||"#f0f0f0"):isArea?(AREA_COLORS[z.Type]||"#50aaff"):"#ff8c28";
   ctx.fillStyle=col+(i===selZone?"80":(isWalk?"30":"40"));
   ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=i===selZone?2.5:1.5;
   if(isWalk&&z._lonely){ctx.setLineDash([5,4]);ctx.strokeStyle="#ff4040";}
@@ -434,7 +436,7 @@ function draw(){
   ctx.strokeStyle="#f0c060";ctx.lineWidth=s===hsSel?2.5:1.5;ctx.stroke();
   if(scale>=2){const c=hsCenter(s);const[x,y]=T(c[0],c[1]);
    ctx.fillStyle="#ffe0a0";ctx.font="11px sans-serif";ctx.textAlign="center";
-   ctx.fillText("\u2302 "+s.name+" ("+(s.count||2)+")",x,y);ctx.textAlign="left";}}
+   ctx.fillText("\u2302 "+s.name+" ("+hsCount(s)+" vendor, "+(s.homes||0)+" plain)",x,y);ctx.textAlign="left";}}
  // in-progress house-spot sketch
  if(document.getElementById("editHS").checked&&drawPts.length){ctx.beginPath();
   for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
@@ -1124,6 +1126,9 @@ addEventListener("keydown",e=>{
  if(document.getElementById("editHS").checked){
   if(e.key==="Enter"&&drawPts.length>=3){saveHS();}
   else if(e.key==="Escape"){drawPts=[];hsSel=null;draw();}
+  else if((e.key==="e"||e.key==="E")&&hsSel&&drawPts.length===0){
+   const n=askHSNumbers(hsCount(hsSel),hsSel.homes||0);
+   if(n)postHS(hsSel.name,n,hsSel.poly);}
   else if((e.key==="Delete"||e.key==="Backspace")&&hsSel){
    if(confirm(`Delete house spot '${hsSel.name}'? (houses already placed stay)`)){
     fetch("/hs_del",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -1236,8 +1241,8 @@ function hsClick(px,py){
  if(drawPts.length===0){
   for(const s of HSPOTS){if(s.poly&&s.poly.length>=3&&inPoly(s.poly,tx,ty)){
    hsSel=s;document.getElementById("info").textContent=
-    `[house spot] ${s.name} · ${s.count||2} vendor house(s) · ${s.poly.length} corners
-Delete = remove`;
+    `[house spot] ${s.name} · ${hsCount(s)} vendor house(s) · ${s.homes||0} plain house(s) · ${s.poly.length} corners
+E = change the numbers · Delete = remove`;
    draw();return;}}
  }
  hsSel=null;drawPts.push([tx,ty]);
@@ -1245,18 +1250,32 @@ Delete = remove`;
   `House spot: ${drawPts.length} corner(s)
 Enter = save (name + count), Esc = cancel`;
  draw();}
+// Old spots saved before plain houses existed have no "homes" and may
+// have no "count" (the server read that as 2).
+function hsCount(s){return s.count===undefined?2:s.count;}
+function askHSNumbers(shops,homes){
+ const a=prompt("How many vendor houses here? (0-10)",String(shops));
+ if(a===null)return null;
+ const b=prompt("How many plain houses here, no vendor? (0-10)",String(homes));
+ if(b===null)return null;
+ const c=Math.max(0,Math.min(10,parseInt(a,10)||0)), h=Math.max(0,Math.min(10,parseInt(b,10)||0));
+ if(c+h===0){alert("A spot needs at least one house.");return null;}
+ return {count:c,homes:h};}
+function postHS(name,n,poly){
+ fetch("/hs_save",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({name:name,count:n.count,homes:n.homes,poly:poly})})
+ .then(r=>r.json()).then(r=>{
+  document.getElementById("info").textContent=r.ok
+   ?`saved house spot '${r.name}': ${n.count} vendor, ${n.homes} plain (${r.count} spots)
+Use the \u2302 button to place the houses in game.`
+   :"save failed: "+r.error;
+  drawPts=[];hsSel=null;loadData();});}
 function saveHS(){
  const name=prompt("House spot name:","Spot "+(HSPOTS.length+1));
  if(!name){return;}
- const cnt=parseInt(prompt("How many vendor houses here?","2")||"2",10)||2;
- fetch("/hs_save",{method:"POST",headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({name:name,count:cnt,poly:drawPts})})
- .then(r=>r.json()).then(r=>{
-  document.getElementById("info").textContent=r.ok
-   ?`saved house spot '${r.name}' — ${r.count} total
-Use the \u2302 button to place the vendor houses in game.`
-   :"save failed: "+r.error;
-  drawPts=[];loadData();});}
+ const n=askHSNumbers(2,2);
+ if(!n){return;}
+ postHS(name,n,drawPts);}
 document.getElementById("editHS").onchange=function(){
  drawPts=[];hsSel=null;
  if(this.checked){

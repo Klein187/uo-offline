@@ -93,6 +93,9 @@ namespace Server.CustomBots
         // road because its leader got stuck on one waypoint and dropped
         // the trip; the four behind it went home.
         public int ReAims;
+        // Hunt bound for a dungeon the leader cannot walk to: it recalls,
+        // and the members are pulled to its side like any straggler.
+        public bool ByMagic;
 
         // A guild crew waits for guildmates who are recalling in before
         // it marches. Mustering does nothing until this passes.
@@ -126,7 +129,7 @@ namespace Server.CustomBots
         // Caps scale with the population. At sixteen hundred bots a flat
         // three hunts shard-wide meant a party was something you read
         // about; an eight-minute soak formed two, both of two people.
-        public static int MaxParties  => Math.Max(3, BotPopulation.TargetCount / 120);
+        public static int MaxParties  => Math.Max(3, BotPopulation.TargetCount / 80);
         public static int MaxConvoys  => Math.Max(3, BotPopulation.TargetCount / 200);
         public static int MaxWarbands => Math.Max(2, BotPopulation.TargetCount / 400);
         // Formation attempts happen this often (each attempt may fail —
@@ -251,6 +254,12 @@ namespace Server.CustomBots
         }
 
         public static bool IsInParty(PlayerBot bot) => PartyOf(bot) != null;
+
+        // The leader of a hunt that recalls to its dungeon, on its way
+        // there (dest = the trip it is on; null skips that check).
+        public static bool RecallsForParty(PlayerBot bot, string dest = null) =>
+            PartyOf(bot) is { Kind: BotPartyKind.Hunt, ByMagic: true } p && p.Leader == bot &&
+            (dest == null || string.Equals(p.Target?.Name, dest, StringComparison.OrdinalIgnoreCase));
 
         // -------------------------------------------------------------------
         // Tick — advance every party, then maybe try to form a new one.
@@ -693,6 +702,11 @@ namespace Server.CustomBots
             !DungeonRegistry.IsInDungeon(bot) &&
             !IsInParty(bot);
 
+        // Hunts only take bots that are stocked up. A leader short on
+        // bandages or scrolls walked in, turned round at the door to go
+        // shopping, and the party broke up on the steps.
+        private static bool IsStocked(PlayerBot bot) => BotSupplies.FirstFightNeed(bot) == SupplyNeed.None;
+
         // Try to form one party. anchor = null picks a random bank-sitting
         // leader anywhere; a non-null anchor (the [BotParties form command)
         // prefers leaders near that spot.
@@ -703,7 +717,7 @@ namespace Server.CustomBots
             foreach (var m in World.Mobiles.Values)
             {
                 if (m is PlayerBot bot &&
-                    IsEligible(bot) &&
+                    IsEligible(bot) && IsStocked(bot) &&
                     bot.Behavior is BankSitterBehavior &&
                     IsFighter(bot.Class) &&
                     bot.SkillTier >= BotSkillTier.Apprentice)
@@ -741,8 +755,9 @@ namespace Server.CustomBots
         private static BotParty TryFormAround(PlayerBot leader)
         {
             // 2. Target dungeon: an entrance on the leader's own landmass,
-            //    close enough to march to.
-            var target = PickDungeonFor(leader);
+            //    close enough to march to, or one of its town's own
+            //    dungeons by Recall.
+            var target = PickDungeonFor(leader, out bool byMagic);
             if (target == null)
             {
                 return null;
@@ -753,10 +768,10 @@ namespace Server.CustomBots
             foreach (var m in leader.Map.GetMobilesInRange(leader.Location, RecruitRange))
             {
                 if (m is PlayerBot bot && bot != leader &&
-                    IsEligible(bot) &&
+                    IsEligible(bot) && IsStocked(bot) &&
                     IsRecruitable(bot.Class) &&
                     Math.Abs((int)bot.SkillTier - (int)leader.SkillTier) <= 2 &&
-                    bot.Behavior is BankSitterBehavior or IdleBehavior or WanderBehavior)
+                    CanAnswerLfg(bot))
                 {
                     recruits.Add(bot);
                 }
@@ -773,10 +788,10 @@ namespace Server.CustomBots
                     if (m is PlayerBot bot && bot != leader &&
                         bot.BotGuildIndex == leader.BotGuildIndex &&
                         !recruits.Contains(bot) &&
-                        IsEligible(bot) &&
+                        IsEligible(bot) && IsStocked(bot) &&
                         IsRecruitable(bot.Class) &&
                         Math.Abs((int)bot.SkillTier - (int)leader.SkillTier) <= 2 &&
-                        bot.Behavior is BankSitterBehavior or IdleBehavior or WanderBehavior)
+                        CanAnswerLfg(bot))
                     {
                         recruits.Add(bot);
                     }
@@ -804,6 +819,7 @@ namespace Server.CustomBots
                 Target       = target,
                 EntranceTile = target.Location,
                 FormedAt     = Core.Now,
+                ByMagic      = byMagic,
             };
             party.SetState(BotPartyState.Mustering);
 
@@ -829,7 +845,7 @@ namespace Server.CustomBots
             _parties.Add(party);
             Console.WriteLine(
                 $"[party] {leader.Name} formed a party of {take + 1} " +
-                $"for {target.Dungeon} ({target.Name})");
+                $"for {target.Dungeon} ({target.Name}){(byMagic ? " by Recall" : "")}");
             return party;
         }
 
@@ -840,9 +856,9 @@ namespace Server.CustomBots
         // muster until the last one lands, then marches like any hunt.
         // -------------------------------------------------------------------
         public static bool CanLeadHunt(PlayerBot bot) =>
-            IsEligible(bot) && IsFighter(bot.Class) &&
+            IsEligible(bot) && IsStocked(bot) && IsFighter(bot.Class) &&
             bot.SkillTier >= BotSkillTier.Apprentice &&
-            PickDungeonFor(bot) != null;
+            PickDungeonFor(bot, out _) != null;
 
         public static BotParty FormGuildCrew(PlayerBot leader, TimeSpan hold)
         {
@@ -850,7 +866,7 @@ namespace Server.CustomBots
             {
                 return null;
             }
-            var target = PickDungeonFor(leader);
+            var target = PickDungeonFor(leader, out bool byMagic);
             if (target == null)
             {
                 return null;
@@ -863,6 +879,7 @@ namespace Server.CustomBots
                 EntranceTile = target.Location,
                 FormedAt     = Core.Now,
                 HoldUntil    = Core.Now + hold,
+                ByMagic      = byMagic,
             };
             party.SetState(BotPartyState.Mustering);
             _parties.Add(party);
@@ -898,9 +915,110 @@ namespace Server.CustomBots
             }
         }
 
+        // Who hears an LFG at the bank: anyone hanging around, shopping
+        // nearby or passing through, not only the bank crowd. A bot busy
+        // with its house or carrying a gatherer's haul has its own errand.
+        private static bool CanAnswerLfg(PlayerBot bot) =>
+            bot.Behavior is BankSitterBehavior or IdleBehavior or WanderBehavior
+                or ShopperBehavior or VisitorBehavior ||
+            bot.Behavior is TravelerBehavior { AvoidTowns: false } &&
+            !BotHomes.IsBusy(bot) && !bot.HaulPending;
+
         // Nearest few dungeon entrances on the leader's landmass; random
-        // among them so Despise doesn't get every single party.
-        private static BotDestination PickDungeonFor(PlayerBot leader)
+        // among them so Despise doesn't get every single party. A town
+        // with none in walking reach (Trinsic, the islands) goes to one of
+        // its own dungeons by Recall, if the leader can cast or carries
+        // scrolls.
+        private static BotDestination PickDungeonFor(PlayerBot leader, out bool byMagic)
+        {
+            byMagic = false;
+
+            // Now and then a party heads for a dungeon that is not this
+            // town's: any of the others, on foot if it shares the
+            // landmass and not too far, by Recall if the leader can,
+            // otherwise the long walk, and across water not today.
+            if (Utility.RandomDouble() < BotDungeonRuns.AwayChance)
+            {
+                var awayTown = BotHangouts.TownNear(leader.Location);
+                var away = new List<BotDestination>();
+                foreach (var d in DestinationCatalog.All)
+                {
+                    if (d.Type == DestinationType.DungeonEntrance && !string.IsNullOrEmpty(d.Dungeon) &&
+                        !BotHangouts.IsLocalDungeon(awayTown, d))
+                    {
+                        away.Add(d);
+                    }
+                }
+                if (away.Count > 0)
+                {
+                    var pick = away[Utility.Random(away.Count)];
+                    int dist = Math.Max(Math.Abs(pick.Location.X - leader.X), Math.Abs(pick.Location.Y - leader.Y));
+                    bool walkable = OnLeadersLandmass(leader, pick);
+                    if (walkable && dist <= AwayWalkDistance)
+                    {
+                        return pick;
+                    }
+                    if (MagicTravel.CanTravel(leader))
+                    {
+                        byMagic = true;
+                        return pick;
+                    }
+                    if (walkable)
+                    {
+                        return pick;
+                    }
+                }
+            }
+
+            var walk = PickWalkableDungeon(leader);
+            if (walk != null)
+            {
+                return walk;
+            }
+            if (!MagicTravel.CanTravel(leader))
+            {
+                return null;
+            }
+            // The town it is standing in, which for a bank crowd is not
+            // always the one it calls home.
+            var town = BotHangouts.TownNear(leader.Location);
+            var own = new List<BotDestination>();
+            foreach (var d in DestinationCatalog.All)
+            {
+                if (BotHangouts.IsLocalDungeon(town, d))
+                {
+                    own.Add(d);
+                }
+            }
+            if (own.Count == 0)
+            {
+                return null;
+            }
+            byMagic = true;
+            return own[Utility.Random(own.Count)];
+        }
+
+        // Past this, an away party recalls if the leader can, rather
+        // than spend its march walking.
+        private const int AwayWalkDistance = 900;
+
+        private static bool OnLeadersLandmass(PlayerBot leader, BotDestination d)
+        {
+            var graph = WaypointRegistry.Graph;
+            var leaderNode = graph?.FindNearestNode(leader.Location);
+            if (leaderNode == null)
+            {
+                return false;
+            }
+            var wp = d.NearestWaypoint;
+            if (string.IsNullOrEmpty(wp) || graph.Get(wp) == null)
+            {
+                wp = graph.FindNearestNode(d.Location)?.Name;
+            }
+            return wp != null && graph.ComponentOf(wp) == graph.ComponentOf(leaderNode.Name);
+        }
+
+        private static BotDestination PickWalkableDungeon(PlayerBot leader)
         {
             var graph = WaypointRegistry.Graph;
             var leaderNode = graph.FindNearestNode(leader.Location);

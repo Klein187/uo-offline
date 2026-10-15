@@ -108,6 +108,17 @@ namespace Server.CustomBots
         // What (if anything) does this bot need? Priority: the thing that
         // stops a fight first.
         // -------------------------------------------------------------------
+        // What a bot needs to keep fighting. Recall scrolls are for getting
+        // around, not for fighting: a crawler short of them walks out the
+        // way it came in, and a hunt doesn't need them either. Getting to
+        // the dungeon by Recall left most crawlers one scroll under the
+        // line, and the run ended the moment they arrived.
+        public static SupplyNeed FirstFightNeed(PlayerBot bot)
+        {
+            var need = FirstNeed(bot);
+            return need == SupplyNeed.Scrolls ? SupplyNeed.None : need;
+        }
+
         public static SupplyNeed FirstNeed(PlayerBot bot)
         {
             var pack = bot?.Backpack;

@@ -303,15 +303,16 @@ namespace Server.CustomBots
                 {
                     // Inside is one step back from the door. Outside is the
                     // first tile past the house going the other way: the
-                    // front steps are part of the house, so it can be up to
-                    // three tiles out.
+                    // front steps are part of the house, and a patio house's
+                    // whole front terrace too, so it can be several tiles
+                    // out.
                     int ix = door.X - dx, iy = door.Y - dy;
                     if (!Walkable.TryFindSeedZ(map, ix, iy, door.Z, out var iz) ||
                         !house.IsInside(new Point3D(ix, iy, iz), 16))
                     {
                         continue;
                     }
-                    for (int k = 1; k <= 3; k++)
+                    for (int k = 1; k <= 8; k++)
                     {
                         int ox = door.X + dx * k, oy = door.Y + dy * k;
                         if (!Walkable.TryFindSeedZ(map, ox, oy, door.Z, out var oz))

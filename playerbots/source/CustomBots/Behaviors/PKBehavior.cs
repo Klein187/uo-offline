@@ -525,7 +525,14 @@ namespace Server.CustomBots
 
             BeginAmbushAt(bot, pick);
             int crew = 1;
+            // Copied first: sending a mate off changes what is in range
+            // while the loop is still walking it.
+            var near = new List<Mobile>();
             foreach (var m in bot.GetMobilesInRange(30))
+            {
+                near.Add(m);
+            }
+            foreach (var m in near)
             {
                 if (m is PlayerBot mate && mate != bot &&
                     mate.Behavior is PKBehavior pk &&

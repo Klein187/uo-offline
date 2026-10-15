@@ -77,7 +77,12 @@ namespace Server.CustomBots
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"PlayerBot tick error on {bot.Name}: {ex.Message}");
+                    // The top of the stack says which code it was; the
+                    // message alone ("collection was modified") does not.
+                    var where = ex.StackTrace?.Split('\n', 3) ?? new[] { "?" };
+                    var top = string.Join(" <- ", where[..Math.Min(2, where.Length)]).Replace("\r", "").Trim();
+                    Console.WriteLine($"PlayerBot tick error on {bot.Name} ({bot.Behavior?.SerializableName}): " +
+                        $"{ex.Message} at {top}");
                 }
             }
 

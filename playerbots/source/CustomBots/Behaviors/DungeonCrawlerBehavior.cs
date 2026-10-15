@@ -596,7 +596,7 @@ namespace Server.CustomBots
             if (!ExitMode && Core.Now >= _nextSupplyThink)
             {
                 _nextSupplyThink = Core.Now + TimeSpan.FromMinutes(2);
-                if (BotSupplies.FirstNeed(bot) != SupplyNeed.None)
+                if (BotSupplies.FirstFightNeed(bot) != SupplyNeed.None)
                 {
                     ExitMode = true;
                     _exitModeSince = Core.Now;
@@ -1030,6 +1030,41 @@ namespace Server.CustomBots
             PadCheck(bot);
         }
 
+        // What is actually at the pad tile: the teleporter (its Z and
+        // whether it is on) and anyone standing on it.
+        private string PadItemsNote(PlayerBot bot)
+        {
+            var map = bot.Map;
+            if (map == null)
+            {
+                return "no map";
+            }
+            var parts = new List<string>();
+            foreach (var t in map.GetItemsInRange<Teleporter>(_padTile, 0))
+            {
+                parts.Add($"teleporter z {t.Z}{(t.Active ? "" : " OFF")}");
+            }
+            foreach (var m in map.GetMobilesInRange(_padTile, 0))
+            {
+                if (m != bot)
+                {
+                    parts.Add($"{m.Name} on it");
+                }
+            }
+            return parts.Count == 0 ? "no teleporter on the tile" : string.Join(", ", parts);
+        }
+
+        // A step onto a teleporter is only taken on purpose: the pad this
+        // crawler is walking onto right now. Anything else (a stair tile on
+        // the way across a room, the exit pad beside a fight) is refused,
+        // so a crawler doesn't fall down a level or out of the dungeon by
+        // accident.
+        // A stair is often a strip of teleporter tiles, and the way to the
+        // chosen one can cross its neighbours, so any tile of the same
+        // stair (within two of it) is fine.
+        public bool MayStepOnto(Point3D tile) =>
+            _transitionPending && Dist(tile, _padTile) <= 2;
+
         // Jump/timeout check, run every pad-timer beat and (as a backstop)
         // every decision tick while a transition is pending. Returns true if
         // it handled the bot (landed or gave up).
@@ -1060,7 +1095,9 @@ namespace Server.CustomBots
 
                 Console.WriteLine(
                     $"[DungeonCrawler] {bot.Name}: teleporter at {_padTile} " +
-                    $"({DungeonName} L{Level}) never fired — resuming crawl");
+                    $"({DungeonName} L{Level}) never fired — resuming crawl " +
+                    $"[standing {bot.Location}, {Dist(bot.Location, _padTile)} tiles off, " +
+                    $"{(bot.Combatant != null ? "in a fight" : "no fight")}, {PadItemsNote(bot)}]");
                 StuckTelemetry.Record(bot, "pad_timeout",
                     $"{DungeonName} L{Level} pad {_padTile}");
                 AbortTransition();
@@ -1082,6 +1119,13 @@ namespace Server.CustomBots
         {
             StopPadTimer();
             _padFollower = null;
+
+            // The jump is handled here. Without this the next tick still
+            // compared against where the bot stood before the stair walk,
+            // called a deliberate transition a stray, and resolved the
+            // same landing twice.
+            _lastTickLoc = bot.Location;
+            _lastTickMap = bot.Map;
 
             // Same-floor first: levels sit side by side on the map, so the
             // 2D-nearest point can be through a wall on another floor.

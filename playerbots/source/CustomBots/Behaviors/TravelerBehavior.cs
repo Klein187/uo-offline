@@ -469,8 +469,11 @@ namespace Server.CustomBots
 
             // A party leader walks — Recalling out from under three bots
             // mid-march would strand the group. (Members aren't Travelers,
-            // but the check is cheap and future-proof.)
-            if (BotPartyManager.IsInParty(bot)) return;
+            // but the check is cheap and future-proof.) The exception is a
+            // hunt bound for a dungeon it cannot walk to: the leader
+            // recalls and the party lands with it.
+            bool partyRecall = BotPartyManager.RecallsForParty(bot, DestinationName);
+            if (BotPartyManager.IsInParty(bot) && !partyRecall) return;
 
             // The route may be temporarily aimed at a moongate (island
             // escape / long-haul shortcut). A caster doesn't need the gate
@@ -492,7 +495,7 @@ namespace Server.CustomBots
 
             if (!coord.HasValue) return;
 
-            if (MagicTravel.TryBeginTrip(bot, destName, coord.Value, destType))
+            if (MagicTravel.TryBeginTrip(bot, destName, coord.Value, destType, required: partyRecall))
             {
                 _magicTravelPending = true;
                 StopStepTimer();
@@ -549,6 +552,27 @@ namespace Server.CustomBots
             }
 
             var botNode = NearestReachableNode(bot);
+
+            // Is this trip a dungeon run? Decided first, with a set chance
+            // per class, then which dungeon. Left to the place roll, eleven
+            // entrances against two hundred shops came up one trip in
+            // twenty.
+            if (!AvoidTowns && BotDungeonRuns.WantsRun(bot))
+            {
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    var dng = BotDungeonRuns.PickEntrance(bot);
+                    if (dng == null)
+                    {
+                        break;
+                    }
+                    if (botNode == null || !IsStrandedIsland(dng, botNode.Name) ||
+                        MagicTravel.CanTravel(bot))
+                    {
+                        return MaybeStableFirst(bot, dng.Name);
+                    }
+                }
+            }
 
             // Reroll picks that land on a gateless island (e.g. Buccaneer's
             // Den): no moongate arrives in that waypoint component, so a bot
@@ -610,6 +634,7 @@ namespace Server.CustomBots
                 case DestinationType.TreasureSite:
                 case DestinationType.Shrine:
                 case DestinationType.Graveyard:
+                case DestinationType.AdventureArea:
                 case DestinationType.Crossroads:
                 case DestinationType.Bridge:
                 case DestinationType.Dungeon:
@@ -758,7 +783,7 @@ namespace Server.CustomBots
                 ? dest.Type is DestinationType.GatherSpot
                     or DestinationType.MiningSpot or DestinationType.LumberSpot
                 : dest.Type is DestinationType.Graveyard
-                    or DestinationType.DungeonEntrance;
+                    or DestinationType.DungeonEntrance or DestinationType.AdventureArea;
             if (!wants)
             {
                 return destName;
@@ -1550,11 +1575,14 @@ namespace Server.CustomBots
                 bool destGateless = destObj != null &&
                     IsStrandedIsland(destObj, nearest.Name);
 
+                // A hunt leader bound for a dungeon over the water is the
+                // exception: it recalls, and its party lands beside it.
+                bool partyRecall = BotPartyManager.RecallsForParty(bot, DestinationName);
                 if (_planDepth == 0 && _finalCoord.HasValue &&
-                    !BotPartyManager.IsInParty(bot) &&
+                    (!BotPartyManager.IsInParty(bot) || partyRecall) &&
                     MagicTravel.TryBeginTrip(
                         bot, DestinationName, _finalCoord.Value, _destType,
-                        required: destGateless))
+                        required: destGateless || partyRecall))
                 {
                     _magicTravelPending = true;
                     StopStepTimer();
@@ -1624,7 +1652,8 @@ namespace Server.CustomBots
                     // Isle, say). The earlier magic attempt may have
                     // declined by CHANCE; with no gate it's mandatory now —
                     // a bot holding a recall scroll doesn't wade home.
-                    if (_finalCoord.HasValue && !BotPartyManager.IsInParty(bot) &&
+                    if (_finalCoord.HasValue &&
+                        (!BotPartyManager.IsInParty(bot) || BotPartyManager.RecallsForParty(bot, DestinationName)) &&
                         MagicTravel.TryBeginTrip(
                             bot, DestinationName, _finalCoord.Value, _destType,
                             required: true))
@@ -1633,6 +1662,29 @@ namespace Server.CustomBots
                         StopStepTimer();
                         _plannedPath = new List<string>();
                         Log(bot, $"Stranded with no gate — recalling to '{DestinationName}'");
+                        return;
+                    }
+
+                    // A hunt leader whose party is waiting on its Recall
+                    // does not wander off to a shop when the cast can't
+                    // start this moment (just fought, criminal, hands
+                    // full): it holds still and tries again shortly.
+                    if (BotPartyManager.RecallsForParty(bot, DestinationName))
+                    {
+                        Log(bot, $"can't recall to '{DestinationName}' right now — the party waits and tries again");
+                        StopStepTimer();
+                        _plannedPath = new List<string>();
+                        _magicTravelPending = true;
+                        var self = this;
+                        var dest = DestinationName;
+                        Timer.DelayCall(TimeSpan.FromSeconds(20), () =>
+                        {
+                            if (!bot.Deleted && bot.Alive && bot.Behavior == self &&
+                                BotPartyManager.RecallsForParty(bot, dest))
+                            {
+                                bot.Behavior = new TravelerBehavior { DestinationName = dest };
+                            }
+                        });
                         return;
                     }
 
@@ -2337,6 +2389,7 @@ namespace Server.CustomBots
         private static bool IsLeaveImmediately(DestinationType type)
         {
             return type == DestinationType.Graveyard
+                || type == DestinationType.AdventureArea
                 || type == DestinationType.Home
                 || type == DestinationType.Architect
                 || type == DestinationType.HouseShop
@@ -2798,6 +2851,22 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     chance = 0.75;  // you go to a graveyard to fight
                     break;
 
+                case DestinationType.Landmark:
+                    // Come to see it: a stroll around, then on.
+                    targetBehavior  = "Visitor";
+                    chance          = 0.9;
+                    visitMinMinutes = 3;
+                    visitMaxMinutes = 8;
+                    break;
+
+                case DestinationType.AdventureArea:
+                    // A hunting ground: nobody comes here for the view.
+                    targetBehavior  = "Adventurer";
+                    chance          = 1.0;
+                    visitMinMinutes = 15;
+                    visitMaxMinutes = 30;
+                    break;
+
                 case DestinationType.VendorSmith:
                 case DestinationType.VendorMage:
                 case DestinationType.VendorTailor:
@@ -2868,6 +2937,10 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             if (visit is VisitorBehavior vb)
             {
                 vb.ConfigureFor(_destType, DestinationName);
+                if (_destType == DestinationType.Landmark && _finalCoord.HasValue)
+                {
+                    vb.Area = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
+                }
             }
             // The gatherer needs to know WHICH site it was sent to: the
             // painted polygon is the mine, and it only works inside it.
@@ -2880,6 +2953,12 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             if (visit is ShopperBehavior sb && _finalCoord.HasValue)
             {
                 sb.ShopArea = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
+            }
+            // A hunter at a drawn hunting ground patrols inside its shape.
+            if (visit is AdventurerBehavior ab && _destType == DestinationType.AdventureArea &&
+                _finalCoord.HasValue)
+            {
+                ab.HuntArea = ZoneRegistry.AreaForDestination(DestinationName, _finalCoord.Value);
             }
             visit.VisitExpiresAt = Core.Now + TimeSpan.FromMinutes(
                 Utility.RandomMinMax(visitMinMinutes, visitMaxMinutes));

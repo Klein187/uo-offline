@@ -1073,6 +1073,9 @@ namespace Server.CustomBots
                 case "seed":
                     names.Add($"{Seed(count)} seeded");
                     break;
+                case "housetypes":
+                    names.AddRange(BotVendorHouses.TestHouseTypes());
+                    break;
                 case "vendors":
                     names.Add($"{BotVendorHouses.EnsureAll()} vendor houses placed");
                     BotHouseShopping.RegisterShops();

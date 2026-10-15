@@ -621,6 +621,15 @@ namespace Server.CustomBots
         // -------------------------------------------------------------------
         public override bool Move(Direction d)
         {
+            // Inside a dungeon, a crawler (or a hunt member following one)
+            // steps onto a teleporter only when it means to. Stepping on a
+            // stair tile mid-patrol threw crawlers down a level, back up,
+            // or out to the surface hundreds of times an hour.
+            if (StepsOntoUnwantedPad(d))
+            {
+                return false;
+            }
+
             if (base.Move(d))
             {
                 return true;
@@ -630,6 +639,51 @@ namespace Server.CustomBots
             return DoorHelper.TryOpenAhead(this, d) && base.Move(d);
         }
 
+
+        private bool StepsOntoUnwantedPad(Direction d)
+        {
+            var crawler = Behavior as DungeonCrawlerBehavior;
+            if (crawler == null && !(Behavior is PartyMemberBehavior && DungeonRegistry.IsInDungeon(this)))
+            {
+                return false;
+            }
+            var map = Map;
+            if (map == null || map == Map.Internal || (Direction & Direction.Mask) != (d & Direction.Mask))
+            {
+                // A turn, not a step.
+                return false;
+            }
+            int x = X, y = Y;
+            Server.Movement.Movement.Offset(d, ref x, ref y);
+            var tile = new Point3D(x, y, Z);
+            if (crawler != null && crawler.MayStepOnto(tile))
+            {
+                return false;
+            }
+            foreach (var t in map.GetItemsInRange<Teleporter>(tile, 0))
+            {
+                if (!t.Active || Math.Abs(t.Z - Z) > 16)
+                {
+                    continue;
+                }
+                // A bot refused again and again has a route that really
+                // does cross the stair (a strip across a corridor). Let it
+                // through, as before, rather than stand there until the
+                // stuck rescue.
+                if (Core.Now - _padRefusedSince > PadRefusalWindow)
+                {
+                    _padRefusedSince = Core.Now;
+                    _padRefusals = 0;
+                }
+                return ++_padRefusals <= PadRefusalLimit;
+            }
+            return false;
+        }
+
+        private DateTime _padRefusedSince;
+        private int _padRefusals;
+        private const int PadRefusalLimit = 10;
+        private static readonly TimeSpan PadRefusalWindow = TimeSpan.FromSeconds(20);
 
         // -------------------------------------------------------------------
         // Order vs Chaos is LEGAL combat (IDEAS 2.1 phase 3): harming an

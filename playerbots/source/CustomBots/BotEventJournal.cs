@@ -293,6 +293,9 @@ namespace Server.CustomBots
                     return "the wilds";
                 case DestinationType.Graveyard:
                     return !string.IsNullOrEmpty(d.City) ? $"the {d.City} graveyard" : "the graveyard";
+                case DestinationType.AdventureArea:
+                case DestinationType.Landmark:
+                    return d.Name;
                 case DestinationType.Crossroads:
                 case DestinationType.Bridge:
                     if (!string.IsNullOrEmpty(d.City))

@@ -17,9 +17,10 @@
 //     (another island, across water)                   x OverWater
 //   - and a bot that has wandered far from home is pulled back toward it
 //
-// Dungeons and the countryside have no town; they are scaled by distance
-// and landmass the same way, so a Britain bot hunts Despise and Covetous
-// and only now and then sails off to Hythloth.
+// Each town also has its own dungeons: the two nearest to it. They count
+// as home, wherever they are, so a Trinsic bot hunts Destard and Fire and
+// a Moonglow bot recalls to Deceit. Other dungeons and the countryside are
+// scaled by distance and landmass like any other place.
 // =========================================================================
 
 using System;
@@ -48,7 +49,11 @@ namespace Server.CustomBots
         // ---- City centres and landmasses (built once per catalog) ----
 
         private static Dictionary<string, Point3D> _centres;
+        private static Dictionary<string, HashSet<string>> _localDungeons;
         private static Dictionary<string, int> _destComp;
+
+        // How many dungeons each town calls its own.
+        private const int LocalDungeonCount = 2;
         private static WaypointGraph _builtFor;
 
         private static void EnsureBuilt()
@@ -78,6 +83,42 @@ namespace Server.CustomBots
             {
                 _centres[city] = new Point3D((int)(s.x / s.n), (int)(s.y / s.n), 0);
             }
+
+            // A town's own dungeons: the nearest ones by straight line,
+            // across water or not. Every entrance of a dungeon counts
+            // (Covetous has two).
+            _localDungeons = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (city, c) in _centres)
+            {
+                var byDist = new List<(int dist, string dungeon)>();
+                foreach (var d in DestinationCatalog.All)
+                {
+                    if (d.Type == DestinationType.DungeonEntrance && !string.IsNullOrEmpty(d.Dungeon))
+                    {
+                        byDist.Add((Math.Max(Math.Abs(d.Location.X - c.X), Math.Abs(d.Location.Y - c.Y)), d.Dungeon));
+                    }
+                }
+                byDist.Sort((a, b) => a.dist.CompareTo(b.dist));
+                var own = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var (_, dungeon) in byDist)
+                {
+                    if (own.Count >= LocalDungeonCount)
+                    {
+                        break;
+                    }
+                    own.Add(dungeon);
+                }
+                _localDungeons[city] = own;
+            }
+        }
+
+        // One of this town's own dungeons.
+        public static bool IsLocalDungeon(string town, BotDestination d)
+        {
+            EnsureBuilt();
+            return d.Type == DestinationType.DungeonEntrance && !string.IsNullOrEmpty(town) &&
+                !string.IsNullOrEmpty(d.Dungeon) &&
+                _localDungeons.TryGetValue(town, out var own) && own.Contains(d.Dungeon);
         }
 
         public static Point3D? CentreOf(string city)
@@ -161,6 +202,14 @@ namespace Server.CustomBots
                 return 1.0;
             }
             double f;
+
+            // The town's own dungeons are home too, however far, and a
+            // Recall across water to one is not an outing.
+            if (IsLocalDungeon(ctx.HomeTown, d))
+            {
+                return HomeTown;
+            }
+
             bool homeTown = !string.IsNullOrEmpty(ctx.HomeTown) &&
                 string.Equals(d.City, ctx.HomeTown, StringComparison.OrdinalIgnoreCase);
             if (homeTown)

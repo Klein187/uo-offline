@@ -69,7 +69,9 @@ namespace Server.CustomBots
         // climb further than the floor window in one shape, so a mine, a
         // grove or a dock is measured over the whole column as before.
         public bool IsOpenGround =>
-            IsGatherSite || string.Equals(Type, "Dock", StringComparison.OrdinalIgnoreCase);
+            IsGatherSite || string.Equals(Type, "Dock", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Type, "AdventureArea", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Type, "Landmark", StringComparison.OrdinalIgnoreCase);
 
         // Set when the authored floor found nothing standable at all, so
         // the zone falls back to measuring the whole column, as before.

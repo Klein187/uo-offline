@@ -1,13 +1,14 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
--i created a bug that nuked how many playerbots spawned, fixed. whoops!
+-a lot more bots go to dungeons now, about a fifth of the shard
+-each town has its own nearby dungeons, sometimes bots and parties go further
+-parties form in every town, towns with no dungeon nearby recall in
+-crawlers no longer leave a dungeon right away for being one recall scroll short
+-crawlers stop falling down stairs they didn't mean to take
+-house spots hold plain houses too, in every size, each owned by a bot
+-new map editor areas: adventure areas (bots hunt there) and landmarks (bots look around)
+-lumber spots have a brighter color in the map editor
+-map editor clicks place house spot corners again
 
 Last update:
--bots you recruit to your party keep up with you now, in town and in dungeons
--they follow you through dungeon entrances and stop fighting to catch up if you run off
--bots on foot still fall behind if you ride a horse, they catch up when you stop
--mages that stood still in fights and never cast a spell cast again
--every dungeon floor is drawn for the new bot navigation
--bots walking into walls in some dungeon rooms fixed
--bots stuck on the landing in fire dungeon fixed
--covetous has a second entrance for bots that recall, so they reach the lower levels
+-i created a bug that nuked how many playerbots spawned, fixed. whoops!

@@ -4,16 +4,21 @@
 // In T2A the good stuff was not at the NPCs. It was on player vendors in
 // houses along the busy roads. This puts bot-owned ones there.
 //
-// Hot spots are drawn in the map editor (EDIT house spots): a polygon and
-// how many vendor houses it should hold. They live in
-// Data/CustomSpawns/house_spots.json. On boot, at the end of First Time
-// Setup, and on request, every spot is filled up to its count:
+// Hot spots are drawn in the map editor (EDIT house spots): a polygon,
+// how many vendor houses it should hold, and how many plain houses with
+// no vendor. They live in Data/CustomSpawns/house_spots.json. On boot, at
+// the end of First Time Setup, and on request, every spot is filled up to
+// its counts:
 //
-//   - a new regular (a trader, a crafter or an adventurer) places a real
-//     house inside the polygon, as BotHomes does for any home
-//   - a real PlayerVendor stands just inside the door, with a shop name
-//   - it opens with stock rolled from the hawker table for the owner's
-//     line of work
+//   - a new regular places a real house inside the polygon, as BotHomes
+//     does for any home. Any house an Architect sells, from a small house
+//     to a castle, picked at random from the ones that fit the spot
+//   - a vendor house's owner is a trader, a crafter or an adventurer, and
+//     a real PlayerVendor stands on the doorstep with a shop name
+//   - the shop opens with stock rolled from the hawker table for the
+//     owner's line of work
+//   - a plain house's owner is any class; it lives there and keeps its
+//     loot in the chest, like any bot home
 //
 // After that the shop runs on the bot economy. Each time the owner comes
 // home (HomeVisitBehavior) it collects the vendor's takings into its bank,
@@ -67,7 +72,16 @@ namespace Server.CustomBots
 
         // Houses in a hot spot sit closer together and nearer the road than
         // countryside homes, but never on the trail itself.
-        private const int SpotMinTrail = 8, SpotSpacing = 16;
+        // Spacing is by the house's own size: its longest side plus a few
+        // tiles between centers. The real placement rules (HousePlacement)
+        // still have the last word on yards and overlaps.
+        private const int SpotMinTrail = 6, SpotGap = 3;
+
+        private static int SpacingFor(int multiId)
+        {
+            var (x0, y0, x1, y1) = BotHousing.Footprint(multiId);
+            return Math.Max(x1 - x0, y1 - y0) + 1 + SpotGap;
+        }
 
         private static readonly BotClass[] OwnerClasses =
         {
@@ -81,7 +95,8 @@ namespace Server.CustomBots
         public sealed class Spot
         {
             public string Name;
-            public int Count;
+            public int Count;  // vendor houses
+            public int Homes;  // plain houses, no vendor
             public Point2D[] Poly;
         }
 
@@ -116,7 +131,8 @@ namespace Server.CustomBots
                     list.Add(new Spot
                     {
                         Name = el.TryGetProperty("name", out var n) ? n.GetString() : "spot",
-                        Count = el.TryGetProperty("count", out var c) ? Math.Clamp(c.GetInt32(), 1, 10) : 2,
+                        Count = el.TryGetProperty("count", out var c) ? Math.Clamp(c.GetInt32(), 0, 10) : 2,
+                        Homes = el.TryGetProperty("homes", out var hm) ? Math.Clamp(hm.GetInt32(), 0, 10) : 0,
                         Poly = pts.ToArray(),
                     });
                 }
@@ -134,18 +150,34 @@ namespace Server.CustomBots
             int placed = 0;
             foreach (var spot in LoadSpots())
             {
-                int have = 0;
+                int shops = 0, homes = 0;
                 foreach (var h in BaseHouse.AllHouses)
                 {
                     if (h != null && !h.Deleted && h.Map == Map.Felucca &&
                         h.Owner is PlayerBot && BotHousing.InPolygon(spot.Poly, h.X, h.Y))
                     {
-                        have++;
+                        if (VendorOf(h) != null)
+                        {
+                            shops++;
+                        }
+                        else
+                        {
+                            homes++;
+                        }
                     }
                 }
-                for (int i = have; i < spot.Count; i++)
+                Console.WriteLine($"[vendorhouses] '{spot.Name}' has {shops}/{spot.Count} vendor and " +
+                    $"{homes}/{spot.Homes} plain houses");
+                for (int i = shops; i < spot.Count; i++)
                 {
-                    if (PlaceOne(spot))
+                    if (PlaceOne(spot, withVendor: true))
+                    {
+                        placed++;
+                    }
+                }
+                for (int i = homes; i < spot.Homes; i++)
+                {
+                    if (PlaceOne(spot, withVendor: false))
                     {
                         placed++;
                     }
@@ -153,26 +185,66 @@ namespace Server.CustomBots
             }
             if (placed > 0)
             {
-                Console.WriteLine($"[vendorhouses] placed {placed} vendor house(s)");
+                Console.WriteLine($"[vendorhouses] placed {placed} house(s) in the drawn spots");
             }
             return placed;
         }
 
-        private static bool PlaceOne(Spot spot)
+        // House types whose whole outline fits the spot's bounding box,
+        // in the weighted order of BotHousing.SpotMultiIds, shuffled.
+        private static List<int> TypesThatFit(Spot spot)
+        {
+            int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
+            foreach (var q in spot.Poly)
+            {
+                x0 = Math.Min(x0, q.X);
+                y0 = Math.Min(y0, q.Y);
+                x1 = Math.Max(x1, q.X);
+                y1 = Math.Max(y1, q.Y);
+            }
+            var list = new List<int>();
+            foreach (var id in BotHousing.SpotMultiIds)
+            {
+                var (fx0, fy0, fx1, fy1) = BotHousing.Footprint(id);
+                if (fx1 - fx0 <= x1 - x0 && fy1 - fy0 <= y1 - y0)
+                {
+                    list.Add(id);
+                }
+            }
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = Utility.Random(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+            return list;
+        }
+
+        private static bool PlaceOne(Spot spot, bool withVendor)
         {
             var map = Map.Felucca;
             var probe = new Rat { Controlled = true, Blessed = true, Hidden = true };
             try
             {
-                for (int attempt = 0; attempt < 6; attempt++)
+                // Each try is a different type, so a spot too tight for a
+                // big house ends up with a smaller one.
+                var tried = new HashSet<int>();
+                BotHousing.LastRejections.Clear();
+                foreach (int multiId in TypesThatFit(spot))
                 {
-                    int multiId = BotHousing.HouseMultiIds[Utility.Random(BotHousing.HouseMultiIds.Length)];
-                    if (!BotHousing.TryFindSiteInPolygon(map, probe, multiId, spot.Poly, SpotMinTrail,
-                            SpotSpacing, out var center))
+                    if (tried.Count >= 6)
+                    {
+                        break;
+                    }
+                    if (!tried.Add(multiId))
                     {
                         continue;
                     }
-                    var owner = BotHomes.NewOwner(OwnerClasses);
+                    if (!BotHousing.TryFindSiteInPolygon(map, probe, multiId, spot.Poly, SpotMinTrail,
+                            SpacingFor(multiId), out var center))
+                    {
+                        continue;
+                    }
+                    var owner = withVendor ? BotHomes.NewOwner(OwnerClasses) : BotHomes.NewOwner();
                     var house = BotHomes.PlaceWithDeed(owner, multiId, center, map);
                     if (house == null)
                     {
@@ -180,6 +252,12 @@ namespace Server.CustomBots
                         continue;
                     }
                     BotHomes.SettleIn(house, owner, seeded: true);
+                    if (!withVendor)
+                    {
+                        Console.WriteLine($"[vendorhouses] {owner.Name} ({owner.Class}) moved into a " +
+                            $"{house.GetType().Name} at '{spot.Name}' {house.Location}");
+                        return true;
+                    }
                     var vendor = AddVendor(house, owner);
                     if (vendor != null)
                     {
@@ -198,7 +276,7 @@ namespace Server.CustomBots
                             }
                         }
                     }
-                    Console.WriteLine($"[vendorhouses] {owner.Name} opened a shop at '{spot.Name}' " +
+                    Console.WriteLine($"[vendorhouses] {owner.Name} opened a shop in a {house.GetType().Name} at '{spot.Name}' " +
                         $"{house.Location} with {vendor?.Backpack?.Items.Count ?? 0} lots, vendor at " +
                         $"{vendor?.Location} ({(vendor != null && house.IsInside(vendor) ? "on the steps" : "in the yard")})");
                     return true;
@@ -208,8 +286,81 @@ namespace Server.CustomBots
             {
                 probe.Delete();
             }
-            Console.WriteLine($"[vendorhouses] no room left for another house at '{spot.Name}'");
+            var why = new List<string>();
+            foreach (var (k, v) in BotHousing.LastRejections)
+            {
+                why.Add($"{k} {v}");
+            }
+            Console.WriteLine($"[vendorhouses] no room left for another house at '{spot.Name}' " +
+                $"(turned down: {string.Join(", ", why)})");
             return false;
+        }
+
+        // Test hook (homes_request "housetypes"): every house type bigger
+        // than the small ones is placed once in open country near Britain,
+        // checked the way a bot uses it (front door, floor to furnish, a
+        // doorstep for a vendor, the walk in from outside), then removed
+        // again with its owner. Nothing stays in the world.
+        public static List<string> TestHouseTypes()
+        {
+            var lines = new List<string>();
+            var map = Map.Felucca;
+            var probe = new Rat { Controlled = true, Blessed = true, Hidden = true };
+            var done = new HashSet<int>();
+            try
+            {
+                foreach (int id in BotHousing.SpotMultiIds)
+                {
+                    // One small house too, to compare against.
+                    if (id is > 0x64 and <= 0x6E || !done.Add(id))
+                    {
+                        continue;
+                    }
+                    if (!BotHousing.TryFindRuralSite(map, probe, id, new Point3D(1450, 1700, 0), 900,
+                            out var center, out _))
+                    {
+                        lines.Add($"0x{id:X}: no site found");
+                        continue;
+                    }
+                    var owner = BotHomes.NewOwner(OwnerClasses);
+                    var house = BotHomes.PlaceWithDeed(owner, id, center, map);
+                    if (house == null)
+                    {
+                        lines.Add($"0x{id:X}: the deed refused {center}");
+                        owner.Delete();
+                        continue;
+                    }
+                    bool door = HomeVisitBehavior.FindDoor(house, out var outside, out var inside, out _);
+                    int floor = HomeVisitBehavior.InteriorTiles(house).Count;
+                    bool step = DoorstepSpot(house, out var stepAt, out _);
+                    // The owner unlocks its own door; the path finder goes
+                    // through unlocked ones.
+                    foreach (var d in house.Doors)
+                    {
+                        if (d != null)
+                        {
+                            d.Locked = false;
+                        }
+                    }
+                    bool walkIn = false;
+                    if (door)
+                    {
+                        owner.MoveToWorld(outside, map);
+                        walkIn = new MovementPath(owner, inside).Success;
+                    }
+                    var line = $"{house.GetType().Name} 0x{id:X} at {house.Location}: door {door}, " +
+                        $"floor tiles {floor}, doorstep {(step ? stepAt.ToString() : "none")}, walk in {walkIn}";
+                    lines.Add(line);
+                    Console.WriteLine($"[vendorhouses] TEST {line}");
+                    house.Delete();
+                    owner.Delete();
+                }
+            }
+            finally
+            {
+                probe.Delete();
+            }
+            return lines;
         }
 
         private static PlayerVendor AddVendor(BaseHouse house, PlayerBot owner)
@@ -270,7 +421,7 @@ namespace Server.CustomBots
             BaseDoor door = null;
             foreach (var d in house.Doors)
             {
-                if (d != null && Math.Abs(d.X - outside.X) + Math.Abs(d.Y - outside.Y) <= 3)
+                if (d != null && Math.Abs(d.X - outside.X) + Math.Abs(d.Y - outside.Y) <= 8)
                 {
                     door = d;
                     break;

@@ -13,6 +13,12 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **More bots in dungeons.** Bots used to pick a dungeon about one time in thirty, so the towns were full and the dungeons were empty. Fighters now set out on a dungeon run about a third of the time, tamers, healers, thieves and bards less often. Each town has its two nearest dungeons as home dungeons, and now and then a bot or a party goes to one further away. About a fifth of the shard is in or on the way to a dungeon now.
+- **Parties from every town.** Hunting parties form in towns with no dungeon in walking distance too: the leader recalls the group in. Shoppers and sightseers answer the call as well, and a party only takes bots that have their bandages, arrows or reagents.
+- **Crawlers stay in.** Most crawlers that recalled to a dungeon left right away because they were one recall scroll short. Scrolls no longer end a run. Crawlers also stop stepping onto stairs they did not mean to take.
+- **More houses in house spots.** A house spot can hold plain houses as well as vendor houses, in every size an architect sells, from the small stone house to the tower and the keep. Each one is owned by a bot who lives in it.
+- **Adventure areas and landmarks.** Two new kinds of area in the map editor. Bots go to an adventure area to hunt the monsters in it, the way they do in a graveyard. At a landmark they walk around and look at it for a few minutes.
+- **The map editor works for house spots again.** Clicks did not place house spot or PK area corners.
 - **Party bots keep up.** Bots you recruit used to fall behind a running player within a minute and then stand still. They follow your footsteps now, through dungeon entrances too, and drop a fight to catch up when you move on. On foot they still trail a mounted player and catch up when you stop.
 - **Mages cast again.** A mage with a monster a few tiles away could turn on the spot for most of an hour without casting a spell. It steps back and casts now.
 - **Dungeon floors are drawn.** Every dungeon level has a drawn floor the crawlers walk, and twelve rooms stored at the wrong height can be reached now. Fire's first level can be left from the landing, and Covetous has a second entrance into its deep cave for bots that can recall.
@@ -278,7 +284,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 
 **Visible taming.** Tamers stalk wild animals and work them with the classic client spam ("I've always wanted an animal like you"). Sometimes the beast shies away, sometimes it submits. Tamed pets follow their master through town, get hawked at the bank, and either sell to a bystander or get released. No bot accumulates a permanent pet.
 
-**Bot homesteads.** Small era houses sit along the wilderness roads, placed with the real house placement rules, furnished, and each owned by a regular bot who uses it: lets itself in with its key, puts loot in its chest, stays a while, and often logs out inside. A world gets 30 at setup. Regulars who save up the price of a deed buy one from an architect and build their own. Houses in drawn house spots get a player vendor on the doorstep. The owner restocks it only from what it found, made or bought: dungeon loot, pieces crafted from real materials, and supplies bought in bulk at NPC shops on a stock run. The takings go to the owner's bank.
+**Bot homesteads.** Small era houses sit along the wilderness roads, placed with the real house placement rules, furnished, and each owned by a regular bot who uses it: lets itself in with its key, puts loot in its chest, stays a while, and often logs out inside. A world gets 30 at setup. Regulars who save up the price of a deed buy one from an architect and build their own. Drawn house spots fill with houses of every size, some with a player vendor on the doorstep and some plain homes. The owner restocks it only from what it found, made or bought: dungeon loot, pieces crafted from real materials, and supplies bought in bulk at NPC shops on a stock run. The takings go to the owner's bank.
 
 **Gear progression.** Dungeon runs pay. Survive three and the next bank visit is shopping day: a visible tier promotion with better skills and kit ("finally saved up for new gear"). Regulars get better over weeks.
 
@@ -352,7 +358,8 @@ It draws the full Felucca map with your waypoints, destinations, zones, and spaw
 - **Waypoints** — click to add (snaps to walkable road and auto-connects neighbors), drag to move, link or sever edges, delete.
 - **Destinations** — drag to move, enable or disable, paint areas over them so the shape becomes the destination, or create new ones.
 - **Arrival points** — drop them on reachable tiles, including interior floors, drag and delete them, and link each to route waypoints by clicking the gold marker and then a waypoint.
-- **House spots** — draw an area and say how many vendor houses it should hold. The ⌂ button (or the next restart) fills it with bot-owned houses that have player vendors inside.
+- **House spots** — draw an area and say how many vendor houses and how many plain houses it should hold. The ⌂ button (or the next restart) fills it with bot-owned houses of mixed sizes. Vendor houses get a player vendor on the doorstep. Select a spot and press E to change the numbers.
+- **Areas** — draw an area for bots to use. A lumber spot (pink) is where lumberjacks chop, an adventure area (green) is where fighters go to hunt, and a landmark (teal) is where bots stop to look around.
 - **Spawns** — place spawn points of every kind (PlayerBot fixed-role, PlayerBot lifecycle, Monster, NPC, Vendor) with a count, range, and respawn timer. Filter by kind, drag, edit, delete. `[GenerateCustomSpawners` turns the saved `spawns.json` into real in-game spawners.
 
 Two read-only overlays help you debug:

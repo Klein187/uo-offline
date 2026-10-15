@@ -78,6 +78,17 @@ namespace Server.CustomBots
         DungeonRoom,     // a roam/combat point on a level
         DungeonDescend,  // a down-teleporter to a deeper level
         DungeonAscend,   // an up-teleporter to a shallower level / the surface
+
+        // A hunting ground drawn in the map editor (an Area of this type).
+        // Bots come here to kill monsters, like a graveyard: on arrival
+        // they hunt inside the drawn shape for a while, then move on.
+        // Rolled by the dungeon-run roll as well as the normal place roll.
+        AdventureArea,
+
+        // A landmark drawn in the map editor (an Area of this type). Bots
+        // come to see it: they stroll around inside the shape, stop and
+        // look about, then move on.
+        Landmark,
     }
 
     public static class DestinationWeights
@@ -277,6 +288,28 @@ namespace Server.CustomBots
                 ["Healer"]   = 1.5, // following an adventurer party
             },
 
+            // Anyone might go and see a landmark.
+            [DestinationType.Landmark] = new()
+            {
+                ["Default"]  = 2.0,
+                ["Bard"]     = 3.0, // wandering minstrels
+                ["Ranger"]   = 3.0, // out on the roads anyway
+            },
+
+            // A hunting ground draws the same crowd as a dungeon.
+            [DestinationType.AdventureArea] = new()
+            {
+                ["Default"]  = 0.3,
+                ["Warrior"]  = 5.0,
+                ["Fencer"]   = 4.0,
+                ["Archer"]   = 4.0,
+                ["Ranger"]   = 3.5,
+                ["Mage"]     = 4.5,
+                ["Tamer"]    = 3.0,
+                ["Thief"]    = 1.0,
+                ["Healer"]   = 1.5,
+            },
+
             // A dungeon ENTRANCE draws the same crowd as a Dungeon — this is
             // the rollable surface teleporter that actually starts a crawl.
             [DestinationType.DungeonEntrance] = new()
@@ -384,7 +417,8 @@ namespace Server.CustomBots
             if (cls == BotClass.Crafter &&
                 (type == DestinationType.Dungeon ||
                  type == DestinationType.DungeonEntrance ||
-                 type == DestinationType.Graveyard))
+                 type == DestinationType.Graveyard ||
+                 type == DestinationType.AdventureArea))
             {
                 return 0.0;
             }

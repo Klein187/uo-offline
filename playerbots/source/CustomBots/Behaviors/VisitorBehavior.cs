@@ -13,6 +13,7 @@
 //   Shrine  — kneels and CHANTS THE VIRTUE'S MANTRA (era: Ahm, Mu, Summ,
 //             Lum, Beh, Cah, Om, Ra) between quiet meditation
 //   Tavern  — the old small-talk/lfg loiter, now with an exit time
+//   Landmark — strolls around the drawn shape, stops, looks about
 //
 // The visit honors VisitExpiresAt (stamped by the arrival handoff) and
 // hands back to a Traveler when it ends. A Visitor loaded from a stale
@@ -32,6 +33,17 @@ namespace Server.CustomBots
         private string _statusLine = "visiting";
         private Point3D _anchor;
         private DateTime _nextBeat;
+
+        // Landmarks: the drawn shape to stroll around in (null = around the
+        // arrival spot), and the walk to the next place to look from.
+        public PaintedZone Area { get; set; }
+        private bool _sightseeing;
+        private Point3D? _strollTo;
+        private ILegFollower _strollPath;
+        private int _strollSteps;
+        private Timer _strollTimer;
+        private const int StrollMaxSteps = 60;
+        private const int StrollRadius = 8;
 
         public override string GetStatusLine(PlayerBot bot) => _statusLine;
 
@@ -71,7 +83,88 @@ namespace Server.CustomBots
                     _statusLine = "praying at the shrine";
                     _mantra = MantraFor(destName);
                     break;
+                case DestinationType.Landmark:
+                    ChatCategories = new[] { "landmark_visit", "small_talk" };
+                    _statusLine = $"looking around {destName}";
+                    _sightseeing = true;
+                    break;
             }
+        }
+
+        public override void OnDetached(PlayerBot bot)
+        {
+            StopStroll();
+            base.OnDetached(bot);
+        }
+
+        private void StopStroll()
+        {
+            _strollTimer?.Stop();
+            _strollTimer = null;
+            _strollTo = null;
+            _strollPath = null;
+        }
+
+        // Somewhere else to stand and look from: inside the drawn shape, or
+        // near where the bot arrived when there is none.
+        private Point3D? PickLookout(PlayerBot bot)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                int x, y;
+                if (Area != null)
+                {
+                    x = Utility.RandomMinMax(Area.MinX, Area.MaxX);
+                    y = Utility.RandomMinMax(Area.MinY, Area.MaxY);
+                    if (!Area.Contains(x, y))
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    x = _anchor.X + Utility.RandomMinMax(-StrollRadius, StrollRadius);
+                    y = _anchor.Y + Utility.RandomMinMax(-StrollRadius, StrollRadius);
+                }
+                if (Walkable.TryFindSeedZ(bot.Map, x, y, bot.Z, out var z))
+                {
+                    return new Point3D(x, y, z);
+                }
+            }
+            return null;
+        }
+
+        // A walking pace along a real path (around walls and buildings),
+        // giving up on a spot it can't reach in a short while.
+        private void StartStroll(PlayerBot bot, Point3D to)
+        {
+            StopStroll();
+            _strollTo = to;
+            _strollSteps = 0;
+            _strollPath = LegFollowers.Create(bot, to, null);
+            _strollTimer = Timer.DelayCall(TimeSpan.FromMilliseconds(450), TimeSpan.FromMilliseconds(450), () =>
+            {
+                if (bot.Deleted || !bot.Alive || bot.Behavior != this || _strollPath == null ||
+                    bot.Combatant != null || ++_strollSteps > StrollMaxSteps)
+                {
+                    StopStroll();
+                    return;
+                }
+                bool arrived;
+                try
+                {
+                    arrived = _strollPath.Follow(false, 1);
+                }
+                catch
+                {
+                    arrived = true;
+                }
+                if (arrived)
+                {
+                    StopStroll();
+                    bot.Direction = (Direction)Utility.Random(8);
+                }
+            });
         }
 
         // The era mantras, one per virtue shrine.
@@ -129,6 +222,22 @@ namespace Server.CustomBots
                 return;
             }
             _nextBeat = Core.Now + TimeSpan.FromSeconds(Utility.RandomMinMax(8, 18));
+
+            // At a landmark: walk somewhere else in it, or stand and take
+            // it in, now and then saying so.
+            if (_sightseeing)
+            {
+                if (_strollTo == null && Utility.RandomDouble() < 0.6 && PickLookout(bot) is Point3D next)
+                {
+                    StartStroll(bot, next);
+                }
+                else if (_strollTo == null)
+                {
+                    bot.Direction = (Direction)Utility.Random(8);
+                    TrySpeak(bot);
+                }
+                return;
+            }
 
             // Shrine visitors kneel and chant the mantra between lines.
             if (_mantra != null && Utility.RandomDouble() < 0.55)

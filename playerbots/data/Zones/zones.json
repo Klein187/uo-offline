@@ -4165,7 +4165,8 @@
         ]
       ],
       "Dungeon": "Covetous lvl1b",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Covetous lvl1e floor",
@@ -5059,7 +5060,8 @@
         ]
       ],
       "Dungeon": "Covetous lvl1e",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Covetous lvl2 floor",
@@ -5121,7 +5123,8 @@
         ]
       ],
       "Dungeon": "Covetous lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Covetous lvl3 floor",
@@ -5195,7 +5198,8 @@
         ]
       ],
       "Dungeon": "Covetous lvl3",
-      "Level": 3
+      "Level": 3,
+      "_lonely": true
     },
     {
       "Name": "Covetous lvl4 floor",
@@ -5645,7 +5649,8 @@
         ]
       ],
       "Dungeon": "Covetous lvl4",
-      "Level": 4
+      "Level": 4,
+      "_lonely": true
     },
     {
       "Name": "Deceit lvl2 floor",
@@ -5951,7 +5956,8 @@
         ]
       ],
       "Dungeon": "Deceit lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Deceit lvl1 floor",
@@ -6205,7 +6211,8 @@
         ]
       ],
       "Dungeon": "Deceit lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Deceit lvl4 floor",
@@ -6379,7 +6386,8 @@
         ]
       ],
       "Dungeon": "Deceit lvl4",
-      "Level": 4
+      "Level": 4,
+      "_lonely": true
     },
     {
       "Name": "Deceit lvl5 floor",
@@ -6553,7 +6561,8 @@
         ]
       ],
       "Dungeon": "Deceit lvl5",
-      "Level": 5
+      "Level": 5,
+      "_lonely": true
     },
     {
       "Name": "Despise lvl1c floor",
@@ -6611,7 +6620,8 @@
         ]
       ],
       "Dungeon": "Despise lvl1c",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Despise lvl1 floor",
@@ -7205,7 +7215,8 @@
         ]
       ],
       "Dungeon": "Despise lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Despise lvl1b floor",
@@ -8803,7 +8814,8 @@
         ]
       ],
       "Dungeon": "Despise lvl1b",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Despise lvl2b floor",
@@ -9373,7 +9385,8 @@
         ]
       ],
       "Dungeon": "Despise lvl2b",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Destard lvl1 floor",
@@ -10167,7 +10180,8 @@
         ]
       ],
       "Dungeon": "Destard lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Destard lvl1b floor",
@@ -10313,7 +10327,8 @@
         ]
       ],
       "Dungeon": "Destard lvl1b",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Destard lvl2 floor",
@@ -10491,7 +10506,8 @@
         ]
       ],
       "Dungeon": "Destard lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Hythloth lvl2 floor",
@@ -10769,7 +10785,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Hythloth lvl3 floor",
@@ -10939,7 +10956,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl3",
-      "Level": 3
+      "Level": 3,
+      "_lonely": false
     },
     {
       "Name": "Hythloth lvl4 floor",
@@ -10965,7 +10983,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl4",
-      "Level": 4
+      "Level": 4,
+      "_lonely": true
     },
     {
       "Name": "Hythloth lvl5 floor",
@@ -11159,7 +11178,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl5",
-      "Level": 5
+      "Level": 5,
+      "_lonely": true
     },
     {
       "Name": "Hythloth lvl1 floor",
@@ -11413,7 +11433,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": false
     },
     {
       "Name": "Hythloth lvl7 floor",
@@ -11447,7 +11468,8 @@
         ]
       ],
       "Dungeon": "Hythloth lvl7",
-      "Level": 7
+      "Level": 7,
+      "_lonely": false
     },
     {
       "Name": "Shame lvl1 floor",
@@ -11877,7 +11899,8 @@
         ]
       ],
       "Dungeon": "Shame lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Shame lvl4 floor",
@@ -11943,7 +11966,8 @@
         ]
       ],
       "Dungeon": "Shame lvl4",
-      "Level": 4
+      "Level": 4,
+      "_lonely": true
     },
     {
       "Name": "Shame lvl2 floor",
@@ -12705,7 +12729,8 @@
         ]
       ],
       "Dungeon": "Shame lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Shame lvl3 floor",
@@ -14287,7 +14312,8 @@
         ]
       ],
       "Dungeon": "Shame lvl3",
-      "Level": 3
+      "Level": 3,
+      "_lonely": true
     },
     {
       "Name": "Shame lvl5 floor",
@@ -15241,7 +15267,8 @@
         ]
       ],
       "Dungeon": "Shame lvl5",
-      "Level": 5
+      "Level": 5,
+      "_lonely": true
     },
     {
       "Name": "Wrong lvl2 floor",
@@ -15379,7 +15406,8 @@
         ]
       ],
       "Dungeon": "Wrong lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Wrong lvl2b floor",
@@ -15437,7 +15465,8 @@
         ]
       ],
       "Dungeon": "Wrong lvl2b",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Wrong lvl1 floor",
@@ -15703,7 +15732,8 @@
         ]
       ],
       "Dungeon": "Wrong lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Fire lvl1 floor",
@@ -16861,7 +16891,8 @@
         ]
       ],
       "Dungeon": "Fire lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Fire lvl2 floor",
@@ -17175,7 +17206,8 @@
         ]
       ],
       "Dungeon": "Fire lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Ice lvl1 floor",
@@ -17489,7 +17521,8 @@
         ]
       ],
       "Dungeon": "Ice lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Ice lvl2 floor",
@@ -17527,7 +17560,8 @@
         ]
       ],
       "Dungeon": "Ice lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Ice lvl2b floor",
@@ -17577,7 +17611,8 @@
         ]
       ],
       "Dungeon": "Ice lvl2b",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Orc Cave lvl1 floor",
@@ -17695,7 +17730,8 @@
         ]
       ],
       "Dungeon": "Orc Cave lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Orc Cave lvl3 floor",
@@ -17957,7 +17993,8 @@
         ]
       ],
       "Dungeon": "Orc Cave lvl3",
-      "Level": 3
+      "Level": 3,
+      "_lonely": true
     },
     {
       "Name": "Orc Cave lvl2 floor",
@@ -18255,7 +18292,8 @@
         ]
       ],
       "Dungeon": "Orc Cave lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Terathan Keep lvl2b floor",
@@ -18301,7 +18339,8 @@
         ]
       ],
       "Dungeon": "Terathan Keep lvl2b",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Terathan Keep lvl1c floor",
@@ -18939,7 +18978,8 @@
         ]
       ],
       "Dungeon": "Terathan Keep lvl1c",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
     },
     {
       "Name": "Terathan Keep lvl2 floor",
@@ -19117,7 +19157,8 @@
         ]
       ],
       "Dungeon": "Terathan Keep lvl2",
-      "Level": 2
+      "Level": 2,
+      "_lonely": true
     },
     {
       "Name": "Khaldun lvl1 floor",
@@ -19611,7 +19652,141 @@
         ]
       ],
       "Dungeon": "Khaldun lvl1",
-      "Level": 1
+      "Level": 1,
+      "_lonely": true
+    },
+    {
+      "Name": "road 96",
+      "Kind": "Walk",
+      "Tag": "road",
+      "Cost": 0.7,
+      "Points": [
+        [
+          1368,
+          1239
+        ],
+        [
+          1389,
+          1239
+        ],
+        [
+          1396,
+          1245
+        ],
+        [
+          1411,
+          1245
+        ],
+        [
+          1420,
+          1247
+        ],
+        [
+          1425,
+          1251
+        ],
+        [
+          1448,
+          1250
+        ],
+        [
+          1425,
+          1229
+        ],
+        [
+          1434,
+          1210
+        ],
+        [
+          1463,
+          1213
+        ],
+        [
+          1473,
+          1228
+        ],
+        [
+          1472,
+          1248
+        ],
+        [
+          1465,
+          1254
+        ],
+        [
+          1466,
+          1273
+        ],
+        [
+          1422,
+          1275
+        ],
+        [
+          1385,
+          1274
+        ],
+        [
+          1364,
+          1275
+        ],
+        [
+          1358,
+          1250
+        ]
+      ],
+      "_lonely": false
+    },
+    {
+      "Name": "road 97",
+      "Kind": "Walk",
+      "Tag": "road",
+      "Cost": 0.7,
+      "Points": [
+        [
+          1259,
+          1258
+        ],
+        [
+          1224,
+          1269
+        ],
+        [
+          1215,
+          1261
+        ],
+        [
+          1234,
+          1236
+        ],
+        [
+          1250,
+          1215
+        ],
+        [
+          1265,
+          1207
+        ],
+        [
+          1285,
+          1208
+        ],
+        [
+          1287,
+          1220
+        ],
+        [
+          1286,
+          1236
+        ],
+        [
+          1280,
+          1251
+        ],
+        [
+          1274,
+          1255
+        ]
+      ]
     }
   ]
 }

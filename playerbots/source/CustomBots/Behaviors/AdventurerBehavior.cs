@@ -43,6 +43,10 @@ namespace Server.CustomBots
         public double RetreatHpFraction { get; set; } = 0.55;
         public int ArrivalRange { get; set; } = 2;
 
+        // A drawn hunting ground (AdventureArea). When set, patrol points
+        // are picked inside its shape instead of around the arrival spot.
+        public PaintedZone HuntArea { get; set; }
+
         // ---- Defender mode ----
         //
         // When a Traveler gets attacked on the road it swaps to an
@@ -953,7 +957,7 @@ namespace Server.CustomBots
                 // A subclass may supply the next goal (e.g. the crawler's
                 // scoped dungeon points). Null means "use the default
                 // wilderness patrol below".
-                var custom = SelectPatrolGoal(bot);
+                var custom = SelectPatrolGoal(bot) ?? PointInHuntArea(bot);
                 if (custom.HasValue)
                 {
                     _goal = custom.Value;
@@ -1015,6 +1019,27 @@ namespace Server.CustomBots
         // Supply the next patrol goal. Return null to use the default
         // wilderness patrol.
         protected virtual Point3D? SelectPatrolGoal(PlayerBot bot) => null;
+
+        // A random standable spot inside the hunting ground, or null to use
+        // the ordinary patrol.
+        private Point3D? PointInHuntArea(PlayerBot bot)
+        {
+            var area = HuntArea;
+            if (area == null || bot.Map == null)
+            {
+                return null;
+            }
+            for (int i = 0; i < 12; i++)
+            {
+                int x = Utility.RandomMinMax(area.MinX, area.MaxX);
+                int y = Utility.RandomMinMax(area.MinY, area.MaxY);
+                if (area.Contains(x, y) && Walkable.TryFindSeedZ(bot.Map, x, y, bot.Z, out var z))
+                {
+                    return new Point3D(x, y, z);
+                }
+            }
+            return null;
+        }
 
         // Called when the current patrol goal is reached. Return true to
         // claim the arrival (the base will NOT pick a new goal this pass).
