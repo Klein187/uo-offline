@@ -44,9 +44,24 @@ namespace Server.CustomBots
     {
         public static ILegFollower Create(PlayerBot bot, Point3D goal, bool? useZones)
         {
-            if (bot?.Map != null && ZoneNav.WantsZones(bot, useZones) &&
-                ZoneNav.CoversBoth(bot.Map, bot.Location, goal))
+            if (bot?.Map == null)
             {
+                return new EnginePathFollower(bot, goal);
+            }
+            if (!ZoneNav.WantsZones(bot, useZones))
+            {
+                ZoneNavStats.LegNotWanted();
+                return new EnginePathFollower(bot, goal);
+            }
+            bool startOn = bot.Map == ZoneRegistry.MeshMap && ZoneRegistry.MeshZoneAt(bot.Location) != null;
+            bool goalOn = bot.Map == ZoneRegistry.MeshMap && ZoneRegistry.MeshZoneAt(goal) != null;
+            if (!startOn || !goalOn)
+            {
+                ZoneNavStats.LegOffMesh(bot.Location, startOn, goal, goalOn);
+            }
+            else
+            {
+                ZoneNavStats.LegOnMesh();
                 if (ZoneNav.Verbose || useZones == true)
                 {
                     Console.WriteLine($"[zones] {bot.Name} walks zones: ({bot.X},{bot.Y}) -> ({goal.X},{goal.Y})");
@@ -67,7 +82,15 @@ namespace Server.CustomBots
         private int _idx;
         private int _replans;
         private EnginePathFollower _fallback;
+        private bool _counted;
         public string FallbackReason { get; private set; }
+
+        // Strict: never hand the leg to the engine walker. A leg the mesh
+        // cannot walk stops and says why (Failed). The mesh-only test trip
+        // uses this, so a pass means the drawn zones did all the walking.
+        public bool Strict { get; init; }
+        public bool Failed { get; private set; }
+        public string FailReason { get; private set; }
 
         // Local detour inside the current zone.
         private List<Point3D> _local;
@@ -136,7 +159,15 @@ namespace Server.CustomBots
 
         private void UseFallback(string why)
         {
+            if (Strict)
+            {
+                Failed = true;
+                FailReason = why;
+                _route = null;
+                return;
+            }
             FallbackReason = why;
+            ZoneNavStats.Fallback(why);
             _fallback = new EnginePathFollower(_bot, _goal);
             _route = null;
         }
@@ -145,7 +176,16 @@ namespace Server.CustomBots
         {
             if (PathFollower.Check(_bot.Location, _goal, range))
             {
+                if (!_counted)
+                {
+                    _counted = true;
+                    ZoneNavStats.Arrived(_fallback == null);
+                }
                 return true;
+            }
+            if (Failed)
+            {
+                return false;
             }
             if (_fallback != null)
             {
@@ -160,9 +200,9 @@ namespace Server.CustomBots
                         Console.WriteLine($"[zones] {_bot.Name}: no zone route ({_bot.X},{_bot.Y}) -> ({_goal.X},{_goal.Y})");
                     }
                     UseFallback("no zone route");
-                    return _fallback.Follow(run, range);
+                    return !Failed && _fallback.Follow(run, range);
                 }
-                if (IsDetour())
+                if (!Strict && IsDetour())
                 {
                     UseFallback("zone route is a detour");
                     return _fallback.Follow(run, range);
@@ -201,6 +241,10 @@ namespace Server.CustomBots
             else if (Core.Now - _lastProgress > StallAfter)
             {
                 Stall();
+                if (Failed)
+                {
+                    return false;
+                }
             }
 
             return PathFollower.Check(_bot.Location, _goal, range);

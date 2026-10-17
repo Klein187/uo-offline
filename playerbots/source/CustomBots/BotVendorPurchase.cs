@@ -213,11 +213,70 @@ namespace Server.CustomBots
             return what;
         }
 
+        // Test trips only: buy the single cheapest thing on the shelf the
+        // bot can afford, so a visit always ends in a real sale even when
+        // the bot is short of nothing.
+        public static string TryBuyCheapest(PlayerBot bot, BaseVendor vendor)
+        {
+            var pack = bot?.Backpack;
+            if (pack == null || vendor == null || vendor.Deleted)
+            {
+                return null;
+            }
+            IBuyItemInfo[] infos;
+            try
+            {
+                vendor.UpdateBuyInfo();
+                infos = vendor.GetBuyInfo();
+            }
+            catch
+            {
+                return null;
+            }
+            int gold = pack.GetAmount(typeof(Gold));
+            IBuyItemInfo pick = null;
+            foreach (var bi in infos ?? Array.Empty<IBuyItemInfo>())
+            {
+                if (bi is GenericBuyInfo && bi.Amount > 0 && bi.Price <= gold &&
+                    (pick == null || bi.Price < pick.Price))
+                {
+                    pick = bi;
+                }
+            }
+            if (pick?.GetEntity() is not Item item)
+            {
+                return null;
+            }
+            int price = Math.Max(1, pick.Price);
+            if (item.Stackable)
+            {
+                item.Amount = 1;
+            }
+            pack.DropItem(item);
+            pick.Amount--;
+            pack.ConsumeTotal(typeof(Gold), price);
+            string what = $"1 {Noun(item, pick)}";
+            try
+            {
+                vendor.Say($"The total of thy purchase is {price} gold. My thanks for the patronage.");
+            }
+            catch { }
+            Remember($"{bot.Name} bought {what} from {vendor.Name} for {price}gp");
+            return what;
+        }
+
         private static string Noun(Item item, IBuyItemInfo bi)
         {
             string n = !string.IsNullOrEmpty(bi.Name) ? bi.Name
                      : !string.IsNullOrEmpty(item.Name) ? item.Name
                      : item.GetType().Name;
+            // Shop lists name most stock by cliloc number ("1025044"). The
+            // tile name is the same word without the client's text file.
+            if (int.TryParse(n, out _))
+            {
+                var tile = TileData.ItemTable[item.ItemID & TileData.MaxItemValue].Name;
+                n = !string.IsNullOrEmpty(tile) ? tile : item.GetType().Name;
+            }
             return n.ToLowerInvariant();
         }
 

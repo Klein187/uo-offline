@@ -30,7 +30,7 @@ namespace Server.CustomBots
 
     public static class ZoneNav
     {
-        public static ZoneNavMode Mode { get; set; } = ZoneNavMode.Half;
+        public static ZoneNavMode Mode { get; set; } = ZoneNavMode.On;
         public static string ModeName => Mode.ToString().ToLowerInvariant();
 
         // [zonenav verbose on|off: log every zone-walked leg. For soaks.

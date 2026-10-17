@@ -69,9 +69,13 @@ namespace Server.CustomBots
         // climb further than the floor window in one shape, so a mine, a
         // grove or a dock is measured over the whole column as before.
         public bool IsOpenGround =>
-            IsGatherSite || string.Equals(Type, "Dock", StringComparison.OrdinalIgnoreCase) ||
+            !Indoors && (IsGatherSite || string.Equals(Type, "Dock", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(Type, "AdventureArea", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Type, "Landmark", StringComparison.OrdinalIgnoreCase);
+            string.Equals(Type, "Landmark", StringComparison.OrdinalIgnoreCase));
+
+        // A landmark that is a building (a castle) has storeys like a shop:
+        // "Indoors": true on its destination measures it on its own floor.
+        public bool Indoors;
 
         // Set when the authored floor found nothing standable at all, so
         // the zone falls back to measuring the whole column, as before.
@@ -521,6 +525,7 @@ namespace Server.CustomBots
                             Tag = d.TryGetProperty("Tag", out var tg) ? tg.GetString() : null,
                             FloorZ = d.TryGetProperty("Z", out var dz) && dz.ValueKind == JsonValueKind.Number
                                      ? dz.GetInt32() : int.MinValue,
+                            Indoors = d.TryGetProperty("Indoors", out var ind) && ind.ValueKind == JsonValueKind.True,
                         };
                         if (d.TryGetProperty("Cost", out var c) && c.ValueKind == JsonValueKind.Number)
                         {
@@ -881,6 +886,83 @@ namespace Server.CustomBots
         // Huge outlines are not flooded: they get one part, as before.
         private const int MaxFloodTiles = 40000;
 
+        // The flood keeps one height per tile, so where it starts decides
+        // the split: from the gate side of Blackthorn's bridge it took the
+        // low step (z2) at the foot and could not climb to the deck (z11),
+        // while from the deck it walks straight down. Two parts that touch
+        // where a real step joins them, in either direction, are one part.
+        private static int MergeSteppedParts(Map map, PaintedZone z, int[] part, int[] tileZ, int w, int h, int count)
+        {
+            var root = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                root[i] = i;
+            }
+            int Find(int a)
+            {
+                while (root[a] != a)
+                {
+                    root[a] = root[root[a]];
+                    a = root[a];
+                }
+                return a;
+            }
+            bool merged = false;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int i = x + y * w;
+                    if (part[i] < 0)
+                    {
+                        continue;
+                    }
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        for (int dy = -1; dy <= 1; dy++)
+                        {
+                            int nx = x + dx, ny = y + dy;
+                            if (dx == 0 && dy == 0 || nx < 0 || ny < 0 || nx >= w || ny >= h)
+                            {
+                                continue;
+                            }
+                            int ni = nx + ny * w;
+                            if (part[ni] < 0 || Find(part[ni]) == Find(part[i]))
+                            {
+                                continue;
+                            }
+                            if (Walkable.CanStepThroughDoors(map, x + z.MinX, y + z.MinY, tileZ[i],
+                                    nx + z.MinX, ny + z.MinY, out int lz) && (z.FloorProbed || z.OnFloor(lz)))
+                            {
+                                root[Find(part[ni])] = Find(part[i]);
+                                merged = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!merged)
+            {
+                return count;
+            }
+            var renumber = new int[count];
+            Array.Fill(renumber, -1);
+            int next = 0;
+            for (int i = 0; i < part.Length; i++)
+            {
+                if (part[i] >= 0)
+                {
+                    int r = Find(part[i]);
+                    if (renumber[r] < 0)
+                    {
+                        renumber[r] = next++;
+                    }
+                    part[i] = renumber[r];
+                }
+            }
+            return next;
+        }
+
         private static void FloodParts(Map map, PaintedZone z)
         {
             int w = z.MaxX - z.MinX + 1, h = z.MaxY - z.MinY + 1;
@@ -950,6 +1032,10 @@ namespace Server.CustomBots
                     }
                     count++;
                 }
+            }
+            if (count > 1)
+            {
+                count = MergeSteppedParts(map, z, part, tileZ, w, h, count);
             }
             // Ground reached off a guessed floor widens the zone's height
             // range, so links to rooms on the ledge are not ruled out.

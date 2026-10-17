@@ -1569,6 +1569,45 @@
       ]
     },
     {
+      "Name": "Blackthorn Bridge S",
+      "X": 1523,
+      "Y": 1509,
+      "Z": 0,
+      "Connects": [
+        "WP 153",
+        "Blackthorn Bridge N"
+      ]
+    },
+    {
+      "Name": "Blackthorn Bridge N",
+      "X": 1523,
+      "Y": 1487,
+      "Z": 11,
+      "Connects": [
+        "Blackthorn Bridge S",
+        "Blackthorn Gate"
+      ]
+    },
+    {
+      "Name": "Blackthorn Gate",
+      "X": 1523,
+      "Y": 1460,
+      "Z": 15,
+      "Connects": [
+        "Blackthorn Bridge N",
+        "Blackthorn Courtyard"
+      ]
+    },
+    {
+      "Name": "Blackthorn Courtyard",
+      "X": 1523,
+      "Y": 1448,
+      "Z": 15,
+      "Connects": [
+        "Blackthorn Gate"
+      ]
+    },
+    {
       "Name": "WP 153",
       "X": 1515,
       "Y": 1530,
@@ -1966,6 +2005,37 @@
         "Rec 3.3",
         "Rec 4.1",
         "WP 1"
+      ]
+    },
+    {
+      "Name": "LB Castle Steps",
+      "X": 1380,
+      "Y": 1625,
+      "Z": 30,
+      "Connects": [
+        "WP 32",
+        "wp 158",
+        "WP 35",
+        "LB Castle Entry"
+      ]
+    },
+    {
+      "Name": "LB Castle Entry",
+      "X": 1368,
+      "Y": 1625,
+      "Z": 50,
+      "Connects": [
+        "LB Castle Steps",
+        "LB Castle Hall"
+      ]
+    },
+    {
+      "Name": "LB Castle Hall",
+      "X": 1346,
+      "Y": 1625,
+      "Z": 50,
+      "Connects": [
+        "LB Castle Entry"
       ]
     },
     {

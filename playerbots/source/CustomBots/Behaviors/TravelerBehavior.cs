@@ -2394,6 +2394,7 @@ namespace Server.CustomBots
                 || type == DestinationType.Architect
                 || type == DestinationType.HouseShop
                 || type == DestinationType.Dungeon
+                || type == DestinationType.Landmark     // came to look; short of it, move on
                 || type == DestinationType.GatherSpot   // wilderness work site — nothing to loiter for
                 || type == DestinationType.MiningSpot
                 || type == DestinationType.LumberSpot
@@ -2852,7 +2853,17 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
                     break;
 
                 case DestinationType.Landmark:
-                    // Come to see it: a stroll around, then on.
+                    // Come to see it: a stroll around, then on. Only at the
+                    // landmark itself: a walk that stalled across the moat
+                    // from Blackthorn's castle used to start the visit on
+                    // the far shore.
+                    if (!ZoneArrival(bot, 15) &&
+                        !(_finalCoord.HasValue && bot.InRange(_finalCoord.Value, 6)))
+                    {
+                        Log(bot, $"No Visitor handoff at '{DestinationName}' — " +
+                                 $"{(_finalCoord.HasValue ? bot.GetDistanceToSqrt(_finalCoord.Value).ToString("0") : "?")} tiles from it (leaving)");
+                        return false;
+                    }
                     targetBehavior  = "Visitor";
                     chance          = 0.9;
                     visitMinMinutes = 3;
