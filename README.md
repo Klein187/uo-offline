@@ -13,6 +13,9 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Smiths and tailors work at the anvil and the wheel.** They used to set up wherever their walk ended, sometimes out in the street. They walk to a real anvil and forge, or a spinning wheel or loom, and a shop with none is skipped.
+- **Nujel'm has roads.** The island had no waypoints, so a smith who recalled to a Nujel'm forge got carried back to Vesper. It has them now.
+- **Every bot walks the drawn zones.** It used to be half of them. Bots can also get into Lord Blackthorn's and Lord British's castles instead of stopping outside the walls.
 - **More bots in dungeons.** Bots used to pick a dungeon about one time in thirty, so the towns were full and the dungeons were empty. Fighters now set out on a dungeon run about a third of the time, tamers, healers, thieves and bards less often. Each town has its two nearest dungeons as home dungeons, and now and then a bot or a party goes to one further away. About a fifth of the shard is in or on the way to a dungeon now.
 - **Parties from every town.** Hunting parties form in towns with no dungeon in walking distance too: the leader recalls the group in. Shoppers and sightseers answer the call as well, and a party only takes bots that have their bandages, arrows or reagents.
 - **Crawlers stay in.** Most crawlers that recalled to a dungeon left right away because they were one recall scroll short. Scrolls no longer end a run. Crawlers also stop stepping onto stairs they did not mean to take.
@@ -304,7 +307,7 @@ The `admin` account is a Game Master. It's how you set the world up, but a GM is
 - **BankSitter** — stands at a bank and chats, and sometimes starts a duel or closes a WTS deal.
 - **Traveler** — walks or rides between destinations on the waypoint road network.
 - **Shopper** — browses a vendor area, then moves on.
-- **Crafter** — settles at its station (Smith to forge, Tailor to shop, Carpenter to carpentry shop, Fisherman to dock) for long working sessions, making real goods from real materials and restocking when the shelf empties.
+- **Crafter** — settles at its station (Smith at an anvil beside a forge, Tailor at a spinning wheel or loom, Carpenter to carpentry shop, Fisherman to dock) for long working sessions, making real goods from real materials and restocking when the shelf empties.
 - **Gatherer** — works a wilderness site with real chop and mine animations, then hauls the load to town.
 - **Adventurer** — full combat: melee, archery, and real magic up to Flamestrike, with kiting, target switching, and threat assessment. Retreat thresholds scale with experience.
 - **DungeonCrawler** — enters through the real teleporters with a torch lit if a hand is free, sweeps floor by floor (novices stay shallow), loots the gold off its kills, camps respawns, and climbs out when the timer or the supplies run out. On the way up it only fights in self-defense, because leaving should look like leaving.
