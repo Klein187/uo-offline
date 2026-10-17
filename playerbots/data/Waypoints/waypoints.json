@@ -40355,6 +40355,444 @@
       "Connects": [
         "Covetous Approach Deep 1"
       ]
+    },
+    {
+      "Name": "Nujel'm Road 1",
+      "X": 3650,
+      "Y": 1185,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 13",
+        "Nujel'm Road 2",
+        "Nujel'm Road 33",
+        "Nujel'm Road 6"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 2",
+      "X": 3640,
+      "Y": 1191,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 1",
+        "Nujel'm Road 3"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 3",
+      "X": 3622,
+      "Y": 1199,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 2",
+        "Nujel'm Road 4"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 4",
+      "X": 3613,
+      "Y": 1197,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 3",
+        "Nujel'm Road 5"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 5",
+      "X": 3591,
+      "Y": 1182,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Forge Yard",
+        "Nujel'm Road 4"
+      ]
+    },
+    {
+      "Name": "Nujel'm Forge Yard",
+      "X": 3569,
+      "Y": 1193,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 5"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 6",
+      "X": 3636,
+      "Y": 1163,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 1",
+        "Nujel'm Road 7"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 7",
+      "X": 3634,
+      "Y": 1152,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 6",
+        "Nujel'm Road 8"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 8",
+      "X": 3639,
+      "Y": 1134,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 7",
+        "Nujel'm Road 9"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 9",
+      "X": 3636,
+      "Y": 1117,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 10",
+        "Nujel'm Road 8"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 10",
+      "X": 3649,
+      "Y": 1095,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 11",
+        "Nujel'm Road 9"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 11",
+      "X": 3665,
+      "Y": 1078,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 10",
+        "Nujel'm Road 12"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 12",
+      "X": 3665,
+      "Y": 1064,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 11"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 13",
+      "X": 3663,
+      "Y": 1178,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 1",
+        "Nujel'm Road 14"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 14",
+      "X": 3669,
+      "Y": 1187,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 13",
+        "Nujel'm Road 15",
+        "Nujel'm Road 43"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 15",
+      "X": 3682,
+      "Y": 1193,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 14",
+        "Nujel'm Road 16"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 16",
+      "X": 3690,
+      "Y": 1191,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 15",
+        "Nujel'm Road 17",
+        "Nujel'm Road 38"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 17",
+      "X": 3712,
+      "Y": 1194,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 16",
+        "Nujel'm Road 18"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 18",
+      "X": 3728,
+      "Y": 1208,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 17",
+        "Nujel'm Road 19"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 19",
+      "X": 3750,
+      "Y": 1209,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 18",
+        "Nujel'm Road 20"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 20",
+      "X": 3772,
+      "Y": 1209,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 19",
+        "Nujel'm Road 21"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 21",
+      "X": 3782,
+      "Y": 1201,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 20"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 22",
+      "X": 3695,
+      "Y": 1205,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 23",
+        "Nujel'm Road 43"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 23",
+      "X": 3706,
+      "Y": 1207,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 22",
+        "Nujel'm Road 24"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 24",
+      "X": 3722,
+      "Y": 1225,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 23",
+        "Nujel'm Road 25"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 25",
+      "X": 3718,
+      "Y": 1239,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 24",
+        "Nujel'm Road 26"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 26",
+      "X": 3716,
+      "Y": 1250,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 25",
+        "Nujel'm Road 27"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 27",
+      "X": 3723,
+      "Y": 1262,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 26",
+        "Nujel'm Road 28"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 28",
+      "X": 3723,
+      "Y": 1278,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 27",
+        "Nujel'm Road 29"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 29",
+      "X": 3722,
+      "Y": 1300,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 28",
+        "Nujel'm Road 30"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 30",
+      "X": 3714,
+      "Y": 1317,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 29",
+        "Nujel'm Road 31"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 31",
+      "X": 3718,
+      "Y": 1339,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 30",
+        "Nujel'm Road 32"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 32",
+      "X": 3735,
+      "Y": 1360,
+      "Z": 5,
+      "Connects": [
+        "Nujel'm Road 31"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 33",
+      "X": 3633,
+      "Y": 1207,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 1",
+        "Nujel'm Road 34"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 34",
+      "X": 3631,
+      "Y": 1218,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 33",
+        "Nujel'm Road 35"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 35",
+      "X": 3619,
+      "Y": 1224,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 34",
+        "Nujel'm Road 36"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 36",
+      "X": 3603,
+      "Y": 1246,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 35",
+        "Nujel'm Road 37"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 37",
+      "X": 3600,
+      "Y": 1270,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 36"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 38",
+      "X": 3703,
+      "Y": 1186,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 16",
+        "Nujel'm Road 39"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 39",
+      "X": 3723,
+      "Y": 1174,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 38",
+        "Nujel'm Road 40"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 40",
+      "X": 3744,
+      "Y": 1169,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 39",
+        "Nujel'm Road 41"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 41",
+      "X": 3766,
+      "Y": 1154,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 40",
+        "Nujel'm Road 42"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 42",
+      "X": 3780,
+      "Y": 1136,
+      "Z": 20,
+      "Connects": [
+        "Nujel'm Road 41"
+      ]
+    },
+    {
+      "Name": "Nujel'm Road 43",
+      "X": 3682,
+      "Y": 1196,
+      "Z": 0,
+      "Connects": [
+        "Nujel'm Road 14",
+        "Nujel'm Road 22"
+      ]
     }
   ]
 }

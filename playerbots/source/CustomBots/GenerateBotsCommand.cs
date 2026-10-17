@@ -451,7 +451,7 @@ namespace Server.CustomBots
             int pinned = 0;
             foreach (var (station, cls) in stations)
             {
-                var spots = BuildArrivalSpots(city, new HashSet<DestinationType> { station });
+                var spots = BuildArrivalSpots(city, new HashSet<DestinationType> { station }, cls);
                 foreach (var pt in spots)
                 {
                     if (TryPlace(city.MapName, pt.X, pt.Y, pt.Z,
@@ -471,14 +471,20 @@ namespace Server.CustomBots
         // spot for banks), so bots land exactly where you placed them. Falls
         // back to a destination's own coord only if it has no arrival points.
         // Used for Shoppers (vendor types) and BankSitters (bank type).
+        // With `fixtureFor`, a smith's or tailor's station with no anvil or
+        // wheel near it is skipped (CraftStations.HasFixture).
         private static List<Point3D> BuildArrivalSpots(
-            CityRegion city, HashSet<DestinationType> types)
+            CityRegion city, HashSet<DestinationType> types, BotClass? fixtureFor = null)
         {
             var spots = new List<Point3D>();
             foreach (var d in DestinationCatalog.All)
             {
                 if (!string.Equals(d.City, city.Name, StringComparison.OrdinalIgnoreCase)
                     || !types.Contains(d.Type))
+                {
+                    continue;
+                }
+                if (fixtureFor.HasValue && !CraftStations.HasFixture(d, fixtureFor.Value))
                 {
                     continue;
                 }

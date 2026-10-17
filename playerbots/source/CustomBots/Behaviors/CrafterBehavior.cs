@@ -57,6 +57,30 @@ namespace Server.CustomBots
         public Point3D Home { get; private set; }
         public Map HomeMap   { get; private set; }
 
+        // The station it was sent to (set by the Traveler handoff). A smith
+        // or tailor walks from wherever it stopped to the anvil or wheel
+        // there before it works. Null for a crafter loaded from a save: it
+        // looks around where it stands.
+        public Point3D? StationPoint { get; set; }
+
+        // Placing: still on the way to the work tile.
+        private bool _placed;
+        public bool Placed => _placed;
+        private ILegFollower _walker;
+        private Timer _stepTimer;
+        private DateTime _walkStarted;
+        private Point3D _workTile;
+        private Point3D _faceAt;
+        private static readonly TimeSpan PlaceTimeout = TimeSpan.FromSeconds(25);
+        private const int PlaceMaxWalk = 40;
+        // Tiles it couldn't get onto; up to three tries before it leaves.
+        private readonly List<Point3D> _badTiles = new();
+        private const int PlaceTries = 3;
+
+        public override Point3D? NavGoal(PlayerBot bot) =>
+            _stepTimer != null && _walker != null ? _walker.GetGoalLocation() : null;
+        public override ILegFollower ActiveLegFollower => _stepTimer != null ? _walker : null;
+
         // Work-cycle cadence: animation plays and a production roll happens
         // each cycle (production rarely succeeds — see CrafterProduction).
         private DateTime _nextCraftAt = DateTime.MinValue;
@@ -138,68 +162,137 @@ namespace Server.CustomBots
                 _                  => CraftChat,
             };
 
-            // A smith works AT the anvil — face it. (Without this the
-            // hammer swings at whatever direction the walk-in happened to
-            // end on, sometimes with the anvil at the smith's back.)
-            if (bot.Class == BotClass.Smith)
-            {
-                FaceNearestAnvil(bot);
-            }
+            // A smith or tailor finds its anvil or wheel first (see Place).
+            // Everyone else works where the walk ended.
+            _placed = !CraftStations.NeedsFixture(bot.Class);
 
             ScheduleNextCraft();
             ScheduleNextSell();
         }
 
-        // Anvils are statics 0x0FAF/0x0FB0; forges are 0x0FB1 plus the
-        // large multi-tile forge range. Face the nearest one within a few
-        // tiles of the station; keep the current facing if none is found.
-        private static void FaceNearestAnvil(PlayerBot bot)
+        // -------------------------------------------------------------------
+        // Place — get to the anvil (smith) or the spinning wheel / loom
+        // (tailor) before working. The walk can end down the street, at the
+        // shop door or on the wrong side of a wall; the work tile is found
+        // around the station it was sent to and walked to. A crafter that
+        // can't get there, or finds no fixture at all, ends the visit and
+        // travels again rather than working out in the street.
+        // -------------------------------------------------------------------
+        private void Place(PlayerBot bot)
         {
-            var map = bot.Map;
-            if (map == null || map == Map.Internal)
+            if (_stepTimer != null)
             {
+                if (Core.Now - _walkStarted > PlaceTimeout)
+                {
+                    StopStepTimer();
+                    if (Cheb(bot.Location, _workTile) <= 1)
+                    {
+                        Settle(bot);
+                    }
+                    else if (_badTiles.Count + 1 < PlaceTries)
+                    {
+                        _badTiles.Add(_workTile);   // try another free tile next tick
+                    }
+                    else
+                    {
+                        GiveUp(bot, $"could not reach the work tile ({_workTile.X},{_workTile.Y},{_workTile.Z}), " +
+                                    $"stopped {Cheb(bot.Location, _workTile)} tiles short");
+                    }
+                }
                 return;
             }
 
-            Point3D? best = null;
-            int bestDist = int.MaxValue;
-            for (int dx = -3; dx <= 3; dx++)
+            var center = StationPoint ?? bot.Location;
+            if (!CraftStations.FindWorkTile(bot, center, out _workTile, out _faceAt, _badTiles))
             {
-                for (int dy = -3; dy <= 3; dy++)
-                {
-                    if (dx == 0 && dy == 0)
-                    {
-                        continue;
-                    }
-                    int x = bot.X + dx, y = bot.Y + dy;
-                    foreach (var st in map.Tiles.GetStaticTiles(x, y))
-                    {
-                        int id = st.ID & TileData.MaxItemValue;
-                        bool workFace = id is 0x0FAF or 0x0FB0 or 0x0FB1 ||
-                                        (id >= 0x197A && id <= 0x19A9);
-                        if (!workFace)
-                        {
-                            continue;
-                        }
-                        int dist = Math.Max(Math.Abs(dx), Math.Abs(dy));
-                        if (dist < bestDist)
-                        {
-                            bestDist = dist;
-                            best = new Point3D(x, y, st.Z);
-                        }
-                    }
-                }
+                GiveUp(bot, $"no free {(bot.Class == BotClass.Smith ? "anvil and forge" : "spinning wheel or loom")} " +
+                            $"within {CraftStations.SearchRange} tiles of ({center.X},{center.Y},{center.Z})");
+                return;
+            }
+            if (bot.Location == _workTile)
+            {
+                Settle(bot);
+                return;
+            }
+            int far = Cheb(bot.Location, _workTile);
+            if (far > PlaceMaxWalk)
+            {
+                GiveUp(bot, $"stopped {far} tiles from the station");
+                return;
             }
 
-            if (best != null)
+            CraftStations.Claim(_workTile, bot);
+            _walker = LegFollowers.Create(bot, _workTile, null);
+            _walkStarted = Core.Now;
+            var interval = TimeSpan.FromMilliseconds(Server.Movement.Movement.WalkFootDelay);
+            _stepTimer = Timer.DelayCall(interval, interval, () => StepToWork(bot));
+        }
+
+        private void StepToWork(PlayerBot bot)
+        {
+            if (bot.Deleted || bot.Map == null || bot.Map == Map.Internal ||
+                !ReferenceEquals(bot.Behavior, this) || _walker == null)
             {
-                var d = bot.GetDirectionTo(best.Value);
-                if (bot.Direction != d)
-                {
-                    bot.Direction = d;
-                }
+                StopStepTimer();
+                return;
+            }
+            bool arrived;
+            try
+            {
+                arrived = _walker.Follow(false, 0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[crafter] {bot.Name} step failed: {ex.Message}");
+                StopStepTimer();
+                return;
+            }
+            if (arrived)
+            {
+                StopStepTimer();
+                Settle(bot);
             }
         }
+
+        private void Settle(PlayerBot bot)
+        {
+            _placed = true;
+            CraftStations.Claim(bot.Location, bot);
+            Home = bot.Location;
+            HomeMap = bot.Map;
+            var d = bot.GetDirectionTo(_faceAt);
+            if (bot.Direction != d)
+            {
+                bot.Direction = d;
+            }
+            Console.WriteLine($"[crafter] {bot.Name} ({bot.Class}) at work at ({bot.X},{bot.Y},{bot.Z}), " +
+                              $"{Cheb(bot.Location, _faceAt)} tile(s) from the " +
+                              $"{(bot.Class == BotClass.Smith ? "anvil" : "wheel")}");
+        }
+
+        private void GiveUp(PlayerBot bot, string why)
+        {
+            // Off to the nearest other station that has an anvil or wheel.
+            // Without one, the visit just ends and the usual roll decides.
+            var next = CraftStations.NearestGoodStation(bot, StationPoint ?? bot.Location);
+            Console.WriteLine($"[crafter] {bot.Name} ({bot.Class}) not working here: {why}" +
+                              (next != null ? $"; heading to '{next.Name}'" : ""));
+            if (next != null)
+            {
+                bot.Behavior = new TravelerBehavior { DestinationName = next.Name };
+                return;
+            }
+            VisitExpiresAt = Core.Now;
+        }
+
+        private void StopStepTimer()
+        {
+            _stepTimer?.Stop();
+            _stepTimer = null;
+        }
+
+        private static int Cheb(Point3D a, Point3D b) =>
+            Math.Max(Math.Abs(a.X - b.X), Math.Abs(a.Y - b.Y));
 
         public override void Tick(PlayerBot bot)
         {
@@ -212,6 +305,12 @@ namespace Server.CustomBots
             if (CheckVisitExpired(bot)) return;
 
             TrySpeak(bot);
+
+            if (!_placed)
+            {
+                Place(bot);
+                return;
+            }
 
             // Periodically "sell" made goods so the pack stays bounded. Runs
             // regardless of whether the bot is settled on its tile this tick.
@@ -302,6 +401,8 @@ namespace Server.CustomBots
 
         public override void OnDetached(PlayerBot bot)
         {
+            StopStepTimer();
+            CraftStations.Release(bot);
             base.OnDetached(bot);
             // Stop tracking made items; they remain in the pack and the
             // bot's next behavior owns them. Avoids dangling references.

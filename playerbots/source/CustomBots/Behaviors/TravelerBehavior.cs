@@ -2959,6 +2959,12 @@ private bool ZoneArrival(PlayerBot bot, int fallbackRange)
             {
                 gb.SiteName = DestinationName;
             }
+            // The crafter looks for its anvil or wheel around the station
+            // it was sent to, not wherever the walk happened to stop.
+            if (visit is CrafterBehavior cb)
+            {
+                cb.StationPoint = DestinationCatalog.GetByName(DestinationName)?.Location ?? _finalCoord;
+            }
             // The shopper is handed the shop's own floor, so one that
             // arrives at the door (not yet inside) still walks in to it.
             if (visit is ShopperBehavior sb && _finalCoord.HasValue)

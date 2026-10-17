@@ -214,6 +214,13 @@ namespace Server.CustomBots
                     {
                         w = 0;
                     }
+                    // A smith's or tailor's station with no anvil, wheel or
+                    // loom near it is a shop they can't work in.
+                    if (w > 0 && d.Type == BotClassHelper.StationFor(cls) &&
+                        !CraftStations.HasFixture(d, cls))
+                    {
+                        w = 0;
+                    }
                 }
 
                 if (w > 0 && bot != null)
