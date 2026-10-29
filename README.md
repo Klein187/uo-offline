@@ -13,6 +13,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **Cook on a fire again.** Double-clicking raw fish or meat did nothing, because ModernUO only cooks through the skillet menu. Double-click the raw food and target a fire, oven or firepit, the T2A way.
 - **Smiths and tailors work at the anvil and the wheel.** They used to set up wherever their walk ended, sometimes out in the street. They walk to a real anvil and forge, or a spinning wheel or loom, and a shop with none is skipped.
 - **Nujel'm has roads.** The island had no waypoints, so a smith who recalled to a Nujel'm forge got carried back to Vesper. It has them now.
 - **Every bot walks the drawn zones.** It used to be half of them. Bots can also get into Lord Blackthorn's and Lord British's castles instead of stopping outside the walls.

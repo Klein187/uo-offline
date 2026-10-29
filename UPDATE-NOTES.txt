@@ -1,18 +1,10 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
+-double-click raw fish or meat and target a fire, oven or firepit to cook it again
+
+Last update:
 -smiths and tailors walk to a real anvil or spinning wheel to work now, not wherever they stopped
 -shops with no anvil or wheel get skipped
 -nujel'm has waypoints now, smiths who recall there stay there instead of getting sent to vesper
 -every bot walks the drawn zones now, not just half
 -bots can get into lord blackthorn's and lord british's castles
-
-Last update:
--a lot more bots go to dungeons now, about a fifth of the shard
--each town has its own nearby dungeons, sometimes bots and parties go further
--parties form in every town, towns with no dungeon nearby recall in
--crawlers no longer leave a dungeon right away for being one recall scroll short
--crawlers stop falling down stairs they didn't mean to take
--house spots hold plain houses too, in every size, each owned by a bot
--new map editor areas: adventure areas (bots hunt there) and landmarks (bots look around)
--lumber spots have a brighter color in the map editor
--map editor clicks place house spot corners again
