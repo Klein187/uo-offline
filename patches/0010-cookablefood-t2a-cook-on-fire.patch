@@ -1,0 +1,79 @@
+diff --git a/Projects/UOContent/Items/Food/CookableFood.cs b/Projects/UOContent/Items/Food/CookableFood.cs
+index e9597fd03..76ae0783a 100644
+--- a/Projects/UOContent/Items/Food/CookableFood.cs
++++ b/Projects/UOContent/Items/Food/CookableFood.cs
+@@ -1,3 +1,4 @@
++using System;
+ using ModernUO.Serialization;
+ using Server.Targeting;
+ 
+@@ -14,6 +15,69 @@ public abstract partial class CookableFood : Item
+ 
+     public abstract Food Cook();
+ 
++    // T2A cooking: double-click the raw food, then target a fire.
++    public override void OnDoubleClick(Mobile from)
++    {
++        if (!Movable)
++        {
++            return;
++        }
++
++        if (!IsChildOf(from.Backpack))
++        {
++            from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
++            return;
++        }
++
++        from.BeginTarget(1, false, TargetFlags.None, OnCookTarget, this);
++    }
++
++    private static void OnCookTarget(Mobile from, object targeted, CookableFood food)
++    {
++        if (food.Deleted || !IsHeatSource(targeted))
++        {
++            return;
++        }
++
++        if (!from.BeginAction<CookableFood>())
++        {
++            from.SendLocalizedMessage(500119); // You must wait to perform another action.
++            return;
++        }
++
++        from.PlaySound(0x225);
++        food.Consume();
++
++        var map = from.Map;
++        var point = targeted as IPoint3D;
++        Timer.StartTimer(TimeSpan.FromSeconds(5.0), () => FinishCooking(from, point, map, food));
++    }
++
++    private static void FinishCooking(Mobile from, IPoint3D point, Map map, CookableFood food)
++    {
++        from.EndAction<CookableFood>();
++
++        if (from.Map != map || point != null && !from.InRange(point, 3))
++        {
++            from.SendLocalizedMessage(500686); // You burn the food to a crisp! It's ruined.
++            return;
++        }
++
++        if (from.CheckSkill(SkillName.Cooking, food.CookingLevel, 100))
++        {
++            var cooked = food.Cook();
++
++            if (from.AddToBackpack(cooked))
++            {
++                from.PlaySound(0x57);
++            }
++        }
++        else
++        {
++            from.SendLocalizedMessage(500686); // You burn the food to a crisp! It's ruined.
++        }
++    }
++
+     public static bool IsHeatSource(object targeted)
+     {
+         int itemID;

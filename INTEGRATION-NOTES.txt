@@ -294,3 +294,18 @@ ModernUO treats NuGet warnings as errors, so the build stopped. Patch in:
 A newer ModernUO that already fixed this will refuse the patch, and that
 is fine. If your build fails with NU1902 or NU1903 on this package, add
 the line by hand.
+
+
+Stock-file patch: cook raw food on a fire (2026-10-29)
+------------------------------------------------------
+ModernUO took out the old way to cook. Raw food (fish steaks, ribs, bird,
+lamb leg, chicken leg, and the rest) only cooked through the skillet
+craft menu, so double-clicking a raw fish steak did nothing. Patch in:
+
+  Projects/UOContent/Items/Food/CookableFood.cs
+
+It adds back the T2A way: double-click the raw food in your pack, target
+a fire, oven, firepit or heating stand within one tile. Five seconds
+later a Cooking skill check either gives you the cooked food or burns it.
+Walk more than 3 tiles away while it cooks and it burns. The skillet menu
+still works too.
