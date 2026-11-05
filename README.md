@@ -362,7 +362,7 @@ It draws the full Felucca map with your waypoints, destinations, zones, and spaw
 - **Waypoints** — click to add (snaps to walkable road and auto-connects neighbors), drag to move, link or sever edges, delete.
 - **Destinations** — drag to move, enable or disable, paint areas over them so the shape becomes the destination, or create new ones.
 - **Arrival points** — drop them on reachable tiles, including interior floors, drag and delete them, and link each to route waypoints by clicking the gold marker and then a waypoint.
-- **House spots** — draw an area. The ⌂ button (or the next restart) fills it with bot-owned houses of mixed sizes, a random mix sized to the area. Houses follow the real placement rules, so trees limit how many fit. Vendor houses get a player vendor on the doorstep. Select a spot and press E to change the numbers.
+- **House spots** — draw an area. The ⌂ button (or the next restart) fills it with bot-owned houses of mixed sizes, a random mix sized to the area. Houses follow the real placement rules, so trees limit how many fit. Green tiles in the editor show where a house can go. Vendor houses get a player vendor on the doorstep. Select a spot and press E to change the numbers.
 - **Areas** — draw an area for bots to use. A lumber spot (pink) is where lumberjacks chop, an adventure area (green) is where fighters go to hunt, and a landmark (teal) is where bots stop to look around.
 - **Spawns** — place spawn points of every kind (PlayerBot fixed-role, PlayerBot lifecycle, Monster, NPC, Vendor) with a count, range, and respawn timer. Filter by kind, drag, edit, delete. `[GenerateCustomSpawners` turns the saved `spawns.json` into real in-game spawners.
 

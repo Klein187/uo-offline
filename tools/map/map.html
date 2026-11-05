@@ -118,8 +118,10 @@
  </div>
  <label style="color:#f0c060"><input type="checkbox" id="editHS"> EDIT house spots</label>
  <div id="hsCtl" style="display:none;margin:4px 0 4px 16px;font-size:12px;color:#f0c060">
-  click = add corner &middot; Enter = save (asks name, vendor houses, plain houses)<br>
-  click a spot = select &middot; E = change its numbers &middot; Delete = remove &middot; Esc = cancel
+  click = add corner &middot; Enter = save (asks name)<br>
+  click a spot = select &middot; Delete = remove &middot; Esc = cancel<br>
+  <span style="color:#3cff5a">green = a small house can stand here</span><br>
+  <span id="buildNote"></span>
  </div>
  <label style="color:#7fdfff"><input type="checkbox" id="editSpawns"> EDIT spawns</label>
  <div id="spawnCtl" style="display:none;margin:4px 0;font-size:12px">
@@ -162,7 +164,7 @@
   ☠ Place PK spawns in game</button>
  <button id="genVendors" style="width:100%;margin-top:4px;padding:5px;background:#5a4a2d"
    title="Fill every drawn house spot with bot houses, a random mix sized to the area (house_spots.json)">
-   &#8962; Place vendor houses in game</button>
+   &#8962; Place houses in game</button>
  <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
    &#9851; Regenerate bots in game</button>
@@ -272,11 +274,32 @@ function resize(){cv.width=innerWidth;cv.height=innerHeight;draw();}
 addEventListener("resize",resize);
 img.onload=resize;
 function T(x,y){return[(x-ox)*scale,(y-oy)*scale];}
+// Green = where a small house can go (BotBuildMap.cs in the game). Zoomed out
+// it uses the 1/4 size map, where a single good tile still shows.
+const BUILD={full:new Image(),small:new Image(),version:-1,timer:null};
+BUILD.full.onload=BUILD.small.onload=()=>draw();
+function drawBuildable(){
+ const small=scale<1,im=small?BUILD.small:BUILD.full,k=small?4:1;
+ if(!im.complete||!im.naturalWidth)return;
+ ctx.globalAlpha=.6;
+ ctx.drawImage(im,ox/k,oy/k,cv.width/scale/k,cv.height/scale/k,0,0,cv.width,cv.height);
+ ctx.globalAlpha=1;}
+function pollBuildable(){
+ fetch("/build_status").then(r=>r.json()).then(st=>{
+  const note=document.getElementById("buildNote"),baking=st.percent!==undefined&&st.percent<100;
+  note.textContent=baking?`making the buildable map in game: ${st.percent}%`
+   :st.ready?`${(st.tiles||0).toLocaleString()} buildable tiles`
+   :"no buildable map yet: start the game once to make it";
+  if(st.ready&&st.version!==BUILD.version){BUILD.version=st.version;
+   BUILD.full.src="/buildable.png?v="+st.version;
+   BUILD.small.src="/buildable_small.png?v="+st.version;}
+ }).catch(()=>{});}
 function draw(){
  ctx.imageSmoothingEnabled=false;
  ctx.fillStyle="#000";ctx.fillRect(0,0,cv.width,cv.height);
  if(img.complete&&img.naturalWidth)
   ctx.drawImage(img,ox,oy,cv.width/scale,cv.height/scale,0,0,cv.width,cv.height);
+ if(document.getElementById("editHS").checked)drawBuildable();
  if(lCov.checked&&COV){const{x0,y0,cell,cols,rows,dist}=COV;
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const d=dist[r*cols+c];
    if(d<=28)continue;  // well-covered: leave clear
@@ -1271,7 +1294,9 @@ document.getElementById("editHS").onchange=function(){
  if(this.checked){
   for(const id of ["editZones","editSpawns","editDungeon","editPK"]){
    const o=document.getElementById(id);if(o&&o.checked){o.checked=false;o.onchange&&o.onchange();}}
-  document.getElementById("lHS").checked=true;}
+  document.getElementById("lHS").checked=true;
+  pollBuildable();BUILD.timer=setInterval(pollBuildable,5000);}
+ else{clearInterval(BUILD.timer);}
  document.getElementById("hsCtl").style.display=this.checked?"block":"none";
  draw();};
 // ---- PK spawn / hunt-area editor ----

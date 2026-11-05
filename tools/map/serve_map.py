@@ -57,6 +57,37 @@ HOUSE_SPOTS_JSON = _data("CustomSpawns/house_spots.json")
 HOMES_REQ = _data("Live/homes_request.txt")
 HOMES_ACK = _data("Live/homes_ack.json")
 
+# Buildable ground (BotBuildMap.cs writes these, P5 PGM, 255 = a small house
+# can stand here). The editor draws them as a see-through green PNG.
+BUILD_STATUS = _data("Live/build_map.json")
+BUILD_PGMS = {"full": _data("Live/build_map.pgm"), "small": _data("Live/build_map_small.pgm")}
+_build_png = {}
+
+def build_png(which):
+    """The PGM as a palette PNG, kept until the game writes a newer one."""
+    import struct, zlib
+    path = BUILD_PGMS[which]
+    mtime = os.path.getmtime(path)
+    got = _build_png.get(which)
+    if got and got[0] == mtime:
+        return got[1]
+    data = open(path, "rb").read()
+    parts = data.split(b"\n", 3)
+    w, h = map(int, parts[1].split())
+    px = parts[3].translate(bytes([0] + [1] * 255))
+    raw = b"".join(b"\0" + px[y * w:(y + 1) * w] for y in range(h))
+    def chunk(tag, body):
+        return (struct.pack(">I", len(body)) + tag + body +
+                struct.pack(">I", zlib.crc32(tag + body) & 0xffffffff))
+    png = (b"\x89PNG\r\n\x1a\n" +
+           chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 3, 0, 0, 0)) +
+           chunk(b"PLTE", bytes([0, 0, 0, 60, 255, 90])) +
+           chunk(b"tRNS", bytes([0, 255])) +
+           chunk(b"IDAT", zlib.compress(raw, 6)) +
+           chunk(b"IEND", b""))
+    _build_png[which] = (mtime, png)
+    return png
+
 # Walk atlas (tools/walkmap_atlas.py output, P5 PGM, 255 = standable). The
 # editor shades unwalkable tiles red while a zone is drawn or selected.
 # Read lazily; the first candidate that exists wins.
@@ -319,6 +350,27 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
     def do_GET(self):
+        if self.path.split("?")[0] == "/build_status":
+            # How far the game has got with the buildable ground map.
+            try: st = jload(BUILD_STATUS)
+            except Exception: st = {}
+            st["ready"] = all(os.path.exists(p) for p in BUILD_PGMS.values())
+            st["version"] = int(os.path.getmtime(BUILD_PGMS["full"])) if st["ready"] else 0
+            self._json(200, st)
+            return
+        if self.path.split("?")[0] in ("/buildable.png", "/buildable_small.png"):
+            try:
+                body = build_png("small" if "small" in self.path.split("?")[0] else "full")
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except FileNotFoundError:
+                self.send_error(404, "no buildable ground map yet")
+            except Exception as ex:
+                self.send_error(500, str(ex))
+            return
         if self.path.split("?")[0] == "/walk":
             # /walk?x0=&y0=&x1=&y1=  -> walkability rows for the red shading
             from urllib.parse import urlparse, parse_qs

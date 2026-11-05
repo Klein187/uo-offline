@@ -726,7 +726,7 @@ namespace Server.CustomBots
         private static bool TooCloseToTrail(WaypointGraph graph, int x, int y) =>
             TooCloseToTrail(graph, x, y, MinTrailDistance);
 
-        private static bool TooCloseToTrail(WaypointGraph graph, int x, int y, int minTrail)
+        internal static bool TooCloseToTrail(WaypointGraph graph, int x, int y, int minTrail)
         {
             foreach (var node in graph.AllNodes)
             {

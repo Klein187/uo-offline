@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Server.Items;
+using Server.Logging;
 using Server.Mobiles;
 using Server.Multis;
 
@@ -29,6 +30,8 @@ namespace Server.CustomBots
 {
     public static class BotHouseFurnishing
     {
+        private static readonly ILogger logger = LogFactory.GetLogger(typeof(BotHouseFurnishing));
+
         // ---- Knobs ----
 
         // One piece of furniture per this many floor tiles, before the
@@ -293,7 +296,7 @@ namespace Server.CustomBots
             var type = AssemblyHandler.FindTypeByName(typeName);
             if (type == null)
             {
-                Console.WriteLine($"[furnish] no item type '{typeName}'");
+                logger.Warning("[furnish] no item type '{Type}'", typeName);
                 return null;
             }
             try
@@ -315,12 +318,12 @@ namespace Server.CustomBots
                         return ctor.Invoke(values) as Item;
                     }
                 }
-                Console.WriteLine($"[furnish] '{typeName}' will not build bare");
+                logger.Warning("[furnish] '{Type}' will not build bare", typeName);
                 return null;
             }
             catch
             {
-                Console.WriteLine($"[furnish] '{typeName}' will not build bare");
+                logger.Warning("[furnish] '{Type}' will not build bare", typeName);
                 return null;
             }
         }
@@ -785,8 +788,8 @@ namespace Server.CustomBots
             var done = Furnish(house, owner);
             if (done.Pieces == 0)
             {
-                Console.WriteLine($"[furnish] nothing went in the {house.GetType().Name} at {house.Location}: " +
-                    $"{done.Rooms} floor(s), {done.FloorTiles} tiles, {done.Style}");
+                logger.Information("[furnish] nothing went in the {House} at {Location}: {Rooms} floor(s), {Tiles} tiles, {Style}",
+                    house.GetType().Name, house.Location, done.Rooms, done.FloorTiles, done.Style);
             }
             return done.Pieces > 0;
         }

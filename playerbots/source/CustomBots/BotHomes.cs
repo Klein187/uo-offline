@@ -131,6 +131,7 @@ namespace Server.CustomBots
                 BotVendorHouses.EnsureAll();
             }
             BotHouseShopping.RegisterShops();
+            BotBuildMap.StartIfStale();
             _booted = true;
             Console.WriteLine($"[homes] {_homeOf.Count} bot homes ({adopted} adopted, {seeded} seeded now), " +
                 $"{_architects.Count} architects");
@@ -1054,6 +1055,10 @@ namespace Server.CustomBots
                 case "seed":
                     names.Add($"{Seed(count)} seeded");
                     break;
+                case "buildmap":
+                    BotBuildMap.Start();
+                    names.Add("making the buildable ground map");
+                    break;
                 case "survey":
                     names.AddRange(BotVendorHouses.SurveySpots());
                     break;
@@ -1061,8 +1066,13 @@ namespace Server.CustomBots
                     names.AddRange(BotVendorHouses.TestHouseTypes());
                     break;
                 case "vendors":
-                    names.Add($"{BotVendorHouses.EnsureAll()} houses placed");
+                    int placedNow = BotVendorHouses.EnsureAll();
+                    names.Add($"{placedNow} houses placed");
                     BotHouseShopping.RegisterShops();
+                    if (placedNow > 0)
+                    {
+                        BotBuildMap.Start();
+                    }
                     break;
                 case "shop":
                     names.AddRange(BotHouseShopping.SendShoppers(count));
