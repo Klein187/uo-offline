@@ -280,7 +280,9 @@ namespace Server.CustomBots
 
             foreach (var item in map.GetItemsInRange(center, SearchRange))
             {
-                if (!item.Deleted && item.Parent == null && Math.Abs(item.Z - center.Z) <= 16)
+                // A forge in a bot's home is behind its locked door.
+                if (!item.Deleted && item.Parent == null && Math.Abs(item.Z - center.Z) <= 16 &&
+                    Server.Multis.BaseHouse.FindHouseAt(item) == null)
                 {
                     Take(item.ItemID, item.Location);
                 }

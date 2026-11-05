@@ -114,6 +114,18 @@ namespace Server.CustomBots
             RegisterOwnedHomes();
             int adopted = AdoptOwnerless();
             int seeded = EnsureSeeded();
+            int upgraded = 0;
+            foreach (var (owner, house) in _homeOf)
+            {
+                if (!owner.Deleted && !house.Deleted && BotHouseFurnishing.Upgrade(house, owner))
+                {
+                    upgraded++;
+                }
+            }
+            if (upgraded > 0)
+            {
+                Console.WriteLine($"[homes] furnished {upgraded} older home(s) of {_homeOf.Count}");
+            }
             if (WorldIsSetUp())
             {
                 BotVendorHouses.EnsureAll();
@@ -819,8 +831,8 @@ namespace Server.CustomBots
         internal static void SettleIn(BaseHouse house, PlayerBot owner, bool seeded)
         {
             house.RestrictDecay = true;
+            BotHouseFurnishing.Furnish(house, owner);
             var inside = HomeVisitBehavior.InteriorTiles(house);
-            Furnish(house, owner, inside);
 
             // Some savings, as an established player would have.
             if (seeded)
@@ -833,76 +845,45 @@ namespace Server.CustomBots
             RegisterHome(house, owner);
         }
 
-        // -------------------------------------------------------------------
-        // Furniture: a table and chair, a chest and a bookcase, locked down,
-        // with the owner's trade goods in the chest.
-        // -------------------------------------------------------------------
-        private static void Furnish(BaseHouse house, PlayerBot owner, List<Point3D> tiles)
+        // A few odds and ends, different in every chest.
+        private static readonly (string type, int min, int max)[] ChestExtras =
         {
-            if (tiles.Count < 4)
-            {
-                return;
-            }
-            var free = new List<Point3D>(tiles);
+            ("Bandage", 5, 40), ("BreadLoaf", 1, 6), ("Apple", 2, 12), ("CookedBird", 1, 4),
+            ("Torch", 1, 3), ("Candle", 1, 4), ("Lockpick", 1, 6), ("BlankScroll", 2, 15),
+            ("Cloak", 1, 1), ("Shirt", 1, 1), ("Sandals", 1, 1), ("Robe", 1, 1),
+            ("RedBook", 1, 1), ("TanBook", 1, 1), ("Amber", 1, 3), ("Citrine", 1, 3),
+            ("Amethyst", 1, 2), ("Sapphire", 1, 2), ("LesserHealPotion", 1, 3),
+            ("RefreshPotion", 1, 3), ("Arrow", 10, 60), ("Bolt", 10, 60), ("Feather", 5, 30),
+            ("Kindling", 2, 10), ("Bottle", 1, 8), ("Pouch", 1, 1),
+        };
 
-            Item Place(Item item)
+        private static void FillExtras(Container chest)
+        {
+            for (int i = Utility.RandomMinMax(2, 6); i > 0; i--)
             {
-                if (free.Count == 0)
-                {
-                    item.Delete();
-                    return null;
-                }
-                int i = Utility.Random(free.Count);
-                var p = free[i];
-                free.RemoveAt(i);
-                item.MoveToWorld(p, house.Map);
-                if (!house.LockDown(owner, item, false))
-                {
-                    item.Movable = false;
-                }
-                return item;
-            }
-
-            Place(new WritingTable());
-            Place(new WoodenChair());
-            var chest = new WoodenChest();
-            FillChest(chest, owner);
-            Place(chest);
-            Place(Utility.RandomBool() ? new FullBookcase() : new Armoire());
-            if (free.Count > 2)
-            {
-                Place(new Candelabra());
+                var (type, min, max) = ChestExtras[Utility.Random(ChestExtras.Length)];
+                Add(chest, type, Utility.RandomMinMax(min, max));
             }
         }
 
         private static void Add(Container c, string typeName, int amount)
         {
-            var type = AssemblyHandler.FindTypeByName(typeName);
-            if (type == null)
+            var item = BotHouseFurnishing.Make(typeName);
+            if (item == null)
             {
                 return;
             }
-            try
+            if (item.Stackable)
             {
-                if (Activator.CreateInstance(type) is not Item item)
-                {
-                    return;
-                }
-                if (item.Stackable)
-                {
-                    item.Amount = Math.Max(1, amount);
-                }
-                c.DropItem(item);
+                item.Amount = Math.Max(1, amount);
             }
-            catch
-            {
-                // a type that will not build bare is simply left out
-            }
+            c.DropItem(item);
         }
 
-        private static void FillChest(Container chest, PlayerBot owner)
+        internal static void FillChest(Container chest, PlayerBot owner)
         {
             Add(chest, "Gold", Utility.RandomMinMax(100, 900));
+            FillExtras(chest);
             switch (owner.Class)
             {
                 case BotClass.Smith:
@@ -1073,11 +1054,14 @@ namespace Server.CustomBots
                 case "seed":
                     names.Add($"{Seed(count)} seeded");
                     break;
+                case "survey":
+                    names.AddRange(BotVendorHouses.SurveySpots());
+                    break;
                 case "housetypes":
                     names.AddRange(BotVendorHouses.TestHouseTypes());
                     break;
                 case "vendors":
-                    names.Add($"{BotVendorHouses.EnsureAll()} vendor houses placed");
+                    names.Add($"{BotVendorHouses.EnsureAll()} houses placed");
                     BotHouseShopping.RegisterShops();
                     break;
                 case "shop":

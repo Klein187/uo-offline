@@ -65,18 +65,18 @@ namespace Server.CustomBots
 
         // Every house an Architect sells, for the spots drawn in the map
         // editor, except the two small workshops: their only door is
-        // upstairs, so a bot has no way in at street level. Each type is listed as often as it should come up: small
-        // houses most, the big ones now and then. Big ones only go where
+        // upstairs, so a bot has no way in at street level. Each type is listed as often as it should come up: every
+        // size about as likely, keeps and castles now and then. Big ones only go where
         // the whole house fits inside the drawn spot.
         public static readonly int[] SpotMultiIds =
         {
-            0x64, 0x64, 0x66, 0x66, 0x68, 0x68, 0x6A, 0x6A, 0x6C, 0x6C, 0x6E, 0x6E, // small houses
-            0x98, 0x9A, 0x9C,       // small tower, log cabin, sandstone patio
-            0x74, 0x76, 0x78, 0x9E, // brick house, two-story houses, villa
-            0x8C, 0x96,             // large patio, marble patio
-            0x7A,                   // tower
-            0x7C,                   // keep
-            0x7E,                   // castle
+            0x64, 0x66, 0x68, 0x6A, 0x6C, 0x6E,   // small houses
+            0x98, 0x98, 0x9A, 0x9A, 0x9C, 0x9C,   // small tower, log cabin, sandstone patio
+            0x74, 0x74, 0x76, 0x76, 0x78, 0x78, 0x9E, 0x9E, // brick house, two-story houses, villa
+            0x8C, 0x8C, 0x96, 0x96,               // large patio, marble patio
+            0x7A, 0x7A,                           // tower
+            0x7C,                                 // keep
+            0x7E,                                 // castle
         };
 
         private static readonly string[] HouseNouns =
@@ -561,10 +561,21 @@ namespace Server.CustomBots
                 x1 = Math.Max(x1, q.X);
                 y1 = Math.Max(y1, q.Y);
             }
-            for (int i = 0; i < attempts; i++)
+            // Every tile once at most, in random order: enough attempts
+            // and a site that exists is found.
+            var tiles = new List<(int x, int y)>();
+            for (int tx = x0; tx <= x1; tx++)
             {
-                int x = Utility.RandomMinMax(x0, x1);
-                int y = Utility.RandomMinMax(y0, y1);
+                for (int ty = y0; ty <= y1; ty++)
+                {
+                    tiles.Add((tx, ty));
+                }
+            }
+            for (int i = 0; i < attempts && i < tiles.Count; i++)
+            {
+                int pick = i + Utility.Random(tiles.Count - i);
+                (tiles[i], tiles[pick]) = (tiles[pick], tiles[i]);
+                var (x, y) = tiles[i];
                 string why = !FootprintInPolygon(poly, multiId, x, y) ? "outside"
                     : TooCloseToHouse(map, x, y, minSpacing) ? "near a house"
                     : TooCloseToTrail(graph, x, y, minTrail) ? "on a trail"

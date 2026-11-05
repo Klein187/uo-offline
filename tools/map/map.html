@@ -161,7 +161,7 @@
  <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33" title="Place the PK spawns drawn in the editor (pk_spawns.json)">
   ☠ Place PK spawns in game</button>
  <button id="genVendors" style="width:100%;margin-top:4px;padding:5px;background:#5a4a2d"
-   title="Fill every drawn house spot with bot vendor houses (house_spots.json)">
+   title="Fill every drawn house spot with bot houses, a random mix sized to the area (house_spots.json)">
    &#8962; Place vendor houses in game</button>
  <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
@@ -427,7 +427,7 @@ function draw(){
   ctx.textAlign="left";ctx.textBaseline="alphabetic";
   if(scale>=4){ctx.fillStyle="#ffb0b0";ctx.font="10px sans-serif";
    ctx.fillText(s.name+" ("+(s.amount||3)+")",x+8,y+3);}}
- // vendor-house hot spots: gold polygons, name + count
+ // house spots: gold polygons, name + room
  if(document.getElementById("lHS").checked)for(const s of HSPOTS){
   if(!s.poly||s.poly.length<3)continue;ctx.beginPath();
   for(let j=0;j<s.poly.length;j++){const[hx,hy]=T(s.poly[j][0],s.poly[j][1]);
@@ -436,7 +436,7 @@ function draw(){
   ctx.strokeStyle="#f0c060";ctx.lineWidth=s===hsSel?2.5:1.5;ctx.stroke();
   if(scale>=2){const c=hsCenter(s);const[x,y]=T(c[0],c[1]);
    ctx.fillStyle="#ffe0a0";ctx.font="11px sans-serif";ctx.textAlign="center";
-   ctx.fillText("\u2302 "+s.name+" ("+hsCount(s)+" vendor, "+(s.homes||0)+" plain)",x,y);ctx.textAlign="left";}}
+   ctx.fillText("\u2302 "+s.name+" (room for "+hsPlots(s.poly)+")",x,y);ctx.textAlign="left";}}
  // in-progress house-spot sketch
  if(document.getElementById("editHS").checked&&drawPts.length){ctx.beginPath();
   for(let j=0;j<drawPts.length;j++){const[x,y]=T(drawPts[j][0],drawPts[j][1]);
@@ -1126,9 +1126,6 @@ addEventListener("keydown",e=>{
  if(document.getElementById("editHS").checked){
   if(e.key==="Enter"&&drawPts.length>=3){saveHS();}
   else if(e.key==="Escape"){drawPts=[];hsSel=null;draw();}
-  else if((e.key==="e"||e.key==="E")&&hsSel&&drawPts.length===0){
-   const n=askHSNumbers(hsCount(hsSel),hsSel.homes||0);
-   if(n)postHS(hsSel.name,n,hsSel.poly);}
   else if((e.key==="Delete"||e.key==="Backspace")&&hsSel){
    if(confirm(`Delete house spot '${hsSel.name}'? (houses already placed stay)`)){
     fetch("/hs_del",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -1241,41 +1238,34 @@ function hsClick(px,py){
  if(drawPts.length===0){
   for(const s of HSPOTS){if(s.poly&&s.poly.length>=3&&inPoly(s.poly,tx,ty)){
    hsSel=s;document.getElementById("info").textContent=
-    `[house spot] ${s.name} · ${hsCount(s)} vendor house(s) · ${s.homes||0} plain house(s) · ${s.poly.length} corners
-E = change the numbers · Delete = remove`;
+    `[house spot] ${s.name} · room for about ${hsPlots(s.poly)} small houses (fewer if big ones roll) · ${s.poly.length} corners
+Delete = remove`;
    draw();return;}}
  }
  hsSel=null;drawPts.push([tx,ty]);
  document.getElementById("info").textContent=
   `House spot: ${drawPts.length} corner(s)
-Enter = save (name + count), Esc = cancel`;
+${drawPts.length>=3?`room for about ${hsPlots(drawPts)} small houses · `:""}Enter = save, Esc = cancel`;
  draw();}
-// Old spots saved before plain houses existed have no "homes" and may
-// have no "count" (the server read that as 2).
-function hsCount(s){return s.count===undefined?2:s.count;}
-function askHSNumbers(shops,homes){
- const a=prompt("How many vendor houses here? (0-10)",String(shops));
- if(a===null)return null;
- const b=prompt("How many plain houses here, no vendor? (0-10)",String(homes));
- if(b===null)return null;
- const c=Math.max(0,Math.min(10,parseInt(a,10)||0)), h=Math.max(0,Math.min(10,parseInt(b,10)||0));
- if(c+h===0){alert("A spot needs at least one house.");return null;}
- return {count:c,homes:h};}
-function postHS(name,n,poly){
+// The game sets a spot's houses from its area: one small house per
+// PLOT_TILES tiles (PlotTiles in BotVendorHouses.cs), a random mix.
+const PLOT_TILES=110;
+function hsPlots(poly){let a=0;
+ for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];a+=p[0]*q[1]-q[0]*p[1];}
+ return Math.max(1,Math.round(Math.abs(a)/2/PLOT_TILES));}
+function postHS(name,poly){
  fetch("/hs_save",{method:"POST",headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({name:name,count:n.count,homes:n.homes,poly:poly})})
+  body:JSON.stringify({name:name,poly:poly})})
  .then(r=>r.json()).then(r=>{
   document.getElementById("info").textContent=r.ok
-   ?`saved house spot '${r.name}': ${n.count} vendor, ${n.homes} plain (${r.count} spots)
+   ?`saved house spot '${r.name}': room for about ${hsPlots(poly)} small houses (${r.count} spots)
 Use the \u2302 button to place the houses in game.`
    :"save failed: "+r.error;
   drawPts=[];hsSel=null;loadData();});}
 function saveHS(){
  const name=prompt("House spot name:","Spot "+(HSPOTS.length+1));
  if(!name){return;}
- const n=askHSNumbers(2,2);
- if(!n){return;}
- postHS(name,n,drawPts);}
+ postHS(name,drawPts);}
 document.getElementById("editHS").onchange=function(){
  drawPts=[];hsSel=null;
  if(this.checked){
@@ -1300,7 +1290,7 @@ Delete = remove`;
  pkSel=null;drawPts.push([tx,ty]);
  document.getElementById("info").textContent=
   `PK hunt area: ${drawPts.length} corner(s)
-Enter = save (name + count), Esc = cancel`;
+${drawPts.length>=3?`room for about ${hsPlots(drawPts)} small houses · `:""}Enter = save, Esc = cancel`;
  draw();}
 function savePK(){
  const cx=Math.round(drawPts.reduce((a,p)=>a+p[0],0)/drawPts.length);
@@ -1722,8 +1712,8 @@ document.getElementById("genPKs").onclick=function(){
 document.getElementById("genVendors").onclick=function(){
  if(!confirm("Fill every drawn house spot with bot vendor houses? "+
    "(only adds houses a spot is missing; nothing is removed)"))return;
- triggerInGame("/genvendors","/genvendors_status","placing vendor houses in game...",
-  a=>"vendor houses: "+a.names+" ("+a.homes+" bot homes in the world)",40);};
+ triggerInGame("/genvendors","/genvendors_status","placing houses in game...",
+  a=>"houses: "+a.names+" ("+a.homes+" bot homes in the world)",40);};
 document.getElementById("genBots").onclick=function(){
  if(!confirm("Regenerate the whole bot population? This clears all bots and "+
    "spawners and re-lays them (bank/shop crowds move to current arrival points)."))return;

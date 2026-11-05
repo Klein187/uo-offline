@@ -362,7 +362,9 @@ namespace Server.CustomBots
                         continue;
                     }
                     var p = new Point3D(x, y, z);
-                    if (house.IsInside(p, 16) && !NextToDoor(doors, x, y))
+                    // A Z well off the floor means the tile is taken and the
+                    // finder landed on top of the furniture.
+                    if (Math.Abs(z - (house.Z + 7)) <= 3 && house.IsInside(p, 16) && !NextToDoor(doors, x, y))
                     {
                         list.Add(p);
                     }

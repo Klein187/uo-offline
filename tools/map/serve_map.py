@@ -442,8 +442,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if self.path.split("?")[0] in ("/hs_save", "/hs_del"):
             # Vendor-house hot spots in house_spots.json.
-            #   /hs_save {name, count, homes, poly:[[x,y],...]}  add or replace by name
-            #            count = vendor houses, homes = plain houses (no vendor)
+            #   /hs_save {name, poly:[[x,y],...]}  add or replace by name; the
+            #            game sets the number of houses from the area
             #   /hs_del  {name}                           remove
             try:
                 n = int(self.headers.get("Content-Length", 0))
@@ -461,11 +461,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if self.path.split("?")[0] == "/hs_save":
                     poly = [[int(a), int(b)] for a, b in (p.get("poly") or [])]
                     if len(poly) < 3: raise ValueError("need >=3 corners")
-                    count = max(0, min(10, int(p.get("count", 2))))
-                    homes = max(0, min(10, int(p.get("homes", 0))))
-                    if count + homes == 0: raise ValueError("a spot needs at least one house")
-                    data["Spots"].append({"name": name, "count": count, "homes": homes,
-                                          "poly": poly})
+                    data["Spots"].append({"name": name, "poly": poly})
                 os.makedirs(os.path.dirname(HOUSE_SPOTS_JSON), exist_ok=True)
                 if os.path.exists(HOUSE_SPOTS_JSON):
                     import shutil; shutil.copy(HOUSE_SPOTS_JSON, HOUSE_SPOTS_JSON + ".bak")
