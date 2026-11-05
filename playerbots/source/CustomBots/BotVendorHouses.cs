@@ -488,7 +488,7 @@ namespace Server.CustomBots
                                 }
                             }
                             var c = new Point3D(x, y, Map.Felucca.GetAverageZ(x, y));
-                            probe.MoveToWorld(c, Map.Felucca);
+                            BotHousing.ParkProbe(probe, Map.Felucca);
                             var v = HousePlacement.Check(probe, 0x64, c, out _);
                             verdicts[v] = verdicts.GetValueOrDefault(v) + 1;
                         }

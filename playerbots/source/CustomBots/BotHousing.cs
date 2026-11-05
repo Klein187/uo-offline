@@ -321,7 +321,7 @@ namespace Server.CustomBots
 
                     int multiId = HouseMultiIds[Utility.Random(HouseMultiIds.Length)];
 
-                    probe.MoveToWorld(center, map);
+                    ParkProbe(probe, map);
                     var result = HousePlacement.Check(probe, multiId, center, out var toMove);
                     if (result != HousePlacementResult.Valid)
                     {
@@ -640,31 +640,29 @@ namespace Server.CustomBots
                 y + y0 >= py0 - FootprintSlack && y + y1 <= py1 + FootprintSlack;
         }
 
-        private static HousePlacementResult CheckSiteResult(Map map, Mobile checker, int multiId, Point3D c)
+        // Where the probe waits between checks. Staff see hidden mobiles, so a
+        // probe hopping from tile to tile near an admin sends that client a
+        // packet for every hop, thousands a second, and the server drops the
+        // client when its send buffer fills. The placement check only needs
+        // the probe on the right map, so it waits in this empty corner.
+        public static readonly Point3D ProbePark = new(1, 1, 0);
+
+        public static void ParkProbe(Mobile probe, Map map)
         {
-            var back = checker.Location;
-            var backMap = checker.Map;
-            checker.MoveToWorld(c, map);
-            var result = HousePlacement.Check(checker, multiId, c, out _);
-            if (backMap != null && backMap != Map.Internal)
+            if (probe.Map != map || probe.Location != ProbePark)
             {
-                checker.MoveToWorld(back, backMap);
+                probe.MoveToWorld(ProbePark, map);
             }
-            return result;
         }
 
-        private static bool CheckSite(Map map, Mobile checker, int multiId, Point3D c)
+        private static HousePlacementResult CheckSiteResult(Map map, Mobile checker, int multiId, Point3D c)
         {
-            var back = checker.Location;
-            var backMap = checker.Map;
-            checker.MoveToWorld(c, map);
-            var result = HousePlacement.Check(checker, multiId, c, out _);
-            if (backMap != null && backMap != Map.Internal)
-            {
-                checker.MoveToWorld(back, backMap);
-            }
-            return result == HousePlacementResult.Valid;
+            ParkProbe(checker, map);
+            return HousePlacement.Check(checker, multiId, c, out _);
         }
+
+        private static bool CheckSite(Map map, Mobile checker, int multiId, Point3D c) =>
+            CheckSiteResult(map, checker, multiId, c) == HousePlacementResult.Valid;
 
         // The owner has to get between its front door and the road. Every
         // house type opens to the south, so walk from just below the
@@ -741,14 +739,11 @@ namespace Server.CustomBots
             {
                 return false;
             }
-            var back = checker.Location;
-            var backMap = checker.Map;
+            // The path finder starts from where the mobile stands, so this
+            // one does move. Only sites that passed the placement check get here.
             checker.MoveToWorld(new Point3D(center.X, fy, fz), map);
             bool ok = new MovementPath(checker, road).Success;
-            if (backMap != null && backMap != Map.Internal)
-            {
-                checker.MoveToWorld(back, backMap);
-            }
+            ParkProbe(checker, map);
             return ok;
         }
 
