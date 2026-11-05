@@ -20,7 +20,10 @@
 // puts spare loot in its chest, stays a while, and often logs out inside.
 // A regular logs back in where it logged out, so those come back at home.
 //
-// The house is Ageless (RestrictDecay): bots have no account to refresh it.
+// The house decays like any T2A house and falls five days after its last
+// refresh. Every visit refreshes it, and an owner who has not been back in two
+// to four days is sent home, logging in first if it has to. Time with the
+// server off does not count: the owner could not have come.
 //
 //   [BotHomes               â€” counts
 //   homes_request.txt       â€” headless test, "token verb [n]":
@@ -112,6 +115,7 @@ namespace Server.CustomBots
             }
             RegisterArchitects();
             RegisterOwnedHomes();
+            ForgiveDowntime();
             int adopted = AdoptOwnerless();
             int seeded = EnsureSeeded();
             int upgraded = 0;
@@ -322,10 +326,174 @@ namespace Server.CustomBots
             {
                 if (h != null && !h.Deleted && h.Owner is PlayerBot pb && !pb.Deleted && pb.Regular)
                 {
-                    h.RestrictDecay = true;
+                    // From before bot houses decayed: starts part way through
+                    // a cycle, so they don't all come due together.
+                    if (h.RestrictDecay)
+                    {
+                        h.RestrictDecay = false;
+                        h.LastRefreshed = Core.Now - TimeSpan.FromHours(Utility.Random(36));
+                    }
                     RegisterHome(h, pb);
                 }
             }
+        }
+
+        // The time the server was off comes off every owned home's decay. An
+        // unowned house gets no such grace: nobody was coming anyway.
+        private static string ClockPath => Path.Combine(Core.BaseDirectory, "Data", "Live", "bot_house_clock.txt");
+
+        private static void ForgiveDowntime()
+        {
+            try
+            {
+                if (File.Exists(ClockPath) && DateTime.TryParse(File.ReadAllText(ClockPath), null,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out var last))
+                {
+                    var off = Core.Now - last;
+                    if (off > TimeSpan.FromMinutes(2))
+                    {
+                        foreach (var house in _homeOf.Values)
+                        {
+                            var moved = house.LastRefreshed + off;
+                            house.LastRefreshed = moved > Core.Now ? Core.Now : moved;
+                        }
+                        Console.WriteLine($"[homes] server was off {off.TotalHours:F1} h, not counted against bot homes");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[homes] house clock unreadable: {ex.Message}");
+            }
+            WriteClock();
+        }
+
+        private static void WriteClock()
+        {
+            try
+            {
+                File.WriteAllText(ClockPath, Core.Now.ToString("O"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[homes] house clock not written: {ex.Message}");
+            }
+        }
+
+        // When an owner should have been back by, two to four days, different
+        // for each house so they don't all go at once.
+        private static TimeSpan RefreshAfter(BaseHouse house) =>
+            TimeSpan.FromHours(48 + house.Serial.Value % 48);
+
+        private const int MaxRefreshLoginsPerTick = 3;
+
+        private static void SendOverdueOwnersHome()
+        {
+            int logins = 0;
+            foreach (var (owner, house) in new List<KeyValuePair<PlayerBot, BaseHouse>>(_homeOf))
+            {
+                if (owner.Deleted || house.Deleted || Core.Now - house.LastRefreshed < RefreshAfter(house))
+                {
+                    continue;
+                }
+                if (owner.Map == Map.Internal)
+                {
+                    if (logins < MaxRefreshLoginsPerTick)
+                    {
+                        logins++;
+                        Console.WriteLine($"[homes] {owner.Name} logs in to refresh its house at {house.Location}");
+                        BotRegulars.LogInNow(owner);
+                    }
+                    continue;
+                }
+                // Anything but a fight, a party or an errand can wait, a
+                // crafter's shift included.
+                if (owner.Alive && owner.Combatant == null && !owner.LoggingOut && !owner.CorpseRunPending &&
+                    !_errands.ContainsKey(owner) && !AtHome(owner, house) && !HeadingHome(owner, house) &&
+                    !IsBusy(owner) && !BotPartyManager.IsInParty(owner) && !BotPlayerParty.InPlayerParty(owner))
+                {
+                    Console.WriteLine($"[homes] {owner.Name} goes to refresh its house, " +
+                        $"{(Core.Now - house.LastRefreshed).TotalDays:F1} days since");
+                    SendHome(owner);
+                }
+            }
+        }
+
+        // A house nobody ever lived in: furnished, then left with no owner, so
+        // it decays and falls. The bot was only there to place it the real way.
+        internal static void LeaveEmpty(BaseHouse house, PlayerBot placer)
+        {
+            BotHouseFurnishing.Furnish(house, placer);
+            house.Owner = null;
+            placer.Delete();
+        }
+
+        // Test hook (homes_request "decaytest"): one empty house placed and
+        // aged to fall in two minutes, one kept unaged, and owners aged past
+        // due (one logged out, one crafter, one other). Logs them for 8 minutes.
+        private static List<string> TestDecay()
+        {
+            var lines = new List<string>();
+            var watch = new List<(string what, BaseHouse house, PlayerBot owner)>();
+            var aged = BotVendorHouses.TestPlaceEmpty();
+            if (aged != null)
+            {
+                aged.LastRefreshed = Core.Now - aged.DecayPeriod + TimeSpan.FromMinutes(2);
+                watch.Add(("empty, aged", aged, null));
+            }
+            var kept = BotVendorHouses.TestPlaceEmpty();
+            if (kept != null)
+            {
+                watch.Add(("empty, new", kept, null));
+            }
+            bool offline = false, crafter = false, other = false;
+            foreach (var (owner, house) in _homeOf)
+            {
+                if (owner.Deleted || house.Deleted)
+                {
+                    continue;
+                }
+                string what = null;
+                if (owner.Map == Map.Internal && !offline)
+                {
+                    offline = true;
+                    what = "logged out";
+                }
+                else if (owner.Behavior is CrafterBehavior && !crafter)
+                {
+                    crafter = true;
+                    what = "crafter";
+                }
+                else if (owner.Map != Map.Internal && owner.Behavior is not CrafterBehavior && !other)
+                {
+                    other = true;
+                    what = "online";
+                }
+                if (what != null)
+                {
+                    house.LastRefreshed = Core.Now - TimeSpan.FromDays(4.5);
+                    watch.Add((what, house, owner));
+                }
+            }
+            for (int minute = 1; minute <= 8; minute++)
+            {
+                int m = minute;
+                Timer.DelayCall(TimeSpan.FromMinutes(m), () =>
+                {
+                    foreach (var (what, house, owner) in watch)
+                    {
+                        Console.WriteLine($"[homes] DECAY min {m}: {what} {owner?.Name} at {house.Location}: " +
+                            (house.Deleted ? "FELL" : $"{house.DecayLevel}, {(Core.Now - house.LastRefreshed).TotalDays:F2} days, " +
+                                $"{owner?.Behavior?.GetType().Name}, inside {owner != null && house.IsInside(owner)}"));
+                    }
+                });
+            }
+            foreach (var (what, house, owner) in watch)
+            {
+                lines.Add($"{what}: {owner?.Name} at {house.Location}, {house.DecayType}, {house.DecayLevel}");
+                Console.WriteLine($"[homes] DECAY start {lines[^1]}");
+            }
+            return lines;
         }
 
         // The road node a house's destination sits on.
@@ -422,6 +590,9 @@ namespace Server.CustomBots
                     SendHome(bot);
                 }
             }
+
+            SendOverdueOwnersHome();
+            WriteClock();
         }
 
         // Free to drop what it is doing: a plain Traveler, alive, not in a
@@ -738,7 +909,7 @@ namespace Server.CustomBots
             }
 
             _errands.Remove(bot);
-            house.RestrictDecay = true;
+            house.RestrictDecay = false;
             RegisterHome(house, bot);
             BotEventJournal.Record("house", bot);
             SayFrom(bot, "house_placed");
@@ -906,7 +1077,7 @@ namespace Server.CustomBots
 
         internal static void SettleIn(BaseHouse house, PlayerBot owner, bool seeded)
         {
-            house.RestrictDecay = true;
+            house.RestrictDecay = false;
             BotHouseFurnishing.Furnish(house, owner);
             var inside = HomeVisitBehavior.InteriorTiles(house);
 
@@ -1129,6 +1300,9 @@ namespace Server.CustomBots
             {
                 case "seed":
                     names.Add($"{Seed(count)} seeded");
+                    break;
+                case "decaytest":
+                    names.AddRange(TestDecay());
                     break;
                 case "zonehomes":
                     names.AddRange(TestZoneHomes(count));

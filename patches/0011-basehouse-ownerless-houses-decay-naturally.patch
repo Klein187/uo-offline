@@ -1,0 +1,14 @@
+diff --git a/Projects/UOContent/Multis/Houses/BaseHouse.cs b/Projects/UOContent/Multis/Houses/BaseHouse.cs
+--- a/Projects/UOContent/Multis/Houses/BaseHouse.cs
++++ b/Projects/UOContent/Multis/Houses/BaseHouse.cs
+@@ -3252,8 +3252,9 @@ namespace Server.Multis
+                 // housing system places scenery homesteads with no live
+                 // owner mobile. Reaping those on every load undid the
+                 // land rush ten seconds after boot.
++                // One that can decay is left to decay and fall on its own.
+                 if (m_Owner == null && Friends.Count == 0 && CoOwners.Count == 0 &&
+-                    !RestrictDecay)
++                    !RestrictDecay && !CanDecay)
+                 {
+                     Timer.StartTimer(TimeSpan.FromSeconds(10.0), Delete);
+                 }

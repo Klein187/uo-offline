@@ -16,6 +16,8 @@
 //   - about 4 in 10 are vendor houses. A vendor house's owner is a trader,
 //     a crafter or an adventurer, and a real PlayerVendor stands on the
 //     doorstep with a shop name
+//   - a few never get an owner at all. They stand furnished and locked,
+//     decay and fall, and the spot fills the gap on a later boot
 //   - the shop opens with stock rolled from the hawker table for the
 //     owner's line of work
 //   - a plain house's owner is any class; it lives there and keeps its
@@ -84,8 +86,35 @@ namespace Server.CustomBots
         // with PLOT_TILES in the map editor.
         private const int PlotTiles = 110;
 
-        // Share of a spot's houses that get a vendor.
+        // Share of a spot's houses that get a vendor, and that nobody ever
+        // lives in.
         private const double VendorShare = 0.4;
+        private const double EmptyShare = 0.03;
+
+        private enum HouseKind { Plain, Shop, Empty }
+
+        private static HouseKind RollKind()
+        {
+            double roll = Utility.RandomDouble();
+            return roll < EmptyShare ? HouseKind.Empty
+                : roll < EmptyShare + VendorShare ? HouseKind.Shop
+                : HouseKind.Plain;
+        }
+
+        // Test hook: an empty house in the first spot with room for one.
+        public static BaseHouse TestPlaceEmpty()
+        {
+            foreach (var spot in LoadSpots())
+            {
+                if (PlaceOne(spot, 0x64, HouseKind.Empty))
+                {
+                    return _lastPlaced;
+                }
+            }
+            return null;
+        }
+
+        private static BaseHouse _lastPlaced;
 
         // One house may take at most this share of a spot, so a spot never
         // ends up as one castle.
@@ -203,7 +232,7 @@ namespace Server.CustomBots
                 for (int round = 0; round < FillRounds; round++)
                 {
                     var built = new Dictionary<int, int>();
-                    int used = 0, shops = 0, homes = 0;
+                    int used = 0, shops = 0, homes = 0, empty = 0;
                     foreach (var h in BaseHouse.AllHouses)
                     {
                         if (h != null && !h.Deleted && h.Map == Map.Felucca && BotHousing.InPolygon(spot.Poly, h.X, h.Y))
@@ -211,7 +240,11 @@ namespace Server.CustomBots
                             var mcl = h.Components;
                             used += PlotsFor(mcl.Width, mcl.Height);
                             built[h.ItemID] = built.GetValueOrDefault(h.ItemID) + 1;
-                            if (VendorOf(h) != null)
+                            if (h.Owner == null)
+                            {
+                                empty++;
+                            }
+                            else if (VendorOf(h) != null)
                             {
                                 shops++;
                             }
@@ -223,8 +256,8 @@ namespace Server.CustomBots
                     }
                     if (round == 0)
                     {
-                        Console.WriteLine($"[vendorhouses] '{spot.Name}' has {shops} vendor and {homes} plain " +
-                            $"houses, {used}/{total} plots used");
+                        Console.WriteLine($"[vendorhouses] '{spot.Name}' has {shops} vendor, {homes} plain and " +
+                            $"{empty} empty houses, {used}/{total} plots used");
                     }
                     var plan = PlanHouses(spot, total, total - used, built);
                     if (plan.Count == 0)
@@ -235,7 +268,7 @@ namespace Server.CustomBots
                     foreach (int multiId in plan)
                     {
                         // Not even a small house would go in: the spot is full.
-                        if (!PlaceOne(spot, multiId, Utility.RandomDouble() < VendorShare))
+                        if (!PlaceOne(spot, multiId, RollKind()))
                         {
                             full = true;
                             break;
@@ -340,7 +373,7 @@ namespace Server.CustomBots
             return list;
         }
 
-        private static bool PlaceOne(Spot spot, int planned, bool withVendor)
+        private static bool PlaceOne(Spot spot, int planned, HouseKind kind)
         {
             var map = Map.Felucca;
             var probe = new Rat { Controlled = true, Blessed = true, Hidden = true };
@@ -362,12 +395,21 @@ namespace Server.CustomBots
                     {
                         continue;
                     }
+                    bool withVendor = kind == HouseKind.Shop;
                     var owner = withVendor ? BotHomes.NewOwner(OwnerClasses) : BotHomes.NewOwner();
                     var house = BotHomes.PlaceWithDeed(owner, multiId, center, map);
                     if (house == null)
                     {
                         owner.Delete();
                         continue;
+                    }
+                    _lastPlaced = house;
+                    if (kind == HouseKind.Empty)
+                    {
+                        BotHomes.LeaveEmpty(house, owner);
+                        Console.WriteLine($"[vendorhouses] a {house.GetType().Name} at '{spot.Name}' {house.Location} " +
+                            "stands empty, nobody will ever live in it");
+                        return true;
                     }
                     BotHomes.SettleIn(house, owner, seeded: true);
                     if (!withVendor)

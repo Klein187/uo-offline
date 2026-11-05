@@ -172,6 +172,8 @@ namespace Server.CustomBots
 
         private void StartStay(PlayerBot bot)
         {
+            // Coming home keeps the house from decaying.
+            _house.RefreshDecay();
             int stashed = BotHomes.StashLoot(bot, _house);
             Console.WriteLine($"[homes] {bot.Name} is home" +
                 (stashed > 0 ? $", stashed {stashed} item(s)" : ""));
