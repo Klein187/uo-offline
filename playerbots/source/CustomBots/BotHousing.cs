@@ -589,10 +589,6 @@ namespace Server.CustomBots
                     {
                         why = check.ToString();
                     }
-                    else if (OnDrawnRoad(multiId, c))
-                    {
-                        why = "on a drawn road";
-                    }
                     else if (!CanWalkToNav(map, checker, multiId, c, road.Location))
                     {
                         why = "no walk to road";
@@ -682,32 +678,6 @@ namespace Server.CustomBots
         // Drawn ground the bots walk on: walk zones and painted areas on the
         // surface. Dungeon floors are not in the house business.
         public static bool IsSurfaceNav(PaintedZone zone) => zone.IsMesh && !zone.IsDungeon;
-
-        // Would this house stand on ground the bots walk, as drawn in the
-        // editor? Same idea as staying off the waypoint trails.
-        private static bool OnDrawnRoad(int multiId, Point3D c)
-        {
-            var (x0, y0, x1, y1) = Footprint(multiId);
-            foreach (var zone in ZoneRegistry.All)
-            {
-                if (!IsSurfaceNav(zone) || c.X + x1 < zone.MinX || c.X + x0 > zone.MaxX ||
-                    c.Y + y1 < zone.MinY || c.Y + y0 > zone.MaxY)
-                {
-                    continue;
-                }
-                for (int x = c.X + x0; x <= c.X + x1; x++)
-                {
-                    for (int y = c.Y + y0; y <= c.Y + y1; y++)
-                    {
-                        if (zone.Contains(x, y))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
 
         // The nearest tile of drawn walking ground within reach, nearest ring
         // first.

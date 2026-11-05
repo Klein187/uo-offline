@@ -3,8 +3,9 @@
 //
 // Writes Data/Live/build_map.pgm: one pixel per tile, 255 = a small house
 // can stand with its center here, by the same rules the bots place by
-// (HousePlacement.Check, off the trails and the drawn zones, and close enough
-// to a waypoint or a drawn zone for the owner to walk between them).
+// (HousePlacement.Check, off the waypoint trails, and close enough to a
+// waypoint or a drawn zone for the owner to walk between them). A house may
+// stand inside a drawn zone: zones are only where bots can walk.
 // build_map_small.pgm is the same
 // map at 1/4 size, for when the editor is zoomed out. EDIT house spots in the
 // editor shows them in green.
@@ -101,7 +102,6 @@ namespace Server.CustomBots
             int height = map.Height;
             _blocked = new byte[LandWidth * height];
             _inReach = MarkReach(height);
-            MarkZones(height);
             _good = new byte[map.Width * height];
             _cells = OccupiedCells();
             _row = 0;
@@ -167,28 +167,6 @@ namespace Server.CustomBots
                 }
             }
             return reach;
-        }
-
-        // A house can't stand on drawn walking ground.
-        private static void MarkZones(int height)
-        {
-            foreach (var zone in ZoneRegistry.All)
-            {
-                if (!BotHousing.IsSurfaceNav(zone))
-                {
-                    continue;
-                }
-                for (int x = Math.Max(0, zone.MinX); x <= Math.Min(LandWidth - 1, zone.MaxX); x++)
-                {
-                    for (int y = Math.Max(0, zone.MinY); y <= Math.Min(height - 1, zone.MaxY); y++)
-                    {
-                        if (zone.Contains(x, y))
-                        {
-                            _blocked[y * LandWidth + x] = 1;
-                        }
-                    }
-                }
-            }
         }
 
         // The tiles under the house itself, from its center.
