@@ -1,10 +1,12 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
--double-click raw fish or meat and target a fire, oven or firepit to cook it again
+-fixed getting disconnected a few seconds after logging in as admin
+-bot houses decay now, the owners go home to refresh them
+-a few houses never get an owner and fall down on their own
+-house spots get as many houses as fit, not just 10
+-more house types and sizes, and the insides are furnished to fit the owner
+-the map editor shows in green where a house can go
+-more roads drawn for the new navigation
 
 Last update:
--smiths and tailors walk to a real anvil or spinning wheel to work now, not wherever they stopped
--shops with no anvil or wheel get skipped
--nujel'm has waypoints now, smiths who recall there stay there instead of getting sent to vesper
--every bot walks the drawn zones now, not just half
--bots can get into lord blackthorn's and lord british's castles
+-double-click raw fish or meat and target a fire, oven or firepit to cook it again

@@ -7,12 +7,16 @@ The point of it is the PlayerBots. The world is full of bots that fight, shop, b
 Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https://github.com/ClassicUO/ClassicUO). T2A era, all on localhost.
 
 <details>
-<summary><b>What's new — September and October 2026</b></summary>
+<summary><b>What's new — September to November 2026</b></summary>
 
 <br>
 
 Newest first.
 
+- **No more disconnects near house spots.** Playing as admin, you could get dropped a few seconds after logging in. The house search moved a hidden test creature over every tile it tried, staff can see hidden creatures, and the flood of updates filled the connection. It no longer moves it around.
+- **Bot houses decay.** Bot houses fall after five days without a visit, like any T2A house. Their owners come home now and then to refresh them, and one who has stayed away too long logs in and goes. A few houses are never lived in and fall on their own.
+- **House spots fill to fit.** A house spot is no longer capped at ten houses. It gets a random mix of plain and vendor houses sized to the area, in more types and sizes, and the inside of each house fits its owner, with rooms for sleeping, eating, reading or working the owner's trade. In the editor, green tiles show where a house can go.
+- **More roads drawn.** More of the new walk zones are drawn.
 - **Cook on a fire again.** Double-clicking raw fish or meat did nothing, because ModernUO only cooks through the skillet menu. Double-click the raw food and target a fire, oven or firepit, the T2A way.
 - **Smiths and tailors work at the anvil and the wheel.** They used to set up wherever their walk ended, sometimes out in the street. They walk to a real anvil and forge, or a spinning wheel or loom, and a shop with none is skipped.
 - **Nujel'm has roads.** The island had no waypoints, so a smith who recalled to a Nujel'm forge got carried back to Vesper. It has them now.
@@ -362,7 +366,7 @@ It draws the full Felucca map with your waypoints, destinations, zones, and spaw
 - **Waypoints** — click to add (snaps to walkable road and auto-connects neighbors), drag to move, link or sever edges, delete.
 - **Destinations** — drag to move, enable or disable, paint areas over them so the shape becomes the destination, or create new ones.
 - **Arrival points** — drop them on reachable tiles, including interior floors, drag and delete them, and link each to route waypoints by clicking the gold marker and then a waypoint.
-- **House spots** — draw an area. The ⌂ button (or the next restart) fills it with bot-owned houses of mixed sizes, a random mix sized to the area. Houses follow the real placement rules, so trees limit how many fit. Green tiles in the editor show where a house can go. Bot houses decay like any T2A house, so owners come home to refresh them, and a few are never lived in and eventually fall. Vendor houses get a player vendor on the doorstep. Select a spot and press E to change the numbers.
+- **House spots** — draw an area. The ⌂ button (or the next restart) fills it with bot-owned houses of mixed sizes, a random mix sized to the area. Houses follow the real placement rules, so trees limit how many fit. Green tiles in the editor show where a house can go. Bot houses decay like any T2A house, so owners come home to refresh them, and a few are never lived in and eventually fall. Vendor houses get a player vendor on the doorstep.
 - **Areas** — draw an area for bots to use. A lumber spot (pink) is where lumberjacks chop, an adventure area (green) is where fighters go to hunt, and a landmark (teal) is where bots stop to look around.
 - **Spawns** — place spawn points of every kind (PlayerBot fixed-role, PlayerBot lifecycle, Monster, NPC, Vendor) with a count, range, and respawn timer. Filter by kind, drag, edit, delete. `[GenerateCustomSpawners` turns the saved `spawns.json` into real in-game spawners.
 
