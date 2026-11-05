@@ -1,5 +1,5 @@
 // =========================================================================
-// BotHomes.cs — bots that own houses and live in them.
+// BotHomes.cs â€” bots that own houses and live in them.
 //
 // Only regulars (BotRegulars) own houses: a house needs an owner who comes
 // back. Three ways a bot ends up with one:
@@ -22,8 +22,8 @@
 //
 // The house is Ageless (RestrictDecay): bots have no account to refresh it.
 //
-//   [BotHomes               — counts
-//   homes_request.txt       — headless test, "token verb [n]":
+//   [BotHomes               â€” counts
+//   homes_request.txt       â€” headless test, "token verb [n]":
 //       seed N    place N seeded homes now
 //       rich N    give N homeless online regulars the deed money and send
 //                 them to buy
@@ -141,6 +141,71 @@ namespace Server.CustomBots
         public static void OnCatalogReloaded()
         {
             DestinationCatalog.RegisterSynthetic(_synthetic);
+            // The editor reloaded: new waypoints or zones change where a
+            // house can go.
+            if (_booted)
+            {
+                BotBuildMap.Start();
+            }
+        }
+
+        // Test hook (homes_request "zonehomes"): homes no waypoint can reach.
+        // Each owner starts on a road some way off and is sent home, and the
+        // log says where it is once a minute for eight minutes.
+        private static List<string> TestZoneHomes(int count)
+        {
+            var lines = new List<string>();
+            var graph = WaypointRegistry.Graph;
+            var sent = new List<(PlayerBot bot, BaseHouse house)>();
+            foreach (var (owner, house) in new List<KeyValuePair<PlayerBot, BaseHouse>>(_homeOf))
+            {
+                var nearest = graph?.FindNearestNode(house.Location);
+                if (sent.Count >= count || owner.Deleted || house.Deleted || nearest == null ||
+                    Distance(house.Location, nearest.Location) <= BotHousing.PathReach - 8)
+                {
+                    continue;
+                }
+                WaypointNode start = null;
+                foreach (var node in graph.AllNodes)
+                {
+                    int d = Distance(node.Location, house.Location);
+                    if (d is >= 80 and <= 250 && graph.ComponentOf(node.Name) == graph.ComponentOf(nearest.Name))
+                    {
+                        start = node;
+                        break;
+                    }
+                }
+                if (start == null)
+                {
+                    continue;
+                }
+                if (owner.Map == Map.Internal)
+                {
+                    BotRegulars.LogInNow(owner);
+                }
+                owner.MoveToWorld(start.Location, Map.Felucca);
+                SendHome(owner);
+                sent.Add((owner, house));
+                lines.Add($"{owner.Name}: {house.Location}, road {Distance(house.Location, nearest.Location)} away, " +
+                    $"arrives {RoadOf(house)}, starts {start.Location}");
+                Console.WriteLine($"[homes] ZONEHOME {lines[^1]}");
+            }
+            for (int minute = 1; minute <= 8; minute++)
+            {
+                int m = minute;
+                Timer.DelayCall(TimeSpan.FromMinutes(m), () =>
+                {
+                    foreach (var (bot, house) in sent)
+                    {
+                        if (!bot.Deleted && !house.Deleted)
+                        {
+                            Console.WriteLine($"[homes] ZONEHOME min {m}: {bot.Name} {Distance(bot.Location, house.Location)} " +
+                                $"from home, inside {house.IsInside(bot)}, {bot.Behavior?.GetType().Name}");
+                        }
+                    }
+                });
+            }
+            return lines;
         }
 
         // First Time Setup: the world was just spawned.
@@ -175,10 +240,20 @@ namespace Server.CustomBots
             {
                 return null;
             }
+            // A house out of a waypoint's reach, beside a drawn zone: the trip
+            // ends on the zone, and the walk from there goes by the zones.
+            var arrive = node.Location;
+            if (type is DestinationType.Home or DestinationType.HouseShop &&
+                Distance(near, node.Location) > BotHousing.PathReach - 8 &&
+                BotHousing.TryNearestDrawnGround(Map.Felucca, near, BotHousing.PathReach - 6, out var ground))
+            {
+                arrive = ground;
+                node = WaypointRegistry.Graph.FindNearestNode(ground) ?? node;
+            }
             var d = new BotDestination
             {
                 Name            = name,
-                Location        = node.Location,
+                Location        = arrive,
                 Type            = type,
                 City            = "",
                 NearestWaypoint = node.Name,
@@ -1055,6 +1130,9 @@ namespace Server.CustomBots
                 case "seed":
                     names.Add($"{Seed(count)} seeded");
                     break;
+                case "zonehomes":
+                    names.AddRange(TestZoneHomes(count));
+                    break;
                 case "buildmap":
                     BotBuildMap.Start();
                     names.Add("making the buildable ground map");
@@ -1173,7 +1251,7 @@ namespace Server.CustomBots
     }
 
     // =====================================================================
-    // ErrandWalkBehavior — walk to a spot off the road, then do one thing.
+    // ErrandWalkBehavior â€” walk to a spot off the road, then do one thing.
     // =====================================================================
     public class ErrandWalkBehavior : PlayerBotBehavior
     {

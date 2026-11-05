@@ -3,8 +3,9 @@
 //
 // Writes Data/Live/build_map.pgm: one pixel per tile, 255 = a small house
 // can stand with its center here, by the same rules the bots place by
-// (HousePlacement.Check, off the trails, and close enough to a waypoint for
-// the owner to walk between them). build_map_small.pgm is the same
+// (HousePlacement.Check, off the trails and the drawn zones, and close enough
+// to a waypoint or a drawn zone for the owner to walk between them).
+// build_map_small.pgm is the same
 // map at 1/4 size, for when the editor is zoomed out. EDIT house spots in the
 // editor shows them in green.
 //
@@ -14,8 +15,9 @@
 // goes through the real check.
 //
 // Runs on boot when the map is missing or the number of houses in the world
-// has changed since it was made, after houses are placed in the spots, and
-// on request: homes_request.txt "token buildmap".
+// has changed since it was made, after houses are placed in the spots, when
+// the editor reloads waypoints and zones in game, and on request:
+// homes_request.txt "token buildmap".
 // =========================================================================
 
 using System;
@@ -57,6 +59,7 @@ namespace Server.CustomBots
         // it; that is too slow for every tile, so the map goes by distance,
         // with room for the front being a few tiles from the center.
         private const int WaypointReach = 32;
+        private const int ZoneSampleStep = 8;
 
         // ---- State ----
 
@@ -98,6 +101,7 @@ namespace Server.CustomBots
             int height = map.Height;
             _blocked = new byte[LandWidth * height];
             _inReach = MarkReach(height);
+            MarkZones(height);
             _good = new byte[map.Width * height];
             _cells = OccupiedCells();
             _row = 0;
@@ -109,31 +113,82 @@ namespace Server.CustomBots
             _timer = Timer.DelayCall(SliceEvery, SliceEvery, Slice);
         }
 
-        // Every tile close enough to a waypoint.
+        // Every tile close enough to a waypoint or a drawn zone.
         private static byte[] MarkReach(int height)
         {
             var reach = new byte[LandWidth * height];
-            var graph = WaypointRegistry.Graph;
-            if (graph == null)
+
+            void Around(int px, int py)
             {
-                return reach;
-            }
-            foreach (var node in graph.AllNodes)
-            {
-                int x0 = Math.Max(0, node.Location.X - WaypointReach);
-                int x1 = Math.Min(LandWidth - 1, node.Location.X + WaypointReach);
-                int y0 = Math.Max(0, node.Location.Y - WaypointReach);
-                int y1 = Math.Min(height - 1, node.Location.Y + WaypointReach);
+                int x0 = Math.Max(0, px - WaypointReach);
+                int x1 = Math.Min(LandWidth - 1, px + WaypointReach);
+                int y0 = Math.Max(0, py - WaypointReach);
+                int y1 = Math.Min(height - 1, py + WaypointReach);
                 if (x0 > x1)
                 {
-                    continue;
+                    return;
                 }
                 for (int y = y0; y <= y1; y++)
                 {
                     Array.Fill(reach, (byte)1, y * LandWidth + x0, x1 - x0 + 1);
                 }
             }
+
+            var graph = WaypointRegistry.Graph;
+            if (graph != null)
+            {
+                foreach (var node in graph.AllNodes)
+                {
+                    Around(node.Location.X, node.Location.Y);
+                }
+            }
+
+            // A zone's corners and a tile every so often inside it; the reach
+            // squares overlap far more than that spacing.
+            foreach (var zone in ZoneRegistry.All)
+            {
+                if (!BotHousing.IsSurfaceNav(zone))
+                {
+                    continue;
+                }
+                foreach (var (px, py) in zone.Points)
+                {
+                    Around(px, py);
+                }
+                for (int x = zone.MinX; x <= zone.MaxX; x += ZoneSampleStep)
+                {
+                    for (int y = zone.MinY; y <= zone.MaxY; y += ZoneSampleStep)
+                    {
+                        if (zone.Contains(x, y))
+                        {
+                            Around(x, y);
+                        }
+                    }
+                }
+            }
             return reach;
+        }
+
+        // A house can't stand on drawn walking ground.
+        private static void MarkZones(int height)
+        {
+            foreach (var zone in ZoneRegistry.All)
+            {
+                if (!BotHousing.IsSurfaceNav(zone))
+                {
+                    continue;
+                }
+                for (int x = Math.Max(0, zone.MinX); x <= Math.Min(LandWidth - 1, zone.MaxX); x++)
+                {
+                    for (int y = Math.Max(0, zone.MinY); y <= Math.Min(height - 1, zone.MaxY); y++)
+                    {
+                        if (zone.Contains(x, y))
+                        {
+                            _blocked[y * LandWidth + x] = 1;
+                        }
+                    }
+                }
+            }
         }
 
         // The tiles under the house itself, from its center.
@@ -222,7 +277,10 @@ namespace Server.CustomBots
                         }
                     }
                 }
-                _blocked[y * LandWidth + x] = (byte)(blocked ? 1 : 0);
+                if (blocked)
+                {
+                    _blocked[y * LandWidth + x] = 1;
+                }
             }
         }
 

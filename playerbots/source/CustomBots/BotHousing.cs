@@ -589,7 +589,11 @@ namespace Server.CustomBots
                     {
                         why = check.ToString();
                     }
-                    else if (!CanWalkToRoad(map, checker, multiId, c, road.Location))
+                    else if (OnDrawnRoad(multiId, c))
+                    {
+                        why = "on a drawn road";
+                    }
+                    else if (!CanWalkToNav(map, checker, multiId, c, road.Location))
                     {
                         why = "no walk to road";
                     }
@@ -672,6 +676,93 @@ namespace Server.CustomBots
         // footprint to the road node with the engine's own pathfinder; open
         // country with no way through (cliffs, a river, a thicket) is
         // turned down.
+        // How far the engine's path finder reaches (BitmapAStarAlgorithm.AreaSize).
+        public const int PathReach = 38;
+
+        // Drawn ground the bots walk on: walk zones and painted areas on the
+        // surface. Dungeon floors are not in the house business.
+        public static bool IsSurfaceNav(PaintedZone zone) => zone.IsMesh && !zone.IsDungeon;
+
+        // Would this house stand on ground the bots walk, as drawn in the
+        // editor? Same idea as staying off the waypoint trails.
+        private static bool OnDrawnRoad(int multiId, Point3D c)
+        {
+            var (x0, y0, x1, y1) = Footprint(multiId);
+            foreach (var zone in ZoneRegistry.All)
+            {
+                if (!IsSurfaceNav(zone) || c.X + x1 < zone.MinX || c.X + x0 > zone.MaxX ||
+                    c.Y + y1 < zone.MinY || c.Y + y0 > zone.MaxY)
+                {
+                    continue;
+                }
+                for (int x = c.X + x0; x <= c.X + x1; x++)
+                {
+                    for (int y = c.Y + y0; y <= c.Y + y1; y++)
+                    {
+                        if (zone.Contains(x, y))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // The nearest tile of drawn walking ground within reach, nearest ring
+        // first.
+        public static bool TryNearestDrawnGround(Map map, Point3D near, int reach, out Point3D ground)
+        {
+            ground = Point3D.Zero;
+            var zones = new List<PaintedZone>();
+            foreach (var zone in ZoneRegistry.All)
+            {
+                if (IsSurfaceNav(zone) && near.X + reach >= zone.MinX && near.X - reach <= zone.MaxX &&
+                    near.Y + reach >= zone.MinY && near.Y - reach <= zone.MaxY)
+                {
+                    zones.Add(zone);
+                }
+            }
+            if (zones.Count == 0)
+            {
+                return false;
+            }
+            for (int d = 0; d <= reach; d++)
+            {
+                for (int x = near.X - d; x <= near.X + d; x++)
+                {
+                    for (int y = near.Y - d; y <= near.Y + d; y++)
+                    {
+                        if (Math.Max(Math.Abs(x - near.X), Math.Abs(y - near.Y)) != d)
+                        {
+                            continue;
+                        }
+                        foreach (var zone in zones)
+                        {
+                            if (zone.Contains(x, y) && Walkable.TryFindSeedZ(map, x, y, near.Z, out var z))
+                            {
+                                ground = new Point3D(x, y, z);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // A walk from the house to a waypoint, or to drawn walking ground.
+        private static bool CanWalkToNav(Map map, Mobile checker, int multiId, Point3D center, Point3D road)
+        {
+            if (Math.Max(Math.Abs(road.X - center.X), Math.Abs(road.Y - center.Y)) <= PathReach &&
+                CanWalkToRoad(map, checker, multiId, center, road))
+            {
+                return true;
+            }
+            return TryNearestDrawnGround(map, center, PathReach - 6, out var ground) &&
+                CanWalkToRoad(map, checker, multiId, center, ground);
+        }
+
         private static bool CanWalkToRoad(Map map, Mobile checker, int multiId, Point3D center, Point3D road)
         {
             // Two tiles past the front of the house, wherever that is for
