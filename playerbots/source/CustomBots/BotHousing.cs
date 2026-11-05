@@ -542,10 +542,10 @@ namespace Server.CustomBots
         }
 
         // A spot inside a drawn polygon (vendor hot spots). Houses may sit
-        // closer to the road and to each other here: that is the point of a
-        // hot spot. Still never on a trail.
+        // closer to the road here: that is the point of a hot spot. Still never
+        // on a trail. How close to other houses is up to HousePlacement alone.
         public static bool TryFindSiteInPolygon(Map map, Mobile checker, int multiId,
-            Point2D[] poly, int minTrail, int minSpacing, out Point3D center, int attempts = 400)
+            Point2D[] poly, int minTrail, out Point3D center, int attempts = 400)
         {
             center = Point3D.Zero;
             var graph = WaypointRegistry.Graph;
@@ -577,7 +577,6 @@ namespace Server.CustomBots
                 (tiles[i], tiles[pick]) = (tiles[pick], tiles[i]);
                 var (x, y) = tiles[i];
                 string why = !FootprintInPolygon(poly, multiId, x, y) ? "outside"
-                    : TooCloseToHouse(map, x, y, minSpacing) ? "near a house"
                     : TooCloseToTrail(graph, x, y, minTrail) ? "on a trail"
                     : null;
                 if (why == null)

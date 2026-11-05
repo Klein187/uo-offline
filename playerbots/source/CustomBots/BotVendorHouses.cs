@@ -71,12 +71,10 @@ namespace Server.CustomBots
         // The owner keeps this much ahead in the vendor's wage account.
         private const int WageReserve = 3000;
 
-        // Houses in a hot spot sit closer together and nearer the road than
-        // countryside homes, but never on the trail itself.
-        // Spacing is by the house's own size: its longest side plus a tile
-        // between centers. The real placement rules (HousePlacement)
-        // still have the last word on yards and overlaps.
-        private const int SpotMinTrail = 6, SpotGap = 1;
+        // Houses in a hot spot sit nearer the road than countryside homes, but
+        // never on the trail itself. How close they stand to each other is up
+        // to the real placement rules (HousePlacement) alone.
+        private const int SpotMinTrail = 6;
 
         // The room a house takes for counting: its outline and this much
         // around it, for yards.
@@ -96,12 +94,6 @@ namespace Server.CustomBots
         // Rounds of planning per spot: a planned house that doesn't fit is
         // swapped for a smaller one, which leaves room to plan again.
         private const int FillRounds = 3;
-
-        private static int SpacingFor(int multiId)
-        {
-            var (x0, y0, x1, y1) = BotHousing.Footprint(multiId);
-            return Math.Max(x1 - x0, y1 - y0) + 1 + SpotGap;
-        }
 
         private static readonly BotClass[] OwnerClasses =
         {
@@ -366,7 +358,7 @@ namespace Server.CustomBots
                     var (fx0, fy0, fx1, fy1) = BotHousing.Footprint(multiId);
                     int minTrail = Math.Max(SpotMinTrail, Math.Max(fx1 - fx0, fy1 - fy0) / 2 + 2);
                     if (!BotHousing.TryFindSiteInPolygon(map, probe, multiId, spot.Poly, minTrail,
-                            SpacingFor(multiId), out var center, attempts))
+                            out var center, attempts))
                     {
                         continue;
                     }
