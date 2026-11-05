@@ -163,7 +163,7 @@
  <button id="genPKs" style="width:100%;margin-top:4px;padding:5px;background:#5a2d33" title="Place the PK spawns drawn in the editor (pk_spawns.json)">
   ☠ Place PK spawns in game</button>
  <button id="genVendors" style="width:100%;margin-top:4px;padding:5px;background:#5a4a2d"
-   title="Fill every drawn house spot with bot houses, a random mix sized to the area (house_spots.json)">
+   title="Fill newly drawn house spots with bot houses, a random mix sized to the area (house_spots.json)">
    &#8962; Place houses in game</button>
  <button id="genBots" style="width:100%;margin-top:4px;padding:5px;background:#5a3a2d"
    title="Re-lay the whole bot population (= [GenerateBots) so bank/shop crowds move onto current arrival points">
@@ -1735,8 +1735,8 @@ document.getElementById("genPKs").onclick=function(){
  triggerInGame("/genpks","/genpks_status","placing PK spawners in game...",
   a=>"PKs armed: "+a.spawners+" spawner(s), ~"+a.pks+" red hunters on the roads",20);};
 document.getElementById("genVendors").onclick=function(){
- if(!confirm("Fill every drawn house spot with bot vendor houses? "+
-   "(only adds houses a spot is missing; nothing is removed)"))return;
+ if(!confirm("Fill the newly drawn house spots with bot houses? "+
+   "(a spot is filled once; spots filled before are left alone, nothing is removed)"))return;
  triggerInGame("/genvendors","/genvendors_status","placing houses in game...",
   a=>"houses: "+a.names+" ("+a.homes+" bot homes in the world)",40);};
 document.getElementById("genBots").onclick=function(){

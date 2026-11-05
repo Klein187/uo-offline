@@ -6,8 +6,10 @@
 //
 // Hot spots are drawn in the map editor (EDIT house spots) as a polygon and
 // live in Data/CustomSpawns/house_spots.json. The drawn area sets how many
-// houses a spot holds, and the mix is random. On boot, at the end of First
-// Time Setup, and on request, every spot is filled up:
+// houses a spot holds, and the mix is random. A spot is filled once, the
+// first time the server sees it (on boot, at the end of First Time Setup,
+// or on request), and never topped up after that. A redrawn spot counts as
+// a new one:
 //
 //   - a new regular places a real house inside the polygon, as BotHomes
 //     does for any home. Any house an Architect sells, from a small house
@@ -17,7 +19,7 @@
 //     a crafter or an adventurer, and a real PlayerVendor stands on the
 //     doorstep with a shop name
 //   - a few never get an owner at all. They stand furnished and locked,
-//     decay and fall, and the spot fills the gap on a later boot
+//     decay and fall, and the ground stays empty
 //   - the shop opens with stock rolled from the hawker table for the
 //     owner's line of work
 //   - a plain house's owner is any class; it lives there and keeps its
@@ -30,7 +32,7 @@
 // work. Real players buy the normal way, and the gold lands in the owner's
 // bank, which is what lets it buy the next thing.
 //
-//   homes_request.txt "token vendors" places any missing houses now.
+//   homes_request.txt "token vendors" fills any new spot now.
 // =========================================================================
 
 using System;
@@ -220,12 +222,56 @@ namespace Server.CustomBots
             return PlotsFor(x1 - x0 + 1, y1 - y0 + 1);
         }
 
-        // Fill every drawn spot in proportion to its area. Returns houses placed.
+        // Spots already filled, one line per spot: its name and corners.
+        private static string FilledPath =>
+            Path.Combine(Core.BaseDirectory, "Data", "Live", "house_spots_filled.txt");
+
+        private static string KeyOf(Spot spot)
+        {
+            var corners = new List<string>();
+            foreach (var p in spot.Poly)
+            {
+                corners.Add($"{p.X},{p.Y}");
+            }
+            return $"{spot.Name}|{string.Join(";", corners)}";
+        }
+
+        private static bool HasBotHouse(Spot spot)
+        {
+            foreach (var h in BaseHouse.AllHouses)
+            {
+                if (h != null && !h.Deleted && h.Map == Map.Felucca && (h.Owner == null || h.Owner is PlayerBot) &&
+                    BotHousing.InPolygon(spot.Poly, h.X, h.Y))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Fill every drawn spot that has not been filled before, in proportion
+        // to its area. Returns houses placed.
         public static int EnsureAll()
         {
             int placed = 0;
+            // Worlds from before the record was kept: a spot that already
+            // has bot houses was filled back then.
+            bool firstRecord = !File.Exists(FilledPath);
+            var filled = new HashSet<string>(firstRecord ? Array.Empty<string>() : File.ReadAllLines(FilledPath));
+            int filledBefore = filled.Count;
             foreach (var spot in LoadSpots())
             {
+                var key = KeyOf(spot);
+                if (filled.Contains(key))
+                {
+                    continue;
+                }
+                filled.Add(key);
+                if (firstRecord && HasBotHouse(spot))
+                {
+                    Console.WriteLine($"[vendorhouses] '{spot.Name}' was filled before, left as it is");
+                    continue;
+                }
                 int total = spot.Plots;
                 int placedHere = 0;
                 bool full = false;
@@ -285,6 +331,18 @@ namespace Server.CustomBots
             if (placed > 0)
             {
                 Console.WriteLine($"[vendorhouses] placed {placed} house(s) in the drawn spots");
+            }
+            if (filled.Count != filledBefore || firstRecord)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(FilledPath));
+                    File.WriteAllLines(FilledPath, filled);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[vendorhouses] could not write {FilledPath}: {ex.Message}");
+                }
             }
             return placed;
         }
