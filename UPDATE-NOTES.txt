@@ -1,5 +1,8 @@
 I am currently working on a new way of bot navigation that I believe will vastly improve how they travel. Updates will slow down because of this as I have to manually place a lot of things.
 
+-house spots fill once when you draw them, restarts don't add houses anymore
+
+Last update:
 -fixed getting disconnected a few seconds after logging in as admin
 -bot houses decay now, the owners go home to refresh them
 -a few houses never get an owner and fall down on their own
@@ -7,6 +10,3 @@ I am currently working on a new way of bot navigation that I believe will vastly
 -more house types and sizes, and the insides are furnished to fit the owner
 -the map editor shows in green where a house can go
 -more roads drawn for the new navigation
-
-Last update:
--double-click raw fish or meat and target a fire, oven or firepit to cook it again

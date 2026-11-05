@@ -13,6 +13,7 @@ Built on [ModernUO](https://github.com/modernuo/ModernUO) and [ClassicUO](https:
 
 Newest first.
 
+- **House spots fill once.** A spot used to get more houses on every restart if it had room. It fills the first time the server sees it now, and restarts leave it alone.
 - **No more disconnects near house spots.** Playing as admin, you could get dropped a few seconds after logging in. The house search moved a hidden test creature over every tile it tried, staff can see hidden creatures, and the flood of updates filled the connection. It no longer moves it around.
 - **Bot houses decay.** Bot houses fall after five days without a visit, like any T2A house. Their owners come home now and then to refresh them, and one who has stayed away too long logs in and goes. A few houses are never lived in and fall on their own.
 - **How house spots work.** A house spot is an area you draw in the map editor where bots build houses. Tick EDIT house spots, click the corners, press Enter and give it a name. Green tiles show where a house can stand. Then press Place houses in game, or restart the server.
